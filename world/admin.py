@@ -18,5 +18,5 @@ class MarkerAdmin(admin.OSMGeoAdmin):
 class ParcelAdmin(admin.OSMGeoAdmin):
     """Parcel admin."""
 
-    # list_display = ("name", "location")
+    list_display = ("apn", "situs_addr", "situs_stre", "situs_suff")
 
