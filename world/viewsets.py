@@ -23,13 +23,13 @@ class MyInBBoxFilter(filters.InBBoxFilter):
         ct = CoordTransform(source=SpatialReference('WGS84'), target=SpatialReference('NAD83'))
         geom = GEOSGeometry(x).transform(ct=ct, clone=True)
 
-        print ("Get filter:", x)
-        print ("GEOM", geom)
+        # print ("Get filter:", x)
+        # print ("GEOM", geom)
         return geom
 
     def filter_queryset(self, request, queryset, view):
         queryset = super().filter_queryset(request, queryset, view)
-        print ("Queryset", queryset.query)
+        # print ("Queryset", queryset.query)
         return queryset
 
 class ParcelViewSet(viewsets.ReadOnlyModelViewSet):

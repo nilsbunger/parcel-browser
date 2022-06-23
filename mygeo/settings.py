@@ -16,7 +16,9 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env()
+env = environ.Env(
+    LOCAL_DB=(bool, False)
+)
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
@@ -82,13 +84,19 @@ GEOS_LIBRARY_PATH='/opt/homebrew/lib/libgeos_c.dylib'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+if (env('LOCAL_DB')):
+    print ("****** LOCAL DATABASE ******")
+    (dbHost, dbName, dbUserName, dbPassword) = ('localhost', 'geodjango', 'nils', '')
+else:
+    (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'), env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': env('DB_HOST'),
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USERNAME'),
-        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': dbHost,
+        'NAME': dbName,
+        'USER': dbUserName,
+        'PASSWORD': dbPassword,
     }
 }
 
