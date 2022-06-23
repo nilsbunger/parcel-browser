@@ -6,9 +6,8 @@ const map = L.map("map", { layers: [osm], minZoom: 5 });
 //     locate()
 //     .on("locationfound", (e) => map.setView(e.latlng, 8))
 //     .on("locationerror", () => map.setView([0, 0], 5));
-// map.setView([-118,32], 5);
-// map.setView([32.7, -117.2], 11);    // San Diego
-map.setView([33.22214126963008, -117.22432683708347], 14)
+// map.setView([33.22214126963008, -117.22432683708347], 14) // San Diego
+map.setView([32.78415286818754, -117.19905688459625], 18)   // 2210 Illion St, San Diego, 92110
 // We ask our endpoint to return only the markers of the specific displayed area, passed as a boundbox string.
 //
 // To build the marker layer, we ask our endpoint for data asynchronously and extract the properties we want to show in the pop-ups.
@@ -51,3 +50,4 @@ async function render_layers() {
 }
 
 map.on("moveend", render_layers);
+render_layers();
