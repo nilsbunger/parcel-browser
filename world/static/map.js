@@ -1,7 +1,7 @@
 const copy = "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors";
 const url = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const osm = L.tileLayer(url, { attribution: copy });
-const map = L.map("map", { layers: [osm], minZoom: 5 });
+const map = L.map("map", { layers: [osm], minZoom: 8 });
 // map.
 //     locate()
 //     .on("locationfound", (e) => map.setView(e.latlng, 8))
@@ -20,6 +20,14 @@ async function load_markers() {
     return geojson
 }
 
+async function load_zoningBases() {
+    const zoningBasesUrl = `/api/zoningbases/?in_bbox=${map.getBounds().toBBoxString()}`
+    const response = await fetch(zoningBasesUrl)
+    const geojson = await response.json()
+    return geojson
+}
+
+
 let pending = 0;
 async function load_parcels() {
     const parcels_url = `/api/parcels/?in_bbox=${map.getBounds().toBBoxString()}`
@@ -33,18 +41,25 @@ async function render_layers() {
     L.geoJSON(markers)
     .bindPopup((layer) => layer.feature.properties.name)
     .addTo(map);
-    if (pending === 1) {
-        pending = 2;
-        return;
-    }
-    pending = 1;
-    while (pending > 0) {
-        const parcels = await load_parcels();
-        L.geoJSON(parcels)
-            // .bindPopup((layer) => layer.feature.properties.name)
-            .addTo(map);
-        pending = pending - 1;
-    }
+
+    const zoningBases = await load_zoningBases();
+    L.geoJSON(zoningBases)
+    // .bindPopup((layer) => layer.feature.properties.name)
+    .addTo(map);
+    console.log('ZoningBases=', zoningBases);
+
+    // if (pending === 1) {
+    //     pending = 2;
+    //     return;
+    // }
+    // pending = 1;
+    // while (pending > 0) {
+    //     const parcels = await load_parcels();
+    //     L.geoJSON(parcels)
+    //         // .bindPopup((layer) => layer.feature.properties.name)
+    //         .addTo(map);
+    //     pending = pending - 1;
+    // }
     // console.log('markers=', markers);
     // console.log('parcels=', parcels);
 }

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head %}
+    <!-- Ol.CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css" type="text/css">
+    <!-- Ol.Js -->
+{#    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>#}
+    <style>
+     .map{
+         width:400px;
+         height:400px;
+     }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div id="map" class="map" tabindex="0"></div>
+{% endblock %}
+
+{% block endbody %}
+    <script src="/frontend/parcel-detail.js"></script>
+    <script>
+
+    </script>
+
+{% endblock %}

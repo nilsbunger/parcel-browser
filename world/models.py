@@ -7,6 +7,57 @@ from django.contrib.gis.db import models
 
 
 # This is an auto-generated Django model module created by ogrinspect.
+from django.contrib.gis.db import models
+
+
+class BuildingOutlines(models.Model):
+    outline_id = models.FloatField()
+    bldgid = models.FloatField()
+    centroid_x = models.FloatField()
+    centroid_y = models.FloatField()
+    area = models.FloatField()
+    comment = models.CharField(max_length=254, blank=True, null=True)
+    shape_leng = models.FloatField()
+    shape_star = models.FloatField()
+    shape_stle = models.FloatField()
+    geom = models.MultiPolygonField(srid=4326)
+
+
+buildingoutlines_mapping = {
+    'outline_id': 'outline_id',
+    'bldgid': 'bldgID',
+    'centroid_x': 'CENTROID_X',
+    'centroid_y': 'CENTROID_Y',
+    'area': 'AREA',
+    'comment': 'COMMENT',
+    'shape_leng': 'Shape_Leng',
+    'shape_star': 'Shape_STAr',
+    'shape_stle': 'Shape_STLe',
+    'geom': 'MULTIPOLYGON',
+}
+
+
+class ZoningBase(models.Model):
+    zone_name = models.CharField(max_length=20)
+    imp_date = models.DateField()
+    ordnum = models.CharField(max_length=10)
+    shape_star = models.FloatField()
+    shape_stle = models.FloatField()
+    geom = models.MultiPolygonField(srid=4326)
+
+
+# Auto-generated `LayerMapping` dictionary for ZoningBase model
+zoningbase_mapping = {
+    'zone_name': 'ZONE_NAME',
+    'imp_date': 'IMP_DATE',
+    'ordnum': 'ORDNUM',
+    'shape_star': 'Shape_STAr',
+    'shape_stle': 'Shape_STLe',
+    'geom': 'MULTIPOLYGON',
+}
+
+
+# This is an auto-generated Django model module created by ogrinspect.
 
 class Parcel(models.Model):
     apn = models.CharField(max_length=10, blank=True, null=True)
@@ -73,6 +124,9 @@ class Parcel(models.Model):
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=2230)
+
+    def __str__(self):
+        return '%s %s %s %s' % (self.apn, self.situs_addr, self.situs_stre, self.situs_zip)
 
 
 # Auto-generated `LayerMapping` dictionary for Parcel model

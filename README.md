@@ -13,9 +13,20 @@ From the project directory:
 
 `source ./venv/bin/activate` to put local python and site-packages in path.
 
+`cp .env.example .env` -- create your .env file, get DB credentials from an admin.
+
+# Install or update dependencies
+
 `pip install -r requirements.txt`
 
-... A couple steps to setup DB which we should document...
+`cd frontend && yarn add` -- install dependencies for frontned
 
-`./manage.py runserver` - start django server. 
+# Running in dev
+You'll need to run frontend and backend servers:
+
+`cd frontend && yarn dev` -- start frontend (parcel) dev server
+`./manage.py runserver` - start backend (django) server. 
+
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
+
+You'll periodically need to update python and yarn dependencies

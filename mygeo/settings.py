@@ -16,6 +16,8 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+FRONTEND_DIR = BASE_DIR.parent / 'frontend'
+
 env = environ.Env(
     LOCAL_DB=(bool, False)
 )
@@ -28,7 +30,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = 'django-insecure--j&vhgll2bv2yqzfhva!l!+qu=1rn2%lre(sb==o9))5bojn1&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DJANGO_ENV') == 'development'
+ALLOWED_HOSTS = ['localhost']
+if (DEBUG):
+    print ("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 
 ALLOWED_HOSTS = []
 

@@ -5,8 +5,8 @@ from rest_framework import viewsets
 from rest_framework_gis import filters
 from rest_framework_gis.filters import InBBoxFilter
 
-from world.models import Marker, Parcel
-from world.serializers import MarkerSerializer, ParcelSerializer
+from world.models import Marker, Parcel, ZoningBase
+from world.serializers import MarkerSerializer, ParcelSerializer, ZoningBaseSerializer
 
 
 class MarkerViewSet(viewsets.ReadOnlyModelViewSet):
@@ -37,5 +37,15 @@ class ParcelViewSet(viewsets.ReadOnlyModelViewSet):
 
     bbox_filter_field = "geom"
     filter_backends = (MyInBBoxFilter,)
+    bbox_filter_include_overlapping = True
     queryset = Parcel.objects.all() # .order_by('-id')[:10]
     serializer_class = ParcelSerializer
+
+class ZoningBaseViewSet(viewsets.ReadOnlyModelViewSet):
+    bbox_filter_field = "geom"
+    filter_backends = (InBBoxFilter,)
+    bbox_filter_include_overlapping = True
+    queryset = ZoningBase.objects.all()
+    serializer_class = ZoningBaseSerializer
+
+# class SingleParcelViewSet(viewsets.ReadOnlyModelViewSet):
