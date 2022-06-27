@@ -60,7 +60,7 @@ zoningbase_mapping = {
 # This is an auto-generated Django model module created by ogrinspect.
 
 class Parcel(models.Model):
-    apn = models.CharField(max_length=10, blank=True, null=True)
+    apn = models.CharField(max_length=10, blank=True, null=True, unique=True)
     apn_8 = models.CharField(max_length=8, blank=True, null=True)
     parcelid = models.BigIntegerField()
     own_name1 = models.CharField(max_length=96, blank=True, null=True)

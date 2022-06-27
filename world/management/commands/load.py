@@ -32,7 +32,7 @@ class Command(BaseCommand):
         # lm = LayerMapping(WorldBorder, shpfile, world_mapping, transform=False)
         lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
         lm.save(strict=True, verbose=False, progress=True)
-        self.stdout.write(self.style.SUCCESS('Finished writing data for model %s', model))
+        self.stdout.write(self.style.SUCCESS('Finished writing data for model %s' % model))
 
 
 

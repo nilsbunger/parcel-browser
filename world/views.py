@@ -1,15 +1,12 @@
-import urllib
 from itertools import chain
-from urllib.error import HTTPError
 
+from django.contrib.gis.db.models.functions import Scale
 from django.core.serializers import serialize
-from django.http import HttpResponse, Http404, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.conf import settings
-from django.template import engines
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
@@ -17,59 +14,44 @@ from vectortiles.postgis.views import MVTView
 from world.models import Parcel, BuildingOutlines
 
 
+# ------------------------------------------------------
+# Overall Map viewer at /map
+# ------------------------------------------------------
+
+# main map page
 class MapView(LoginRequiredMixin, TemplateView):
-    template_name='map2.html'
+    template_name = 'map2.html'
 
-
-class ParcelView(LoginRequiredMixin, View):
-    template_name = 'parcel-detail.html'
-
-    def get(self, request, apn, *args, **kwargs):
-        return render(request, self.template_name, {})
-
+# ajax call for vector tiles for big map
 class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
     model = Parcel
     vector_tile_layer_name = "parcels"
-    vector_tile_fields = ('apn', )
+    vector_tile_fields = ('apn',)
 
-    # def get(self, request, *args, **kwargs):
-    #     return '{}'
+# ------------------------------------------------------
+# Parcel detail viewer at /parcel/<apn>
+# ------------------------------------------------------
 
-class ParcelData(LoginRequiredMixin, View):
+# main detail page
+class ParcelDetailView(LoginRequiredMixin, View):
+    template_name = 'parcel-detail.html'
+
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
-        print (parcel)
+        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+        # Example of how to combine two objects into one geojson serialization:
+        # serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
 
-        buildings = BuildingOutlines.objects.filter(geom__bboverlaps=parcel.geom)
-        serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom', ))
+        # Serializing the data into the template. There's unneeded duplication since we also get the
+        # data via JSON, but I haven't figured out how to get the mapping library to use this data.
+        serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', fields=('apn', 'geom',))
+        serialized_buildings = serialize('geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+        return render(request, self.template_name, {'parcel_data': serialized_parcel, 'building_data': serialized_buildings})
+
+# ajax call to get parcel and building info
+class ParcelDetailData(LoginRequiredMixin, View):
+    def get(self, request, apn, *args, **kwargs):
+        parcel = Parcel.objects.get(apn=apn)
+        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+        serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
         return HttpResponse(serialized, content_type='application/json')
-
-
-# hybrid app as per https://fractalideas.com/blog/making-react-and-django-play-well-together-hybrid-app-model/
-def catchall_dev(request, path, upstream='http://localhost:1234'):
-    upstream_url = upstream + '/' + path
-
-    try:
-        response = urllib.request.urlopen(upstream_url)
-    except HTTPError as e:
-        if e.code == 404:
-            raise Http404
-        else: raise e
-
-    content_type = response.headers.get('Content-Type')
-    if content_type == 'text/html; charset=UTF-8':
-        # run HTML through the template engine
-        response_text = response.read().decode()
-        content = engines['django'].from_string(response_text).render()
-    else:
-        content = response.read()
-    return HttpResponse(
-        content,
-        content_type=content_type,
-        status=response.status,
-        reason=response.reason,
-    )
-
-catchall_prod = TemplateView.as_view(template_name='index.html')
-
-catchall = catchall_dev if settings.DEBUG else catchall_prod

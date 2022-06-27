@@ -17,17 +17,17 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 
 from world import views
-from world.views import MapView, ParcelView, ParcelData, ParcelTileData
+from world.infra_views import frontend_proxy_view
+from world.views import MapView, ParcelDetailView, ParcelDetailData
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('map/', MapView.as_view()),
-    path("api/", include("world.api")),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('parcel/<str:apn>', ParcelView.as_view()),
-    path('parcel/<str:apn>/geodata', ParcelData.as_view()),
-    # path('parceltile', ParcelTileData.as_view()),
+    path('map/', MapView.as_view()),
     path('parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
-    path('frontend/<path:path>', views.catchall),
+    # path("api/", include("world.api")),
+    path('parcel/<str:apn>', ParcelDetailView.as_view()),
+    path('parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
+    path('frontend/<path:path>', frontend_proxy_view),
 
 ]

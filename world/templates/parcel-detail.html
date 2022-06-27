@@ -17,8 +17,13 @@
 {% block content %}
     <div id="map" class="map" tabindex="0"></div>
 {% endblock %}
+{#        // {{ parcel_data|json_script:"parcelData" }}#}
 
 {% block endbody %}
+    <script>
+        let parcelData = {{ parcel_data | safe}};
+        let buildingData = {{  building_data | safe }};
+    </script>
     <script src="/frontend/parcel-detail.js"></script>
     <script>
 
