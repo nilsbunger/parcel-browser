@@ -123,11 +123,15 @@ class Parcel(models.Model):
     multi = models.CharField(max_length=1, blank=True, null=True)
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
-    geom = models.MultiPolygonField(srid=2230)
+    geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
 
     def __str__(self):
         return '%s %s %s %s' % (self.apn, self.situs_addr, self.situs_stre, self.situs_zip)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['apn'])
+        ]
 
 # Auto-generated `LayerMapping` dictionary for Parcel model
 parcel_mapping = {

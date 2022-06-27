@@ -1,21 +1,24 @@
 import urllib
+from itertools import chain
 from urllib.error import HTTPError
 
 from django.core.serializers import serialize
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from django.template import engines
 
 # Create your views here.
+from vectortiles.postgis.views import MVTView
+
 from world.models import Parcel, BuildingOutlines
 
 
 class MapView(LoginRequiredMixin, TemplateView):
-    template_name='map.html'
+    template_name='map2.html'
 
 
 class ParcelView(LoginRequiredMixin, View):
@@ -24,14 +27,21 @@ class ParcelView(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         return render(request, self.template_name, {})
 
+class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
+    model = Parcel
+    vector_tile_layer_name = "parcels"
+    vector_tile_fields = ('apn', )
+
+    # def get(self, request, *args, **kwargs):
+    #     return '{}'
+
 class ParcelData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         print (parcel)
 
-        buildings = BuildingOutlines.objects.filter(geom__contains=parcel.geom)
-        print (buildings)
-        serialized = serialize('geojson', [parcel], geometry_field='geom', fields=('apn', 'geom', ))
+        buildings = BuildingOutlines.objects.filter(geom__bboverlaps=parcel.geom)
+        serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom', ))
         return HttpResponse(serialized, content_type='application/json')
 
 

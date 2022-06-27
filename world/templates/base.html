@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="height:100%;">
 <head>
     <title>H3-GIS</title>
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
     {% block head %}
     {% endblock %}
 </head>
-<body>
+<body style="min-height: 100vh; height:100%;">
 
 <header class="page-header">
     <div class="container" >
@@ -32,7 +32,7 @@
 </header>
 <main class="container" style="height:90%">
     <div class="row" style="height:100%">
-        <div class="col">
+        <div class="col" style="height:100%">
             {% block content %}
             {% endblock %}
         </div>
