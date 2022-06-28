@@ -14,6 +14,8 @@ from pathlib import Path
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from mygeo.util import eprint
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
@@ -33,7 +35,7 @@ SECRET_KEY = 'django-insecure--j&vhgll2bv2yqzfhva!l!+qu=1rn2%lre(sb==o9))5bojn1&
 DEBUG = env('DJANGO_ENV') == 'development'
 ALLOWED_HOSTS = ['localhost']
 if (DEBUG):
-    print ("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
+    eprint ("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 
 ALLOWED_HOSTS = []
 
@@ -90,7 +92,7 @@ GEOS_LIBRARY_PATH='/opt/homebrew/lib/libgeos_c.dylib'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 if (env('LOCAL_DB')):
-    print ("****** LOCAL DATABASE ******")
+    eprint ("****** LOCAL DATABASE ******")
     (dbHost, dbName, dbUserName, dbPassword) = ('localhost', 'geodjango', 'nils', '')
 else:
     (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'), env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))

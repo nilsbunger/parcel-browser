@@ -21,7 +21,7 @@ class SubCommand(Enum):
 
 
 class Command(BaseCommand):
-    help = 'Analyze a parcel'
+    help = 'Analyze all the residential parcels, creating or working with the analyze_parcels table'
 
     def add_arguments(self, parser):
         parser.add_argument('cmd', choices=SubCommand.__members__)
@@ -110,7 +110,6 @@ class Command(BaseCommand):
                                                               'skip': skip_reason != "", 'skip_reason': skip_reason})
         print("Included %d parcels" % include_count)
         sorted_skips = sorted(skip_count.items(), key=operator.itemgetter(1), reverse=True)
-        print()
 
         print("Skipped:")
         print(self.pp.pprint(sorted_skips))
