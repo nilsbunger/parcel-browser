@@ -1,6 +1,9 @@
+import json
 from itertools import chain
 
+import geopandas as geopandas
 from django.contrib.gis.db.models.functions import Scale
+from django.contrib.gis.geos import Point
 from django.core.serializers import serialize
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -36,6 +39,9 @@ class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
 class ParcelDetailView(LoginRequiredMixin, View):
     template_name = 'parcel-detail.html'
 
+    def tuple_sub(self, t1, t2):
+        return tuple(map(lambda i, j: (i - j)*1000, t1, t2))
+
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
@@ -46,6 +52,13 @@ class ParcelDetailView(LoginRequiredMixin, View):
         # data via JSON, but I haven't figured out how to get the mapping library to use this data.
         serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', fields=('apn', 'geom',))
         serialized_buildings = serialize('geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+
+    # https://photon.komoot.io/ -- address resolution
+    # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
+        parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
+        parcel_in_utm = parcel_data_frame.to_crs(parcel_data_frame.estimate_utm_crs())
+        lot_square_meters = parcel_in_utm.area
+        print ("Lot size:", lot_square_meters)
         return render(request, self.template_name, {'parcel_data': serialized_parcel, 'building_data': serialized_buildings})
 
 # ajax call to get parcel and building info

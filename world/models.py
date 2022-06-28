@@ -5,9 +5,21 @@ from django.db import models
 
 from django.contrib.gis.db import models
 
-
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
+
+
+class AnalyzedParcel(models.Model):
+    apn = models.CharField(max_length=10, blank=True, null=True, unique=True)
+    lot_size = models.IntegerField(blank=True, null=True)
+    building_size = models.IntegerField(blank=True, null=True)
+    skip = models.BooleanField(blank=True, null=True)
+    skip_reason = models.CharField(max_length=254, blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['apn'])
+        ]
 
 
 class BuildingOutlines(models.Model):
@@ -126,12 +138,18 @@ class Parcel(models.Model):
     geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
 
     def __str__(self):
-        return '%s %s %s %s' % (self.apn, self.situs_addr, self.situs_stre, self.situs_zip)
+        if (self.acreage > 0):
+            lot_str = "%s acres" % self.acreage
+        else:
+            lot_str = "%s lot" % self.usable_sq_field
+        base_str = '%s %s %s %s: %s living, ' % (self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
+        return base_str + lot_str
 
     class Meta:
         indexes = [
             models.Index(fields=['apn'])
         ]
+
 
 # Auto-generated `LayerMapping` dictionary for Parcel model
 parcel_mapping = {
@@ -225,7 +243,6 @@ class WorldBorder(models.Model):
         return self.name
 
 
-
 class Marker(models.Model):
     """A marker with name and location."""
 
@@ -236,17 +253,18 @@ class Marker(models.Model):
         """Return string representation."""
         return self.name
 
+
 world_mapping = {
-    'fips' : 'FIPS',
-    'iso2' : 'ISO2',
-    'iso3' : 'ISO3',
-    'un' : 'UN',
-    'name' : 'NAME',
-    'area' : 'AREA',
-    'pop2005' : 'POP2005',
-    'region' : 'REGION',
-    'subregion' : 'SUBREGION',
-    'lon' : 'LON',
-    'lat' : 'LAT',
-    'mpoly' : 'MULTIPOLYGON',
+    'fips': 'FIPS',
+    'iso2': 'ISO2',
+    'iso3': 'ISO3',
+    'un': 'UN',
+    'name': 'NAME',
+    'area': 'AREA',
+    'pop2005': 'POP2005',
+    'region': 'REGION',
+    'subregion': 'SUBREGION',
+    'lon': 'LON',
+    'lat': 'LAT',
+    'mpoly': 'MULTIPOLYGON',
 }
