@@ -19,7 +19,7 @@ From the project directory:
 
 `pip install -r requirements.txt`
 
-`cd frontend && yarn add` -- install dependencies for frontned
+`cd frontend && yarn install` -- install dependencies for frontned
 
 Note: You'll periodically need to update python and yarn dependencies as the code changes.
 
@@ -67,7 +67,7 @@ created.
 You don't need this section if you're using data that's already loaded into our cloud DB. 
 But if you're loading new data, or setting up a new DB, follow these instructions:
 
-1. Download Parcels, Building_outlines, and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
+1. Download Parcels, Building_outlines (under MISCELLANEOUS), and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
 2. Unzip and put the shape files in world/data/ subdirectories.  (The management command load.py has exact directory specs, they're a little inconsistent now, feel free to fix them).
 3. Load the shape files into the DB:
 `./manage.py load Zoning`
