@@ -70,17 +70,20 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 1. Download Parcels, Building_outlines (under MISCELLANEOUS), and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
 2. Unzip and put the shape files in world/data/ subdirectories.  (The management command load.py has exact directory specs, they're a little inconsistent now, feel free to fix them).
 3. Load the shape files into the DB:
-`./manage.py load Zoning`
-`./manage.py load Parcel`
-`./manage.py load Buildings`
+`[LOCAL_DB=1] ./manage.py load Zoning`
+`[LOCAL_DB=1] ./manage.py load Parcel`
+`[LOCAL_DB=1] ./manage.py load Buildings`
+
+Note: include LOCAL_DB=1 if using local database (no brackets)
+
 
 3. Run ETL jobs as necessary, eg:
-`./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+`[LOCAL_DB=1] ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
 # Jupyter notebook
 
 For easier analysis and plotting, we have Jupyter notebooks which are connected into Django's model system.
-Just run `jupyter-lab` from the h3-gis directory to get started. It will pop open a local browser where you can select or create a file.
+Just run `[LOCAL_DB=1] jupyter-lab` from the h3-gis directory to get started. It will pop open a local browser where you can select or create a file.
 
 Start from `notebooks/parcel_play.ipynb` . Cell 1 is general setup for Django model access and other useful imports ; you might want to copy that to any notebook you create.
 
