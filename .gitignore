@@ -3,3 +3,4 @@
 .env
 world/data
 venv/
+.ipynb_checkpoints/
