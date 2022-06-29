@@ -25,9 +25,9 @@ class Command(BaseCommand):
         if (model == "Parcel"):
             (fname, db_model, mapper) = ('PARCELS.shp', Parcel, parcel_mapping)
         elif (model == "Zoning"):
-            (fname, db_model, mapper) = ('ZONING_BASE_SD/ZONING_BASE_SD.shp', ZoningBase, zoningbase_mapping)
+            (fname, db_model, mapper) = ('ZONING_BASE_SD.shp', ZoningBase, zoningbase_mapping)
         elif (model == "Buildings"):
-            (fname, db_model, mapper) = ('BUILDING_OUTLINES/BUILDING_OUTLINES.shp', BuildingOutlines, buildingoutlines_mapping)
+            (fname, db_model, mapper) = ('BUILDING_OUTLINES.shp', BuildingOutlines, buildingoutlines_mapping)
 
         # lm = LayerMapping(WorldBorder, shpfile, world_mapping, transform=False)
         lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
