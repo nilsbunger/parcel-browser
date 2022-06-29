@@ -13,7 +13,7 @@ From the project directory:
 
 `source ./venv/bin/activate` to put local python and site-packages in path.
 
-`cp .env.example .env` -- create your .env file, get DB credentials from an admin (for a cloud DB)
+`cp .env.example .env` -- create your .env file, get DB credentials from an admin (only needed for access to a cloud DB)
 
 # Install or update dependencies
 
@@ -25,7 +25,9 @@ Note: You'll periodically need to update python and yarn dependencies as the cod
 
 # Set up a local database
 
-You'll either need a local db or access to a cloud DB to run the service. A local DB is best for running big queries, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally.
+You'll either need a local DB or access to a cloud DB to run the service. A local DB is best for running big queries, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally. 
+
+Running with your local DB is easy -- you just preface the manage.py command with `LOCAL_DB=1` (see examples below).
 
 1. `brew install postgres`
 
@@ -42,7 +44,7 @@ You'll need to run frontend and backend servers:
 
 Now start the Django server with a cloud db or local db:
 1. RUNNING WITH CLOUD DB: `./manage.py runserver` - start backend (django) server
-2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver'
+2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver`
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
 
