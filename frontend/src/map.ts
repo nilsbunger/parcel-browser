@@ -32,7 +32,7 @@ const vtLayer = new VectorTileLayer({
 });
 const queryString = window. location. search;
 const urlParams = new URLSearchParams(queryString);
-const centerStr = urlParams.get('center').split(',')
+const centerStr = urlParams.get('center')?.split(',')
 let viewCenter = fromLonLat([-117.19905688459625, 32.78415286818754]) // 2210 Illion St, San Diego, 92110],
 let zoom = 18
 console.log (viewCenter)
