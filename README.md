@@ -78,8 +78,9 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 # Copying data from one DB to another
 
-If you already have data set up in one DB, it might be faster to copy the 
-table to another DB than to do another import. Here are some steps for copying data between databases:
+You don't need this section for initial setup. But once you have data set up in one DB, and want to set up a remote DB, this info can come in handy. It's much faster to move large tables (like the table from the Parcel.shp file) using these instructions, compared to using Django management commands. 
+
+Here are some steps for copying data between databases:
 
 ## Moving data using SQL clients
 Using a SQL client to create and move a table is pretty fast. Even the 3GB Parcel
