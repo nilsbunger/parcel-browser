@@ -74,11 +74,11 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 `[LOCAL_DB=1] ./manage.py load Parcel`
 `[LOCAL_DB=1] ./manage.py load Buildings`
 
-Note: include LOCAL_DB=1 if using local database (no brackets)
-
-
-3. Run ETL jobs as necessary, eg:
+4. Run ETL jobs as necessary, eg:
 `[LOCAL_DB=1] ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+
+Note: include LOCAL_DB=1 in all commands if using local database. Don't include the brackets!
+
 
 # Jupyter notebook
 
