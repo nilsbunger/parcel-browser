@@ -21,17 +21,36 @@ From the project directory:
 
 `cd frontend && yarn add` -- install dependencies for frontned
 
+Note: You'll periodically need to update python and yarn dependencies as the code changes.
+
+# Set up a local database
+
+You'll either need a local db or access to a cloud DB to run the service. A local DB is best for running big queries, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally.
+
+1. `brew install postgres`
+
+2. `createdb geodjango` -- postgres command to create the database
+
+3. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the 
+
+4. `LOCAL_DB=1 ./manage.py createsuperuser <name>` -- give yourself a superadmin account on django
+
 # Running in dev
 You'll need to run frontend and backend servers:
 
 `cd frontend && yarn dev` -- start frontend (parcel) dev server
-`./manage.py runserver` - start backend (django) server. 
+
+Now start the Django server with a cloud db or local db:
+1. RUNNING WITH CLOUD DB: `./manage.py runserver` - start backend (django) server
+2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver'
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
 
-You'll periodically need to update python and yarn dependencies
+If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
+
 
 # Management commands
+
 In `world/management/commands/` you'll find our custom command-line commands for
 doing ETL and various other processing. This is the easiest place to 
 write code that isn't a web request.
@@ -46,33 +65,33 @@ created.
 You don't need this section if you're using data that's already loaded into our cloud DB. 
 But if you're loading new data, or setting up a new DB, follow these instructions:
 
-1. Put shape files from San Diego in world/data/ subdirectories. 
-We currently recognize Parcels.zip, Building_outlines.zip, and Zoning_base_sd.zip
-2. Load the shape files into the DB:
+1. Download Parcels, Building_outlines, and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
+2. Unzip and put the shape files in world/data/ subdirectories.  (The management command load.py has exact directory specs, they're a little inconsistent now, feel free to fix them).
+3. Load the shape files into the DB:
 `./manage.py load Parcel`
 `./manage.py load Buildings
-`./manage.py load Buildings`
+`./manage.py load Zoning`
 3. Run ETL jobs as necessary, eg:
 `./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
 # Copying data from one DB to another
 
 If you already have data set up in one DB, it might be faster to copy the 
-table to another DB. 
+table to another DB than to do another import. Here are some steps for copying data between databases:
 
-## Using SQL clients
-Using a SQL client to create and move a dump is pretty fast. Even the 3GB Parcel
+## Moving data using SQL clients
+Using a SQL client to create and move a table is pretty fast. Even the 3GB Parcel
 table can be exported and imported in a few minutes.
 
 Here's an example of copying from your local DB to our cloud DB:
 1. Make sure the destination table is empty: `Delete from world_*` on the correct DB would work. Just be careful!
-2. `pg_dump -a -t 'world_*' geodjango | gzip > world_dump.sql` where 'geodjango' is the local DB name and world_parcel is the DB table to export
+2. `pg_dump -a -t 'world_parcel' geodjango | gzip > world_dump.sql` where 'geodjango' is the local DB name and world_parcel is the DB table to export
 4. Optional - Send the file to the remote machine to be close to the DB. Example for AcuGIS server:
     `scp -i id_rsa ../world_dump.sql.gz hgiswebg@us14.acugis-dns.com:~`
 6. Load the file into the new DB. Example for AcuGIS server:
     `gunzip -c world_dump.sql.gz | psql -U hgiswebg_nils hgiswebg_geodjango`
 
-## Using Django commands. 
+## Moving data using Django commands. 
 You can move data with Django commands. But this is very slow (Parcel table would take ~20 hours) if django is running far away from the DB, eg
 with Django running locally and your DB running in the cloud.
 1. Make sure the destination table is empty: `Delete from world_parcel` on the correct DB would work. Just be careful!
