@@ -11,7 +11,7 @@ This is currently working on a Mac with M1 processor. Will need tweaks for other
 From the project directory:
 `python3 -m venv ./venv` to create a venv ([ref](https://docs.python.org/3/library/venv.html))
 
-`source ./venv/bin/activate` to put local python and site-packages in path.
+`source ./venv/bin/activate` activates the virtual env. You need to do this in any terminal window where you're running Django, Jupyter Lab, or related tools.
 
 `cp .env.example .env` -- create your .env file, get DB credentials from an admin (only needed for access to a cloud DB)
 
@@ -72,10 +72,19 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 3. Load the shape files into the DB:
 `./manage.py load Zoning`
 `./manage.py load Parcel`
-`./manage.py load Buildings
+`./manage.py load Buildings`
 
 3. Run ETL jobs as necessary, eg:
 `./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+
+# Jupyter notebook
+
+For easier analysis and plotting, we have Jupyter notebooks which are connected into Django's model system.
+Just run `jupyter-lab` from the h3-gis directory to get started. It will pop open a local browser where you can select or create a file.
+
+Start from `notebooks/parcel_play.ipynb` . Cell 1 is general setup for Django model access and other useful imports ; you might want to copy that to any notebook you create.
+
+The geometric capabilities are provided by GeoPandas, which is a combination of pandas data library and shapely geometry library. You'll be using the documentation for both.
 
 # Copying data from one DB to another
 
