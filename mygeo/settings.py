@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     "rest_framework",
-    "rest_framework_gis",
+    # "rest_framework_gis",
     'world',
 ]
 
@@ -149,6 +149,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGGING_CONFIG = 'logging.config.dictConfig'
 
 LOGGING = {
     'version': 1,

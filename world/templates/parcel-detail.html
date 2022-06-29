@@ -3,19 +3,33 @@
 
 {% block head %}
     <!-- Ol.CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css" type="text/css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css"
+          type="text/css">
     <!-- Ol.Js -->
-{#    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>#}
+    {#    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>#}
     <style>
-     .map{
-         width:400px;
-         height:400px;
-     }
+        .map {
+            width: 400px;
+            height: 400px;
+        }
+        p {
+            margin-bottom:6px;
+            line-height:0.8;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div id="map" class="map" tabindex="0"></div>
+    <div class="row" style="height:100%">
+        <div class="col" style="height:100%">
+            <div id="map" class="map" tabindex="0"></div>
+        </div>
+        <div class="col" id="rightcol">
+
+        </div>
+    </div>
+
 {% endblock %}
 {#        // {{ parcel_data|json_script:"parcelData" }}#}
 

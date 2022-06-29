@@ -30,6 +30,17 @@ const vtLayer = new VectorTileLayer({
       }),
     })
 });
+const queryString = window. location. search;
+const urlParams = new URLSearchParams(queryString);
+const centerStr = urlParams.get('center').split(',')
+let viewCenter = fromLonLat([-117.19905688459625, 32.78415286818754]) // 2210 Illion St, San Diego, 92110],
+let zoom = 18
+console.log (viewCenter)
+if (centerStr) {
+    viewCenter = [parseFloat(centerStr[0]), parseFloat(centerStr[1])]
+    zoom = 19
+}
+console.log (viewCenter)
 
 let map = new Map({
     layers: [
@@ -44,8 +55,8 @@ let map = new Map({
     ],
     target: 'map',
     view: new View({
-        center: fromLonLat([-117.19905688459625, 32.78415286818754]), // 2210 Illion St, San Diego, 92110],
-        zoom: 18,
+        center: viewCenter,
+        zoom: zoom,
         minZoom: 14,
     })
 });
@@ -66,6 +77,7 @@ map.on(['click'], function (event) {
     const features = map.getFeaturesAtPixel(event.pixel);
     console.log ("Features:", features[0]);
     if (features[0]?.properties_.apn) {
+        document.body.style.cursor = "wait";
         window.location.href = "/parcel/" + features[0].properties_.apn;
     }
     // vtLayer.getFeatures(event.pixel).then(function (features) {

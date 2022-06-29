@@ -43,6 +43,54 @@ let map = new Map({
 vectorSource.on('featuresloadend', (event) => {
     console.log("FEATURED LOADED");
     console.log(event.features[0].getGeometry());
-    view.fit( event.features[0].getGeometry() as SimpleGeometry,{padding: [100, 100, 100, 100]})
+    // console.log(event.features[0].values_);
+    const parcelFeatures = pickFeatures(event.features[0].values_);
+    let rightcol = document.getElementById('rightcol');
+    rightcol.innerHTML = "";
+    let val: keyof typeof parcelFeatures;
+    for (val in parcelFeatures) {
+        console.log(val, parcelFeatures[val]);
+        let p = document.createElement("p");
+        p.innerHTML = val + ": " + parcelFeatures[val];
+        rightcol.append(p)
+    }
 
+
+
+    view.fit( event.features[0].getGeometry() as SimpleGeometry,{padding: [100, 100, 100, 100]})
+    let center = view.getCenter();
+    let maplink = document.getElementById('map-header-link');
+    maplink.href = new URL("/map?center="+center, maplink.href);
 })
+
+
+const pickFeatures = (o) => {
+    return (({
+        apn, apn_8, parcelid, own_name1, own_name2, own_name3,
+    fractint, own_addr1, own_addr2, own_addr3, own_addr4,
+    own_zip, situs_juri, situs_stre, situs_suff, situs_post,
+    situs_pre_field, situs_addr, situs_frac, situs_buil,
+    situs_suit, legldesc, asr_land, asr_impr, asr_total,
+    doctype, docnmbr, docdate, acreage, taxstat, ownerocc,
+    tranum, asr_zone, asr_landus, unitqty, submap, subname,
+    nucleus_zo, nucleus_us, situs_comm, year_effec, total_lvg_field,
+    bedrooms, baths, addition_a, garage_con, garage_sta,
+    carport_st, pool, par_view, usable_sq_field, qual_class,
+    nucleus_si, nucleus_1, nucleus_2, situs_zip, overlay_ju,
+    sub_type, multi,
+    }) => ({
+        apn, apn_8, parcelid, own_name1, own_name2, own_name3,
+    fractint, own_addr1, own_addr2, own_addr3, own_addr4,
+    own_zip, situs_juri, situs_stre, situs_suff, situs_post,
+    situs_pre_field, situs_addr, situs_frac, situs_buil,
+    situs_suit, legldesc, asr_land, asr_impr, asr_total,
+    doctype, docnmbr, docdate, acreage, taxstat, ownerocc,
+    tranum, asr_zone, asr_landus, unitqty, submap, subname,
+    nucleus_zo, nucleus_us, situs_comm, year_effec, total_lvg_field,
+    bedrooms, baths, addition_a, garage_con, garage_sta,
+    carport_st, pool, par_view, usable_sq_field, qual_class,
+    nucleus_si, nucleus_1, nucleus_2, situs_zip, overlay_ju,
+    sub_type, multi,
+    })) (o)
+
+}

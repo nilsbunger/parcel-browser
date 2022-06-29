@@ -21,7 +21,7 @@
                 H3-GIS
             </div>
             <div>
-                <a href="/map">Map</a>
+                <a id="map-header-link" href="/map">Map</a>
             </div>
             <div>
                 <a href="/admin">Data</a>
@@ -31,12 +31,8 @@
     </div>
 </header>
 <main class="container" style="height:90%">
-    <div class="row" style="height:100%">
-        <div class="col" style="height:100%">
-            {% block content %}
-            {% endblock %}
-        </div>
-    </div>
+    {% block content %}
+    {% endblock %}
 </main>
 
 {% block endbody %}

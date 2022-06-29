@@ -86,16 +86,18 @@ class Command(BaseCommand):
             lot_size = int(lot_size)
             skip_reason = ""
             nucleus_us = int(parcel.nucleus_us or 0)
-            if (lot_size == 0):
+            if (nucleus_us < 100 or nucleus_us > 118):
+                skip_reason = "NUCLEUS_" + str(nucleus_us)
+            elif (parcel.overlay_ju != 'SD'):
+                skip_reason = "JURISDICTION_" + str(parcel.overlay_ju)
+            # Evaluate lot sizes after other reasons, since lot size 0 may mean it's a townhouse or something
+            elif (lot_size == 0):
                 skip_reason = "LOT_ZERO"
             elif (lot_size < 2400):
                 skip_reason = "LOT_UNDER_2_4K"
             elif (lot_size < 5000):
                 skip_reason = "LOT_UNDER_5K"
-            elif (nucleus_us < 100 or nucleus_us > 118):
-                skip_reason = "NUCLEUS_" + str(nucleus_us)
-            elif (parcel.overlay_ju != 'SD'):
-                skip_reason = "JURISDICTION_" + str(parcel.overlay_ju)
+
             if (skip_reason):
                 skip_count[skip_reason] = skip_count.get(skip_reason, 0) + 1
                 if (idx % 100 == 0):

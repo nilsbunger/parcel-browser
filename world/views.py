@@ -1,4 +1,5 @@
 import json
+import pprint
 from itertools import chain
 
 import geopandas as geopandas
@@ -15,6 +16,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from vectortiles.postgis.views import MVTView
 
 from world.models import Parcel, BuildingOutlines
+
+pp = pprint.PrettyPrinter(indent=2)
 
 
 # ------------------------------------------------------
@@ -58,6 +61,8 @@ class ParcelDetailView(LoginRequiredMixin, View):
         parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
         parcel_in_utm = parcel_data_frame.to_crs(parcel_data_frame.estimate_utm_crs())
         lot_square_meters = parcel_in_utm.area
+        print (repr(parcel))
+        print (pp.pprint(parcel.__dict__))
         print ("Lot size:", lot_square_meters)
         return render(request, self.template_name, {'parcel_data': serialized_parcel, 'building_data': serialized_buildings})
 
@@ -66,5 +71,5 @@ class ParcelDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
-        serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
+        serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', ) #fields=('apn', 'geom',))
         return HttpResponse(serialized, content_type='application/json')
