@@ -93,7 +93,7 @@ GEOS_LIBRARY_PATH='/opt/homebrew/lib/libgeos_c.dylib'
 
 if (env('LOCAL_DB')):
     eprint ("****** LOCAL DATABASE ******")
-    (dbHost, dbName, dbUserName, dbPassword) = ('localhost', 'geodjango', 'nils', '')
+    (dbHost, dbName, dbUserName, dbPassword) = ('localhost', 'geodjango', 'marciovonmuhlen', '')
 else:
     (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'), env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
 

@@ -8,6 +8,9 @@ This is currently working on a Mac with M1 processor. Will need tweaks for other
 
 `brew install python3` - use python 3.8 or newer
 
+`pip3 install geopandas` - adds support for geographic data to pandas objects
+
+
 From the project directory:
 `python3 -m venv ./venv` to create a venv ([ref](https://docs.python.org/3/library/venv.html))
 
@@ -31,18 +34,27 @@ Running with your local DB is easy -- you just preface the manage.py command wit
 
 1. `brew install postgres`
 
-2. `createdb geodjango` -- postgres command to create the database
+2. `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions
 
-3. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the 
+3. `initdb -D <data_dir>` set directory for local data 
 
-4. `LOCAL_DB=1 ./manage.py createsuperuser <name>` -- give yourself a superadmin account on django
+4. `pg_ctl -D <data_dir> -l logfile start` start local db
+
+5. `createdb geodjango` -- postgres command to create the database
+
+6. Update dbUserName param on /mygeo/Settings.py, line 96 with your device username
+
+7. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the local DB
+
+8. `LOCAL_DB=1 ./manage.py createsuperuser` -- give yourself a superadmin account on django
+
 
 # Running in dev
 You'll need to run frontend and backend servers:
 
 `cd frontend && yarn dev` -- start frontend (parcel) dev server
 
-Now start the Django server with a cloud db or local db:
+Now start the Django server with a cloud db or local db (remember to start venv):
 1. RUNNING WITH CLOUD DB: `./manage.py runserver` - start backend (django) server
 2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver`
 
@@ -68,7 +80,7 @@ You don't need this section if you're using data that's already loaded into our 
 But if you're loading new data, or setting up a new DB, follow these instructions:
 
 1. Download Parcels, Building_outlines (under MISCELLANEOUS), and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
-2. Unzip and put the shape files in world/data/ subdirectories.  (The management command load.py has exact directory specs, they're a little inconsistent now, feel free to fix them).
+2. Unzip and put all files in world/data/  
 3. Load the shape files into the DB:
 `./manage.py load Zoning`
 `./manage.py load Parcel`
