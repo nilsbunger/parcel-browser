@@ -13,7 +13,7 @@ From the project directory:
 
 `source ./venv/bin/activate` to put local python and site-packages in path.
 
-`cp .env.example .env` -- create your .env file, get DB credentials from an admin.
+`cp .env.example .env` -- create your .env file, get DB credentials from an admin (for a cloud DB)
 
 # Install or update dependencies
 
