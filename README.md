@@ -70,9 +70,10 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 1. Download Parcels, Building_outlines, and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
 2. Unzip and put the shape files in world/data/ subdirectories.  (The management command load.py has exact directory specs, they're a little inconsistent now, feel free to fix them).
 3. Load the shape files into the DB:
+`./manage.py load Zoning`
 `./manage.py load Parcel`
 `./manage.py load Buildings
-`./manage.py load Zoning`
+
 3. Run ETL jobs as necessary, eg:
 `./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
