@@ -64,7 +64,13 @@ class ParcelDetailView(LoginRequiredMixin, View):
         print (repr(parcel))
         print (pp.pprint(parcel.__dict__))
         print ("Lot size:", lot_square_meters)
-        return render(request, self.template_name, {'parcel_data': serialized_parcel, 'building_data': serialized_buildings})
+        print ("Lot location:", parcel_data_frame.centroid)
+        return render(request, self.template_name,
+                      {'parcel_data': serialized_parcel,
+                       'building_data': serialized_buildings,
+                       'latlong': str(list(parcel_data_frame.centroid[0].coords)[0])
+                       }
+                      )
 
 # ajax call to get parcel and building info
 class ParcelDetailData(LoginRequiredMixin, View):
