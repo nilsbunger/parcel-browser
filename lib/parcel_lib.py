@@ -5,13 +5,11 @@ from django.core.serializers import serialize
 import json
 from shapely.geometry import GeometryCollection
 from shapely.ops import triangulate
-# from notebooks.notebook_util import nb_exit
 # Find rectangles based on another answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
 from rasterio import features, transform, plot as rasterio_plot
 
-from notebooks.notebook_util import nb_exit
 from world.models import Parcel, ZoningBase, BuildingOutlines
 
 
