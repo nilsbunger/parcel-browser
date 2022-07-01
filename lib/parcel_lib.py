@@ -83,7 +83,8 @@ def normalize_geometries(parcel, buildings):
         buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
 
     Returns:
-        A tuple containing the normalized parcel and buildings (parcel, building (ONE FOR NOW))
+        A tuple containing the normalized parcel and buildings (parcel, buildings as 
+        a list of MultiPolygons)
     """
     offset_bounds = parcel.total_bounds
 
@@ -92,32 +93,53 @@ def normalize_geometries(parcel, buildings):
         xoff=-offset_bounds[0], yoff=-offset_bounds[1])[0]
     zero_bounds = parcel_boundary_multipoly.bounds
 
-    # Change x in buildings.boundary[x] to support multiple buildings
-    building_line_string = buildings.boundary[1].geoms[0]
-    # move building coordinates to be 0,0 based so they're easier to see.
-    building_line_string = shapely.affinity.translate(
-        building_line_string, xoff=-offset_bounds[0], yoff=-offset_bounds[1])
-    return (parcel_boundary_multipoly, building_line_string)
+    # translated is a list of buildings, each building represented as a MultiPolygon
+    # Most MultiPolygons will have just one Polygon. Not sure which ones will have multiple
+    # as it makes sense that one building is one polygon
+    translated = []
+    for building_geom in buildings.geometry:
+        translated.append(shapely.affinity.translate(
+            building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1]))
+    return (parcel_boundary_multipoly, translated)
 
 
-def get_avail_geoms(parcel_boundary_multipoly, building_line_string):
+def collapse_multipolygon_list(multipolygons):
+    """Collapses a list of multipolygons into one multipolygon
+
+    Args:
+        multipolygons ([MultiPolygon]): A list of multipolygons
+
+    Returns:
+        MultiPolygon: A single MultiPolygon
+    """
+    # TODO: Make this sexy with one list comprehension
+    res = []
+    for multipolygon in multipolygons:
+        res.append(*multipolygon.geoms)
+    return MultiPolygon(res)
+
+
+def get_avail_geoms(parcel_boundary_multipoly, buildings):
     """Returns a MultiPolygon representing the available space for a given parcel
 
     Args:
         parcel_boundary_multipoly (type?): A parcel
-        building_line_string (type?): A LineString of a building in question (eventually will support
-        multiple buildings)
+        buildings ([MultiPolygon]): A list of multipolygons representing the buildings
 
     Returns:
         MultiPolygon: A multipolygon of the available space for placing ADUs/extra buildings
     """
     triags = triangulate(GeometryCollection(
-        [building_line_string, parcel_boundary_multipoly]))
+        [*buildings, parcel_boundary_multipoly]))
+
+    # We can't pass in a list of multipolygons to relate, we can only pass in one multipolygon
+    # So we collapse all the multipolygons into one
+    buildings_multipoly = collapse_multipolygon_list(buildings)
 
     # Find triangles not in the building:
     # DE-9IM gives a 3x3 matrix of how two objects relate. It's quite fascinating.
     # Check out the diagram in https://postgis.net/workshops/postgis-intro/de9im.html
-    de9im = [x.relate(building_line_string.convex_hull)
+    de9im = [x.relate(buildings_multipoly)
              for idx, x in enumerate(triags)]
     kept_triangles = [x for idx, x in enumerate(
         triags) if de9im[idx][0] == 'F']
