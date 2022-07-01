@@ -112,4 +112,7 @@ def biggestPolyOverRotations(avail_geom, do_plots=False):
             p1 = geopandas.GeoSeries(avail_geom).plot()
             geopandas.GeoSeries(rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
+    # Adjust positions by 0.5 to counteract quantization of raster.
+    biggest_rect = shapely.affinity.translate(biggest_rect, xoff=0.5, yoff=0.5)
+
     return biggest_rect
