@@ -13,15 +13,41 @@ from rasterio import features, transform, plot as rasterio_plot
 from world.models import Parcel, ZoningBase, BuildingOutlines
 
 
-def get_parcel(apn):
+def get_parcel(apn: str):
+    """Returns a Parcel object from the database
+
+    Args:
+        apn (str): The APN of the parcel
+
+    Returns:
+        A Django Parcel model object
+    """
     return Parcel.objects.get(apn=apn)
 
 
 def get_buildings(parcel):
+    """Returns a list of BuildingOutlines objects from the database that intersect with
+    the given parcel object.
+
+    Args:
+        parcel (Parcel): Parcel object to intersect buildings with
+
+    Returns:
+        A list of BuildingOutlines objects
+    """
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
 def parcel_to_utm_gdf(parcel):
+    """Converts a parcel into a UTM projection, stored as a Dataframe. This is a flat projection
+    where one unit is one meter.
+
+    Args:
+        parcel (Parcel): The parcel to convert
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame representing the parcel
+    """
     serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
     parcel_data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_parcel), crs="EPSG:4326")
@@ -30,6 +56,15 @@ def parcel_to_utm_gdf(parcel):
 
 
 def buildings_to_utm_gdf(buildings):
+    """Converts buildings into  UTM projections, stored as a Dataframe. This is a flat projection
+    where one unit is one meter.
+
+    Args:
+        buildings ([BuildingOutlines]): A list of building outlines to convert
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame representing the list of buildings
+    """
     serialized_buildings = serialize(
         'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
     buildings_data_frame = geopandas.GeoDataFrame.from_features(
@@ -41,6 +76,15 @@ def buildings_to_utm_gdf(buildings):
 # Moves parcel bounds to (0,0) for easier displaying
 # Converts buildings into line strings?
 def normalize_geometries(parcel, buildings):
+    """Normalizes the parcel and buildings to (0,0).
+
+    Args:
+        parcel (GeoDataFrame): The parcel in a UTM-projected Dataframe
+        buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+
+    Returns:
+        A tuple containing the normalized parcel and buildings (parcel, building (ONE FOR NOW))
+    """
     offset_bounds = parcel.total_bounds
 
     # move parcel coordinates to be 0,0 based so they're easier to see.
@@ -57,6 +101,16 @@ def normalize_geometries(parcel, buildings):
 
 
 def get_avail_geoms(parcel_boundary_multipoly, building_line_string):
+    """Returns a MultiPolygon representing the available space for a given parcel
+
+    Args:
+        parcel_boundary_multipoly (type?): A parcel
+        building_line_string (type?): A LineString of a building in question (eventually will support
+        multiple buildings)
+
+    Returns:
+        MultiPolygon: A multipolygon of the available space for placing ADUs/extra buildings
+    """
     triags = triangulate(GeometryCollection(
         [building_line_string, parcel_boundary_multipoly]))
 
@@ -73,11 +127,20 @@ def get_avail_geoms(parcel_boundary_multipoly, building_line_string):
     return MultiPolygon(kept_triangles)
 
 
-def find_largest_rectangles_on_avail_geom(avail_geom):
+def find_largest_rectangles_on_avail_geom(avail_geom, num_rects):
+    """Finds a number of the largest rectangles we can place given the available geometry.
+
+    Args:
+        avail_geom (MultiPolygon): The available geometry to place extra structures
+        num_rects (int): The number of rectangles to find
+
+    Returns:
+        A list of biggest rectangles
+    """
     placed_polys = []
 
     # Placement approach: Place single biggest unit, then rerun analysis
-    for i in range(4):    # place 4 units
+    for i in range(num_rects):    # place 4 units
         biggest_poly = biggestPolyOverRotations(avail_geom)
         placed_polys.append(biggest_poly)
         avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
