@@ -1,11 +1,89 @@
 import geopandas
 import shapely
 from shapely.geometry import Polygon, box, MultiPolygon
-from notebooks.notebook_util import nb_exit
-## Find rectangles based on another answer at
-## https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
+from django.core.serializers import serialize
+import json
+from shapely.geometry import GeometryCollection
+from shapely.ops import triangulate
+# from notebooks.notebook_util import nb_exit
+# Find rectangles based on another answer at
+# https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
 from rasterio import features, transform, plot as rasterio_plot
+from world.models import Parcel, ZoningBase, BuildingOutlines
+
+
+def get_parcel(apn):
+    return Parcel.objects.get(apn=apn)
+
+
+def get_buildings(parcel):
+    return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+
+
+def parcel_to_utm_gdf(parcel):
+    serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
+    parcel_data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_parcel), crs="EPSG:4326")
+    return parcel_data_frame.to_crs(
+        parcel_data_frame.estimate_utm_crs())
+
+
+def buildings_to_utm_gdf(buildings):
+    serialized_buildings = serialize(
+        'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+    buildings_data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_buildings), crs="EPSG:4326")
+    return buildings_data_frame.to_crs(
+        buildings_data_frame.estimate_utm_crs())
+
+
+# Moves parcel bounds to (0,0) for easier displaying
+# Converts buildings into line strings?
+def normalize_geometries(parcel, buildings):
+    offset_bounds = parcel.total_bounds
+
+    # move parcel coordinates to be 0,0 based so they're easier to see.
+    parcel_boundary_multipoly = parcel.translate(
+        xoff=-offset_bounds[0], yoff=-offset_bounds[1])[0]
+    zero_bounds = parcel_boundary_multipoly.bounds
+
+    # Change x in buildings.boundary[x] to support multiple buildings
+    building_line_string = buildings.boundary[1].geoms[0]
+    # move building coordinates to be 0,0 based so they're easier to see.
+    building_line_string = shapely.affinity.translate(
+        building_line_string, xoff=-offset_bounds[0], yoff=-offset_bounds[1])
+    return (parcel_boundary_multipoly, building_line_string)
+
+
+def get_avail_geoms(parcel_boundary_multipoly, building_line_string):
+    triags = triangulate(GeometryCollection(
+        [building_line_string, parcel_boundary_multipoly]))
+
+    # Find triangles not in the building:
+    # DE-9IM gives a 3x3 matrix of how two objects relate. It's quite fascinating.
+    # Check out the diagram in https://postgis.net/workshops/postgis-intro/de9im.html
+    de9im = [x.relate(building_line_string.convex_hull)
+             for idx, x in enumerate(triags)]
+    kept_triangles = [x for idx, x in enumerate(
+        triags) if de9im[idx][0] == 'F']
+    # Why do we have the kept_triangles_gs?
+    kept_triangles_gs = geopandas.GeoSeries(kept_triangles)
+
+    return MultiPolygon(kept_triangles)
+
+
+def find_largest_rectangles_on_avail_geom(avail_geom):
+    placed_polys = []
+
+    # Placement approach: Place single biggest unit, then rerun analysis
+    for i in range(4):    # place 4 units
+        biggest_poly = biggestPolyOverRotations(avail_geom)
+        placed_polys.append(biggest_poly)
+        avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
+
+    return placed_polys
+
 
 """ Find maximal rectangles in a grid
 Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
