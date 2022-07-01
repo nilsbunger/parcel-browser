@@ -1,11 +1,174 @@
 import geopandas
 import shapely
 from shapely.geometry import Polygon, box, MultiPolygon
-from notebooks.notebook_util import nb_exit
-## Find rectangles based on another answer at
-## https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
+from django.core.serializers import serialize
+import json
+from shapely.geometry import GeometryCollection
+from shapely.ops import triangulate
+# from notebooks.notebook_util import nb_exit
+# Find rectangles based on another answer at
+# https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
 from rasterio import features, transform, plot as rasterio_plot
+from world.models import Parcel, ZoningBase, BuildingOutlines
+
+
+def get_parcel(apn: str):
+    """Returns a Parcel object from the database
+
+    Args:
+        apn (str): The APN of the parcel
+
+    Returns:
+        A Django Parcel model object
+    """
+    return Parcel.objects.get(apn=apn)
+
+
+def get_buildings(parcel):
+    """Returns a list of BuildingOutlines objects from the database that intersect with
+    the given parcel object.
+
+    Args:
+        parcel (Parcel): Parcel object to intersect buildings with
+
+    Returns:
+        A list of BuildingOutlines objects
+    """
+    return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+
+
+def parcel_to_utm_gdf(parcel):
+    """Converts a parcel into a UTM projection, stored as a Dataframe. This is a flat projection
+    where one unit is one meter.
+
+    Args:
+        parcel (Parcel): The parcel to convert
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame representing the parcel
+    """
+    serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
+    parcel_data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_parcel), crs="EPSG:4326")
+    return parcel_data_frame.to_crs(
+        parcel_data_frame.estimate_utm_crs())
+
+
+def buildings_to_utm_gdf(buildings):
+    """Converts buildings into  UTM projections, stored as a Dataframe. This is a flat projection
+    where one unit is one meter.
+
+    Args:
+        buildings ([BuildingOutlines]): A list of building outlines to convert
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame representing the list of buildings
+    """
+    serialized_buildings = serialize(
+        'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+    buildings_data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_buildings), crs="EPSG:4326")
+    return buildings_data_frame.to_crs(
+        buildings_data_frame.estimate_utm_crs())
+
+
+# Moves parcel bounds to (0,0) for easier displaying
+# Converts buildings into line strings?
+def normalize_geometries(parcel, buildings):
+    """Normalizes the parcel and buildings to (0,0).
+
+    Args:
+        parcel (GeoDataFrame): The parcel in a UTM-projected Dataframe
+        buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+
+    Returns:
+        A tuple containing the normalized parcel and buildings (parcel, buildings as 
+        a list of MultiPolygons)
+    """
+    offset_bounds = parcel.total_bounds
+
+    # move parcel coordinates to be 0,0 based so they're easier to see.
+    parcel_boundary_multipoly = parcel.translate(
+        xoff=-offset_bounds[0], yoff=-offset_bounds[1])[0]
+    zero_bounds = parcel_boundary_multipoly.bounds
+
+    # translated is a list of buildings, each building represented as a MultiPolygon
+    # Most MultiPolygons will have just one Polygon. Not sure which ones will have multiple
+    # as it makes sense that one building is one polygon
+    translated = []
+    for building_geom in buildings.geometry:
+        translated.append(shapely.affinity.translate(
+            building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1]))
+    return (parcel_boundary_multipoly, translated)
+
+
+def collapse_multipolygon_list(multipolygons):
+    """Collapses a list of multipolygons into one multipolygon
+
+    Args:
+        multipolygons ([MultiPolygon]): A list of multipolygons
+
+    Returns:
+        MultiPolygon: A single MultiPolygon
+    """
+    # TODO: Make this sexy with one list comprehension
+    res = []
+    for multipolygon in multipolygons:
+        res.append(*multipolygon.geoms)
+    return MultiPolygon(res)
+
+
+def get_avail_geoms(parcel_boundary_multipoly, buildings):
+    """Returns a MultiPolygon representing the available space for a given parcel
+
+    Args:
+        parcel_boundary_multipoly (type?): A parcel
+        buildings ([MultiPolygon]): A list of multipolygons representing the buildings
+
+    Returns:
+        MultiPolygon: A multipolygon of the available space for placing ADUs/extra buildings
+    """
+    triags = triangulate(GeometryCollection(
+        [*buildings, parcel_boundary_multipoly]))
+
+    # We can't pass in a list of multipolygons to relate, we can only pass in one multipolygon
+    # So we collapse all the multipolygons into one
+    buildings_multipoly = collapse_multipolygon_list(buildings)
+
+    # Find triangles not in the building:
+    # DE-9IM gives a 3x3 matrix of how two objects relate. It's quite fascinating.
+    # Check out the diagram in https://postgis.net/workshops/postgis-intro/de9im.html
+    de9im = [x.relate(buildings_multipoly)
+             for idx, x in enumerate(triags)]
+    kept_triangles = [x for idx, x in enumerate(
+        triags) if de9im[idx][0] == 'F']
+    # Why do we have the kept_triangles_gs?
+    kept_triangles_gs = geopandas.GeoSeries(kept_triangles)
+
+    return MultiPolygon(kept_triangles)
+
+
+def find_largest_rectangles_on_avail_geom(avail_geom, num_rects):
+    """Finds a number of the largest rectangles we can place given the available geometry.
+
+    Args:
+        avail_geom (MultiPolygon): The available geometry to place extra structures
+        num_rects (int): The number of rectangles to find
+
+    Returns:
+        A list of biggest rectangles
+    """
+    placed_polys = []
+
+    # Placement approach: Place single biggest unit, then rerun analysis
+    for i in range(num_rects):    # place 4 units
+        biggest_poly = biggestPolyOverRotations(avail_geom)
+        placed_polys.append(biggest_poly)
+        avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
+
+    return placed_polys
+
 
 """ Find maximal rectangles in a grid
 Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
