@@ -5,12 +5,28 @@ from django.core.serializers import serialize
 import json
 from shapely.geometry import GeometryCollection
 from shapely.ops import triangulate
-# from notebooks.notebook_util import nb_exit
 # Find rectangles based on another answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
 from rasterio import features, transform, plot as rasterio_plot
+
 from world.models import Parcel, ZoningBase, BuildingOutlines
+
+
+def aspect_ratio(extents):
+    """Calculate the aspect ratio of a rectangle
+
+    Args:
+        extents ((x1,y1), (x2,y2)): The extents of the rectangle as a tuple
+
+    Returns:
+        A float of the aspect ratio
+    """
+    (pt1, pt2) = extents
+    w = pt2[0] - pt1[0] + 1
+    h = pt2[1] - pt1[1] + 1
+    aspect = max(float(w) / h, float(h) / w)
+    return aspect
 
 
 def get_parcel(apn: str):
@@ -149,12 +165,13 @@ def get_avail_geoms(parcel_boundary_multipoly, buildings):
     return MultiPolygon(kept_triangles)
 
 
-def find_largest_rectangles_on_avail_geom(avail_geom, num_rects):
+def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
     """Finds a number of the largest rectangles we can place given the available geometry.
 
     Args:
         avail_geom (MultiPolygon): The available geometry to place extra structures
         num_rects (int): The number of rectangles to find
+        max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
 
     Returns:
         A list of biggest rectangles
@@ -163,7 +180,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects):
 
     # Placement approach: Place single biggest unit, then rerun analysis
     for i in range(num_rects):    # place 4 units
-        biggest_poly = biggestPolyOverRotations(avail_geom)
+        biggest_poly = biggest_poly_over_rotation(avail_geom, max_aspect_ratio=max_aspect_ratio)
         placed_polys.append(biggest_poly)
         avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
 
@@ -172,7 +189,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects):
 
 """ Find maximal rectangles in a grid
 Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
-def maximalRectangles(matrix):
+def maximal_rectangles(matrix):
     m = len(matrix)
     n = len(matrix[0])
     # print (f'{m}x{n} grid (MxN)')
@@ -233,11 +250,21 @@ def maximalRectangles(matrix):
 
     return dictrects
 
-""" Rotate grid from 0-90 degrees looking for best placement, and return a Polygon object of best placement"""
-def biggestPolyOverRotations(avail_geom, do_plots=False):
+def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None):
+    """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation
+
+    Args:
+        avail_geom (MultiPolygon): The available geometry to place the rectangle
+        do_plots (boolean): Plot intermediate steps (primarily for debugging
+        max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
+
+    Returns:
+        Polygon: The biggest rectangle fuound
+    """
     # print (avail_geom)
     biggest_area = 0
     biggest_rect = None
+    # Rotate grid from 0-90 degrees looking for best placement
     for rot in [0, 10, 20, 30, 40, 50, 60, 70, 80]:
         rot_geom = shapely.affinity.rotate(avail_geom, rot, origin=(0,0))
         bounds = features.bounds(geopandas.GeoSeries(rot_geom))
@@ -247,7 +274,7 @@ def biggestPolyOverRotations(avail_geom, do_plots=False):
         bounds = features.bounds(geopandas.GeoSeries(rot_geom_translated))
         assert (bounds[0:2] == (0,0)) # bottom-left corner should be 0,0
 
-        # print ("Bounds:", bounds)
+        # Rasterize the rotated avail_geom for the placement algorithm.
         raster_dims = [round(bounds[3]),round(bounds[2])] # NOTE: raster_dims are Y,X
         b = features.rasterize([rot_geom_translated], raster_dims,) # transform=transform)
 
@@ -256,8 +283,13 @@ def biggestPolyOverRotations(avail_geom, do_plots=False):
             rasterio_plot.show(b)
             p2.set_title(f'{rot} deg; raster')
 
-        bigrects = maximalRectangles(b)
+        # Run the algorithm finding biggest rectangles at each candidate X,Y position
+        bigrects = maximal_rectangles(b)
+        # sort by area, from biggest to smallest
         sorted_keys = sorted(bigrects.keys(),key=lambda k: bigrects[k][0], reverse=True)
+        # filter out rects which violate our optional aspect ratio constraint
+        if (max_aspect_ratio):
+            sorted_keys = [k for k in sorted_keys if aspect_ratio(bigrects[k][1]) <= max_aspect_ratio]
         rectarea, rectbounds = bigrects[sorted_keys[0]]
         # print ("Biggest rect:", rectarea, rectbounds)
         rect=box(rectbounds[0][0], rectbounds[0][1], rectbounds[1][0], rectbounds[1][1])
@@ -266,16 +298,23 @@ def biggestPolyOverRotations(avail_geom, do_plots=False):
             geopandas.GeoSeries(rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; rot+xlat map')
 
-        rect = shapely.affinity.translate(rect, xoff=translation_amount[0], yoff=translation_amount[1])
-        rect = shapely.affinity.rotate(rect, -rot, origin=(0,0))
         if (rectarea > biggest_area):
             biggest_area = rectarea
             biggest_rect = rect
+            biggest_rect_rot = rot
+            biggest_rect_xlat_amount = translation_amount
         if (do_plots):
             p1 = geopandas.GeoSeries(avail_geom).plot()
-            geopandas.GeoSeries(rect).plot(ax=p1, color='green')
+            plot_rect = shapely.affinity.translate(rect, xoff=translation_amount[0], yoff=translation_amount[1])
+            plot_rect = shapely.affinity.rotate(rect, -rot, origin=(0, 0))
+            geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
-    # Adjust positions by 0.5 to counteract quantization of raster.
-    biggest_rect = shapely.affinity.translate(biggest_rect, xoff=0.5, yoff=0.5)
+    # translate the biggest rect back into grid coordinates, undoing rotation and translation
+    # Add in a 0.5 to counteract quantization of raster.
+    biggest_rect = shapely.affinity.translate(
+        biggest_rect, xoff=biggest_rect_xlat_amount[0]+0.5, yoff=biggest_rect_xlat_amount[1]+0.5
+    )
+    biggest_rect = shapely.affinity.rotate(biggest_rect, -biggest_rect_rot, origin=(0, 0))
 
     return biggest_rect
+
