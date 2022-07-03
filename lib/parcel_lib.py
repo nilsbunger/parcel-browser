@@ -143,26 +143,14 @@ def get_avail_geoms(parcel_boundary_multipoly, buildings):
         buildings ([MultiPolygon]): A list of multipolygons representing the buildings
 
     Returns:
-        MultiPolygon: A multipolygon of the available space for placing ADUs/extra buildings
+        Polygon: A polygon of the available space for placing ADUs/extra buildings
     """
-    triags = triangulate(GeometryCollection(
-        [*buildings, parcel_boundary_multipoly]))
-
     # We can't pass in a list of multipolygons to relate, we can only pass in one multipolygon
     # So we collapse all the multipolygons into one
     buildings_multipoly = collapse_multipolygon_list(buildings)
 
-    # Find triangles not in the building:
-    # DE-9IM gives a 3x3 matrix of how two objects relate. It's quite fascinating.
-    # Check out the diagram in https://postgis.net/workshops/postgis-intro/de9im.html
-    de9im = [x.relate(buildings_multipoly)
-             for idx, x in enumerate(triags)]
-    kept_triangles = [x for idx, x in enumerate(
-        triags) if de9im[idx][0] == 'F']
-    # Why do we have the kept_triangles_gs?
-    kept_triangles_gs = geopandas.GeoSeries(kept_triangles)
+    return parcel_boundary_multipoly.difference(buildings_multipoly)
 
-    return MultiPolygon(kept_triangles)
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
