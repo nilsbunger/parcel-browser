@@ -112,11 +112,18 @@ def normalize_geometries(parcel, buildings):
     # translated is a list of buildings, each building represented as a MultiPolygon
     # Most MultiPolygons will have just one Polygon. Not sure which ones will have multiple
     # as it makes sense that one building is one polygon
-    translated = []
+    building_polys = []
     for building_geom in buildings.geometry:
-        translated.append(shapely.affinity.translate(
-            building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1]))
-    return (parcel_boundary_multipoly, translated)
+        # This function returns the translated building as a multipolygon
+        # However, a building should be only one polygon, and so we assert this
+        # for a sanity check.
+        translated_building_multipoly = shapely.affinity.translate(
+            building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1])
+        assert(len(translated_building_multipoly.geoms) == 1)
+
+        building_polys.append(translated_building_multipoly)
+
+    return (parcel_boundary_multipoly, building_polys)
 
 
 def collapse_multipolygon_list(multipolygons):
@@ -145,12 +152,7 @@ def get_avail_geoms(parcel_boundary_multipoly, buildings):
     Returns:
         Polygon: A polygon of the available space for placing ADUs/extra buildings
     """
-    # We can't pass in a list of multipolygons to relate, we can only pass in one multipolygon
-    # So we collapse all the multipolygons into one
-    buildings_multipoly = collapse_multipolygon_list(buildings)
-
-    return parcel_boundary_multipoly.difference(buildings_multipoly)
-
+    return parcel_boundary_multipoly.difference(buildings)
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
