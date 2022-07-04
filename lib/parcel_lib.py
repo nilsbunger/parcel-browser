@@ -121,7 +121,7 @@ def normalize_geometries(parcel, buildings):
             building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1])
         assert(len(translated_building_multipoly.geoms) == 1)
 
-        building_polys.append(translated_building_multipoly)
+        building_polys.append(translated_building_multipoly[0])
 
     return (parcel_boundary_multipoly, building_polys)
 
@@ -152,7 +152,7 @@ def get_avail_geoms(parcel_boundary_multipoly, buildings):
     Returns:
         Polygon: A polygon of the available space for placing ADUs/extra buildings
     """
-    return parcel_boundary_multipoly.difference(buildings)
+    return parcel_boundary_multipoly.difference(MultiPolygon(buildings))
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
