@@ -15,7 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
-from world.models import Parcel, BuildingOutlines
+from world.models import Parcel, BuildingOutlines, Topography
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -33,6 +33,13 @@ class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
     model = Parcel
     vector_tile_layer_name = "parcels"
     vector_tile_fields = ('apn',)
+
+# ajax call for topo tiles for big map
+class TopoTileData(LoginRequiredMixin, MVTView, ListView):
+    model = Topography
+    vector_tile_layer_name = "topogrpahy"
+    # vector_tile_fields = ('apn',)
+
 
 # ------------------------------------------------------
 # Parcel detail viewer at /parcel/<apn>

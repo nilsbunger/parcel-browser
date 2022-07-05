@@ -9,7 +9,7 @@ import VectorTileSource from "ol/source/VectorTile";
 import {Fill, Stroke, Style} from "ol/style";
 
 
-let vectorSource = new VectorTileSource({
+let parcelVectorSource = new VectorTileSource({
     format: new MVT({
       idProperty: 'iso_a3',
     }),
@@ -17,9 +17,9 @@ let vectorSource = new VectorTileSource({
     wrapX: false,
 });
 
-const vtLayer = new VectorTileLayer({
+const parcelTileLayer = new VectorTileLayer({
     declutter: true,
-    source: vectorSource,
+    source: parcelVectorSource,
     style: new Style({
         stroke: new Stroke({
             color: 'green',
@@ -30,7 +30,33 @@ const vtLayer = new VectorTileLayer({
       }),
     })
 });
-const queryString = window. location. search;
+
+let topoVectorSource = new VectorTileSource({
+    format: new MVT({
+      idProperty: 'iso_a3',
+    }),
+    url: '/topotile/{z}/{x}/{y}',
+    wrapX: false,
+});
+
+
+const topoTileLayer = new VectorTileLayer({
+    declutter: true,
+    source: topoVectorSource,
+    minZoom: 16,
+    style: new Style({
+        stroke: new Stroke({
+            color: 'green',
+            width: 1
+        }),
+        fill: new Fill({
+        color: 'rgba(20,20,20,0.1)',
+      }),
+    })
+});
+
+
+const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const centerStr = urlParams.get('center')?.split(',')
 let viewCenter = fromLonLat([-117.19905688459625, 32.78415286818754]) // 2210 Illion St, San Diego, 92110],
@@ -38,14 +64,14 @@ let zoom = 18
 console.log (viewCenter)
 if (centerStr) {
     viewCenter = [parseFloat(centerStr[0]), parseFloat(centerStr[1])]
-    zoom = 19
 }
 console.log (viewCenter)
 
 let map = new Map({
     layers: [
         new TileLayer({source: new OSM()}),
-        vtLayer
+        parcelTileLayer,
+        topoTileLayer,
             // style: function (feature) {
             //   const color = feature.get('COLOR') || '#eeeeee';
             //   style.getFill().setColor(color);
