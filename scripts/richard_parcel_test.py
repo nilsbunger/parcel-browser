@@ -40,6 +40,7 @@ def run():
     parcel = models_to_utm_gdf([parcel])
     buildings = models_to_utm_gdf(buildings)
 
+    buffered_buildings_geom = get_buffered_building_geom(buildings)
     edges = get_street_side_boundaries(parcel)
     street_edges, side_edges, back_edges = edges
     to_visualize_edges = [side_edges.buffer(0.5),
@@ -55,14 +56,14 @@ def run():
     # This may include any buildings that we don't demolish, steep parts of the land,
     # other features such as pools etc, or setbacks.
     # Union all the geometries that we can't build to get it as a single Multipolygon
-    cant_build = unary_union([*buildings.geometry, *setbacks])
+    cant_build = unary_union(buffered_buildings_geom)
 
     # Calculate the available geometries
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
 
     # A lot data frame contains the building(s) and the parcel (the plot of land)
     lot_df = geopandas.GeoDataFrame(
-        geometry=[cant_build, parcel.geometry[0].boundary], crs="EPSG:4326")
+        geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
 
     # Display a graphic showing the building(s), and the available geometries we've calculated
     display_polys_on_lot(lot_df, [avail_geom, *to_visualize_edges, *setbacks])
