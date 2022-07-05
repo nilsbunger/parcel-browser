@@ -14,7 +14,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 os.chdir(PROJECTPATH)
 import django
 django.setup()
-from lib.parcel_lib import get_buildings, buildings_to_utm_gdf, get_parcel
+from lib.parcel_lib import get_buildings, models_to_utm_gdf, get_parcel
 from world.models import Topography
 
 
@@ -39,9 +39,9 @@ topos = Topography.objects.raw(
 #     geom__intersects=parcel.geom).annotate(geom=Intersection('geom', parcel.geom)).defer('geom')
 
 # Originally the buidings_to_utm_gdf code,
-topos_df = buildings_to_utm_gdf(topos)
-buildings_df = buildings_to_utm_gdf(buildings)
-parcel_df = buildings_to_utm_gdf([parcel])
+topos_df = models_to_utm_gdf(topos)
+buildings_df = models_to_utm_gdf(buildings)
+parcel_df = models_to_utm_gdf([parcel])
 parcel_df.geometry = parcel_df.geometry.boundary
 
 (xmin,ymin,xmax,ymax) = parcel_df.total_bounds.tolist()
