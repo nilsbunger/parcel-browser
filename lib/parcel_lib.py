@@ -54,39 +54,21 @@ def get_buildings(parcel):
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def parcel_to_utm_gdf(parcel):
-    """Converts a parcel into a UTM projection, stored as a Dataframe. This is a flat projection
-    where one unit is one meter.
+def models_to_utm_gdf(models):
+    """Converts a list of Django models into UTM projections, stored as a Dataframe.
+    This is a flat projection where one unit is one meter.
 
     Args:
-        parcel (Parcel): The parcel to convert
+        models ([Model]): A list of Django models to convert
 
     Returns:
-        GeoDataFrame: A GeoDataFrame representing the parcel
+        GeoDataFrame: A GeoDataFrame representing the list of models
     """
-    serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
-    parcel_data_frame = geopandas.GeoDataFrame.from_features(
-        json.loads(serialized_parcel), crs="EPSG:4326")
-    return parcel_data_frame.to_crs(
-        parcel_data_frame.estimate_utm_crs())
-
-
-def buildings_to_utm_gdf(buildings):
-    """Converts buildings into  UTM projections, stored as a Dataframe. This is a flat projection
-    where one unit is one meter.
-
-    Args:
-        buildings ([BuildingOutlines]): A list of building outlines to convert
-
-    Returns:
-        GeoDataFrame: A GeoDataFrame representing the list of buildings
-    """
-    serialized_buildings = serialize(
-        'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
-    buildings_data_frame = geopandas.GeoDataFrame.from_features(
-        json.loads(serialized_buildings), crs="EPSG:4326")
-    return buildings_data_frame.to_crs(
-        buildings_data_frame.estimate_utm_crs())
+    serialized_models = serialize(
+        'geojson', models, geometry_field='geom', fields=('apn', 'geom',))
+    data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_models), crs="EPSG:4326")
+    return data_frame.to_crs(data_frame.estimate_utm_crs())
 
 
 # Moves parcel bounds to (0,0) for easier displaying
@@ -142,17 +124,18 @@ def collapse_multipolygon_list(multipolygons):
     return MultiPolygon(res)
 
 
-def get_avail_geoms(parcel_boundary_multipoly, buildings):
+def get_avail_geoms(parcel_geom, cant_build_geom):
     """Returns a MultiPolygon representing the available space for a given parcel
 
     Args:
-        parcel_boundary_multipoly (type?): A parcel
-        buildings ([MultiPolygon]): A list of multipolygons representing the buildings
+        parcel_geom (Geometry): The geometry of a given parcel
+        cant_build_geom (Geometry): The geometry of the area we can't build. This should
+        be the union of buildings, setbacks, steep sections, etc.
 
     Returns:
-        Polygon: A polygon of the available space for placing ADUs/extra buildings
+        Multipolygon: A Multipolygon of the available space for placing ADUs/extra buildings
     """
-    return parcel_boundary_multipoly.difference(MultiPolygon(buildings))
+    return parcel_geom.difference(cant_build_geom)
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
