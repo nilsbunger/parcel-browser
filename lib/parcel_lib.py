@@ -3,7 +3,7 @@ import shapely
 from shapely.geometry import Polygon, box, MultiPolygon
 from django.core.serializers import serialize
 import json
-from shapely.geometry import GeometryCollection
+from shapely.geometry import GeometryCollection, MultiLineString
 from shapely.ops import triangulate
 # Find rectangles based on another answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
@@ -11,6 +11,8 @@ from shapely.ops import triangulate
 from rasterio import features, transform, plot as rasterio_plot
 
 from world.models import Parcel, ZoningBase, BuildingOutlines
+
+from numpy import argmax
 
 
 def aspect_ratio(extents):
@@ -159,6 +161,100 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_rati
         avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
 
     return placed_polys
+
+def get_street_side_boundaries(parcel):
+    """ Returns the edges of a parcel that are on the street side, the sides of the lot,
+    and the back of the lot respectively as Shapely MultiLineStrings.
+    Function can be greatly improved with raod data, and other types of data we can
+    layer on top.
+
+    Args:
+        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+
+    Returns:
+        (MultiLineString, MultiLineString, MultiLineString): A tuple of MultiLineStrings
+        representing the front (street), side, and back edges respectively.
+    """
+
+    # Get our adjacent parcels
+    parcel_model = Parcel.objects.get(apn=parcel.apn[0])
+    intersecting_parcels = Parcel.objects.filter(
+        geom__intersects=parcel_model.geom).exclude(apn=parcel.apn[0])
+    intersecting_utm = models_to_utm_gdf(intersecting_parcels)
+
+    # First Heuristic for determining street side:
+    # The sides that intersect with other parcels are definetely not street side
+    # Find the intersections between the adjacent parcels and the parcel
+    other_parcels_geom = intersecting_utm.dissolve().geometry[0]
+    parcels_intersection = other_parcels_geom.intersection(
+        parcel.geometry[0])  # MultiLineString
+
+    # The difference between the outline and the intersection is the street side
+    street_edges = parcel.boundary[0].difference(
+        parcels_intersection)  # MultiLineString
+
+    # The back is the union of all the line segments that don't touch any of the street edges
+    # The lines that do touch are the sides.
+    # TODO: Improve this with simplifying the line segments
+    side_lines, back_lines = [], []
+    for line in parcels_intersection.geoms:
+        if line.intersects(street_edges):
+            side_lines.append(line)
+        else:
+            back_lines.append(line)
+    side_edges = MultiLineString(side_lines)
+    back_edges = MultiLineString(back_lines)
+
+    return street_edges, side_edges, back_edges
+
+
+def get_setback_geoms(parcel, setback_widths, edges):
+    """Given setback widths and the front, side, and back edges, returns the geometry
+    representing that setback.
+
+    Args:
+        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        setback_widths ((num, num, num)): A tuple representing the setback widths (in meters)
+        for the front (street), side, and back edges
+        edges: ((MultiLineString, MultiLineString, MultiLineString)): A tuple representing the edges
+        of the parcel. The front, side, and back edges.
+
+    Returns:
+        (Geometry, Geometry, Geometry): A tuple of Geometry representing the front, side, and back setbacks
+    """
+    setbacks = []
+    for setback_width, edges in zip(setback_widths, edges):
+        setback = edges.buffer(setback_width).intersection(parcel.geometry[0])
+        setbacks.append(setback)
+    return setbacks
+
+def identify_building_types(parcel, buildings):
+    """Identify the building type (Accessory, main, or encroachment) of a building
+    on a lot.
+
+    Args:
+        parcel (GeoDataFrame): The parcel the building is on
+        buildings (GeoDataFrame): The buildings to identify
+
+    Returns:
+       void. Modifies the buildings in-place
+    """
+    # The percent of a building's area that must be inside the parcel
+    # to be not considered an encroachment
+    ENCROACHMENT_THRESHOLD = 0.4
+    parcel_geom = parcel.geometry[0]
+
+    # Go through each building and label it's building_type appropriately
+    for i, building in buildings.iterrows():
+        if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
+            buildings.loc[i, 'building_type'] = 'ENCROACHMENT'
+        else:
+            buildings.loc[i, 'building_type'] = 'ACCESSORY'
+
+    # Find the building with the max area that's not an encroachment and mark it as the main building
+    areas = [geom.area for geom in buildings.geometry]
+    max_area_index = argmax(areas)
+    buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
 def get_buffered_building_geom(buildings):
