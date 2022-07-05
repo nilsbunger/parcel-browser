@@ -257,6 +257,24 @@ def identify_building_types(parcel, buildings):
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
+def get_buffered_building_geom(buildings):
+    """Returns the geometry of buildings that's buffered by a certain width.
+
+    Args:
+        buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+
+    Returns:
+        Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
+    """
+    # Buffer sizes according to building type, in meters
+    BUFFER_SIZES = {
+        "MAIN": 2,
+        "ACCESSORY": 1.1,
+        "ENCROACHMENT": 0.2,
+    }
+    return buildings.dissolve().buffer(BUFFER_SIZES["ACCESSORY"], cap_style=2, join_style=2)
+
+
 """ Find maximal rectangles in a grid
 Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
 
