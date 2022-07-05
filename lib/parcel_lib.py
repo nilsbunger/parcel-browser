@@ -207,6 +207,27 @@ def get_street_side_boundaries(parcel):
     return street_edges, side_edges, back_edges
 
 
+def get_setback_geoms(parcel, setback_widths, edges):
+    """Given setback widths and the front, side, and back edges, returns the geometry
+    representing that setback.
+
+    Args:
+        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        setback_widths ((num, num, num)): A tuple representing the setback widths (in meters)
+        for the front (street), side, and back edges
+        edges: ((MultiLineString, MultiLineString, MultiLineString)): A tuple representing the edges
+        of the parcel. The front, side, and back edges.
+
+    Returns:
+        (Geometry, Geometry, Geometry): A tuple of Geometry representing the front, side, and back setbacks
+    """
+    setbacks = []
+    for setback_width, edges in zip(setback_widths, edges):
+        setback = edges.buffer(setback_width).intersection(parcel.geometry[0])
+        setbacks.append(setback)
+    return setbacks
+
+
 """ Find maximal rectangles in a grid
 Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
 
