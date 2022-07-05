@@ -57,6 +57,22 @@ Browse to http://localhost:8000/map or http://localhost:8000/admin .
 
 If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
 
+# System architecture
+
+The app is a Django application at its core.
+
+The major components of the system are:
+
+- DB: Postgres with PostGIS
+- App server:
+    - Django with GeoDjango library (built-in),
+    - Shapely (geometry manipulation)
+    - GeoPandas (GeoDataFrame and GeoSeries), which includes pandas for data analysis and shapely for geometry manipulation.
+- Front end:
+    - OpenLayers map viewer (see, for example, map.ts)
+
+When you're working on the code, you'll want the docs open for Shapely, GeoPandas, and Django querysets and GeoDjango. You can google for all of them.
+
 
 # Management commands
 
