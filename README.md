@@ -28,34 +28,29 @@ Note: You'll periodically need to update python and yarn dependencies as the cod
 
 # Set up a local database
 
-You'll either need a local DB or access to a cloud DB to run the service. A local DB is best for running big queries, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally. 
-
-Running with your local DB is easy -- you just preface the manage.py command with `LOCAL_DB=1` (see examples below).
+You'll need a local DB or access to a cloud DB to run the service. A local DB is best for dev, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally. 
 
 1. `brew install postgres`
 
 2. `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions
 
-3. `initdb -D <data_dir>` set directory for local data 
+3. `brew services start postgres` -- Run the Postgres server as a service in the background
 
-4. `pg_ctl -D <data_dir> -l logfile start` start local db
+4. `createdb geodjango` -- postgres command to create the database
 
-5. `createdb geodjango` -- postgres command to create the database
+5. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the local DB
 
-6. Update dbUserName param on /mygeo/Settings.py, line 96 with your device username
+6. `LOCAL_DB=1 ./manage.py createsuperuser` -- give yourself a superadmin account on django
 
-7. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the local DB
-
-8. `LOCAL_DB=1 ./manage.py createsuperuser` -- give yourself a superadmin account on django
-
+The above is mostly a one-time setup. 
 
 # Running in dev
 You'll need to run frontend and backend servers:
 
 `cd frontend && yarn dev` -- start frontend (parcel) dev server
 
-Now start the Django server with a cloud db or local db (remember to start venv):
-1. RUNNING WITH CLOUD DB: `./manage.py runserver` - start backend (django) server
+Now start the Django server with a cloud db or local db (remember to start the virtual env if you didn't already):
+1. RUNNING WITH CLOUD DB: `LOCAL_DB=0 ./manage.py runserver`
 2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver`
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
@@ -79,27 +74,25 @@ created.
 You don't need this section if you're using data that's already loaded into our cloud DB. 
 But if you're loading new data, or setting up a new DB, follow these instructions:
 
-1. Download Parcels, Building_outlines (under MISCELLANEOUS), and Zoning_base_sd ZIP files from https://www.sangis.org/ . You'll need a free account.
+1. Download Parcels, Building_outlines (under MISCELLANEOUS), Zoning_base_sd, and Topos_2014_2Ft_PowayLaMesa ZIP files from https://www.sangis.org/ . You'll need a free account. Get the associated PDF files as well, as they are useful in describing what the data means.
 2. Unzip and put all files in world/data/  
 3. Load the shape files into the DB:
-`[LOCAL_DB=1] ./manage.py load Zoning`
-`[LOCAL_DB=1] ./manage.py load Parcel`
-`[LOCAL_DB=1] ./manage.py load Buildings`
+`LOCAL_DB=1 ./manage.py load Zoning`
+`LOCAL_DB=1 ./manage.py load Parcel`
+`LOCAL_DB=1 ./manage.py load Buildings`
+`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_PowayLaMesa.shp`
 
 4. Run ETL jobs as necessary, eg:
-`[LOCAL_DB=1] ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+`LOCAL_DB=1 ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
 Note: include LOCAL_DB=1 in all commands if using local database. Don't include the brackets!
 
 
-# Jupyter notebook
+# Scripts
 
-For easier analysis and plotting, we have Jupyter notebooks which are connected into Django's model system.
-Just run `[LOCAL_DB=1] jupyter-lab` from the h3-gis directory to get started. It will pop open a local browser where you can select or create a file.
-
-Start from `notebooks/parcel_play.ipynb` . Cell 1 is general setup for Django model access and other useful imports ; you might want to copy that to any notebook you create.
-
-The geometric capabilities are provided by GeoPandas, which is a combination of pandas data library and shapely geometry library. You'll be using the documentation for both.
+We're working on several scripts that run outside a Django environment. This is in flux, but here's one you can try:
+`LOCAL_DB=1 ./manage.py runscript richard_parcel_test`
+This comes from the scripts/ directory, and you can create more files there.
 
 # Copying data from one DB to another
 
