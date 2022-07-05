@@ -49,6 +49,8 @@ def run():
     setbacks = get_setback_geoms(
         parcel, SETBACK_WIDTHS, edges)
 
+    identify_building_types(parcel, buildings)
+
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
     # other features such as pools etc, or setbacks.

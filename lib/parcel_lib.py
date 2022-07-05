@@ -12,6 +12,8 @@ from rasterio import features, transform, plot as rasterio_plot
 
 from world.models import Parcel, ZoningBase, BuildingOutlines
 
+from numpy import argmax
+
 
 def aspect_ratio(extents):
     """Calculate the aspect ratio of a rectangle
@@ -160,7 +162,6 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_rati
 
     return placed_polys
 
-
 def get_street_side_boundaries(parcel):
     """ Returns the edges of a parcel that are on the street side, the sides of the lot,
     and the back of the lot respectively as Shapely MultiLineStrings.
@@ -226,6 +227,34 @@ def get_setback_geoms(parcel, setback_widths, edges):
         setback = edges.buffer(setback_width).intersection(parcel.geometry[0])
         setbacks.append(setback)
     return setbacks
+
+def identify_building_types(parcel, buildings):
+    """Identify the building type (Accessory, main, or encroachment) of a building
+    on a lot.
+
+    Args:
+        parcel (GeoDataFrame): The parcel the building is on
+        buildings (GeoDataFrame): The buildings to identify
+
+    Returns:
+       void. Modifies the buildings in-place
+    """
+    # The percent of a building's area that must be inside the parcel
+    # to be not considered an encroachment
+    ENCROACHMENT_THRESHOLD = 0.4
+    parcel_geom = parcel.geometry[0]
+
+    # Go through each building and label it's building_type appropriately
+    for i, building in buildings.iterrows():
+        if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
+            buildings.loc[i, 'building_type'] = 'ENCROACHMENT'
+        else:
+            buildings.loc[i, 'building_type'] = 'ACCESSORY'
+
+    # Find the building with the max area that's not an encroachment and mark it as the main building
+    areas = [geom.area for geom in buildings.geometry]
+    max_area_index = argmax(areas)
+    buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
 """ Find maximal rectangles in a grid

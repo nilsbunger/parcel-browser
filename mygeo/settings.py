@@ -35,7 +35,7 @@ SECRET_KEY = 'django-insecure--j&vhgll2bv2yqzfhva!l!+qu=1rn2%lre(sb==o9))5bojn1&
 DEBUG = env('DJANGO_ENV') == 'development'
 ALLOWED_HOSTS = ['localhost']
 if (DEBUG):
-    eprint ("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
+    eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 
 ALLOWED_HOSTS = []
 
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
     'django.contrib.gis',
     "rest_framework",
     # "rest_framework_gis",
@@ -85,17 +86,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mygeo.wsgi.application'
 
-GDAL_LIBRARY_PATH='/opt/homebrew/lib/libgdal.dylib'
-GEOS_LIBRARY_PATH='/opt/homebrew/lib/libgeos_c.dylib'
+GDAL_LIBRARY_PATH = '/opt/homebrew/lib/libgdal.dylib'
+GEOS_LIBRARY_PATH = '/opt/homebrew/lib/libgeos_c.dylib'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 if (env('LOCAL_DB')):
-    eprint ("****** LOCAL DATABASE ******")
-    (dbHost, dbName, dbUserName, dbPassword) = ('localhost', 'geodjango', env('USER'), '')
+    eprint("****** LOCAL DATABASE ******")
+    (dbHost, dbName, dbUserName, dbPassword) = (
+        'localhost', 'geodjango', env('USER'), '')
 else:
-    (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'), env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
+    (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'),
+                                                env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
 
 DATABASES = {
     'default': {
