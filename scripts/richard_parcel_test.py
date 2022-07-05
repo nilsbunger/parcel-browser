@@ -20,6 +20,9 @@ import os
 import sys
 import matplotlib.pyplot as plt
 
+# Setbacks for the front, side, and back
+SETBACK_WIDTHS = [3, 0.1, 0.1]
+
 
 def run():
     # apn = '4302030800'  # working, original concave parcel
@@ -37,13 +40,22 @@ def run():
     parcel = models_to_utm_gdf([parcel])
     buildings = models_to_utm_gdf(buildings)
 
+    edges = get_street_side_boundaries(parcel)
+    street_edges, side_edges, back_edges = edges
+    to_visualize_edges = [side_edges.buffer(0.5),
+                          back_edges.buffer(0.7),
+                          street_edges.buffer(0.9)]
+
+    setbacks = get_setback_geoms(
+        parcel, SETBACK_WIDTHS, edges)
+
     identify_building_types(parcel, buildings)
 
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
     # other features such as pools etc, or setbacks.
     # Union all the geometries that we can't build to get it as a single Multipolygon
-    cant_build = unary_union(buildings.geometry)
+    cant_build = unary_union([*buildings.geometry, *setbacks])
 
     # Calculate the available geometries
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
@@ -53,11 +65,11 @@ def run():
         geometry=[cant_build, parcel.geometry[0].boundary], crs="EPSG:4326")
 
     # Display a graphic showing the building(s), and the available geometries we've calculated
-    display_polys_on_lot(lot_df, [avail_geom])
+    display_polys_on_lot(lot_df, [avail_geom, *to_visualize_edges, *setbacks])
 
     # Now find the largest rectangles we can fit on the available geometries
     placed_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, num_rects=4, max_aspect_ratio=2.5)
 
-    display_polys_on_lot(lot_df, placed_polys)
+    display_polys_on_lot(lot_df, [*placed_polys, *to_visualize_edges])
     plt.show()
