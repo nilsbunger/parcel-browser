@@ -37,6 +37,8 @@ def run():
     parcel = models_to_utm_gdf([parcel])
     buildings = models_to_utm_gdf(buildings)
 
+    identify_building_types(parcel, buildings)
+
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
     # other features such as pools etc, or setbacks.
