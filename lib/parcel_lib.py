@@ -54,39 +54,21 @@ def get_buildings(parcel):
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def parcel_to_utm_gdf(parcel):
-    """Converts a parcel into a UTM projection, stored as a Dataframe. This is a flat projection
-    where one unit is one meter.
+def models_to_utm_gdf(models):
+    """Converts a list of Django models into UTM projections, stored as a Dataframe.
+    This is a flat projection where one unit is one meter.
 
     Args:
-        parcel (Parcel): The parcel to convert
+        models ([Model]): A list of Django models to convert
 
     Returns:
-        GeoDataFrame: A GeoDataFrame representing the parcel
+        GeoDataFrame: A GeoDataFrame representing the list of models
     """
-    serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
-    parcel_data_frame = geopandas.GeoDataFrame.from_features(
-        json.loads(serialized_parcel), crs="EPSG:4326")
-    return parcel_data_frame.to_crs(
-        parcel_data_frame.estimate_utm_crs())
-
-
-def buildings_to_utm_gdf(buildings):
-    """Converts buildings into  UTM projections, stored as a Dataframe. This is a flat projection
-    where one unit is one meter.
-
-    Args:
-        buildings ([BuildingOutlines]): A list of building outlines to convert
-
-    Returns:
-        GeoDataFrame: A GeoDataFrame representing the list of buildings
-    """
-    serialized_buildings = serialize(
-        'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
-    buildings_data_frame = geopandas.GeoDataFrame.from_features(
-        json.loads(serialized_buildings), crs="EPSG:4326")
-    return buildings_data_frame.to_crs(
-        buildings_data_frame.estimate_utm_crs())
+    serialized_models = serialize(
+        'geojson', models, geometry_field='geom', fields=('apn', 'geom',))
+    data_frame = geopandas.GeoDataFrame.from_features(
+        json.loads(serialized_models), crs="EPSG:4326")
+    return data_frame.to_crs(data_frame.estimate_utm_crs())
 
 
 # Moves parcel bounds to (0,0) for easier displaying

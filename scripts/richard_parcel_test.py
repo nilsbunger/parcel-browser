@@ -33,14 +33,14 @@ def run():
 
     # convert building and parcel data into a UTM projection, which is a flat
     # geometry where each unit is 1 meter.
-    parcel_in_utm = parcel_to_utm_gdf(parcel)
-    buildings_in_utm = buildings_to_utm_gdf(buildings)
+    parcel = models_to_utm_gdf([parcel])
+    buildings = models_to_utm_gdf(buildings)
 
     # Why does building have to be a line_string but parcel isn't?
     # Why do we have to treat buildings as a line string and not as a polygon that can be filled in?
     # Is this something to do with the building's data structure (not having information on the fill, only vertices)?
     parcel_boundary_poly, buildings = normalize_geometries(
-        parcel_in_utm, buildings_in_utm)
+        parcel, buildings)
 
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
