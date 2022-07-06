@@ -90,8 +90,23 @@ def polygon_to_utm(poly, crs):
     return shapely.ops.transform(projection, shapely_poly)
 
 
-# Moves parcel bounds to (0,0) for easier displaying
-# Converts buildings into line strings?
+def get_parcel_and_buildings_gdf(apn):
+    """Convenience function that gets the UTM-projected parcel and buildings
+    as a dataframe.
+
+    Args:
+        apn (str): The APN of the parcel we want to get.
+
+    Returns:
+        (GeoDataFrame, GeoDataFrame): A tuple containing GDFs for the parcel and buildings
+    """
+    parcel = get_parcel(apn)
+    buildings = get_buildings(parcel)
+    parcel_utm = models_to_utm_gdf([parcel])
+    buildings_utm = models_to_utm_gdf(buildings)
+    return parcel_utm, buildings_utm
+
+
 def normalize_geometries(parcel, buildings):
     """Normalizes the parcel and buildings to (0,0).
 
