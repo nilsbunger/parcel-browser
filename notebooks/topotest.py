@@ -18,7 +18,7 @@ from lib.parcel_lib import get_buildings, models_to_utm_gdf, get_parcel
 from world.models import Topography
 
 
-from shapely.geometry import Point, Polygon, box, MultiPolygon, MultiLineString
+from shapely.geometry import Point, Polygon, box, MultiPolygon, MultiLineString, LineString
 
 from django.contrib.gis import geos
 import geopandas
@@ -47,14 +47,25 @@ parcel_df.geometry = parcel_df.geometry.boundary
 (xmin,ymin,xmax,ymax) = parcel_df.total_bounds.tolist()
 
 # Try to find the elevation from the contours
-pt = (xmax-xmin, ymax-ymin)
-
+pt = Point((xmax+xmin)/2, (ymax+ymin)/2)
+print (pt)
 # Translating a single polygon into a shapely shape:
 # shapely_shape = wkt.loads(topos[0].geom.wkt)
+
+from shapely.ops import nearest_points
+
+[nearest_points(pt, x)[0].wkt for x in topos_df.geometry]
+
+sorted([(pt.distance(row.geometry),index) for index,row in topos_df.iterrows()], key=lambda x:x[0])[0:3]
+
+x = LineString ([(xmin, ymin + 5), (xmax, ymin + 5)])
+intersect = topos_df.geometry.intersection(x)
 
 p1 = parcel_df.plot()
 buildings_df.plot(ax=p1, )
 
 p2 = topos_df.plot(ax=p1)
+geopandas.GeoSeries(pt).plot(ax=p1)
+geopandas.GeoSeries(x).plot(ax=p1)
 
 # geopandas.GeoSeries([parcel, buildings, topos]).plot()

@@ -67,7 +67,7 @@ def models_to_utm_gdf(models):
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
     serialized_models = serialize(
-        'geojson', models, geometry_field='geom', fields=('apn', 'geom',))
+        'geojson', models, geometry_field='geom')
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
     return data_frame.to_crs(data_frame.estimate_utm_crs())
