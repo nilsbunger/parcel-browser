@@ -90,13 +90,18 @@ created.
 You don't need this section if you're using data that's already loaded into our cloud DB. 
 But if you're loading new data, or setting up a new DB, follow these instructions:
 
-1. Download Parcels, Building_outlines (under MISCELLANEOUS), Zoning_base_sd, and Topos_2014_2Ft_PowayLaMesa ZIP files from https://www.sangis.org/ . You'll need a free account. Get the associated PDF files as well, as they are useful in describing what the data means.
+1. Download Parcels, Building_outlines (under MISCELLANEOUS), Zoning_base_sd, Topos_2014_2Ft_PowayLaMesa ZIP, and Topos_2014_2Ft_LaJolla.gdb files from https://www.sangis.org/ . You'll need a free account. Get the associated PDF files as well, as they are useful in describing what the data means.
 2. Unzip and put all files in world/data/  
 3. Load the shape files into the DB:
 `LOCAL_DB=1 ./manage.py load Zoning`
+
 `LOCAL_DB=1 ./manage.py load Parcel`
+
 `LOCAL_DB=1 ./manage.py load Buildings`
-`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_PowayLaMesa.shp`
+
+`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_PowayLaMesa.gdb`
+
+`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_LaJolla.gdb`
 
 4. Run ETL jobs as necessary, eg:
 `LOCAL_DB=1 ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
