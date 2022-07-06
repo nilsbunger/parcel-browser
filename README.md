@@ -32,7 +32,7 @@ You'll need a local DB or access to a cloud DB to run the service. A local DB is
 
 1. `brew install postgres`
 
-2. `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions
+2. `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions. Installs it with the protobuf support compiled in.
 
 3. `brew services start postgres` -- Run the Postgres server as a service in the background
 
