@@ -21,7 +21,6 @@ class AnalyzedParcel(models.Model):
             models.Index(fields=['apn'])
         ]
 
-
 class BuildingOutlines(models.Model):
     outline_id = models.FloatField()
     bldgid = models.FloatField()
@@ -35,20 +34,6 @@ class BuildingOutlines(models.Model):
     geom = models.MultiPolygonField(srid=4326)
 
 
-buildingoutlines_mapping = {
-    'outline_id': 'outline_id',
-    'bldgid': 'bldgID',
-    'centroid_x': 'CENTROID_X',
-    'centroid_y': 'CENTROID_Y',
-    'area': 'AREA',
-    'comment': 'COMMENT',
-    'shape_leng': 'Shape_Leng',
-    'shape_star': 'Shape_STAr',
-    'shape_stle': 'Shape_STLe',
-    'geom': 'MULTIPOLYGON',
-}
-
-
 class ZoningBase(models.Model):
     zone_name = models.CharField(max_length=20)
     imp_date = models.DateField()
@@ -56,17 +41,6 @@ class ZoningBase(models.Model):
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326)
-
-
-# Auto-generated `LayerMapping` dictionary for ZoningBase model
-zoningbase_mapping = {
-    'zone_name': 'ZONE_NAME',
-    'imp_date': 'IMP_DATE',
-    'ordnum': 'ORDNUM',
-    'shape_star': 'Shape_STAr',
-    'shape_stle': 'Shape_STLe',
-    'geom': 'MULTIPOLYGON',
-}
 
 
 # This is an auto-generated Django model module created by ogrinspect.
@@ -142,7 +116,8 @@ class Parcel(models.Model):
             lot_str = "%s acres" % self.acreage
         else:
             lot_str = "%s lot" % self.usable_sq_field
-        base_str = '%s %s %s %s: %s living, ' % (self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
+        base_str = '%s %s %s %s: %s living, ' % (
+        self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
         return base_str + lot_str
 
     class Meta:
@@ -151,6 +126,71 @@ class Parcel(models.Model):
         ]
 
 
+class Marker(models.Model):
+    """A marker with name and location."""
+
+    name = models.CharField(max_length=255)
+    location = models.PointField()
+
+    def __str__(self):
+        """Return string representation."""
+        return self.name
+
+class WorldBorder(models.Model):
+    # Regular Django fields corresponding to the attributes in the
+    # world borders shapefile.
+    name = models.CharField(max_length=50)
+    area = models.IntegerField()
+    pop2005 = models.IntegerField('Population 2005')
+    fips = models.CharField('FIPS Code', max_length=2, null=True)
+    iso2 = models.CharField('2 Digit ISO', max_length=2)
+    iso3 = models.CharField('3 Digit ISO', max_length=3)
+    un = models.IntegerField('United Nations Code')
+    region = models.IntegerField('Region Code')
+    subregion = models.IntegerField('Sub-Region Code')
+    lon = models.FloatField()
+    lat = models.FloatField()
+
+    # GeoDjango-specific: a geometry field (MultiPolygonField)
+    mpoly = models.MultiPolygonField()
+
+    # Returns the string representation of the model.
+    def __str__(self):
+        return self.name
+
+
+class Topography(models.Model):  # model based on Topo_2014_2Ft_PowayLaMesa data set.
+    elev = models.FloatField()
+    ltype = models.IntegerField()
+    index_field = models.IntegerField()
+    shape_length = models.FloatField()
+    geom = models.MultiLineStringField(srid=4326)
+
+world_mapping = {
+    'fips': 'FIPS',
+    'iso2': 'ISO2',
+    'iso3': 'ISO3',
+    'un': 'UN',
+    'name': 'NAME',
+    'area': 'AREA',
+    'pop2005': 'POP2005',
+    'region': 'REGION',
+    'subregion': 'SUBREGION',
+    'lon': 'LON',
+    'lat': 'LAT',
+    'mpoly': 'MULTIPOLYGON',
+}
+
+
+# Auto-generated `LayerMapping` dictionary for ZoningBase model
+zoningbase_mapping = {
+    'zone_name': 'ZONE_NAME',
+    'imp_date': 'IMP_DATE',
+    'ordnum': 'ORDNUM',
+    'shape_star': 'Shape_STAr',
+    'shape_stle': 'Shape_STLe',
+    'geom': 'MULTIPOLYGON',
+}
 # Auto-generated `LayerMapping` dictionary for Parcel model
 parcel_mapping = {
     'apn': 'APN',
@@ -220,51 +260,24 @@ parcel_mapping = {
 }
 
 
-class WorldBorder(models.Model):
-    # Regular Django fields corresponding to the attributes in the
-    # world borders shapefile.
-    name = models.CharField(max_length=50)
-    area = models.IntegerField()
-    pop2005 = models.IntegerField('Population 2005')
-    fips = models.CharField('FIPS Code', max_length=2, null=True)
-    iso2 = models.CharField('2 Digit ISO', max_length=2)
-    iso3 = models.CharField('3 Digit ISO', max_length=3)
-    un = models.IntegerField('United Nations Code')
-    region = models.IntegerField('Region Code')
-    subregion = models.IntegerField('Sub-Region Code')
-    lon = models.FloatField()
-    lat = models.FloatField()
-
-    # GeoDjango-specific: a geometry field (MultiPolygonField)
-    mpoly = models.MultiPolygonField()
-
-    # Returns the string representation of the model.
-    def __str__(self):
-        return self.name
-
-
-class Marker(models.Model):
-    """A marker with name and location."""
-
-    name = models.CharField(max_length=255)
-    location = models.PointField()
-
-    def __str__(self):
-        """Return string representation."""
-        return self.name
-
-
-world_mapping = {
-    'fips': 'FIPS',
-    'iso2': 'ISO2',
-    'iso3': 'ISO3',
-    'un': 'UN',
-    'name': 'NAME',
+buildingoutlines_mapping = {
+    'outline_id': 'outline_id',
+    'bldgid': 'bldgID',
+    'centroid_x': 'CENTROID_X',
+    'centroid_y': 'CENTROID_Y',
     'area': 'AREA',
-    'pop2005': 'POP2005',
-    'region': 'REGION',
-    'subregion': 'SUBREGION',
-    'lon': 'LON',
-    'lat': 'LAT',
-    'mpoly': 'MULTIPOLYGON',
+    'comment': 'COMMENT',
+    'shape_leng': 'Shape_Leng',
+    'shape_star': 'Shape_STAr',
+    'shape_stle': 'Shape_STLe',
+    'geom': 'MULTIPOLYGON',
+}
+
+
+topography_mapping = {
+    'elev': 'ELEV',
+    'ltype': 'LTYPE',
+    'index_field': 'INDEX_',
+    'shape_length': 'Shape_Length',
+    'geom': 'MULTILINESTRING',
 }

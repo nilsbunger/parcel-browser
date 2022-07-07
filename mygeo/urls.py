@@ -25,6 +25,7 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('map/', MapView.as_view()),
     path('parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
+    path('topotile/<int:z>/<int:x>/<int:y>', views.TopoTileData.as_view(), name="topo-tile"),
     # path("api/", include("world.api")),
     path('parcel/<str:apn>', ParcelDetailView.as_view()),
     path('parcel/<str:apn>/geodata', ParcelDetailData.as_view()),

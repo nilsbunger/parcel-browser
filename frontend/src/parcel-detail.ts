@@ -1,16 +1,45 @@
 import Map from 'ol/Map';
 import View from 'ol/View';
-import {GeoJSON} from 'ol/format'
+import {GeoJSON, MVT} from 'ol/format'
 import OSM from 'ol/source/OSM';
 import TileLayer from 'ol/layer/Tile';
 import VectorSource from 'ol/source/Vector';
 import {fromLonLat} from 'ol/proj';
 import VectorLayer from "ol/layer/Vector";
 import {SimpleGeometry} from "ol/geom";
+import VectorTileSource from "ol/source/VectorTile";
+import VectorTileLayer from "ol/layer/VectorTile";
+import {Fill, Stroke, Style} from "ol/style";
 
 
 // Initiate map with CRS => EPSG:3857
 const url = window.location.pathname;
+
+
+let topoVectorSource = new VectorTileSource({
+    format: new MVT({
+      idProperty: 'iso_a3',
+    }),
+    url: '/topotile/{z}/{x}/{y}',
+    wrapX: false,
+});
+
+
+const topoTileLayer = new VectorTileLayer({
+    declutter: true,
+    source: topoVectorSource,
+    minZoom: 16,
+    style: new Style({
+        stroke: new Stroke({
+            color: 'green',
+            width: 1
+        }),
+        fill: new Fill({
+        color: 'rgba(20,20,20,0.1)',
+      }),
+    })
+});
+
 
 // TODO: we should use local data from the template (parcelData and buildingData) instead of fetching
 // it.
@@ -34,7 +63,8 @@ let map = new Map({
         }),
         new VectorLayer({
             source: vectorSource,
-        })
+        }),
+        topoTileLayer
     ],
     target: 'map',
     view: view,
@@ -54,8 +84,6 @@ vectorSource.on('featuresloadend', (event) => {
         p.innerHTML = val + ": " + parcelFeatures[val];
         rightcol.append(p)
     }
-
-
 
     view.fit( event.features[0].getGeometry() as SimpleGeometry,{padding: [100, 100, 100, 100]})
     let center = view.getCenter();
