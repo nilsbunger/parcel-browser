@@ -5,6 +5,7 @@ from django.core.serializers import serialize
 import json
 from shapely.geometry import GeometryCollection, MultiLineString
 from shapely.ops import triangulate
+from math import sqrt
 # Find rectangles based on another answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
@@ -140,7 +141,7 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
     return parcel_geom.difference(cant_build_geom)
 
 
-def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None):
+def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None, min_area=11, max_area=111):
     """Finds a number of the largest rectangles we can place given the available geometry.
 
     Args:
@@ -156,9 +157,14 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_rati
     # Placement approach: Place single biggest unit, then rerun analysis
     for i in range(num_rects):    # place 4 units
         biggest_poly = biggest_poly_over_rotation(
-            avail_geom, max_aspect_ratio=max_aspect_ratio)
+            avail_geom, max_aspect_ratio=max_aspect_ratio, min_area=min_area, max_area=max_area)
+
+        if biggest_poly is None:
+            break
+
         placed_polys.append(biggest_poly)
-        avail_geom = avail_geom.difference(MultiPolygon([biggest_poly]))
+        avail_geom = avail_geom.difference(
+            MultiPolygon([biggest_poly]))
 
     return placed_polys
 
@@ -342,7 +348,7 @@ def maximal_rectangles(matrix):
     return dictrects
 
 
-def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None):
+def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None, min_area=None, max_area=None):
     """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation
 
     Args:
@@ -408,6 +414,36 @@ def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None
             plot_rect = shapely.affinity.rotate(rect, -rot, origin=(0, 0))
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
+
+    # If it's too small, we return None
+    if biggest_rect.area < min_area:
+        return None
+
+    # If it's too big, we want to do some processing to trim it down.
+    # Do this here so rotations and scaling are easy
+    # We will first prioritize making it as square as possible, then scale down the square
+    # if that's not enough
+    minx, miny, maxx, maxy = biggest_rect.bounds
+    x_len = maxx - minx
+    y_len = maxy - miny
+
+    if biggest_rect.area > max_area:
+        # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
+        if min(x_len, y_len) ** 2 > max_area:
+            # Scale down the square
+            biggest_rect = shapely.affinity.scale(biggest_rect, xfact=(
+                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+        elif x_len > y_len:
+            # Squish the rectangle to the max_area
+            # x is major axis. We want to scale it down
+            biggest_rect = shapely.affinity.scale(
+                biggest_rect, xfact=(max_area / biggest_rect.area))
+        else:
+            biggest_rect = shapely.affinity.scale(
+                biggest_rect, yfact=(max_area / biggest_rect.area))
+
+    # TODO: Put the redone rectangle to onew of the corners to preserve space.
+
     # translate the biggest rect back into grid coordinates, undoing rotation and translation
     # Add in a 0.5 to counteract quantization of raster.
     biggest_rect = shapely.affinity.translate(
