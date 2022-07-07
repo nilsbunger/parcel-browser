@@ -43,7 +43,8 @@ def run():
     parcel = models_to_utm_gdf([parcel])
     buildings = models_to_utm_gdf(buildings)
 
-    buffered_buildings_geom = get_buffered_building_geom(buildings)
+    buffered_buildings_geom = get_buffered_building_geom(
+        buildings, BUFFER_SIZES)
     edges = get_street_side_boundaries(parcel)
     street_edges, side_edges, back_edges = edges
     to_visualize_edges = [side_edges.buffer(0.5),

@@ -317,22 +317,18 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
     return max_FAR * parcel.geometry[0].area - sum([geom.area for geom in buildings.geometry])
 
 
-def get_buffered_building_geom(buildings):
+def get_buffered_building_geom(buildings, buffer_sizes):
     """Returns the geometry of buildings that's buffered by a certain width.
 
     Args:
         buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+        buffer_size (float): The width of the buffer to apply to the buildings
 
     Returns:
         Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
     """
     # Buffer sizes according to building type, in meters
-    BUFFER_SIZES = {
-        "MAIN": 2,
-        "ACCESSORY": 1.1,
-        "ENCROACHMENT": 0.2,
-    }
-    return buildings.dissolve().buffer(BUFFER_SIZES["ACCESSORY"], cap_style=2, join_style=2)
+    return buildings.dissolve().buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2)
 
 
 def maximal_rectangles(matrix):
