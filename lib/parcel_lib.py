@@ -162,6 +162,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_rati
 
     return placed_polys
 
+
 def get_street_side_boundaries(parcel):
     """ Returns the edges of a parcel that are on the street side, the sides of the lot,
     and the back of the lot respectively as Shapely MultiLineStrings.
@@ -228,6 +229,7 @@ def get_setback_geoms(parcel, setback_widths, edges):
         setbacks.append(setback)
     return setbacks
 
+
 def identify_building_types(parcel, buildings):
     """Identify the building type (Accessory, main, or encroachment) of a building
     on a lot.
@@ -275,11 +277,9 @@ def get_buffered_building_geom(buildings):
     return buildings.dissolve().buffer(BUFFER_SIZES["ACCESSORY"], cap_style=2, join_style=2)
 
 
-""" Find maximal rectangles in a grid
-Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
-
-
 def maximal_rectangles(matrix):
+    """ Find maximal rectangles in a grid
+    Returns: dictionary keyed by (x,y) of bottom-left, with values of (area, ((x,y),(x2,y2))) """
     m = len(matrix)
     n = len(matrix[0])
     # print (f'{m}x{n} grid (MxN)')
