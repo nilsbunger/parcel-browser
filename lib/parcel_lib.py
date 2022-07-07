@@ -3,7 +3,7 @@ import shapely
 from shapely.geometry import Polygon, box, MultiPolygon
 from django.core.serializers import serialize
 import json
-from shapely.geometry import GeometryCollection, MultiLineString
+from shapely.geometry import GeometryCollection, MultiLineString, Point
 from shapely.ops import triangulate
 from math import sqrt
 # Find rectangles based on another answer at
@@ -13,7 +13,7 @@ from rasterio import features, transform, plot as rasterio_plot
 
 from world.models import Parcel, ZoningBase, BuildingOutlines
 
-from numpy import argmax
+from numpy import argmax, argmin
 
 
 def aspect_ratio(extents):
@@ -141,23 +141,30 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
     return parcel_geom.difference(cant_build_geom)
 
 
-def find_largest_rectangles_on_avail_geom(avail_geom, num_rects, max_aspect_ratio=None, min_area=11, max_area=111):
-    """Finds a number of the largest rectangles we can place given the available geometry.
+def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
+                                          max_aspect_ratio=None, min_area=11, max_area=111):
+    """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
+    or maximum area are passed in, the rectangle sizes will be within that area. If not enough rectangles
+    meet the minimum size, then only n < num_rects number of rectangles will be returned.
 
     Args:
         avail_geom (MultiPolygon): The available geometry to place extra structures
+        parcel_boundary (Geometry): A geometry (Polygon or Multipolygon) representing the boundary
+        or exterior of the parcel.
         num_rects (int): The number of rectangles to find
         max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
+        min_area (num or None): Minimum area of a building in square meters
+        max_area (num or None): Maximum area of a building in square meters
 
     Returns:
-        A list of biggest rectangles
+        A list of biggest rectangles found.
     """
     placed_polys = []
 
     # Placement approach: Place single biggest unit, then rerun analysis
     for i in range(num_rects):    # place 4 units
         biggest_poly = biggest_poly_over_rotation(
-            avail_geom, max_aspect_ratio=max_aspect_ratio, min_area=min_area, max_area=max_area)
+            avail_geom, parcel_boundary, max_aspect_ratio=max_aspect_ratio, min_area=min_area, max_area=max_area)
 
         if biggest_poly is None:
             break
@@ -348,22 +355,102 @@ def maximal_rectangles(matrix):
     return dictrects
 
 
-def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None, min_area=None, max_area=None):
-    """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation
+def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_parcel_by, translate_parcel_by):
+    """Takes an axis-aligned rectangle (big_rect) with area bigger than max_area, and shrinks it so that it's
+    still within the bounds of big_rect, but with area as max_area. The algorithm will squish the rectangle
+    to be as square as possible. If after squishing to a square, the size is still too big, then the square
+    will be scaled down to max_area. The resulting rectangle/square will be placed in the corner that is
+    closest to the parcel lot lines (so that polygons are "hugging" lot lines as much as possible).
+
+    Args:
+        big_rect (Polygon): A rectangle that we want to squish
+        parcel_boundary (Geometry): A geometry (Polygon or Multipolygon) representing the boundary
+        or exterior of the parcel.
+        max_area (num): Maximum area of a building
+        rotate_parcel_by (num): The angle (in degrees) to rotate the parcel boundary by to match the
+        rotation of the big_rect.
+        translate_parcel_by ((num, num)): A tuple (x, y) encoding how much to translate the parcel by
+        so that it matches the translation of big_rect.
+
+    Returns:
+        Polygon: The scaled down rectangle with area max_area.
+    """
+    # We will first prioritize making it as square as possible, then scale down the square
+    # if that's not enough
+    minx, miny, maxx, maxy = big_rect.bounds
+    x_len = maxx - minx
+    y_len = maxy - miny
+    if min(x_len, y_len) ** 2 > max_area:
+        # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
+        # Scale down the square
+        rect_to_place = shapely.affinity.scale(big_rect, xfact=(
+            sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+    elif x_len > y_len:
+        # Squish the rectangle to the max_area
+        # x is major axis. We want to scale it down
+        rect_to_place = shapely.affinity.scale(
+            big_rect, xfact=(max_area / big_rect.area))
+    else:
+        rect_to_place = shapely.affinity.scale(
+            big_rect, yfact=(max_area / big_rect.area))
+
+    # Rotate and translate the parcel's boundary geometry for analysis
+    parcel_boundary = shapely.affinity.rotate(
+        parcel_boundary, rotate_parcel_by, origin=(0, 0))
+    parcel_boundary = shapely.affinity.translate(
+        parcel_boundary, xoff=-translate_parcel_by[0], yoff=-translate_parcel_by[1])
+
+    # Now that we've scaled the rectangle down, let's place it on the corner closest to lot lines
+
+    # Find out which corner is the closest to the lot lines
+    # four corners - lower left, upper left, upper right, lower right
+    minx, miny, maxx, maxy = big_rect.bounds
+    big_rect_four_corners = [(minx, miny), (minx, maxy),
+                             (maxx, maxy), (maxx, miny)]
+    minx, miny, maxx, maxy = rect_to_place.bounds
+    to_place_four_corners = [(minx, miny), (minx, maxy),
+                             (maxx, maxy), (maxx, miny)]
+
+    # Find the closest corner of the bigger rectangle to the lot lines
+    closest_corner_index = argmin(
+        [Point(*corner).distance(parcel_boundary) for corner in big_rect_four_corners])
+
+    # Now perform a translation that puts the building in the corner of the big
+    # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
+    # This frees up more available space for other buildings to be placed
+    x_offset = big_rect_four_corners[closest_corner_index][0] - \
+        to_place_four_corners[closest_corner_index][0]
+    y_offset = big_rect_four_corners[closest_corner_index][1] - \
+        to_place_four_corners[closest_corner_index][1]
+    rect_to_place = shapely.affinity.translate(
+        rect_to_place, xoff=x_offset, yoff=y_offset)
+
+    return rect_to_place
+
+
+def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None, min_area=None, max_area=None):
+    """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation.
+    Polygon sizes can be clamped with optional min_area or max_area parameters. In the event when the initial
+    rectangle found exceeds the max_area, an algorithm will scale the rectangle down to max_area. See implementation
+    of clamp_placed_polygon_to_size for details.
 
     Args:
         avail_geom (MultiPolygon): The available geometry to place the rectangle
+        parcel_boundary (Geometry): A geometry (Polygon or Multipolygon) representing the boundary
+        or exterior of the parcel.
         do_plots (boolean): Plot intermediate steps (primarily for debugging
         max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
+        min_area (num or None): Minimum area of a building
+        max_area (num or None): Maximum area of a building
 
     Returns:
-        Polygon: The biggest rectangle fuound
+        Polygon: The biggest rectangle found, or None if no rectangle was found that adheres to min_area
     """
     # print (avail_geom)
     biggest_area = 0
     biggest_rect = None
     # Rotate grid from 0-90 degrees looking for best placement
-    for rot in [0, 10, 20, 30, 40, 50, 60, 70, 80]:
+    for rot in range(0, 90, 5):
         rot_geom = shapely.affinity.rotate(avail_geom, rot, origin=(0, 0))
         bounds = features.bounds(geopandas.GeoSeries(rot_geom))
         # print ("Bounds:", bounds)
@@ -415,39 +502,22 @@ def biggest_poly_over_rotation(avail_geom, do_plots=False, max_aspect_ratio=None
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
 
+    # Translate by 0.5 to counteract quantization of raster.
+    biggest_rect = shapely.affinity.translate(
+        biggest_rect, xoff=0.5, yoff=0.5)
+
     # If it's too small, we return None
-    if biggest_rect.area < min_area:
+    if min_area and biggest_rect.area < min_area:
         return None
 
-    # If it's too big, we want to do some processing to trim it down.
-    # Do this here so rotations and scaling are easy
-    # We will first prioritize making it as square as possible, then scale down the square
-    # if that's not enough
-    minx, miny, maxx, maxy = biggest_rect.bounds
-    x_len = maxx - minx
-    y_len = maxy - miny
-
-    if biggest_rect.area > max_area:
-        # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
-        if min(x_len, y_len) ** 2 > max_area:
-            # Scale down the square
-            biggest_rect = shapely.affinity.scale(biggest_rect, xfact=(
-                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
-        elif x_len > y_len:
-            # Squish the rectangle to the max_area
-            # x is major axis. We want to scale it down
-            biggest_rect = shapely.affinity.scale(
-                biggest_rect, xfact=(max_area / biggest_rect.area))
-        else:
-            biggest_rect = shapely.affinity.scale(
-                biggest_rect, yfact=(max_area / biggest_rect.area))
-
-    # TODO: Put the redone rectangle to onew of the corners to preserve space.
+    if max_area and biggest_rect.area > max_area:
+        # If it's too big, we want to do some processing to trim it down.
+        biggest_rect = clamp_placed_polygon_to_size(
+            biggest_rect, parcel_boundary, max_area, biggest_rect_rot, biggest_rect_xlat_amount)
 
     # translate the biggest rect back into grid coordinates, undoing rotation and translation
-    # Add in a 0.5 to counteract quantization of raster.
     biggest_rect = shapely.affinity.translate(
-        biggest_rect, xoff=biggest_rect_xlat_amount[0]+0.5, yoff=biggest_rect_xlat_amount[1]+0.5
+        biggest_rect, xoff=biggest_rect_xlat_amount[0], yoff=biggest_rect_xlat_amount[1]
     )
     biggest_rect = shapely.affinity.rotate(
         biggest_rect, -biggest_rect_rot, origin=(0, 0))
