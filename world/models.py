@@ -1,3 +1,4 @@
+import django
 from django.contrib.gis.geos import Point
 from django.db import models
 
@@ -20,6 +21,7 @@ class AnalyzedParcel(models.Model):
         indexes = [
             models.Index(fields=['apn'])
         ]
+
 
 class BuildingOutlines(models.Model):
     outline_id = models.FloatField()
@@ -117,12 +119,24 @@ class Parcel(models.Model):
         else:
             lot_str = "%s lot" % self.usable_sq_field
         base_str = '%s %s %s %s: %s living, ' % (
-        self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
+            self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
         return base_str + lot_str
 
     class Meta:
         indexes = [
             models.Index(fields=['apn'])
+        ]
+
+
+class ParcelSlope(models.Model):
+    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn')
+    grade = models.IntegerField()
+    polys = models.MultiPolygonField(blank=True, null=True)
+    run_date = models.DateField(auto_now=True)  # note: only updated on model.save
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['parcel', 'grade'], name='unique_parcel_grade_bucket'),
         ]
 
 
@@ -135,6 +149,7 @@ class Marker(models.Model):
     def __str__(self):
         """Return string representation."""
         return self.name
+
 
 class WorldBorder(models.Model):
     # Regular Django fields corresponding to the attributes in the
@@ -159,12 +174,20 @@ class WorldBorder(models.Model):
         return self.name
 
 
+class TopographyLoads(models.Model):
+    fname = models.CharField('filename', max_length=200)
+    extents = models.PolygonField(srid=4326, unique=True)
+    run_date = models.DateField(auto_now=True)  # note: only updated on model.save
+
+
+
 class Topography(models.Model):  # model based on Topo_2014_2Ft_PowayLaMesa data set.
     elev = models.FloatField()
     ltype = models.IntegerField()
     index_field = models.IntegerField()
     shape_length = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
+
 
 world_mapping = {
     'fips': 'FIPS',
@@ -181,7 +204,6 @@ world_mapping = {
     'mpoly': 'MULTIPOLYGON',
 }
 
-
 # Auto-generated `LayerMapping` dictionary for ZoningBase model
 zoningbase_mapping = {
     'zone_name': 'ZONE_NAME',
@@ -191,6 +213,7 @@ zoningbase_mapping = {
     'shape_stle': 'Shape_STLe',
     'geom': 'MULTIPOLYGON',
 }
+
 # Auto-generated `LayerMapping` dictionary for Parcel model
 parcel_mapping = {
     'apn': 'APN',
@@ -259,7 +282,6 @@ parcel_mapping = {
     'geom': 'MULTIPOLYGON',
 }
 
-
 buildingoutlines_mapping = {
     'outline_id': 'outline_id',
     'bldgid': 'bldgID',
@@ -272,7 +294,6 @@ buildingoutlines_mapping = {
     'shape_stle': 'Shape_STLe',
     'geom': 'MULTIPOLYGON',
 }
-
 
 topography_mapping = {
     'elev': 'ELEV',

@@ -1,8 +1,16 @@
 from enum import Enum
 from pathlib import Path
+
+import pyproj
+import shapely.geometry
+from django.contrib.gis.gdal import DataSource, CoordTransform, SpatialReference, OGRGeometry
+from django.contrib.gis.gdal.geometries import Polygon
+from django.contrib.gis.geos import GeometryCollection, GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
+from shapely import wkt
+
 from world.models import WorldBorder, parcel_mapping, world_mapping, Parcel, ZoningBase, zoningbase_mapping, \
-    BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping
+    BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping, TopographyLoads
 from django.core.management.base import BaseCommand, CommandError
 
 
@@ -32,9 +40,21 @@ class Command(BaseCommand):
         elif model == "Topography":
             (db_model, mapper) = (Topography, topography_mapping)
 
-        # lm = LayerMapping(WorldBorder, shpfile, world_mapping, transform=False)
+        # Do the actual load
         lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
         lm.save(strict=True, verbose=False, progress=True)
+
+        # Execute post-load tasks
+        if (model == "Topography"):
+            # record completion of topography load
+            ds = DataSource(data_dir / fname)
+            new_geom = GEOSGeometry(ds[0].extent.wkt, srid=2230)    # 2230 is NAD83, California Zone 6 code
+            new_geom = new_geom.transform('EPSG:4326', clone=True)
+            print ("Recording topo extents in DB:", new_geom)
+            loaded, was_created = TopographyLoads.objects.get_or_create(extents=new_geom)
+            loaded.fname = fname
+            loaded.save()
+
         self.stdout.write(self.style.SUCCESS('Finished writing data for model %s' % model))
 
 
