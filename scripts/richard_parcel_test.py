@@ -22,6 +22,8 @@ import matplotlib.pyplot as plt
 
 # Setbacks for the front, side, and back
 SETBACK_WIDTHS = [4.5, 1.1, 1.1]
+MIN_AREA = 11  # ~150sqft
+MAX_AREA = 111  # ~1200sqft
 
 
 def run():
@@ -51,6 +53,7 @@ def run():
         parcel, SETBACK_WIDTHS, edges)
 
     identify_building_types(parcel, buildings)
+    max_area_by_FAR = get_avail_floor_area(parcel, buildings, 0.6)
 
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
@@ -70,7 +73,8 @@ def run():
 
     # Now find the largest rectangles we can fit on the available geometries
     placed_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=4, max_aspect_ratio=2.5)
+        avail_geom, parcel.boundary[0], num_rects=4, max_aspect_ratio=2.5,
+        min_area=MIN_AREA, max_area=min(max_area_by_FAR, MAX_AREA))
 
     display_polys_on_lot(lot_df, [*placed_polys, avail_geom])
     plt.show()
