@@ -519,10 +519,6 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
 
-    # Translate by 0.5 to counteract quantization of raster.
-    biggest_rect = shapely.affinity.translate(
-        biggest_rect, xoff=0.5, yoff=0.5)
-
     # If it's too small, we return None
     if min_area and biggest_rect.area < min_area:
         return None
@@ -533,8 +529,9 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
             biggest_rect, parcel_boundary, max_area, biggest_rect_rot, biggest_rect_xlat_amount)
 
     # translate the biggest rect back into grid coordinates, undoing rotation and translation
+    # Translate by 0.5 to counteract quantization of raster.
     biggest_rect = shapely.affinity.translate(
-        biggest_rect, xoff=biggest_rect_xlat_amount[0], yoff=biggest_rect_xlat_amount[1]
+        biggest_rect, xoff=biggest_rect_xlat_amount[0]+0.5, yoff=biggest_rect_xlat_amount[1]+0.5
     )
     biggest_rect = shapely.affinity.rotate(
         biggest_rect, -biggest_rect_rot, origin=(0, 0))

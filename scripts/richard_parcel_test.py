@@ -21,6 +21,7 @@ import sys
 import matplotlib.pyplot as plt
 
 # Setbacks for the front, side, and back
+# All in Square Meters
 SETBACK_WIDTHS = [4.5, 1.1, 1.1]
 MIN_AREA = 11  # ~150sqft
 MAX_AREA = 111  # ~1200sqft
