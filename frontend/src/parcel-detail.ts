@@ -76,7 +76,7 @@ vectorSource.on('featuresloadend', (event) => {
     // console.log(event.features[0].values_);
     const parcelFeatures = pickFeatures(event.features[0].values_);
     let rightcol = document.getElementById('rightcol');
-    rightcol.innerHTML = "<p>" + latlong + "</p>";
+    rightcol.innerHTML = "<p>" + latlong + "</p><p>Lot size:" + lotSize + " </p>";
     let val: keyof typeof parcelFeatures;
     for (val in parcelFeatures) {
         console.log(val, parcelFeatures[val]);

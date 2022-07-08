@@ -67,17 +67,17 @@ class ParcelDetailView(LoginRequiredMixin, View):
     # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
         parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
         parcel_in_utm = parcel_data_frame.to_crs(parcel_data_frame.estimate_utm_crs())
-        lot_square_meters = parcel_in_utm.area
+        lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
         print (repr(parcel))
         print (pp.pprint(parcel.__dict__))
-        print ("Lot size:", lot_square_meters)
+        print ("Lot size:", lot_square_feet )
         print ("Lot location:", parcel_data_frame.centroid)
         return render(request, self.template_name,
                       {'parcel_data': serialized_parcel,
                        'building_data': serialized_buildings,
-                       'latlong': str(list(parcel_data_frame.centroid[0].coords)[0])
-                       }
-                      )
+                       'latlong': str(list(parcel_data_frame.centroid[0].coords)[0]),
+                       'lot_size': lot_square_feet
+                       })
 
 # ajax call to get parcel and building info
 class ParcelDetailData(LoginRequiredMixin, View):
