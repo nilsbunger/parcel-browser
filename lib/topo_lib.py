@@ -70,7 +70,7 @@ def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
     """ Create slope polygons and store them in the database for a given parcel. Assumes that topo data is
 
     """
-    # line segments at each grade
+    # Grade_buckets hold line segments at each grade
     grade_buckets = dict({0: [], 5: [], 10: [], 15: [], 20: [], 25: []})
     parcel_df = models_to_utm_gdf([parcel])
     assert (len(parcel_df.geometry) == 1)
@@ -84,16 +84,15 @@ def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
     for (bucket, line) in _yield_grade_lines(parcel_df, topos_df):
         grade_buckets[bucket].append(line)
 
-    # We have a bunch of lines in grade buckets. Now we iterate through the buckets, turning lines into
+    # We have a bunch of lines in grade buckets. Iterate through the buckets, turning lines into
     # polygons (line.buffer(1) to create 1-meter wide polygons), filling holes, and ultimately creating
     # a list of polygons at each grade level that gets saved to the database.
     grade_polys = dict()
     for bucket in [25, 20, 15, 10, 5]:
         throwaways = []
-        # put together all the areas with the given grade into one polygon or multipolygon
+        # Put together all the areas with the given grade into one polygon or multipolygon
         grade_poly = unary_union([line.buffer(1) for line in grade_buckets[bucket]])
-        # clip it to the parcel and reduce points by simplifying the poly
-        # print (f'Bucket: {bucket}   Before: {type(grade_poly)}')
+        # Clip the poly to the parcel and reduce points by simplifying the poly
         grade_poly = grade_poly.intersection(parcel_poly).simplify(1)
         grade_poly, throwaway_inner = regularize_to_multipolygon(grade_poly)
         throwaways += throwaway_inner
@@ -112,7 +111,7 @@ def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
 
         # Store MultiPolygon into bucket
         grade_polys[bucket] = grade_poly
-        if (throwaways):
+        if throwaways:
             print("THROWING AWAY", throwaways)
             print("KEEPING", list(grade_poly.geoms))
             bucket_stats['weird'] += 1
@@ -121,7 +120,9 @@ def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
         else:
             bucket_stats['full'] += 1
 
+        # Save this slope bucket to the database
         save_slope_object(parcel, bucket, grade_poly, utm_crs)
+        # Plot this slope bucket
         if not grade_poly.is_empty:
             geopandas.GeoSeries(grade_poly).plot(ax=p1, color=colors[bucket])
     return p1
