@@ -493,6 +493,10 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         if (max_aspect_ratio):
             sorted_keys = [k for k in sorted_keys if aspect_ratio(
                 bigrects[k][1]) <= max_aspect_ratio]
+
+        if not sorted_keys:
+            continue
+
         rectarea, rectbounds = bigrects[sorted_keys[0]]
         # print ("Biggest rect:", rectarea, rectbounds)
         rect = box(rectbounds[0][0], rectbounds[0][1],
