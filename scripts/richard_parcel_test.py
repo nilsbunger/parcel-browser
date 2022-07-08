@@ -21,7 +21,10 @@ import sys
 import matplotlib.pyplot as plt
 
 # Setbacks for the front, side, and back
-SETBACK_WIDTHS = [3, 0.1, 0.1]
+# All in Square Meters
+SETBACK_WIDTHS = [4.5, 1.1, 1.1]
+MIN_AREA = 11  # ~150sqft
+MAX_AREA = 111  # ~1200sqft
 
 
 def run():
@@ -51,12 +54,13 @@ def run():
         parcel, SETBACK_WIDTHS, edges)
 
     identify_building_types(parcel, buildings)
+    max_area_by_FAR = get_avail_floor_area(parcel, buildings, 0.6)
 
     # in the future, we store a list of the regions that we can't build on as a list.
     # This may include any buildings that we don't demolish, steep parts of the land,
     # other features such as pools etc, or setbacks.
     # Union all the geometries that we can't build to get it as a single Multipolygon
-    cant_build = unary_union(buffered_buildings_geom)
+    cant_build = unary_union([*buffered_buildings_geom, *setbacks])
 
     # Calculate the available geometries
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
@@ -66,11 +70,12 @@ def run():
         geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
 
     # Display a graphic showing the building(s), and the available geometries we've calculated
-    display_polys_on_lot(lot_df, [avail_geom, *to_visualize_edges, *setbacks])
+    display_polys_on_lot(lot_df, [avail_geom, *setbacks])
 
     # Now find the largest rectangles we can fit on the available geometries
     placed_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, num_rects=4, max_aspect_ratio=2.5)
+        avail_geom, parcel.boundary[0], num_rects=4, max_aspect_ratio=2.5,
+        min_area=MIN_AREA, max_area=min(max_area_by_FAR, MAX_AREA))
 
-    display_polys_on_lot(lot_df, [*placed_polys, *to_visualize_edges])
+    display_polys_on_lot(lot_df, [*placed_polys, avail_geom])
     plt.show()
