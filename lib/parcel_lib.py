@@ -1,17 +1,18 @@
 import geopandas
+import pyproj
 import shapely
+from shapely import wkt
 from shapely.geometry import Polygon, box, MultiPolygon
 from django.core.serializers import serialize
 import json
-from shapely.geometry import GeometryCollection, MultiLineString, Point
+from shapely.geometry import MultiLineString, Point
 from shapely.ops import triangulate
 from math import sqrt
-# Find rectangles based on another answer at
-# https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
-from rasterio import features, transform, plot as rasterio_plot
+from rasterio import features, plot as rasterio_plot
+import shapely.ops
 
-from world.models import Parcel, ZoningBase, BuildingOutlines
+from world.models import Parcel, BuildingOutlines
 
 from numpy import argmax, argmin
 
@@ -67,11 +68,26 @@ def models_to_utm_gdf(models):
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
+    if (len(models) == 0): return geopandas.GeoDataFrame()
     serialized_models = serialize(
         'geojson', models, geometry_field='geom')
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
     return data_frame.to_crs(data_frame.estimate_utm_crs())
+
+def polygon_to_utm(poly, crs):
+    """ Accepts a Django (gis.geos.polygon) Polygon in Lat-long coordinates, and returns
+        an equivalent Shapely Polygon (shapely.geometry.polygon) suitable for use with GeoDjango,
+         projected into UTM coordinates.
+    """
+    # Convert Django polygon to Shapely polygon
+    shapely_poly = wkt.loads(poly.wkt)
+
+    # Re-project the polygon into the UTM CRS coordinate system
+    wgs84 = pyproj.CRS('EPSG:4326')
+    utm = pyproj.CRS(crs)
+    projection = pyproj.Transformer.from_crs(wgs84, utm, always_xy=True).transform
+    return shapely.ops.transform(projection, shapely_poly)
 
 
 # Moves parcel bounds to (0,0) for easier displaying
@@ -140,7 +156,8 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
     """
     return parcel_geom.difference(cant_build_geom)
 
-
+# Find rectangles based on an answer at
+# https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
                                           max_aspect_ratio=None, min_area=None, max_area=None):
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
