@@ -22,7 +22,8 @@ def regularize_to_multipolygon(grade_poly):
 
 
 def yield_interiors(poly):
-    """ Accepts a shapely polygon or collection (MultiPolygon or GeometryCollection) and yields polygon interiors """
+    """ Accepts a shapely polygon or collection (MultiPolygon or GeometryCollection).
+        Yields polygon "interiors"", meaning 'holes' inside the polygon """
     # takes a polygon or multipolygon and yields its interiors
     if poly.geom_type == 'MultiPolygon':
         for geom in poly.geoms:
