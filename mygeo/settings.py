@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
 
 env = environ.Env(
-    LOCAL_DB=(bool, False)
+    LOCAL_DB=(bool, True)
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -38,7 +38,6 @@ if (DEBUG):
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -97,6 +96,7 @@ if (env('LOCAL_DB')):
     (dbHost, dbName, dbUserName, dbPassword) = (
         'localhost', 'geodjango', env('USER'), '')
 else:
+    eprint("****** USING CLOUD DATABASE ******")
     (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'),
                                                 env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
 
@@ -109,7 +109,6 @@ DATABASES = {
         'PASSWORD': dbPassword,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -140,7 +139,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
