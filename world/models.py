@@ -1,6 +1,7 @@
 import django
 from django.contrib.gis.geos import Point
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 
@@ -187,6 +188,55 @@ class Topography(models.Model):  # model based on Topo_2014_2Ft_PowayLaMesa data
     index_field = models.IntegerField()
     shape_length = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
+
+
+class ParcelScenario(models.Model):
+    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE)
+
+    git_commit_hash = models.CharField(max_length=40)
+    date_time_ran = models.DateTimeField(auto_now_add=True)
+    input_parameters = models.JSONField()
+
+    # Added buildings (existing buildings stored as BuildingOnScenario)
+    placed_buildings = ArrayField(
+        base_field=models.MultiPolygonField(srid=4326))
+
+    # Other geometries
+    setback_front_geom = models.MultiPolygonField(
+        srid=4326, blank=True, null=True)
+    setback_side_geom = models.MultiPolygonField(
+        srid=4326, blank=True, null=True)
+    setback_rear_geom = models.MultiPolygonField(
+        srid=4326, blank=True, null=True)
+    buffered_buidings_geom = models.MultiPolygonField(
+        srid=4326, blank=True, null=True)
+    topography_nobuild_geom = models.MultiPolygonField(
+        srid=4326, blank=True, null=True)
+    avail_geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
+
+    parcel_area = models.FloatField()   # In square meters
+    area_added = models.FloatField()    # In square meters
+
+    # Financial modelling details
+    # Score info
+
+    logs = models.CharField(blank=True, max_length=10000)
+    comments = models.CharField(blank=True, max_length=10000)
+
+
+class BuildingOnScenario(models.Model):
+    # Model is used for storing a building on a scenario. These are existing buildings
+    # Note: Eventually, we should add support for ADUs that are converted from
+    # existing buildings, e.g. garages
+    class BuildingType(models.TextChoices):
+        MAIN = 'MAIN'
+        ACCESSSORY = 'ACCESSORY'
+        ENCROACHMENT = 'ENCROACHMENT'
+
+    building = models.ForeignKey(
+        BuildingOutlines, on_delete=models.CASCADE)
+    scenario = models.ForeignKey(ParcelScenario, on_delete=models.CASCADE)
+    type = models.CharField(max_length=15, choices=BuildingType.choices)
 
 
 world_mapping = {
