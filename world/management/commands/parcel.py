@@ -5,6 +5,7 @@ import shapely
 from django.core.serializers import serialize
 from shapely.geometry import MultiLineString
 from shapely.ops import triangulate
+from lib.analyze_parcel_lib import analyze_one_parcel
 
 from world.models import parcel_mapping, world_mapping, Parcel, ZoningBase, zoningbase_mapping, \
     BuildingOutlines, buildingoutlines_mapping
@@ -15,10 +16,17 @@ class Command(BaseCommand):
     help = 'Analyze a parcel'
 
     def add_arguments(self, parser):
-        # parser.add_argument('model', choices=LoadModel.__members__)
-        pass
+        parser.add_argument('apn', nargs=1, type=str)
+        parser.add_argument('--show-plot', '-p', action='store_true')
+        parser.add_argument('--save-file', '-f', action='store_true')
 
     def handle(self, *args, **options):
+        analyze_one_parcel(options['apn'][0],
+                           show_plot=options['show_plot'],
+                           save_file=options['save_file'])
+        print("Done")
+
+    def old_handle(self, *args, **options):
         pp = pprint.PrettyPrinter(indent=2)
 
         apn = '4302030800'

@@ -1,5 +1,6 @@
 """
-This file is used for testing different things about the parcel
+This file is used for testing different things about the parcel.
+Deprecated. Use the Django commands instead.
 """
 
 from notebooks.notebook_util import nb_exit, display_polys_on_lot
