@@ -48,7 +48,10 @@ def get_parcel_by_apn(apn: str):
 
 def get_parcels_by_neighborhood(bounding_box):
     # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
-    return Parcel.objects.filter(geom__intersects=bounding_box)
+    return Parcel.objects.filter(geom__intersects=bounding_box).extra(
+        tables=['world_analyzedparcel'],
+        where=['world_parcel.apn=world_analyzedparcel.apn', 'world_analyzedparcel.skip is false']
+    ).order_by('apn')
 
 
 def get_buildings(parcel):
