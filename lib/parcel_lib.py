@@ -2,11 +2,11 @@ import geopandas
 import pyproj
 import shapely
 from shapely import wkt
+from shapely.validation import make_valid
 from shapely.geometry import Polygon, box, MultiPolygon
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
-from shapely.ops import triangulate
 from math import sqrt
 from django.contrib.gis.geos import GEOSGeometry
 
@@ -34,7 +34,7 @@ def aspect_ratio(extents):
     return aspect
 
 
-def get_parcel(apn: str):
+def get_parcel_by_apn(apn: str):
     """Returns a Parcel object from the database
 
     Args:
@@ -44,6 +44,11 @@ def get_parcel(apn: str):
         A Django Parcel model object
     """
     return Parcel.objects.get(apn=apn)
+
+
+def get_parcels_by_neighborhood(bounding_box):
+    # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
+    return Parcel.objects.filter(geom__intersects=bounding_box)
 
 
 def get_buildings(parcel):
@@ -71,7 +76,7 @@ def models_to_utm_gdf(models, geometry_field='geom'):
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
     if (len(models) == 0):
-        return geopandas.GeoDataFrame()
+        return geopandas.GeoDataFrame(columns=['feature'], geometry='feature')
     serialized_models = serialize(
         'geojson', models, geometry_field=geometry_field)
     data_frame = geopandas.GeoDataFrame.from_features(
@@ -103,7 +108,7 @@ def get_parcel_and_buildings_gdf(apn):
     Returns:
         (GeoDataFrame, GeoDataFrame): A tuple containing GDFs for the parcel and buildings
     """
-    parcel = get_parcel(apn)
+    parcel = get_parcel_by_apn(apn)
     buildings = get_buildings(parcel)
     parcel_utm = models_to_utm_gdf([parcel])
     buildings_utm = models_to_utm_gdf(buildings)

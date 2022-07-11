@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import git
 import matplotlib.colors as mcolors
 import datetime
+import django
 
 MIN_AREA = 11  # ~150sqft
 MAX_AREA = 111  # ~1200sqft
@@ -19,6 +20,7 @@ colorkeys = list(mcolors.XKCD_COLORS.keys())
 
 
 def better_plot(apn, parcel, polys):
+    # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
     plt.title(apn)
     for idx, poly in enumerate(polys):
@@ -26,8 +28,25 @@ def better_plot(apn, parcel, polys):
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.5)
 
 
-def analyze_one_parcel(apn, show_plot=False, save_file=False):
-    parcel, buildings = get_parcel_and_buildings_gdf(apn)
+def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
+    """Runs analysis on a single parcel of land
+
+    Args:
+        parcel (Parcel): A Parcel Model object that we want to analyse.
+        show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
+        save_file (Boolean, optional): Saves the parcel to an image file. Defaults to False.
+    """
+    apn = parcel.apn
+
+    buildings = get_buildings(parcel)
+
+    if (len(buildings)) == 0:
+        print("No buildings found for parcel: ", apn)
+        return
+
+    parcel = models_to_utm_gdf([parcel])
+    buildings = models_to_utm_gdf(buildings)
+
     identify_building_types(parcel, buildings)
 
     # Compute the spaces that we can't build on
@@ -55,12 +74,17 @@ def analyze_one_parcel(apn, show_plot=False, save_file=False):
         'area': poly.area,
     }, new_building_polys))
 
-    # Display a graphic showing the parcel, building, and new buildings
-    lot_df = geopandas.GeoDataFrame(
-        geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
-    better_plot(apn, lot_df, new_building_polys)
+    # Do plotting stuff if necessary
+    if show_plot or save_file:
+        lot_df = geopandas.GeoDataFrame(
+            geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
+        better_plot(apn, lot_df, new_building_polys)
 
-    plt.show()
+        if show_plot:
+            plt.show()
+        if save_file:
+            plt.savefig("./world/data/scenario-images/" + apn + ".jpg")
+            plt.close()
 
     # Get git info
     repo = git.Repo(search_parent_directories=True)
@@ -97,3 +121,22 @@ def analyze_one_parcel(apn, show_plot=False, save_file=False):
     }
 
     return analyzed
+
+
+def analyze_by_apn(apn, show_plot=False, save_file=False):
+    parcel = get_parcel_by_apn(apn)
+    return _analyze_one_parcel(parcel, show_plot, save_file)
+
+
+def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
+    bounding_box = django.contrib.gis.geos.Polygon.from_bbox(
+        hood_bounds_tuple)
+    parcels = get_parcels_by_neighborhood(bounding_box)
+
+    print(f"Found {len(parcels)} parcels to analyze")
+
+    for i, parcel in enumerate(parcels):
+        print(i, parcel.apn)
+        _analyze_one_parcel(parcel, False, False)
+
+    print(f"Done analyzing {len(parcels)} parcels")

@@ -2,29 +2,52 @@ import json
 import pprint
 import geopandas
 import shapely
+from enum import Enum
 from django.core.serializers import serialize
 from shapely.geometry import MultiLineString
 from shapely.ops import triangulate
-from lib.analyze_parcel_lib import analyze_one_parcel
+from lib.analyze_parcel_lib import analyze_by_apn, analyze_neighborhood
 
 from world.models import parcel_mapping, world_mapping, Parcel, ZoningBase, zoningbase_mapping, \
     BuildingOutlines, buildingoutlines_mapping
 from django.core.management.base import BaseCommand, CommandError
 
 
+class Neighborhood(Enum):
+    # Mira Mesa neighborhood of San Diego
+    Miramesa = (-117.17987773162996, 32.930825570911985, -
+                117.12513392170659, 32.894946222075184)
+    # A subset of aorund 50 residential properties in Mira Mesa.
+    # Can be used for testing
+    MiramesaSmall = (-117.135284737197, 32.905422120627904, -
+                     117.13317320050437, 32.90428935023001)
+    # ... add more neighborhoods here
+
+
 class Command(BaseCommand):
-    help = 'Analyze a parcel'
+    help = 'Analyze a parcel and generate scenarios'
 
     def add_arguments(self, parser):
-        parser.add_argument('apn', nargs=1, type=str)
-        parser.add_argument('--show-plot', '-p', action='store_true')
-        parser.add_argument('--save-file', '-f', action='store_true')
+        parser.add_argument('--apn', '-a', action='store',
+                            help="APN of parcel to analyze")
+        parser.add_argument('--neighborhood', '-n', action='store',
+                            help="Specifies a neighborhood to analyze")
+        parser.add_argument(
+            '--show-plot', '-p', action='store_true', help="Display the plot on a GUI")
+        parser.add_argument('--save-file', '-f', action='store_true',
+                            help="Save the plot images to a file")
 
     def handle(self, *args, **options):
-        analyze_one_parcel(options['apn'][0],
+        if options['apn']:
+            analyze_by_apn(options['apn'],
                            show_plot=options['show_plot'],
                            save_file=options['save_file'])
-        print("Done")
+        elif options['neighborhood']:
+            analyze_neighborhood(Neighborhood[options['neighborhood']].value,
+                                 show_plot=options['show_plot'],
+                                 save_file=options['save_file'])
+        else:
+            print("Failed. Please specify either an APN or a neighborhood")
 
     def old_handle(self, *args, **options):
         pp = pprint.PrettyPrinter(indent=2)
