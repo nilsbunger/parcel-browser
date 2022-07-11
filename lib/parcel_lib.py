@@ -571,6 +571,16 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
 
 
 def get_too_steep_polys(parcel, max_slope):
+    """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a list
+    of polygons.
+
+    Args:
+        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        max_slope (int): The maximum slope to consider
+
+    Returns:
+        [Polygon/Multipolygon]: A list of multipolygons.
+    """
 
     parcel_in_4326 = parcel.to_crs('EPSG:4326')
     wkt = parcel_in_4326.geometry.to_wkt()[0]
