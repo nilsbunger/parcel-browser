@@ -571,15 +571,14 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
 
 
 def get_too_steep_polys(parcel, max_slope):
-    """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a list
-    of polygons.
+    """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
 
     Args:
         parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
         max_slope (int): The maximum slope to consider
 
     Returns:
-        [Polygon/Multipolygon]: A list of multipolygons.
+        Multipolygon representing the area that's too steep
     """
 
     parcel_in_4326 = parcel.to_crs('EPSG:4326')
@@ -590,4 +589,11 @@ def get_too_steep_polys(parcel, max_slope):
         polys__intersects=geo_django_geom, grade__gt=max_slope)
 
     polys = models_to_utm_gdf(polys, geometry_field='polys').geometry
+
+    # Make each poly valid
+    # We need this because sometimes, the ParcelSlope polys are invalid geometries
+    # We may want to go through all the ParcelSlope polys and correct the invalid ones/figure
+    # out which ones are invalid
+    polys = [make_valid(poly) for poly in polys]
+
     return polys
