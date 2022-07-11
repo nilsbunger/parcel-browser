@@ -300,6 +300,9 @@ def identify_building_types(parcel, buildings):
     ENCROACHMENT_THRESHOLD = 0.4
     parcel_geom = parcel.geometry[0]
 
+    max_area = 0
+    max_area_index = 0
+
     # Go through each building and label it's building_type appropriately
     for i, building in buildings.iterrows():
         if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
@@ -307,9 +310,11 @@ def identify_building_types(parcel, buildings):
         else:
             buildings.loc[i, 'building_type'] = 'ACCESSORY'
 
+            if building.geometry.area > max_area:
+                max_area = building.geometry.area
+                max_area_index = i
+
     # Find the building with the max area that's not an encroachment and mark it as the main building
-    areas = [geom.area for geom in buildings.geometry]
-    max_area_index = argmax(areas)
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
@@ -322,7 +327,14 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
         buildings (GeoDataFrame): The buildings on the parcel
         max_FAR (float): The maximum floor area to return. < 1
     """
-    return max_FAR * parcel.geometry[0].area - sum([geom.area for geom in buildings.geometry])
+    # Get the total floor area of the existing buildings
+    # for i, bldg in buildings.iterrows():
+    #     print(bldg.building_type)
+
+    total_floor_area = sum([
+        bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
+
+    return max_FAR * parcel.geometry[0].area - total_floor_area
 
 
 def get_buffered_building_geom(buildings, buffer_sizes):

@@ -1,3 +1,10 @@
+"""
+This file contains implementation for functions relating to analyzing a parcel, such as the
+generation of new buildings/repurpose of old one, computing scores for scenarios, and running
+scenarios in general.
+"""
+
+from pandas import DataFrame
 from lib.parcel_lib import *
 from shapely.ops import unary_union
 import geopandas
@@ -15,6 +22,9 @@ BUFFER_SIZES = {
     "ACCESSORY": 1.1,
     "ENCROACHMENT": 0.2,
 }
+MAX_RECTS = 2
+MAX_ASPECT_RATIO = 2.5
+MAX_FAR = 0.6
 
 colorkeys = list(mcolors.XKCD_COLORS.keys())
 
@@ -49,6 +59,8 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
 
     identify_building_types(parcel, buildings)
 
+    max_area = min(get_avail_floor_area(parcel, buildings, MAX_FAR), MAX_AREA)
+
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
     buffered_buildings_geom = get_buffered_building_geom(
@@ -66,8 +78,8 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=4, max_aspect_ratio=2.5,
-        min_area=MIN_AREA, max_area=MAX_AREA)
+        avail_geom, parcel.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
+        min_area=MIN_AREA, max_area=max_area)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
