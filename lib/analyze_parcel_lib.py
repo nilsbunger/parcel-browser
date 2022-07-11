@@ -40,8 +40,10 @@ def analyze_one_parcel(apn, show_plot=False, save_file=False):
     setbacks = get_setback_geoms(parcel, SETBACK_WIDTHS, parcel_edges)
 
     # Insert Topography no-build zones
+    too_steep = get_too_steep_polys(parcel, 10)
 
-    cant_build = unary_union([*buffered_buildings_geom, *setbacks])
+    cant_build = unary_union(
+        [*buffered_buildings_geom, *setbacks, *too_steep])
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(

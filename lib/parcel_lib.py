@@ -8,11 +8,12 @@ import json
 from shapely.geometry import MultiLineString, Point
 from shapely.ops import triangulate
 from math import sqrt
+from django.contrib.gis.geos import GEOSGeometry
 
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
 
-from world.models import Parcel, BuildingOutlines
+from world.models import Parcel, BuildingOutlines, ParcelSlope
 
 from numpy import argmax, argmin
 
@@ -58,19 +59,21 @@ def get_buildings(parcel):
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def models_to_utm_gdf(models):
+def models_to_utm_gdf(models, geometry_field='geom'):
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
 
     Args:
         models ([Model]): A list of Django models to convert
+        geometry_field (str): The field that stores the geometry
 
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
-    if (len(models) == 0): return geopandas.GeoDataFrame()
+    if (len(models) == 0):
+        return geopandas.GeoDataFrame()
     serialized_models = serialize(
-        'geojson', models, geometry_field='geom')
+        'geojson', models, geometry_field=geometry_field)
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
     return data_frame.to_crs(data_frame.estimate_utm_crs())
@@ -565,3 +568,16 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         biggest_rect, -biggest_rect_rot, origin=(0, 0))
 
     return biggest_rect
+
+
+def get_too_steep_polys(parcel, max_slope):
+
+    parcel_in_4326 = parcel.to_crs('EPSG:4326')
+    wkt = parcel_in_4326.geometry.to_wkt()[0]
+    geo_django_geom = GEOSGeometry(wkt, srid=4326)
+
+    polys = ParcelSlope.objects.filter(
+        polys__intersects=geo_django_geom, grade__gt=max_slope)
+
+    polys = models_to_utm_gdf(polys, geometry_field='polys').geometry
+    return polys
