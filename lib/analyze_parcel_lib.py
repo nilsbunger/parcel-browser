@@ -29,6 +29,31 @@ MAX_FAR = 0.6
 colorkeys = list(mcolors.XKCD_COLORS.keys())
 
 
+def get_cap_ratio_score():
+    return 0
+
+
+def get_open_space_score(avail_geom, parcel):
+    """
+    From Notion: Open space score: size and squareness of open space remaining that's
+    at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100, 
+    where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
+    into the open space. Value should typically be in range of 20-40.
+    """
+    new_building_polys = find_largest_rectangles_on_avail_geom(
+        avail_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)
+    area = new_building_polys[0].area
+
+    return area / parcel.area[0] * 100
+
+
+def get_project_size_score(total_added_area):
+    # For now, we use the total size of the added buildings, scaled down by 4
+    # (Each ADU has max size of approx. 111sqm), so a project with one ADU will give us around 27
+    # Later, this should take construction costs into account
+    return total_added_area / 4
+
+
 def better_plot(apn, parcel, polys):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
@@ -98,6 +123,14 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
             plt.savefig("./world/data/scenario-images/" + apn + ".jpg")
             plt.close()
 
+    total_added_area = sum([poly.area for poly in new_building_polys])
+
+    # Score stuff
+    cap_ratio_score = get_cap_ratio_score()
+    open_space_score = get_open_space_score(avail_geom, parcel)
+    project_size_score = get_project_size_score(total_added_area)
+    total_score = cap_ratio_score + open_space_score + project_size_score
+
     # Get git info
     repo = git.Repo(search_parent_directories=True)
     git_sha = repo.head.object.hexsha
@@ -109,14 +142,15 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
         "datetime_ran": datetime.datetime.now(),
 
         "buildings": buildings.to_json(),
+        "num_existing_buildings": len(buildings),
         "parcel_size": parcel.geometry[0].area,
 
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
             "building_buffer_sizes": BUFFER_SIZES,
-            "num_rects": 2,
-            "max_aspect_ratio": 2.5,
-            "FAR_ratio": 0.6,
+            "max_rects": MAX_RECTS,
+            "max_aspect_ratio": MAX_ASPECT_RATIO,
+            "FAR_ratio": MAX_FAR,
         },
 
         "no_build_zones": {
@@ -125,11 +159,17 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
             "topography": "insert",
         },
         "new_buildings": new_building_info,
+        "num_new_buildings": len(new_building_polys),
+        "total_added_area": total_added_area,
         "avail_geom": avail_geom,
-        "others": {}
 
-        # Financial modelling stuff
-        # Log stuff
+        "avail_geom_area": avail_geom.area,
+        "avail_area_by_FAR": max_area,
+
+        "total_score": total_score,
+        "cap_ratio_score": cap_ratio_score,
+        "open_space_score": open_space_score,
+        "project_size_score": project_size_score,
     }
 
     return analyzed
@@ -147,8 +187,20 @@ def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
 
     print(f"Found {len(parcels)} parcels to analyze")
 
+    analyzed = []
+
     for i, parcel in enumerate(parcels):
         print(i, parcel.apn)
-        _analyze_one_parcel(parcel, False, False)
+        analyzed.append(_analyze_one_parcel(parcel, False, False))
+
+    if save_file:
+        # Export to csv
+        # First, create a Pandas dataframe
+        df = DataFrame.from_records(analyzed, exclude=[
+            'buildings', 'input_parameters', 'no_build_zones',
+            'new_buildings', 'avail_geom'])
+        print(df)
+        df.to_csv(
+            "./world/data/scenario-images/results.csv", index=False)
 
     print(f"Done analyzing {len(parcels)} parcels")
