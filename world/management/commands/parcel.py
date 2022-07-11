@@ -39,9 +39,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['apn']:
-            analyze_by_apn(options['apn'],
+            results = analyze_by_apn(options['apn'],
                            show_plot=options['show_plot'],
                            save_file=options['save_file'])
+            results = {k:v for (k,v) in results.items() if k not in
+                       ['buildings', 'no_build_zones', 'datetime_ran', 'avail_geom', 'git_commit_hash']}
+
+            pprint.pprint (results)
         elif options['neighborhood']:
             analyze_neighborhood(Neighborhood[options['neighborhood']].value,
                                  show_plot=options['show_plot'],

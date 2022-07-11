@@ -14,6 +14,8 @@ import matplotlib.colors as mcolors
 import datetime
 import django
 
+from lib.topo_lib import get_topo_lines
+
 MIN_AREA = 11  # ~150sqft
 MAX_AREA = 111  # ~1200sqft
 SETBACK_WIDTHS = [3, 0.1, 0.1]
@@ -54,10 +56,13 @@ def get_project_size_score(total_added_area):
     return total_added_area / 4
 
 
-def better_plot(apn, parcel, polys):
+def better_plot(apn, address, parcel, topos, polys):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
-    plt.title(apn)
+    plt.title(apn + ':' + address)
+
+    topos.plot(ax=p, color='gray')
+
     for idx, poly in enumerate(polys):
         geopandas.GeoSeries(poly).plot(
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.5)
@@ -79,6 +84,9 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
         print("No buildings found for parcel: ", apn)
         return
 
+    topos = get_topo_lines(parcel)
+    topos_df = models_to_utm_gdf(topos)
+
     parcel = models_to_utm_gdf([parcel])
     buildings = models_to_utm_gdf(buildings)
 
@@ -95,7 +103,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
     parcel_edges = get_street_side_boundaries(parcel)
     setbacks = get_setback_geoms(parcel, SETBACK_WIDTHS, parcel_edges)
 
-    # Insert Topography no-build zones
+    # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
     too_steep = get_too_steep_polys(parcel, 10)
 
     cant_build = unary_union(
@@ -113,9 +121,11 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
+        p = dict(parcel.T.to_dict())[0]
+        address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
         lot_df = geopandas.GeoDataFrame(
             geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
-        better_plot(apn, lot_df, new_building_polys)
+        better_plot(apn, address, lot_df, topos_df, new_building_polys)
 
         if show_plot:
             plt.show()
@@ -188,10 +198,16 @@ def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
     print(f"Found {len(parcels)} parcels to analyze")
 
     analyzed = []
-
+    error_count = 0
     for i, parcel in enumerate(parcels):
+        if i >= 2000: break
         print(i, parcel.apn)
-        analyzed.append(_analyze_one_parcel(parcel, False, False))
+        try:
+            analyzed.append(_analyze_one_parcel(parcel, False, save_file))
+        except Exception as e:
+            print (f"Exception on parcel {parcel.apn}")
+            print (e)
+            error_count +=1
 
     if save_file:
         # Export to csv
@@ -203,4 +219,4 @@ def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
         df.to_csv(
             "./world/data/scenario-images/results.csv", index=False)
 
-    print(f"Done analyzing {len(parcels)} parcels")
+    print(f"Done analyzing {len(parcels)} parcels. {error_count} errors")
