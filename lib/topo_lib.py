@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import unary_union
 
-from lib.parcel_lib import models_to_utm_gdf, get_buildings
+from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings
 from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
 from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
 
@@ -27,10 +27,7 @@ def calculate_parcel_slopes(bounding_box, start_idx=0):
     # Filter parcels by ones not marked as skipped. We order the results by APN so we have a consistent analysis order
     # (and can thus start midway if needed). NOTE: We should create a foreign key relationship so we don't need this
     # ugly query.
-    parcels = Parcel.objects.filter(geom__intersects=bounding_box).extra(
-        tables=['world_analyzedparcel'],
-        where=['world_parcel.apn=world_analyzedparcel.apn', 'world_analyzedparcel.skip is false']
-    ).order_by('apn')
+    parcels = get_parcels_by_neighborhood(bounding_box)
 
     print(f'Analyzing {len(parcels)} parcels...')
 

@@ -48,6 +48,8 @@ def get_parcel_by_apn(apn: str):
 
 def get_parcels_by_neighborhood(bounding_box):
     # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
+    # Also ensures that these parcels are not marked as skip in our analyzed table (so they are)
+    # residential and match our criteria
     return Parcel.objects.filter(geom__intersects=bounding_box).extra(
         tables=['world_analyzedparcel'],
         where=['world_parcel.apn=world_analyzedparcel.apn',
