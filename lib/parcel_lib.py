@@ -2,17 +2,18 @@ import geopandas
 import pyproj
 import shapely
 from shapely import wkt
+from shapely.validation import make_valid
 from shapely.geometry import Polygon, box, MultiPolygon
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
-from shapely.ops import triangulate
 from math import sqrt
+from django.contrib.gis.geos import GEOSGeometry
 
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
 
-from world.models import Parcel, BuildingOutlines
+from world.models import Parcel, BuildingOutlines, ParcelSlope
 
 from numpy import argmax, argmin
 
@@ -33,7 +34,7 @@ def aspect_ratio(extents):
     return aspect
 
 
-def get_parcel(apn: str):
+def get_parcel_by_apn(apn: str):
     """Returns a Parcel object from the database
 
     Args:
@@ -43,6 +44,17 @@ def get_parcel(apn: str):
         A Django Parcel model object
     """
     return Parcel.objects.get(apn=apn)
+
+
+def get_parcels_by_neighborhood(bounding_box):
+    # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
+    # Also ensures that these parcels are not marked as skip in our analyzed table (so they are)
+    # residential and match our criteria
+    return Parcel.objects.filter(geom__intersects=bounding_box).extra(
+        tables=['world_analyzedparcel'],
+        where=['world_parcel.apn=world_analyzedparcel.apn',
+               'world_analyzedparcel.skip is false']
+    ).order_by('apn')
 
 
 def get_buildings(parcel):
@@ -58,22 +70,25 @@ def get_buildings(parcel):
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def models_to_utm_gdf(models):
+def models_to_utm_gdf(models, geometry_field='geom'):
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
 
     Args:
         models ([Model]): A list of Django models to convert
+        geometry_field (str): The field that stores the geometry
 
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
-    if (len(models) == 0): return geopandas.GeoDataFrame()
+    if (len(models) == 0):
+        return geopandas.GeoDataFrame(columns=['feature'], geometry='feature')
     serialized_models = serialize(
-        'geojson', models, geometry_field='geom')
+        'geojson', models, geometry_field=geometry_field)
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
     return data_frame.to_crs(data_frame.estimate_utm_crs())
+
 
 def polygon_to_utm(poly, crs):
     """ Accepts a Django (gis.geos.polygon) Polygon in Lat-long coordinates, and returns
@@ -86,12 +101,28 @@ def polygon_to_utm(poly, crs):
     # Re-project the polygon into the UTM CRS coordinate system
     wgs84 = pyproj.CRS('EPSG:4326')
     utm = pyproj.CRS(crs)
-    projection = pyproj.Transformer.from_crs(wgs84, utm, always_xy=True).transform
+    projection = pyproj.Transformer.from_crs(
+        wgs84, utm, always_xy=True).transform
     return shapely.ops.transform(projection, shapely_poly)
 
 
-# Moves parcel bounds to (0,0) for easier displaying
-# Converts buildings into line strings?
+def get_parcel_and_buildings_gdf(apn):
+    """Convenience function that gets the UTM-projected parcel and buildings
+    as a dataframe.
+
+    Args:
+        apn (str): The APN of the parcel we want to get.
+
+    Returns:
+        (GeoDataFrame, GeoDataFrame): A tuple containing GDFs for the parcel and buildings
+    """
+    parcel = get_parcel_by_apn(apn)
+    buildings = get_buildings(parcel)
+    parcel_utm = models_to_utm_gdf([parcel])
+    buildings_utm = models_to_utm_gdf(buildings)
+    return parcel_utm, buildings_utm
+
+
 def normalize_geometries(parcel, buildings):
     """Normalizes the parcel and buildings to (0,0).
 
@@ -158,6 +189,8 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
 
 # Find rectangles based on an answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
+
+
 def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
                                           max_aspect_ratio=None, min_area=None, max_area=None):
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
@@ -277,6 +310,9 @@ def identify_building_types(parcel, buildings):
     ENCROACHMENT_THRESHOLD = 0.4
     parcel_geom = parcel.geometry[0]
 
+    max_area = 0
+    max_area_index = 0
+
     # Go through each building and label it's building_type appropriately
     for i, building in buildings.iterrows():
         if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
@@ -284,40 +320,49 @@ def identify_building_types(parcel, buildings):
         else:
             buildings.loc[i, 'building_type'] = 'ACCESSORY'
 
+            if building.geometry.area > max_area:
+                max_area = building.geometry.area
+                max_area_index = i
+
     # Find the building with the max area that's not an encroachment and mark it as the main building
-    areas = [geom.area for geom in buildings.geometry]
-    max_area_index = argmax(areas)
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
-def get_avail_floor_area(parcel, buildings, max_FAR):
+def get_avail_floor_area(parcel, buildings, total_lvg_by_model, max_FAR):
     """Returns the available floor area of a parcel in square meters such that
     the FAR constraints aren't violated.
 
     Args:
         parcel (GeoDataFrame): The parcel the building is on
         buildings (GeoDataFrame): The buildings on the parcel
+        total_lvg_by_model (float): In sqm. The total_lvg_field of the parcel by the model
         max_FAR (float): The maximum floor area to return. < 1
+
+    Returns:
+        num: The available floor area to build in sqm
     """
-    return max_FAR * parcel.geometry[0].area - sum([geom.area for geom in buildings.geometry])
+    # Get the total floor area of the existing buildings
+    # for i, bldg in buildings.iterrows():
+    #     print(bldg.building_type)
+
+    total_floor_area = sum([
+        bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
+
+    return max_FAR * parcel.geometry[0].area - max(total_floor_area, total_lvg_by_model)
 
 
-def get_buffered_building_geom(buildings):
+def get_buffered_building_geom(buildings, buffer_sizes):
     """Returns the geometry of buildings that's buffered by a certain width.
 
     Args:
         buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+        buffer_size (float): The width of the buffer to apply to the buildings
 
     Returns:
         Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
     """
     # Buffer sizes according to building type, in meters
-    BUFFER_SIZES = {
-        "MAIN": 2,
-        "ACCESSORY": 1.1,
-        "ENCROACHMENT": 0.2,
-    }
-    return buildings.dissolve().buffer(BUFFER_SIZES["ACCESSORY"], cap_style=2, join_style=2)
+    return buildings.dissolve().buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2)
 
 
 def maximal_rectangles(matrix):
@@ -554,3 +599,32 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         biggest_rect, -biggest_rect_rot, origin=(0, 0))
 
     return biggest_rect
+
+
+def get_too_steep_polys(parcel, max_slope):
+    """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
+
+    Args:
+        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        max_slope (int): The maximum slope to consider
+
+    Returns:
+        Multipolygon representing the area that's too steep
+    """
+
+    parcel_in_4326 = parcel.to_crs('EPSG:4326')
+    wkt = parcel_in_4326.geometry.to_wkt()[0]
+    geo_django_geom = GEOSGeometry(wkt, srid=4326)
+
+    polys = ParcelSlope.objects.filter(
+        polys__intersects=geo_django_geom, grade__gt=max_slope)
+
+    polys = models_to_utm_gdf(polys, geometry_field='polys').geometry
+
+    # Make each poly valid
+    # We need this because sometimes, the ParcelSlope polys are invalid geometries
+    # We may want to go through all the ParcelSlope polys and correct the invalid ones/figure
+    # out which ones are invalid
+    polys = [make_valid(poly) for poly in polys]
+
+    return polys
