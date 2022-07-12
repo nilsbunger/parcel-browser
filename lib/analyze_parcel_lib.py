@@ -59,6 +59,30 @@ def get_project_size_score(total_added_area):
     return total_added_area / 4
 
 
+def _get_existing_floor_area_stats(parcel, buildings):
+    # Helper function to get existing stats
+    # There's some overlap with parcel_lib, but keeping it here
+    # as this is for analysis only
+    parcel_size = parcel.geometry[0].area
+    existing_living_area = parcel.total_lvg_field[0] / 10.764
+
+    garage_area = (int(parcel.garage_sta[0] or 0) +
+                   int(parcel.carport_st[0] or 0)) * 23.2
+
+    # existing_living_area + carport/garage area
+    existing_floor_area = existing_living_area + garage_area
+
+    existing_FAR = existing_floor_area / parcel_size
+
+    main_building_area = buildings[buildings.building_type ==
+                                   'MAIN'].geometry.area.sum()
+    accessory_buildings_area = buildings[buildings.building_type ==
+                                         'ACCESSORY'].geometry.area.sum()
+
+    return (parcel_size, existing_living_area, existing_floor_area,
+            existing_FAR, main_building_area, accessory_buildings_area)
+
+
 def better_plot(apn, address, parcel, topos, polys):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
@@ -152,6 +176,11 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     repo = git.Repo(search_parent_directories=True)
     git_sha = repo.head.object.hexsha
 
+    # Get floor area info
+    (parcel_size, existing_living_area, existing_floor_area,
+        existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
+        parcel, buildings)
+
     # Create the data struct that represents the test that was run
     analyzed = {
         "apn": apn,
@@ -159,8 +188,17 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "datetime_ran": datetime.datetime.now(),
 
         "buildings": buildings.to_json(),
-        "num_existing_buildings": len(buildings),
-        "parcel_size": parcel.geometry[0].area,
+        "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
+
+        "carports": parcel.carport_st[0],
+        "garages": parcel.garage_sta[0],
+
+        "parcel_size": parcel_size,
+        "existing_living_area": existing_living_area,
+        "existing_floor_area": existing_floor_area,
+        "existing_FAR": existing_FAR,
+        "main_building_poly_area": main_building_area,
+        "accessory_buildings_polys_area": accessory_buildings_area,
 
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
@@ -182,6 +220,9 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
         "avail_geom_area": avail_geom.area,
         "avail_area_by_FAR": max_area,
+
+        "added_area": total_added_area,
+        "new_FAR": (total_added_area + existing_floor_area) / parcel_size,
 
         "total_score": total_score,
         "cap_ratio_score": cap_ratio_score,
