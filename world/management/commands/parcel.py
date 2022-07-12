@@ -36,20 +36,22 @@ class Command(BaseCommand):
             '--show-plot', '-p', action='store_true', help="Display the plot on a GUI")
         parser.add_argument('--save-file', '-f', action='store_true',
                             help="Save the plot images to a file")
+        parser.add_argument('--save-dir', action='store',
+                            help="Specify a custom directory to save files to. If none is provided, the default is used")
 
     def handle(self, *args, **options):
         if options['apn']:
             results = analyze_by_apn(options['apn'],
-                           show_plot=options['show_plot'],
-                           save_file=options['save_file'])
-            results = {k:v for (k,v) in results.items() if k not in
+                                     show_plot=options['show_plot'],
+                                     save_file=options['save_file'])
+            results = {k: v for (k, v) in results.items() if k not in
                        ['buildings', 'no_build_zones', 'datetime_ran', 'avail_geom', 'git_commit_hash']}
 
-            pprint.pprint (results)
+            pprint.pprint(results)
         elif options['neighborhood']:
             analyze_neighborhood(Neighborhood[options['neighborhood']].value,
-                                 show_plot=options['show_plot'],
-                                 save_file=options['save_file'])
+                                 save_file=options['save_file'],
+                                 save_dir=options['save_dir'])
         else:
             print("Failed. Please specify either an APN or a neighborhood")
 
@@ -60,18 +62,25 @@ class Command(BaseCommand):
 
         # Get parcel and building info for this zone.
         parcel = Parcel.objects.get(apn=apn)
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
-        serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', )
-        serialized_buildings = serialize('geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
-        parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
-        buildings_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_buildings), crs="EPSG:4326")
-        parcel_in_utm = parcel_data_frame.to_crs(parcel_data_frame.estimate_utm_crs())
-        buildings_in_utm = buildings_data_frame.to_crs(buildings_data_frame.estimate_utm_crs())
+        buildings = BuildingOutlines.objects.filter(
+            geom__intersects=parcel.geom)
+        serialized_parcel = serialize(
+            'geojson', [parcel], geometry_field='geom', )
+        serialized_buildings = serialize(
+            'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+        parcel_data_frame = geopandas.GeoDataFrame.from_features(
+            json.loads(serialized_parcel), crs="EPSG:4326")
+        buildings_data_frame = geopandas.GeoDataFrame.from_features(
+            json.loads(serialized_buildings), crs="EPSG:4326")
+        parcel_in_utm = parcel_data_frame.to_crs(
+            parcel_data_frame.estimate_utm_crs())
+        buildings_in_utm = buildings_data_frame.to_crs(
+            buildings_data_frame.estimate_utm_crs())
 
         print(pp.pprint(parcel.__dict__))
         lot_square_meters = parcel_in_utm.area
-        print ("Lot: ", lot_square_meters)
-        print ("buildings: ", buildings_in_utm.area)
+        print("Lot: ", lot_square_meters)
+        print("buildings: ", buildings_in_utm.area)
         assert (len(parcel_in_utm.boundary) == 1)
         assert (len(buildings_in_utm.boundary) == 2)
         assert (len(parcel_in_utm.boundary[0].geoms) == 1)
@@ -80,18 +89,17 @@ class Command(BaseCommand):
         boundary_line_string = parcel_in_utm.boundary[0].geoms[0]
         building_line_string = buildings_in_utm.boundary[1].geoms[0]
         bounds = boundary_line_string.bounds
-        boundary_line_string = shapely.affinity.translate(boundary_line_string, xoff=-bounds[0], yoff=-bounds[1])
-        building_line_string = shapely.affinity.translate(building_line_string, xoff=-bounds[0], yoff=-bounds[1])
+        boundary_line_string = shapely.affinity.translate(
+            boundary_line_string, xoff=-bounds[0], yoff=-bounds[1])
+        building_line_string = shapely.affinity.translate(
+            building_line_string, xoff=-bounds[0], yoff=-bounds[1])
         pprint.pprint(list(boundary_line_string.coords))
         pprint.pprint(list(building_line_string.coords))
-        triangles = triangulate (MultiLineString([boundary_line_string, building_line_string]))
+        triangles = triangulate(MultiLineString(
+            [boundary_line_string, building_line_string]))
         pprint.pprint([triangle.wkt for triangle in triangles])
 
         # r1_zones = ZoningBase.objects.filter(zone_name__istartswith='R-1')
 
-
         # print(pp.pprint(list(buildings).__dict__))
         self.stdout.write(self.style.SUCCESS('Finished running parcel'))
-
-
-

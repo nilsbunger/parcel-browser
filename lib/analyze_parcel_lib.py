@@ -13,6 +13,7 @@ import git
 import matplotlib.colors as mcolors
 import datetime
 import django
+import os
 
 from lib.topo_lib import get_topo_lines
 
@@ -27,6 +28,8 @@ BUFFER_SIZES = {
 MAX_RECTS = 2
 MAX_ASPECT_RATIO = 2.5
 MAX_FAR = 0.6
+
+DEFAULT_SAVE_DIR = './world/data/scenario-images/'
 
 colorkeys = list(mcolors.XKCD_COLORS.keys())
 
@@ -68,7 +71,7 @@ def better_plot(apn, address, parcel, topos, polys):
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.5)
 
 
-def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
+def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR):
     """Runs analysis on a single parcel of land
 
     Args:
@@ -132,7 +135,11 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
         if show_plot:
             plt.show()
         if save_file:
-            plt.savefig("./world/data/scenario-images/" + apn + ".jpg")
+            # Create the directory if it doesn't exist
+            if not os.path.isdir(save_dir):
+                os.makedirs(save_dir)
+
+            plt.savefig(save_dir + apn + ".jpg")
             plt.close()
 
     total_added_area = sum([poly.area for poly in new_building_polys])
@@ -192,7 +199,11 @@ def analyze_by_apn(apn, show_plot=False, save_file=False):
     return _analyze_one_parcel(parcel, show_plot, save_file)
 
 
-def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
+def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR):
+    # Temporary, if none is provided
+    if not save_dir:
+        save_dir = DEFAULT_SAVE_DIR
+
     bounding_box = django.contrib.gis.geos.Polygon.from_bbox(
         hood_bounds_tuple)
     parcels = get_parcels_by_neighborhood(bounding_box)
@@ -206,7 +217,8 @@ def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
             break
         print(i, parcel.apn)
         try:
-            analyzed.append(_analyze_one_parcel(parcel, False, save_file))
+            analyzed.append(_analyze_one_parcel(
+                parcel, False, save_file, save_dir=save_dir))
         except Exception as e:
             print(f"Exception on parcel {parcel.apn}")
             print(e)
