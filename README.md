@@ -99,9 +99,9 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 `LOCAL_DB=1 ./manage.py load Buildings`
 
-`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_PowayLaMesa.gdb`
+`LOCAL_DB=1 ./manage.py load Topography Topo_2014_2Ft_PowayLaMesa.gdb`
 
-`LOCAL_DB=1 ./manage.py load Topography Topos_2014_2Ft_LaJolla.gdb`
+`LOCAL_DB=1 ./manage.py load Topography Topo_2014_2Ft_LaJolla.gdb`
 
 4. Run ETL jobs as necessary, eg:
 `LOCAL_DB=1 ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
