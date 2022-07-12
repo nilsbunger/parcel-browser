@@ -50,7 +50,8 @@ def get_parcels_by_neighborhood(bounding_box):
     # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
     return Parcel.objects.filter(geom__intersects=bounding_box).extra(
         tables=['world_analyzedparcel'],
-        where=['world_parcel.apn=world_analyzedparcel.apn', 'world_analyzedparcel.skip is false']
+        where=['world_parcel.apn=world_analyzedparcel.apn',
+               'world_analyzedparcel.skip is false']
     ).order_by('apn')
 
 
@@ -86,6 +87,7 @@ def models_to_utm_gdf(models, geometry_field='geom'):
         json.loads(serialized_models), crs="EPSG:4326")
     return data_frame.to_crs(data_frame.estimate_utm_crs())
 
+
 def polygon_to_utm(poly, crs):
     """ Accepts a Django (gis.geos.polygon) Polygon in Lat-long coordinates, and returns
         an equivalent Shapely Polygon (shapely.geometry.polygon) suitable for use with GeoDjango,
@@ -97,7 +99,8 @@ def polygon_to_utm(poly, crs):
     # Re-project the polygon into the UTM CRS coordinate system
     wgs84 = pyproj.CRS('EPSG:4326')
     utm = pyproj.CRS(crs)
-    projection = pyproj.Transformer.from_crs(wgs84, utm, always_xy=True).transform
+    projection = pyproj.Transformer.from_crs(
+        wgs84, utm, always_xy=True).transform
     return shapely.ops.transform(projection, shapely_poly)
 
 
@@ -184,6 +187,8 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
 
 # Find rectangles based on an answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
+
+
 def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
                                           max_aspect_ratio=None, min_area=None, max_area=None):
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
@@ -321,14 +326,18 @@ def identify_building_types(parcel, buildings):
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
-def get_avail_floor_area(parcel, buildings, max_FAR):
+def get_avail_floor_area(parcel, buildings, total_lvg_by_model, max_FAR):
     """Returns the available floor area of a parcel in square meters such that
     the FAR constraints aren't violated.
 
     Args:
         parcel (GeoDataFrame): The parcel the building is on
         buildings (GeoDataFrame): The buildings on the parcel
+        total_lvg_by_model (float): In sqm. The total_lvg_field of the parcel by the model
         max_FAR (float): The maximum floor area to return. < 1
+
+    Returns:
+        num: The available floor area to build in sqm
     """
     # Get the total floor area of the existing buildings
     # for i, bldg in buildings.iterrows():
@@ -337,7 +346,7 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
     total_floor_area = sum([
         bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
 
-    return max_FAR * parcel.geometry[0].area - total_floor_area
+    return max_FAR * parcel.geometry[0].area - max(total_floor_area, total_lvg_by_model)
 
 
 def get_buffered_building_geom(buildings, buffer_sizes):

@@ -92,7 +92,9 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False):
 
     identify_building_types(parcel, buildings)
 
-    max_area = min(get_avail_floor_area(parcel, buildings, MAX_FAR), MAX_AREA)
+    total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
+    max_area = min(get_avail_floor_area(parcel, buildings,
+                   total_lvg_by_model, MAX_FAR), MAX_AREA)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -200,14 +202,15 @@ def analyze_neighborhood(hood_bounds_tuple, show_plot=False, save_file=False):
     analyzed = []
     error_count = 0
     for i, parcel in enumerate(parcels):
-        if i >= 2000: break
+        if i >= 2000:
+            break
         print(i, parcel.apn)
         try:
             analyzed.append(_analyze_one_parcel(parcel, False, save_file))
         except Exception as e:
-            print (f"Exception on parcel {parcel.apn}")
-            print (e)
-            error_count +=1
+            print(f"Exception on parcel {parcel.apn}")
+            print(e)
+            error_count += 1
 
     if save_file:
         # Export to csv
