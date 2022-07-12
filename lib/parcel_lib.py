@@ -328,14 +328,15 @@ def identify_building_types(parcel, buildings):
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
-def get_avail_floor_area(parcel, buildings, total_lvg_by_model, max_FAR):
+def get_avail_floor_area(parcel, buildings, max_FAR):
     """Returns the available floor area of a parcel in square meters such that
-    the FAR constraints aren't violated.
+    the FAR constraints aren't violated. Uses the floor area as calculated by summing
+    the garages and total living area that are on the model object. However, if total_lvg_field
+    is missing, will default to use the floor area by building.
 
     Args:
         parcel (GeoDataFrame): The parcel the building is on
         buildings (GeoDataFrame): The buildings on the parcel
-        total_lvg_by_model (float): In sqm. The total_lvg_field of the parcel by the model
         max_FAR (float): The maximum floor area to return. < 1
 
     Returns:
@@ -345,10 +346,17 @@ def get_avail_floor_area(parcel, buildings, total_lvg_by_model, max_FAR):
     # for i, bldg in buildings.iterrows():
     #     print(bldg.building_type)
 
-    total_floor_area = sum([
-        bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
+    if parcel.total_lvg_field[0]:
+        # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
+        garage_area = (int(parcel.garage_sta[0] or 0) +
+                       int(parcel.carport_st[0] or 0)) * 23.2
+        total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
+        existing_floor_area = total_lvg_by_model + garage_area
+    else:
+        existing_floor_area = sum([
+            bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
 
-    return max_FAR * parcel.geometry[0].area - max(total_floor_area, total_lvg_by_model)
+    return max_FAR * parcel.geometry[0].area - existing_floor_area
 
 
 def get_buffered_building_geom(buildings, buffer_sizes):

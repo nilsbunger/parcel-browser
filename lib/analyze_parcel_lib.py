@@ -95,9 +95,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     identify_building_types(parcel, buildings)
 
-    total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
-    max_area = min(get_avail_floor_area(parcel, buildings,
-                   total_lvg_by_model, MAX_FAR), MAX_AREA)
+    max_area = min(get_avail_floor_area(parcel, buildings, MAX_FAR), MAX_AREA)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
