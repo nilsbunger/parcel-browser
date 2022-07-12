@@ -145,11 +145,11 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
+    p = dict(parcel.T.to_dict())[0]
+    address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
-        p = dict(parcel.T.to_dict())[0]
-        address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
         lot_df = geopandas.GeoDataFrame(
             geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
         better_plot(apn, address, lot_df, topos_df, new_building_polys)
@@ -184,6 +184,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     # Create the data struct that represents the test that was run
     analyzed = {
         "apn": apn,
+        "address": address,
         "git_commit_hash": git_sha,
         "datetime_ran": datetime.datetime.now(),
 
