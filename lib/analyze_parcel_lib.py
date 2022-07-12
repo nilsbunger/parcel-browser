@@ -181,7 +181,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
-        existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
+     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
         parcel, buildings)
 
     # Create the data struct that represents the test that was run
@@ -242,7 +242,7 @@ def analyze_by_apn(apn, show_plot=False, save_file=False):
     return _analyze_one_parcel(parcel, show_plot, save_file)
 
 
-def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR):
+def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR, limit=None):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
@@ -256,7 +256,8 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
     analyzed = []
     error_count = 0
     for i, parcel in enumerate(parcels):
-        if i >= 2000:
+        if limit and i >= int(limit):
+            print("Stopping at user-requested limit of parcels.")
             break
         print(i, parcel.apn)
         try:
@@ -277,4 +278,5 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         df.to_csv(
             "./world/data/scenario-images/results.csv", index=False)
 
-    print(f"Done analyzing {len(parcels)} parcels. {error_count} errors")
+
+    print(f"Done analyzing {i} parcels. {error_count} errors")

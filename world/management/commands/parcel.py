@@ -38,6 +38,8 @@ class Command(BaseCommand):
                             help="Save the plot images to a file")
         parser.add_argument('--save-dir', action='store',
                             help="Specify a custom directory to save files to. If none is provided, the default is used")
+        parser.add_argument('--limit', '-l', action='store',
+                            help="Limit the number of parcels analyzed")
 
     def handle(self, *args, **options):
         if options['apn']:
@@ -51,7 +53,8 @@ class Command(BaseCommand):
         elif options['neighborhood']:
             analyze_neighborhood(Neighborhood[options['neighborhood']].value,
                                  save_file=options['save_file'],
-                                 save_dir=options['save_dir'])
+                                 save_dir=options['save_dir'],
+                                 limit=options['limit'])
         else:
             print("Failed. Please specify either an APN or a neighborhood")
 
