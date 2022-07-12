@@ -45,11 +45,11 @@ def get_open_space_score(avail_geom, parcel):
     where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
     into the open space. Value should typically be in range of 20-40.
     """
-    new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)
-    area = new_building_polys[0].area
+    open_space_poly = find_largest_rectangles_on_avail_geom(
+        avail_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
+    area = open_space_poly.area
 
-    return area / parcel.area[0] * 100
+    return open_space_poly, area / parcel.area[0] * 100
 
 
 def get_project_size_score(total_added_area):
@@ -59,16 +59,18 @@ def get_project_size_score(total_added_area):
     return total_added_area / 4
 
 
-def better_plot(apn, address, parcel, topos, polys):
+def better_plot(apn, address, parcel, topos, polys, open_space_poly):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
     plt.title(apn + ':' + address)
 
     topos.plot(ax=p, color='gray')
+    geopandas.GeoSeries(open_space_poly).plot(ax=p, alpha=0.4,
+                                              color="lightgrey", edgecolor="green", hatch="..")
 
     for idx, poly in enumerate(polys):
         geopandas.GeoSeries(poly).plot(
-            ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.5)
+            ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
 def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR):
@@ -124,13 +126,22 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         'area': poly.area,
     }, new_building_polys))
 
+    total_added_area = sum([poly.area for poly in new_building_polys])
+    # Score stuff
+    cap_ratio_score = get_cap_ratio_score()
+    open_space_poly, open_space_score = get_open_space_score(
+        avail_geom, parcel)
+    project_size_score = get_project_size_score(total_added_area)
+    total_score = cap_ratio_score + open_space_score + project_size_score
+
     # Do plotting stuff if necessary
     if show_plot or save_file:
         p = dict(parcel.T.to_dict())[0]
         address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
         lot_df = geopandas.GeoDataFrame(
             geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
-        better_plot(apn, address, lot_df, topos_df, new_building_polys)
+        better_plot(apn, address, lot_df, topos_df,
+                    new_building_polys, open_space_poly)
 
         if show_plot:
             plt.show()
@@ -141,14 +152,6 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
             plt.savefig(save_dir + apn + ".jpg")
             plt.close()
-
-    total_added_area = sum([poly.area for poly in new_building_polys])
-
-    # Score stuff
-    cap_ratio_score = get_cap_ratio_score()
-    open_space_score = get_open_space_score(avail_geom, parcel)
-    project_size_score = get_project_size_score(total_added_area)
-    total_score = cap_ratio_score + open_space_score + project_size_score
 
     # Get git info
     repo = git.Repo(search_parent_directories=True)
