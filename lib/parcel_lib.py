@@ -257,6 +257,9 @@ def get_street_side_boundaries(parcel):
         parcel.geometry[0])  # MultiLineString
 
     # The difference between the outline and the intersection is the street side
+    # NOTE: this implementation to find the street side is not perfect. It's possible
+    # that a side that doesn't have an adjacent parcel is the back of a lot, or just has
+    # wilderness or something behind it.
     street_edges = parcel.boundary[0].difference(
         parcels_intersection)  # MultiLineString
 
