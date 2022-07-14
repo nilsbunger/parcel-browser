@@ -253,7 +253,7 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
     print(f"Found {len(parcels)} parcels to analyze")
 
     analyzed = []
-    error_count = 0
+    errors = []
     for i, parcel in enumerate(parcels):
         if limit and i >= int(limit):
             print("Stopping at user-requested limit of parcels.")
@@ -270,7 +270,10 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         except Exception as e:
             print(f"Exception on parcel {parcel.apn}")
             print(e)
-            error_count += 1
+            errors.append({
+                "apn": parcel.apn,
+                "error": e,
+            })
 
     if save_file:
         # Export to csv
@@ -281,6 +284,7 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         print(df)
         df.to_csv(
             "./world/data/scenario-images/results.csv", index=False)
+        error_df = DataFrame.from_records(errors)
+        error_df.to_csv("./world/data/scenario-images/errors.csv", index=False)
 
-
-    print(f"Done analyzing {i} parcels. {error_count} errors")
+    print(f"Done analyzing {i} parcels. {len(errors)} errors")
