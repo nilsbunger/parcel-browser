@@ -83,7 +83,7 @@ def _get_existing_floor_area_stats(parcel, buildings):
             existing_FAR, main_building_area, accessory_buildings_area)
 
 
-def better_plot(apn, address, parcel, topos, polys, open_space_poly):
+def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edges):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
     plt.title(apn + ':' + address)
@@ -91,6 +91,8 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly):
     topos.plot(ax=p, color='gray')
     geopandas.GeoSeries(open_space_poly).plot(ax=p, alpha=0.4,
                                               color="lightgrey", edgecolor="green", hatch="..")
+
+    geopandas.GeoSeries(street_edges.buffer(0.4)).plot(ax=p, color='brown')
 
     for idx, poly in enumerate(polys):
         geopandas.GeoSeries(poly).plot(
@@ -163,7 +165,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         lot_df = geopandas.GeoDataFrame(
             geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
         better_plot(apn, address, lot_df, topos_df,
-                    new_building_polys, open_space_poly)
+                    new_building_polys, open_space_poly, parcel_edges[0])
 
         if show_plot:
             plt.show()
