@@ -110,8 +110,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     buildings = get_buildings(parcel)
 
     if (len(buildings)) == 0:
-        print("No buildings found for parcel: ", apn)
-        return
+        raise Exception(f"No buildings found for parcel: {apn}")
 
     topos = get_topo_lines(parcel)
     topos_df = models_to_utm_gdf(topos)
@@ -261,8 +260,13 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
             break
         print(i, parcel.apn)
         try:
-            analyzed.append(_analyze_one_parcel(
-                parcel, False, save_file, save_dir=save_dir))
+            result = _analyze_one_parcel(
+                parcel, False, save_file, save_dir=save_dir)
+
+            # Shouldn't need this as result should never be null,
+            # but we keep it as a sanity check
+            if result is not None:
+                analyzed.append(result)
         except Exception as e:
             print(f"Exception on parcel {parcel.apn}")
             print(e)
