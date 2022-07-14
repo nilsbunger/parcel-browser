@@ -192,7 +192,8 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
-                                          max_aspect_ratio=None, min_area=None, max_area=None):
+                                          max_aspect_ratio=None, min_area=None,
+                                          max_total_area=float("inf"), max_area_per_building=float("inf")):
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
     or maximum area are passed in, the rectangle sizes will be within that area. If not enough rectangles
     meet the minimum size, then only n < num_rects number of rectangles will be returned.
@@ -215,7 +216,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
     for i in range(num_rects):    # place 4 units
         biggest_poly = biggest_poly_over_rotation(
             avail_geom, parcel_boundary, max_aspect_ratio=max_aspect_ratio,
-            min_area=min_area, max_area=max_area)
+            min_area=min_area, max_area=min(max_total_area, max_area_per_building))
 
         if biggest_poly is None:
             break
@@ -223,6 +224,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
         placed_polys.append(biggest_poly)
         avail_geom = avail_geom.difference(
             MultiPolygon([biggest_poly]))
+        max_total_area -= biggest_poly.area
 
     return placed_polys
 

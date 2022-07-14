@@ -17,8 +17,8 @@ import os
 
 from lib.topo_lib import get_topo_lines
 
-MIN_AREA = 11  # ~150sqft
-MAX_AREA = 111  # ~1200sqft
+MIN_BUILDING_AREA = 11  # ~150sqft
+MAX_BUILDING_AREA = 111  # ~1200sqft
 SETBACK_WIDTHS = [3, 0.1, 0.1]
 BUFFER_SIZES = {
     "MAIN": 2,
@@ -121,7 +121,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     identify_building_types(parcel, buildings)
 
-    max_area = min(get_avail_floor_area(parcel, buildings, MAX_FAR), MAX_AREA)
+    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -141,7 +141,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
-        min_area=MIN_AREA, max_area=max_area)
+        min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
@@ -204,6 +204,9 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "main_building_poly_area": main_building_area,
         "accessory_buildings_polys_area": accessory_buildings_area,
 
+        "parcel_sloped_area": unary_union(too_steep).area,
+        "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry[0].area,
+
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
             "building_buffer_sizes": BUFFER_SIZES,
@@ -219,11 +222,12 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         },
         "new_buildings": new_building_info,
         "num_new_buildings": len(new_building_polys),
+        "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
         "total_added_area": total_added_area,
         "avail_geom": avail_geom,
 
         "avail_geom_area": avail_geom.area,
-        "avail_area_by_FAR": max_area,
+        "avail_area_by_FAR": max_total_area,
 
         "added_area": total_added_area,
         "new_FAR": (total_added_area + existing_floor_area) / parcel_size,
