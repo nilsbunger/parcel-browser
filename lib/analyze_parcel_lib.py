@@ -38,15 +38,16 @@ def get_cap_ratio_score():
     return 0
 
 
-def get_open_space_score(avail_geom, parcel):
+def get_open_space_score(avail_geom, parcel, placed_buildings):
     """
-    From Notion: Open space score: size and squareness of open space remaining that's
+    From Notion: Open space score: size and squareness of open space remaining after placing buildings that's
     at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100, 
     where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
     into the open space. Value should typically be in range of 20-40.
     """
+    remaining_geom = avail_geom.difference(unary_union(placed_buildings))
     open_space_poly = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
+        remaining_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
     area = open_space_poly.area
 
     return open_space_poly, area / parcel.area[0] * 100
@@ -154,7 +155,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
-        avail_geom, parcel)
+        avail_geom, parcel, new_building_polys)
     project_size_score = get_project_size_score(total_added_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
