@@ -3,7 +3,7 @@ import pyproj
 import shapely
 from shapely import wkt
 from shapely.validation import make_valid
-from shapely.geometry import Polygon, box, MultiPolygon
+from shapely.geometry import Polygon, box, MultiPolygon, LineString
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
@@ -262,6 +262,11 @@ def get_street_side_boundaries(parcel):
     # The lines that do touch are the sides.
     # TODO: Improve this with simplifying the line segments
     side_lines, back_lines = [], []
+
+    # parcels_intersection is sometimes a LineString, convert it to a MultiLineString
+    if isinstance(parcels_intersection, LineString):
+        parcels_intersection = MultiLineString([parcels_intersection])
+
     for line in parcels_intersection.geoms:
         if line.intersects(street_edges):
             side_lines.append(line)
