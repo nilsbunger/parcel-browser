@@ -150,13 +150,33 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     p = dict(parcel.T.to_dict())[0]
     address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
 
+    # Get floor area info
+    (parcel_size, existing_living_area, existing_floor_area,
+     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
+        parcel, buildings)
+
     total_added_area = sum([poly.area for poly in new_building_polys])
+    new_FAR = (total_added_area + existing_floor_area) / parcel_size
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
         avail_geom, parcel, new_building_polys)
     project_size_score = get_project_size_score(total_added_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
+
+    # Get development potential limiting factor. Multiply by a factor
+    # to scale it down to account for innacuracies
+    limiting_factor = ""
+    theoretical_avail_space = MAX_BUILDING_AREA * MAX_RECTS * 0.98
+    tolerance_FAR = 0.01
+
+    if total_added_area < theoretical_avail_space:
+        # Development potential not reached
+        if new_FAR > MAX_FAR - tolerance_FAR:
+            limiting_factor = 'FAR'
+        else:
+            limiting_factor = "Available Space"
+        # Todo: Insert something about topography.
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
@@ -178,11 +198,6 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     # Get git info
     repo = git.Repo(search_parent_directories=True)
     git_sha = repo.head.object.hexsha
-
-    # Get floor area info
-    (parcel_size, existing_living_area, existing_floor_area,
-     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
-        parcel, buildings)
 
     # Create the data struct that represents the test that was run
     analyzed = {
@@ -229,8 +244,8 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "avail_geom_area": avail_geom.area,
         "avail_area_by_FAR": max_total_area,
 
-        "added_area": total_added_area,
-        "new_FAR": (total_added_area + existing_floor_area) / parcel_size,
+        "new_FAR": new_FAR,
+        "limiting_factor": limiting_factor,
 
         "total_score": total_score,
         "cap_ratio_score": cap_ratio_score,
