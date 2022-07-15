@@ -17,8 +17,8 @@ import os
 
 from lib.topo_lib import get_topo_lines
 
-MIN_AREA = 11  # ~150sqft
-MAX_AREA = 111  # ~1200sqft
+MIN_BUILDING_AREA = 11  # ~150sqft
+MAX_BUILDING_AREA = 111  # ~1200sqft
 SETBACK_WIDTHS = [3, 0.1, 0.1]
 BUFFER_SIZES = {
     "MAIN": 2,
@@ -121,7 +121,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     identify_building_types(parcel, buildings)
 
-    max_area = min(get_avail_floor_area(parcel, buildings, MAX_FAR), MAX_AREA)
+    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -141,7 +141,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
-        min_area=MIN_AREA, max_area=max_area)
+        min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
@@ -150,13 +150,33 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     p = dict(parcel.T.to_dict())[0]
     address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
 
+    # Get floor area info
+    (parcel_size, existing_living_area, existing_floor_area,
+     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
+        parcel, buildings)
+
     total_added_area = sum([poly.area for poly in new_building_polys])
+    new_FAR = (total_added_area + existing_floor_area) / parcel_size
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
         avail_geom, parcel, new_building_polys)
     project_size_score = get_project_size_score(total_added_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
+
+    # Get development potential limiting factor. Multiply by a factor
+    # to scale it down to account for innacuracies
+    limiting_factor = ""
+    theoretical_avail_space = MAX_BUILDING_AREA * MAX_RECTS * 0.98
+    tolerance_FAR = 0.01
+
+    if total_added_area < theoretical_avail_space:
+        # Development potential not reached
+        if new_FAR > MAX_FAR - tolerance_FAR:
+            limiting_factor = 'FAR'
+        else:
+            limiting_factor = "Available Space"
+        # Todo: Insert something about topography.
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
@@ -179,11 +199,6 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     repo = git.Repo(search_parent_directories=True)
     git_sha = repo.head.object.hexsha
 
-    # Get floor area info
-    (parcel_size, existing_living_area, existing_floor_area,
-     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
-        parcel, buildings)
-
     # Create the data struct that represents the test that was run
     analyzed = {
         "apn": apn,
@@ -204,6 +219,9 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "main_building_poly_area": main_building_area,
         "accessory_buildings_polys_area": accessory_buildings_area,
 
+        "parcel_sloped_area": unary_union(too_steep).area,
+        "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry[0].area,
+
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
             "building_buffer_sizes": BUFFER_SIZES,
@@ -219,14 +237,15 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         },
         "new_buildings": new_building_info,
         "num_new_buildings": len(new_building_polys),
+        "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
         "total_added_area": total_added_area,
         "avail_geom": avail_geom,
 
         "avail_geom_area": avail_geom.area,
-        "avail_area_by_FAR": max_area,
+        "avail_area_by_FAR": max_total_area,
 
-        "added_area": total_added_area,
-        "new_FAR": (total_added_area + existing_floor_area) / parcel_size,
+        "new_FAR": new_FAR,
+        "limiting_factor": limiting_factor,
 
         "total_score": total_score,
         "cap_ratio_score": cap_ratio_score,
