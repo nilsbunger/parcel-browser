@@ -206,13 +206,10 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     git_sha = repo.head.object.hexsha
 
     # Create the data struct that represents the test that was run
+    # The order in this dictionary is the order that the fields will be written to the csv
     analyzed = {
         "apn": apn,
         "address": address,
-        "git_commit_hash": git_sha,
-        "datetime_ran": datetime.datetime.now(),
-
-        "buildings": buildings.to_json(),
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
 
         "carports": parcel.carport_st[0],
@@ -222,12 +219,32 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "existing_living_area": existing_living_area,
         "existing_floor_area": existing_floor_area,
         "existing_FAR": existing_FAR,
+
+        "num_new_buildings": len(new_building_polys),
+        "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
+        "total_added_area": total_added_area,
+        "new_FAR": new_FAR,
+        "limiting_factor": limiting_factor,
+
         "main_building_poly_area": main_building_area,
         "accessory_buildings_polys_area": accessory_buildings_area,
+        "avail_geom_area": avail_geom.area,
+        "avail_area_by_FAR": max_total_area,
 
         "parcel_sloped_area": unary_union(too_steep).area,
         "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry[0].area,
 
+        "total_score": total_score,
+        "cap_ratio_score": cap_ratio_score,
+        "open_space_score": open_space_score,
+        "project_size_score": project_size_score,
+
+        "git_commit_hash": git_sha,
+        "datetime_ran": datetime.datetime.now(),
+
+        # To be ignored by CSV dump, but we still want to save these in the future
+        "buildings": buildings.to_json(),
+        "new_buildings": new_building_info,
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
             "building_buffer_sizes": BUFFER_SIZES,
@@ -235,28 +252,12 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
             "max_aspect_ratio": MAX_ASPECT_RATIO,
             "FAR_ratio": MAX_FAR,
         },
-
         "no_build_zones": {
             "setbacks": setbacks,
             "buffered_buildings": buffered_buildings_geom,
             "topography": "insert",
         },
-        "new_buildings": new_building_info,
-        "num_new_buildings": len(new_building_polys),
-        "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
-        "total_added_area": total_added_area,
         "avail_geom": avail_geom,
-
-        "avail_geom_area": avail_geom.area,
-        "avail_area_by_FAR": max_total_area,
-
-        "new_FAR": new_FAR,
-        "limiting_factor": limiting_factor,
-
-        "total_score": total_score,
-        "cap_ratio_score": cap_ratio_score,
-        "open_space_score": open_space_score,
-        "project_size_score": project_size_score,
     }
 
     return analyzed
