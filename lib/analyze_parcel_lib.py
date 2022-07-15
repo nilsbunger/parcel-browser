@@ -4,6 +4,7 @@ generation of new buildings/repurpose of old one, computing scores for scenarios
 scenarios in general.
 """
 
+import random
 from pandas import DataFrame
 from lib.parcel_lib import *
 from shapely.ops import unary_union
@@ -268,7 +269,7 @@ def analyze_by_apn(apn, show_plot=False, save_file=False):
     return _analyze_one_parcel(parcel, show_plot, save_file)
 
 
-def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR, limit=None):
+def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR, limit=None, shuffle=False):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
@@ -277,7 +278,11 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         hood_bounds_tuple)
     parcels = get_parcels_by_neighborhood(bounding_box)
 
-    print(f"Found {len(parcels)} parcels to analyze")
+    if (shuffle):
+        parcels = list(parcels)
+        random.shuffle(parcels)
+
+    print(f"Found {len(parcels)} parcels. Analyzing {limit or len(parcels)}.")
 
     analyzed = []
     errors = []
