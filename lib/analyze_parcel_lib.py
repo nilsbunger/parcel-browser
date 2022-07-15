@@ -50,7 +50,11 @@ def get_open_space_score(avail_geom, parcel, placed_buildings):
         remaining_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
     area = open_space_poly.area
 
-    return open_space_poly, area / parcel.area[0] * 100
+    # NOTE: For now, let's scale the factor by 3 to make the score relevant (arbitrary number).
+    # We might want to continue tweaking this to get something that works better
+    SCALING_FACTOR = 3
+
+    return open_space_poly, area / parcel.area[0] * 100 * SCALING_FACTOR
 
 
 def get_project_size_score(total_added_area):
