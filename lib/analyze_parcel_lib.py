@@ -26,7 +26,7 @@ BUFFER_SIZES = {
     "ACCESSORY": 1.1,
     "ENCROACHMENT": 0.2,
 }
-MAX_RECTS = 2
+MAX_NEW_BUILDINGS = 2
 MAX_ASPECT_RATIO = 2.5
 MAX_FAR = 0.6
 
@@ -105,7 +105,7 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edge
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
-def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR):
+def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR, try_garage_conversion=True):
     """Runs analysis on a single parcel of land
 
     Args:
@@ -147,7 +147,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
+        avail_geom, parcel.boundary[0], num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
@@ -162,22 +162,29 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
         parcel, buildings)
 
-    total_added_area = sum([poly.area for poly in new_building_polys])
-    new_FAR = (total_added_area + existing_floor_area) / parcel_size
+    # Compute garage conversion fields
+    num_garages = int(parcel.garage_sta[0] or 0)
+    garage_con_units = int(
+        num_garages > 0) if try_garage_conversion else 0
+    # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
+    garage_con_area = num_garages * 23.2
+
+    total_added_building_area = sum([poly.area for poly in new_building_polys])
+    new_FAR = (total_added_building_area + existing_floor_area) / parcel_size
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
         avail_geom, parcel, new_building_polys)
-    project_size_score = get_project_size_score(total_added_area)
+    project_size_score = get_project_size_score(total_added_building_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
     # Get development potential limiting factor. Multiply by a factor
     # to scale it down to account for innacuracies
     limiting_factor = ""
-    theoretical_avail_space = MAX_BUILDING_AREA * MAX_RECTS * 0.98
+    theoretical_avail_space = MAX_BUILDING_AREA * MAX_NEW_BUILDINGS * 0.98
     tolerance_FAR = 0.01
 
-    if total_added_area < theoretical_avail_space:
+    if total_added_building_area < theoretical_avail_space:
         # Development potential not reached
         if new_FAR > MAX_FAR - tolerance_FAR:
             limiting_factor = 'FAR'
@@ -213,8 +220,8 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "address": address,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
 
-        "carports": parcel.carport_st[0],
-        "garages": parcel.garage_sta[0],
+        "carports": int(parcel.carport_st[0] or 0),
+        "garages": num_garages,
 
         "parcel_size": parcel_size,
         "existing_living_area": existing_living_area,
@@ -223,7 +230,11 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
 
         "num_new_buildings": len(new_building_polys),
         "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
-        "total_added_area": total_added_area,
+        "total_added_building_area": total_added_building_area,
+        "garage_con_units": garage_con_units,
+        "garage_con_area": garage_con_area,
+        "total_new_units": garage_con_units + len(new_building_polys),
+        "total_added_area": garage_con_area + total_added_building_area,
         "new_FAR": new_FAR,
         "limiting_factor": limiting_factor,
 
@@ -249,7 +260,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
             "building_buffer_sizes": BUFFER_SIZES,
-            "max_rects": MAX_RECTS,
+            "max_new_buildings": MAX_NEW_BUILDINGS,
             "max_aspect_ratio": MAX_ASPECT_RATIO,
             "FAR_ratio": MAX_FAR,
         },
@@ -319,4 +330,4 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         error_df = DataFrame.from_records(errors)
         error_df.to_csv("./world/data/scenario-images/errors.csv", index=False)
 
-    print(f"Done analyzing {i} parcels. {len(errors)} errors")
+    print(f"Done analyzing {i+1} parcels. {len(errors)} errors")
