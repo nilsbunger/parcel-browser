@@ -1,7 +1,10 @@
-import sys
+import re
+from typing import Dict
 
 import django
 import geopandas
+import pyproj
+import shapely
 from matplotlib import pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import unary_union
@@ -42,34 +45,36 @@ def calculate_parcel_slopes(bounding_box, start_idx=0):
         plt.close()  # close previous plot to protect memory.
 
         topos = get_topo_lines(parcel)
-        topos_df = models_to_utm_gdf(topos)
-
-        plot = create_slopes_for_parcel(parcel, topos_df, bucket_stats)
+        topos_df = models_to_utm_gdf(topos, utm_crs)
+        plot = create_slopes_for_parcel(parcel, utm_crs, topos_df, bucket_stats)
 
         # Finalize parcel plot with slope data, and save plot image to file
         buildings = get_buildings(parcel)
         if len(buildings) > 0:
-            buildings_df = models_to_utm_gdf(buildings)
+            buildings_df = models_to_utm_gdf(buildings, utm_crs)
             buildings_df.plot(ax=plot, )
         else:
             print("NO BUILDINGS ON LOT")
             bucket_stats["no_buildings"] += 1
         topos_df.plot(ax=plot, color='gray')
-        # geopandas.GeoSeries(extended_parcel_utm.boundary).plot(ax=p1, color='purple')
         plt.title('APN=' + str(parcel.apn))
         plt.savefig("./world/data/topo-images/" + parcel.apn + ".jpg")
 
-    print(f'DONE. Completed {idx - start_idx + 1} parcels. {len(error_parcels)} failed. Failed parcels:')
+    print(f'DONE. Completed {idx - start_idx + 1} parcels. '
+          f'Final slope bucket stats={bucket_stats}. '
+          f'{len(error_parcels)} failed. Failed parcels:')
     print(error_parcels)
 
 
-def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
+def create_slopes_for_parcel(parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geopandas.GeoDataFrame,
+                             bucket_stats: Dict):
     """ Create slope polygons and store them in the database for a given parcel. Assumes that topo data is
-
+        present for the parcel.
     """
     # Grade_buckets hold line segments at each grade
     grade_buckets = dict({0: [], 5: [], 10: [], 15: [], 20: [], 25: []})
-    parcel_df = models_to_utm_gdf([parcel])
+    parcel_df = models_to_utm_gdf([parcel], utm_crs)
+
     assert (len(parcel_df.geometry) == 1)
     parcel_poly = parcel_df.geometry[0]
     parcel_df.geometry = parcel_df.geometry.boundary
@@ -125,7 +130,7 @@ def create_slopes_for_parcel(parcel, topos_df, bucket_stats):
     return p1
 
 
-def save_slope_object(parcel, bucket, grade_poly, utm_crs):
+def save_slope_object(parcel: Parcel, bucket: int, grade_poly: shapely.geometry, utm_crs: pyproj.CRS):
     # Save the final slope data (a multipolygon) for this bucket.
     # An empty Shapely Multipolygon becomes a GeometryCollection, which doesn't translate
     # properly. So check for emptyness directly instead.
@@ -146,7 +151,7 @@ class SortPoint(Point):
         return True if (self.x < other.x) else (self.x == other.x) and (self.y < other.y)
 
 
-def get_topo_lines(parcel):
+def get_topo_lines(parcel: Parcel) -> [Topography]:
     """ Get topo lines that intersect with a Django parcel. Returns a Queryset of Topography objects"""
     # Get the topography objects intersecting with a Django parcel instance under consideration. We make the DB
     # calculate the intersection. It's a raw query because Django won't let us overwrite a model field
