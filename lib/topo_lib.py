@@ -1,4 +1,4 @@
-import re
+import sys
 from typing import Dict
 
 import django
@@ -15,7 +15,7 @@ from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
 
 colors = {25: 'red', 20: 'orange', 15: 'gold', 10: 'greenyellow', 5: 'springgreen', 0: 'white'}
 
-def calculate_parcel_slopes(bounding_box, start_idx=0):
+def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
     """ Calculate slopes for all parcels within a bounding box that are in analyzed_parcel table without
         a 'skip' flag. Records slopes in the database. """
     topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
