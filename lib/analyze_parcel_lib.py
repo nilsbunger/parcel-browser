@@ -3,6 +3,7 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing scores for scenarios, and running
 scenarios in general.
 """
+from typing import Tuple
 
 from pandas import DataFrame
 from lib.parcel_lib import *
@@ -100,11 +101,13 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edge
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
-def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR):
+def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
+                        save_dir=DEFAULT_SAVE_DIR):
     """Runs analysis on a single parcel of land
 
     Args:
         parcel (Parcel): A Parcel Model object that we want to analyse.
+        utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
         save_file (Boolean, optional): Saves the parcel to an image file. Defaults to False.
     """
@@ -116,14 +119,14 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         raise Exception(f"No buildings found for parcel: {apn}")
 
     topos = get_topo_lines(parcel)
-    topos_df = models_to_utm_gdf(topos)
+    topos_df = models_to_utm_gdf(topos, utm_crs)
 
-    parcel = models_to_utm_gdf([parcel])
-    buildings = models_to_utm_gdf(buildings)
+    parcel_df = models_to_utm_gdf([parcel], utm_crs)
+    buildings = models_to_utm_gdf(buildings, utm_crs)
 
-    identify_building_types(parcel, buildings)
+    identify_building_types(parcel_df, buildings)
 
-    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
+    max_total_area = get_avail_floor_area(parcel_df, buildings, MAX_FAR)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -131,38 +134,38 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         buildings, BUFFER_SIZES)
 
     # Then, the setbacks around the parcel edges
-    parcel_edges = get_street_side_boundaries(parcel)
-    setbacks = get_setback_geoms(parcel, SETBACK_WIDTHS, parcel_edges)
+    parcel_edges = get_street_side_boundaries(parcel_df, utm_crs)
+    setbacks = get_setback_geoms(parcel_df, SETBACK_WIDTHS, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
-    too_steep = get_too_steep_polys(parcel, 10)
+    too_steep = get_too_steep_polys(parcel_df, utm_crs, max_slope=10)
 
     cant_build = unary_union(
         [*buffered_buildings_geom, *setbacks, *too_steep])
-    avail_geom = get_avail_geoms(parcel.geometry[0], cant_build)
+    avail_geom = get_avail_geoms(parcel_df.geometry[0], cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
+        avail_geom, parcel_df.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
-    p = dict(parcel.T.to_dict())[0]
+    p = dict(parcel_df.T.to_dict())[0]
     address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
 
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
-        parcel, buildings)
+        parcel_df, buildings)
 
     total_added_area = sum([poly.area for poly in new_building_polys])
     new_FAR = (total_added_area + existing_floor_area) / parcel_size
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
-        avail_geom, parcel, new_building_polys)
+        avail_geom, parcel_df, new_building_polys)
     project_size_score = get_project_size_score(total_added_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
@@ -183,7 +186,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     # Do plotting stuff if necessary
     if show_plot or save_file:
         lot_df = geopandas.GeoDataFrame(
-            geometry=[*buildings.geometry, parcel.geometry[0].boundary], crs="EPSG:4326")
+            geometry=[*buildings.geometry, parcel_df.geometry[0].boundary], crs="EPSG:4326")
         better_plot(apn, address, lot_df, topos_df,
                     new_building_polys, open_space_poly, parcel_edges[0])
 
@@ -211,8 +214,8 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "buildings": buildings.to_json(),
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
 
-        "carports": parcel.carport_st[0],
-        "garages": parcel.garage_sta[0],
+        "carports": parcel_df.carport_st[0],
+        "garages": parcel_df.garage_sta[0],
 
         "parcel_size": parcel_size,
         "existing_living_area": existing_living_area,
@@ -222,7 +225,7 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
         "accessory_buildings_polys_area": accessory_buildings_area,
 
         "parcel_sloped_area": unary_union(too_steep).area,
-        "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry[0].area,
+        "parcel_sloped_ratio": unary_union(too_steep).area / parcel_df.geometry[0].area,
 
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
@@ -258,12 +261,13 @@ def _analyze_one_parcel(parcel, show_plot=False, save_file=False, save_dir=DEFAU
     return analyzed
 
 
-def analyze_by_apn(apn, show_plot=False, save_file=False):
+def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False):
     parcel = get_parcel_by_apn(apn)
-    return _analyze_one_parcel(parcel, show_plot, save_file)
+    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file)
 
 
-def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SAVE_DIR, limit=None):
+def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_file=False, save_dir=DEFAULT_SAVE_DIR,
+                         limit=None):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
@@ -276,6 +280,7 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
 
     analyzed = []
     errors = []
+    i = 0
     for i, parcel in enumerate(parcels):
         if limit and i >= int(limit):
             print("Stopping at user-requested limit of parcels.")
@@ -283,7 +288,7 @@ def analyze_neighborhood(hood_bounds_tuple, save_file=False, save_dir=DEFAULT_SA
         print(i, parcel.apn)
         try:
             result = _analyze_one_parcel(
-                parcel, False, save_file, save_dir=save_dir)
+                parcel, utm_crs, show_plot=False, save_file=save_file, save_dir=save_dir)
 
             # Shouldn't need this as result should never be null,
             # but we keep it as a sanity check

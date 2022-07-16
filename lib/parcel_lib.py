@@ -1,3 +1,4 @@
+import django.contrib.gis.geos
 import geopandas
 import pyproj
 import shapely
@@ -46,7 +47,7 @@ def get_parcel_by_apn(apn: str):
     return Parcel.objects.get(apn=apn)
 
 
-def get_parcels_by_neighborhood(bounding_box):
+def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry):
     # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
     # Also ensures that these parcels are not marked as skip in our analyzed table (so they are)
     # residential and match our criteria
@@ -57,7 +58,7 @@ def get_parcels_by_neighborhood(bounding_box):
     ).order_by('apn')
 
 
-def get_buildings(parcel):
+def get_buildings(parcel: Parcel):
     """Returns a list of BuildingOutlines objects from the database that intersect with
     the given parcel object.
 
@@ -70,57 +71,49 @@ def get_buildings(parcel):
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def models_to_utm_gdf(models, geometry_field='geom'):
+def models_to_utm_gdf(
+        models: [django.contrib.gis.db.models],
+        utm_crs: pyproj.CRS,
+        geometry_field='geom') -> geopandas.GeoDataFrame:
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
 
     Args:
-        models ([Model]): A list of Django models to convert
+        models ([Model]): A list of Django GIS models to convert
+        utm_crs: The destination projection
         geometry_field (str): The field that stores the geometry
 
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
-    if (len(models) == 0):
+    if len(models) == 0:
         return geopandas.GeoDataFrame(columns=['feature'], geometry='feature')
     serialized_models = serialize(
         'geojson', models, geometry_field=geometry_field)
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
-    return data_frame.to_crs(data_frame.estimate_utm_crs())
+    df = data_frame.to_crs(utm_crs)
+    # Temporarily, make sure our dataframe translated correctly by comparing it to how we used
+    # to do it. We can remove this after we've run some cycles with it.
+    df_old = data_frame.to_crs(data_frame.estimate_utm_crs())
+    assert ((df['geometry'] == df_old['geometry']).all())
+
+    return df
 
 
-def polygon_to_utm(poly, crs):
-    """ Accepts a Django (gis.geos.polygon) Polygon in Lat-long coordinates, and returns
-        an equivalent Shapely Polygon (shapely.geometry.polygon) suitable for use with GeoDjango,
-         projected into UTM coordinates.
+def polygon_to_utm(poly: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS):
+    """ Accepts a Django (gis.geos.*) geometry object in Lat-long coordinates, and returns
+        an equivalent Shapely geometry object (shapely.geometry.*) suitable for use with GeoDjango,
+         projected into 'crs' coordinates (typically UTM, created like this: CRS(proj='utm', zone=11, ellps='WGS84'))
     """
-    # Convert Django polygon to Shapely polygon
+    # Convert Django polygon to Shapely polygon via well-known text
     shapely_poly = wkt.loads(poly.wkt)
 
     # Re-project the polygon into the UTM CRS coordinate system
     wgs84 = pyproj.CRS('EPSG:4326')
-    utm = pyproj.CRS(crs)
     projection = pyproj.Transformer.from_crs(
-        wgs84, utm, always_xy=True).transform
+        wgs84, utm_crs, always_xy=True).transform
     return shapely.ops.transform(projection, shapely_poly)
-
-
-def get_parcel_and_buildings_gdf(apn):
-    """Convenience function that gets the UTM-projected parcel and buildings
-    as a dataframe.
-
-    Args:
-        apn (str): The APN of the parcel we want to get.
-
-    Returns:
-        (GeoDataFrame, GeoDataFrame): A tuple containing GDFs for the parcel and buildings
-    """
-    parcel = get_parcel_by_apn(apn)
-    buildings = get_buildings(parcel)
-    parcel_utm = models_to_utm_gdf([parcel])
-    buildings_utm = models_to_utm_gdf(buildings)
-    return parcel_utm, buildings_utm
 
 
 def normalize_geometries(parcel, buildings):
@@ -155,7 +148,7 @@ def normalize_geometries(parcel, buildings):
 
         building_polys.append(translated_building_multipoly[0])
 
-    return (parcel_boundary_poly, building_polys)
+    return parcel_boundary_poly, building_polys
 
 
 def collapse_multipolygon_list(multipolygons):
@@ -213,7 +206,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
     placed_polys = []
 
     # Placement approach: Place single biggest unit, then rerun analysis
-    for i in range(num_rects):    # place 4 units
+    for i in range(num_rects):  # place 4 units
         biggest_poly = biggest_poly_over_rotation(
             avail_geom, parcel_boundary, max_aspect_ratio=max_aspect_ratio,
             min_area=min_area, max_area=min(max_total_area, max_area_per_building))
@@ -229,15 +222,15 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
     return placed_polys
 
 
-def get_street_side_boundaries(parcel):
+def get_street_side_boundaries(parcel: Parcel, utm_crs: pyproj.CRS):
     """ Returns the edges of a parcel that are on the street side, the sides of the lot,
     and the back of the lot respectively as Shapely MultiLineStrings.
-    Function can be greatly improved with raod data, and other types of data we can
+    Function can be greatly improved with road data, and other types of data we can
     layer on top.
 
     Args:
-        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
-
+        parcel (GeoDataFrame): A Django Parcel model
+        utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
     Returns:
         (MultiLineString, MultiLineString, MultiLineString): A tuple of MultiLineStrings
         representing the front (street), side, and back edges respectively.
@@ -247,7 +240,7 @@ def get_street_side_boundaries(parcel):
     parcel_model = Parcel.objects.get(apn=parcel.apn[0])
     intersecting_parcels = Parcel.objects.filter(
         geom__intersects=parcel_model.geom).exclude(apn=parcel.apn[0])
-    intersecting_utm = models_to_utm_gdf(intersecting_parcels)
+    intersecting_utm = models_to_utm_gdf(intersecting_parcels, utm_crs)
 
     # First Heuristic for determining street side:
     # The sides that intersect with other parcels are definetely not street side
@@ -425,7 +418,7 @@ def maximal_rectangles(matrix):
                 left[j] = 0
                 cur_left = j + 1
         # update right
-        for j in range(n-1, -1, -1):
+        for j in range(n - 1, -1, -1):
             if matrix[i][j] == 1:
                 right[j] = min(right[j], cur_right)
             else:
@@ -434,9 +427,9 @@ def maximal_rectangles(matrix):
         # update the area
         for j in range(n):
             proposedarea = height[j] * (right[j] - left[j])
-            rect = ((left[j], bot[j]), (right[j]-1, top[j]))
+            rect = ((left[j], bot[j]), (right[j] - 1, top[j]))
             if (height[j] >= 2):
-                if((rect[0]) not in dictrects) or (dictrects[rect[0]][0] < proposedarea):
+                if ((rect[0]) not in dictrects) or (dictrects[rect[0]][0] < proposedarea):
                     dictrects[rect[0]] = (proposedarea, rect)
                 bigrects.append((proposedarea, rect))
             if (proposedarea > maxarea):
@@ -477,7 +470,7 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
         # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
         # Scale down the square
         rect_to_place = shapely.affinity.scale(big_rect, xfact=(
-            sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
     elif x_len > y_len:
         # Squish the rectangle to the max_area
         # x is major axis. We want to scale it down
@@ -512,16 +505,17 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
     x_offset = big_rect_four_corners[closest_corner_index][0] - \
-        to_place_four_corners[closest_corner_index][0]
+               to_place_four_corners[closest_corner_index][0]
     y_offset = big_rect_four_corners[closest_corner_index][1] - \
-        to_place_four_corners[closest_corner_index][1]
+               to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(
         rect_to_place, xoff=x_offset, yoff=y_offset)
 
     return rect_to_place
 
 
-def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None, min_area=None, max_area=None):
+def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None, min_area=None,
+                               max_area=None):
     """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation.
     Polygon sizes can be clamped with optional min_area or max_area parameters. In the event when the initial
     rectangle found exceeds the max_area, an algorithm will scale the rectangle down to max_area. See implementation
@@ -557,7 +551,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         raster_dims = [round(bounds[3]), round(bounds[2])
                        ]  # NOTE: raster_dims are Y,X
         # transform=transform)
-        b = features.rasterize([rot_geom_translated], raster_dims,)
+        b = features.rasterize([rot_geom_translated], raster_dims, )
 
         if (do_plots):
             p2 = geopandas.GeoSeries().plot()
@@ -611,7 +605,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
     # translate the biggest rect back into grid coordinates, undoing rotation and translation
     # Translate by 0.5 to counteract quantization of raster.
     biggest_rect = shapely.affinity.translate(
-        biggest_rect, xoff=biggest_rect_xlat_amount[0]+0.5, yoff=biggest_rect_xlat_amount[1]+0.5
+        biggest_rect, xoff=biggest_rect_xlat_amount[0] + 0.5, yoff=biggest_rect_xlat_amount[1] + 0.5
     )
     biggest_rect = shapely.affinity.rotate(
         biggest_rect, -biggest_rect_rot, origin=(0, 0))
@@ -619,25 +613,26 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
     return biggest_rect
 
 
-def get_too_steep_polys(parcel, max_slope):
+def get_too_steep_polys(parcel_df: geopandas.GeoDataFrame, utm_crs: pyproj.CRS, max_slope: int):
     """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
 
     Args:
-        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        parcel_df (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         max_slope (int): The maximum slope to consider
 
     Returns:
         Multipolygon representing the area that's too steep
     """
 
-    parcel_in_4326 = parcel.to_crs('EPSG:4326')
+    parcel_in_4326 = parcel_df.to_crs('EPSG:4326')
     wkt = parcel_in_4326.geometry.to_wkt()[0]
     geo_django_geom = GEOSGeometry(wkt, srid=4326)
 
     polys = ParcelSlope.objects.filter(
         polys__intersects=geo_django_geom, grade__gt=max_slope)
 
-    polys = models_to_utm_gdf(polys, geometry_field='polys').geometry
+    polys = models_to_utm_gdf(polys, utm_crs, geometry_field='polys').geometry
 
     # Make each poly valid
     # We need this because sometimes, the ParcelSlope polys are invalid geometries
