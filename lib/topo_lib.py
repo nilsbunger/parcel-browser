@@ -74,7 +74,8 @@ def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, 
 
 
 def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
-    """ Check if parcels to be analyzed within bounding box have topography data for them"""
+    """ Check if parcels to be analyzed within bounding box have topography data for them, and create plot to
+    visualize """
     parcels = get_parcels_by_neighborhood(bounding_box)
     topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
     topos = TopographyLoads.objects.all()
@@ -98,7 +99,7 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
             y = parcel.geom.centroid.y
             plt.plot(x, y, marker="o", markersize=2, markeredgecolor="red", markerfacecolor="yellow")
             outside_parcels += 1
-        elif True:
+        else:
             x = parcel.geom.centroid.x
             y = parcel.geom.centroid.y
             plt.plot(x, y, marker="o", markersize=1, markeredgecolor="green", markerfacecolor="green")
