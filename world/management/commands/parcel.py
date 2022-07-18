@@ -41,6 +41,8 @@ class Command(BaseCommand):
                             help="Specify a custom directory to save files to. If none is provided, the default is used")
         parser.add_argument('--limit', '-l', action='store',
                             help="Limit the number of parcels analyzed")
+        parser.add_argument('--shuffle', '-s', action='store_true',
+                            help="Shuffle the parcels")
 
     def handle(self, *args, **options):
         sd_utm_crs = get_utm_crs()
@@ -58,6 +60,7 @@ class Command(BaseCommand):
                                  sd_utm_crs,
                                  save_file=options['save_file'],
                                  save_dir=options['save_dir'],
-                                 limit=options['limit'])
+                                 limit=options['limit'],
+                                 shuffle=options['shuffle'])
         else:
             print("Failed. Please specify either an APN or a neighborhood")

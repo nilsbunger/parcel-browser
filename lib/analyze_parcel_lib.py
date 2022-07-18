@@ -5,6 +5,7 @@ scenarios in general.
 """
 from typing import Tuple
 
+import random
 from pandas import DataFrame
 from lib.parcel_lib import *
 from shapely.ops import unary_union
@@ -26,7 +27,7 @@ BUFFER_SIZES = {
     "ACCESSORY": 1.1,
     "ENCROACHMENT": 0.2,
 }
-MAX_RECTS = 2
+MAX_NEW_BUILDINGS = 2
 MAX_ASPECT_RATIO = 2.5
 MAX_FAR = 0.6
 
@@ -51,7 +52,11 @@ def get_open_space_score(avail_geom, parcel, placed_buildings):
         remaining_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
     area = open_space_poly.area
 
-    return open_space_poly, area / parcel.area[0] * 100
+    # NOTE: For now, let's scale the factor by 3 to make the score relevant (arbitrary number).
+    # We might want to continue tweaking this to get something that works better
+    SCALING_FACTOR = 3
+
+    return open_space_poly, area / parcel.area[0] * 100 * SCALING_FACTOR
 
 
 def get_project_size_score(total_added_area):
@@ -160,22 +165,29 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
         parcel_df, buildings)
 
-    total_added_area = sum([poly.area for poly in new_building_polys])
-    new_FAR = (total_added_area + existing_floor_area) / parcel_size
+    # Compute garage conversion fields
+    num_garages = int(parcel.garage_sta[0] or 0)
+    garage_con_units = int(
+        num_garages > 0) if try_garage_conversion else 0
+    # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
+    garage_con_area = num_garages * 23.2
+
+    total_added_building_area = sum([poly.area for poly in new_building_polys])
+    new_FAR = (total_added_building_area + existing_floor_area) / parcel_size
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
         avail_geom, parcel_df, new_building_polys)
-    project_size_score = get_project_size_score(total_added_area)
+    project_size_score = get_project_size_score(total_added_building_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
     # Get development potential limiting factor. Multiply by a factor
     # to scale it down to account for innacuracies
     limiting_factor = ""
-    theoretical_avail_space = MAX_BUILDING_AREA * MAX_RECTS * 0.98
+    theoretical_avail_space = MAX_BUILDING_AREA * MAX_NEW_BUILDINGS * 0.98
     tolerance_FAR = 0.01
 
-    if total_added_area < theoretical_avail_space:
+    if total_added_building_area < theoretical_avail_space:
         # Development potential not reached
         if new_FAR > MAX_FAR - tolerance_FAR:
             limiting_factor = 'FAR'
@@ -205,57 +217,61 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
     git_sha = repo.head.object.hexsha
 
     # Create the data struct that represents the test that was run
+    # The order in this dictionary is the order that the fields will be written to the csv
     analyzed = {
         "apn": apn,
         "address": address,
-        "git_commit_hash": git_sha,
-        "datetime_ran": datetime.datetime.now(),
-
-        "buildings": buildings.to_json(),
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
-
-        "carports": parcel_df.carport_st[0],
-        "garages": parcel_df.garage_sta[0],
-
+        "carports": int(parcel.carport_st[0] or 0),
+        "garages": num_garages,
+        
         "parcel_size": parcel_size,
         "existing_living_area": existing_living_area,
         "existing_floor_area": existing_floor_area,
         "existing_FAR": existing_FAR,
-        "main_building_poly_area": main_building_area,
-        "accessory_buildings_polys_area": accessory_buildings_area,
 
-        "parcel_sloped_area": unary_union(too_steep).area,
-        "parcel_sloped_ratio": unary_union(too_steep).area / parcel_df.geometry[0].area,
-
-        "input_parameters": {
-            "setback_widths": SETBACK_WIDTHS,
-            "building_buffer_sizes": BUFFER_SIZES,
-            "max_rects": MAX_RECTS,
-            "max_aspect_ratio": MAX_ASPECT_RATIO,
-            "FAR_ratio": MAX_FAR,
-        },
-
-        "no_build_zones": {
-            "setbacks": setbacks,
-            "buffered_buildings": buffered_buildings_geom,
-            "topography": "insert",
-        },
-        "new_buildings": new_building_info,
         "num_new_buildings": len(new_building_polys),
         "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
-        "total_added_area": total_added_area,
-        "avail_geom": avail_geom,
+        "total_added_building_area": total_added_building_area,
+        "garage_con_units": garage_con_units,
+        "garage_con_area": garage_con_area,
+        "total_new_units": garage_con_units + len(new_building_polys),
+        "total_added_area": garage_con_area + total_added_building_area,
+        "new_FAR": new_FAR,
+        "limiting_factor": limiting_factor,
 
+        "main_building_poly_area": main_building_area,
+        "accessory_buildings_polys_area": accessory_buildings_area,
         "avail_geom_area": avail_geom.area,
         "avail_area_by_FAR": max_total_area,
 
-        "new_FAR": new_FAR,
-        "limiting_factor": limiting_factor,
+        "parcel_sloped_area": unary_union(too_steep).area,
+        "parcel_sloped_ratio": unary_union(too_steep).area / parcel_df.geometry[0].area,
 
         "total_score": total_score,
         "cap_ratio_score": cap_ratio_score,
         "open_space_score": open_space_score,
         "project_size_score": project_size_score,
+
+        "git_commit_hash": git_sha,
+        "datetime_ran": datetime.datetime.now(),
+
+        # To be ignored by CSV dump, but we still want to save these in the future
+        "buildings": buildings.to_json(),
+        "new_buildings": new_building_info,
+        "input_parameters": {
+            "setback_widths": SETBACK_WIDTHS,
+            "building_buffer_sizes": BUFFER_SIZES,
+            "max_new_buildings": MAX_NEW_BUILDINGS,
+            "max_aspect_ratio": MAX_ASPECT_RATIO,
+            "FAR_ratio": MAX_FAR,
+        },
+        "no_build_zones": {
+            "setbacks": setbacks,
+            "buffered_buildings": buffered_buildings_geom,
+            "topography": "insert",
+        },
+        "avail_geom": avail_geom,
     }
 
     return analyzed
@@ -267,7 +283,7 @@ def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=Fal
 
 
 def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_file=False, save_dir=DEFAULT_SAVE_DIR,
-                         limit=None):
+                         limit=None, shuffle=False):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
@@ -276,7 +292,11 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_fil
         hood_bounds_tuple)
     parcels = get_parcels_by_neighborhood(bounding_box)
 
-    print(f"Found {len(parcels)} parcels to analyze")
+    if (shuffle):
+        parcels = list(parcels)
+        random.shuffle(parcels)
+
+    print(f"Found {len(parcels)} parcels. Analyzing {limit or len(parcels)}.")
 
     analyzed = []
     errors = []
@@ -314,4 +334,4 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_fil
         error_df = DataFrame.from_records(errors)
         error_df.to_csv("./world/data/scenario-images/errors.csv", index=False)
 
-    print(f"Done analyzing {i} parcels. {len(errors)} errors")
+    print(f"Done analyzing {i+1} parcels. {len(errors)} errors")
