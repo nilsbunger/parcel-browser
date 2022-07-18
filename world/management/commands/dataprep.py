@@ -1,6 +1,7 @@
 from enum import Enum
 import django
 
+from lib.crs_lib import get_utm_crs
 from lib.topo_lib import calculate_parcel_slopes
 from django.core.management.base import BaseCommand
 
@@ -21,8 +22,9 @@ class Command(BaseCommand):
         # Parcel Slopes calculation - depends on Analyzed Parcels and Topography to be loaded.
         print(f'Calculating slopes for parcels in {hood} neighborhood')
         bounding_box_tuple = Neighborhood[hood].value
+        sd_utm_crs = get_utm_crs()
         bounding_box = django.contrib.gis.geos.Polygon.from_bbox(*bounding_box_tuple)
 
-        calculate_parcel_slopes(bounding_box)
+        calculate_parcel_slopes(bounding_box, sd_utm_crs)
 
         self.stdout.write(self.style.SUCCESS(f'Finished calculating parcel slopes for neighborhood {hood}'))

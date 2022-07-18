@@ -15,6 +15,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
+from lib.crs_lib import get_utm_crs
 from world.models import Parcel, BuildingOutlines, Topography
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -63,10 +64,11 @@ class ParcelDetailView(LoginRequiredMixin, View):
         serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', fields=('apn', 'geom',))
         serialized_buildings = serialize('geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
 
-    # https://photon.komoot.io/ -- address resolution
-    # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
+        # https://photon.komoot.io/ -- address resolution
+        # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
+        utm_crs = get_utm_crs()
         parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
-        parcel_in_utm = parcel_data_frame.to_crs(parcel_data_frame.estimate_utm_crs())
+        parcel_in_utm = parcel_data_frame.to_crs(utm_crs)
         lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
         print (repr(parcel))
         print (pp.pprint(parcel.__dict__))
