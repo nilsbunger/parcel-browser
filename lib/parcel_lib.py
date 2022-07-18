@@ -10,6 +10,8 @@ import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
 from django.contrib.gis.geos import GEOSGeometry
+import matplotlib.pyplot as plt
+
 
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
@@ -72,7 +74,7 @@ def get_buildings(parcel: Parcel):
 
 
 def models_to_utm_gdf(
-        models: [django.contrib.gis.db.models],
+        models: list[django.contrib.gis.db.models],
         utm_crs: pyproj.CRS,
         geometry_field='geom') -> geopandas.GeoDataFrame:
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
@@ -470,7 +472,7 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
         # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
         # Scale down the square
         rect_to_place = shapely.affinity.scale(big_rect, xfact=(
-                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+            sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
     elif x_len > y_len:
         # Squish the rectangle to the max_area
         # x is major axis. We want to scale it down
@@ -505,9 +507,9 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
     x_offset = big_rect_four_corners[closest_corner_index][0] - \
-               to_place_four_corners[closest_corner_index][0]
+        to_place_four_corners[closest_corner_index][0]
     y_offset = big_rect_four_corners[closest_corner_index][1] - \
-               to_place_four_corners[closest_corner_index][1]
+        to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(
         rect_to_place, xoff=x_offset, yoff=y_offset)
 
@@ -641,3 +643,93 @@ def get_too_steep_polys(parcel_df: geopandas.GeoDataFrame, utm_crs: pyproj.CRS, 
     polys = [make_valid(poly) for poly in polys]
 
     return polys
+
+
+def get_second_lot(lots, main_building):
+    return [lot for lot in lots if lot.intersection(main_building).area < .1][0]
+
+
+def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
+    main_building = [
+        bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"][0]
+
+    # Turn the main building into a rectangle to simplify calculations
+    min_rect = main_building.minimum_rotated_rectangle
+
+    # Optional buffering - this is so we're not hugging the main building too tightly
+    min_rect = min_rect.buffer(0.5, cap_style=2, join_style=2)
+
+    # Turn the bounding box into lines
+    x, y = min_rect.exterior.coords.xy
+    bb_lines = [LineString([(x[i], y[i]), (x[i + 1], y[i + 1])])
+                for i in range(len(x) - 1)]
+
+    # Now calculate possibilities for a second parcel,
+    # storing this into second_lots
+    parcel_bounds = parcel.geometry[0].boundary
+    second_lots = []
+    lines = []
+    for line in bb_lines:
+        # First, scale it up by a lot
+        line = shapely.affinity.scale(line, 100, 100, 100)
+
+        # Then find the intersections between the line and parcel boundary
+        intersections = parcel_bounds.intersection(line)
+
+        # Skip if there's no intersections, which means the line is outside the parcel
+        if intersections.is_empty:
+            continue
+
+        # Should only intersect with 2 points. Draw a line using these intersections,
+        # which effectively scales down our lines for easier drawing/debugging later on
+        assert(len(intersections.geoms) == 2)
+        line = LineString(intersections.geoms)
+        line = shapely.affinity.scale(line, 1.1, 1.1, 1.1)
+
+        lines.append(line)
+
+        split = shapely.ops.split(parcel.geometry[0], line)
+
+        # Sanity check: Splitting it should only result in 2 polygons
+        assert(len(split.geoms) == 2)
+
+        # Now append the lot that doesn't have the main house. Allow a margin of error
+        second_lots.append(
+            get_second_lot(split.geoms, main_building))
+
+    biggest_lot_index = argmax([lot.area for lot in second_lots])
+    biggest_lot = second_lots[biggest_lot_index]
+    biggest_lot_area_ratio = biggest_lot.area / parcel.geometry[0].area
+
+    # TODO: Consider L SHAPES if the lot is too small
+    # If even the biggest lot we can get is too small, return None
+    if biggest_lot_area_ratio < 0.4:
+        return None, None
+
+    # Let's try to cut down the size of the lot to target_second_lot_ratio via binary search
+    line_to_move = lines[biggest_lot_index]
+    if line_to_move.parallel_offset(0.01, 'left').intersects(biggest_lot):
+        side = 'left'
+    else:
+        side = 'right'
+
+    start = 0
+    stop = max([line_to_move.distance(Point(point))
+                for point in biggest_lot.exterior.coords])
+
+    for i in range(15):
+        mid = (start + stop) / 2
+        new_div_line = line_to_move.parallel_offset(mid, side)
+        new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
+
+        # Divide the lot
+        split = shapely.ops.split(parcel.geometry[0], new_div_line)
+        new_second_lot = get_second_lot(split.geoms, main_building)
+        new_area_ratio = new_second_lot.area / parcel.geometry[0].area
+
+        if new_area_ratio > target_second_lot_ratio:
+            start = mid
+        else:
+            stop = mid
+
+    return new_second_lot, new_area_ratio

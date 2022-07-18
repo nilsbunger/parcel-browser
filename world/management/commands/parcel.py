@@ -43,6 +43,10 @@ class Command(BaseCommand):
                             help="Limit the number of parcels analyzed")
         parser.add_argument('--shuffle', '-s', action='store_true',
                             help="Shuffle the parcels")
+        # Maybe this option isn't needed, I don't think the lot split calculation is
+        # very expensive at all. Might even be negligible.
+        parser.add_argument('--skip-lot-splits', action='store_true',
+                            help="Skip calculating lot splits. May be computationally better, but only slightly")
 
     def handle(self, *args, **options):
         sd_utm_crs = get_utm_crs()
@@ -61,6 +65,7 @@ class Command(BaseCommand):
                                  save_file=options['save_file'],
                                  save_dir=options['save_dir'],
                                  limit=options['limit'],
-                                 shuffle=options['shuffle'])
+                                 shuffle=options['shuffle'],
+                                 try_split_lot=not options['skip_lot_splits'])
         else:
             print("Failed. Please specify either an APN or a neighborhood")
