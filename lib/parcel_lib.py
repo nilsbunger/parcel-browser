@@ -2,6 +2,7 @@ import django.contrib.gis.geos
 import geopandas
 import pyproj
 import shapely
+from django.db.models import QuerySet
 from shapely import wkt
 from shapely.validation import make_valid
 from shapely.geometry import Polygon, box, MultiPolygon, LineString
@@ -47,10 +48,12 @@ def get_parcel_by_apn(apn: str):
     return Parcel.objects.get(apn=apn)
 
 
-def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry):
-    # Returns a list of parcels that intersect with the bounding box (are in a neighborhood)
-    # Also ensures that these parcels are not marked as skip in our analyzed table (so they are)
-    # residential and match our criteria
+def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry) -> QuerySet:
+    # Returns a Queryset of parcels that intersect with the bounding box (are in a neighborhood)
+    # and are not marked as skip in our analyzed table (so they are residential and match our criteria).
+    # Results ordered by APN so there's a consistent analysis order (and can thus start midway if needed).
+    # NOTE: We should create a foreign key relationship so we don't need this ugly query.
+
     return Parcel.objects.filter(geom__intersects=bounding_box).extra(
         tables=['world_analyzedparcel'],
         where=['world_parcel.apn=world_analyzedparcel.apn',
