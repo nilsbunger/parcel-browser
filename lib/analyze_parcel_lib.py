@@ -106,8 +106,9 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edge
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
-def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
-                        save_dir=DEFAULT_SAVE_DIR):
+def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
+                        save_file=False, save_dir=DEFAULT_SAVE_DIR,
+                        try_garage_conversion=True, try_split_lot=True):
     """Runs analysis on a single parcel of land
 
     Args:
@@ -150,7 +151,7 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
     avail_geom = get_avail_geoms(parcel_df.geometry[0], cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel_df.boundary[0], num_rects=MAX_RECTS, max_aspect_ratio=MAX_ASPECT_RATIO,
+        avail_geom, parcel_df.boundary[0], num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
@@ -195,6 +196,12 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
             limiting_factor = "Available Space"
         # Todo: Insert something about topography.
 
+    # Logic for lot splits
+    if try_split_lot:
+        second_lot, second_lot_area_ratio = split_lot(parcel_df, buildings)
+    else:
+        second_lot, second_lot_area_ratio = None, None
+
     # Do plotting stuff if necessary
     if show_plot or save_file:
         lot_df = geopandas.GeoDataFrame(
@@ -202,15 +209,25 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
         better_plot(apn, address, lot_df, topos_df,
                     new_building_polys, open_space_poly, parcel_edges[0])
 
-        if show_plot:
-            plt.show()
         if save_file:
-            # Create the directory if it doesn't exist
             if not os.path.isdir(save_dir):
                 os.makedirs(save_dir)
 
             plt.savefig(save_dir + apn + ".jpg")
             plt.close()
+
+        if second_lot:
+            print(second_lot_area_ratio)
+            split_plot = lot_df.plot()
+            geopandas.GeoSeries(second_lot).plot(
+                ax=split_plot, color='cyan', alpha=0.7)
+
+            if save_file:
+                plt.savefig(save_dir + "lot_split_" + apn + ".jpg")
+                plt.close()
+
+        if show_plot:
+            plt.show()
 
     # Get git info
     repo = git.Repo(search_parent_directories=True)
@@ -222,9 +239,9 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
         "apn": apn,
         "address": address,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
-        "carports": int(parcel.carport_st[0] or 0),
+        "carports": int(parcel_df.carport_st[0] or 0),
         "garages": num_garages,
-        
+
         "parcel_size": parcel_size,
         "existing_living_area": existing_living_area,
         "existing_floor_area": existing_floor_area,
@@ -252,6 +269,10 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False, sa
         "cap_ratio_score": cap_ratio_score,
         "open_space_score": open_space_score,
         "project_size_score": project_size_score,
+
+        "can_lot_split": second_lot is not None,
+        "new_lot_area_ratio": second_lot_area_ratio,
+        "new_lot_area": second_lot.area if second_lot else None,
 
         "git_commit_hash": git_sha,
         "datetime_ran": datetime.datetime.now(),
@@ -282,8 +303,9 @@ def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=Fal
     return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file)
 
 
-def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_file=False, save_dir=DEFAULT_SAVE_DIR,
-                         limit=None, shuffle=False):
+def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS,
+                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
+                         limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
@@ -308,7 +330,8 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS, save_fil
         print(i, parcel.apn)
         try:
             result = _analyze_one_parcel(
-                parcel, utm_crs, show_plot=False, save_file=save_file, save_dir=save_dir)
+                parcel, utm_crs, show_plot=False, save_file=save_file,
+                save_dir=save_dir, try_split_lot=try_split_lot)
 
             # Shouldn't need this as result should never be null,
             # but we keep it as a sanity check
