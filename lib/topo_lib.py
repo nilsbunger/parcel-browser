@@ -1,69 +1,112 @@
-import sys
+import gc
+import re
 from typing import Dict
 
 import django
 import geopandas
 import pyproj
 import shapely
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import unary_union
 
-from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings
+from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings, polygon_to_utm
 from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
 from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
 
 colors = {25: 'red', 20: 'orange', 15: 'gold', 10: 'greenyellow', 5: 'springgreen', 0: 'white'}
 
+
 def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
     """ Calculate slopes for all parcels within a bounding box that are in analyzed_parcel table without
         a 'skip' flag. Records slopes in the database. """
+    # Prevent memory leak in matplotlib by using non-gui backend. see
+    # https://github.com/matplotlib/matplotlib/issues/20300
+    mpl.use('agg')
+
     topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
     topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
-    have_topo_data = any([bounding_box.within(x) for x in topo_areas])
-    if (not have_topo_data):
-        sys.stderr.write(f'We don\'t have topography data for the outline {bounding_box}\n')
-        print (topo_list)
-        print (topo_areas)
-        sys.exit(1)
-
-    # Filter parcels by ones not marked as skipped. We order the results by APN so we have a consistent analysis order
-    # (and can thus start midway if needed). NOTE: We should create a foreign key relationship so we don't need this
-    # ugly query.
     parcels = get_parcels_by_neighborhood(bounding_box)
 
     print(f'Analyzing {len(parcels)} parcels...')
-
     error_parcels = []
-    bucket_stats = {'empty': 0, 'weird': 0, 'full': 0, 'no_buildings': 0}
-    for idx, parcel in enumerate(parcels):
+    bucket_stats = {'empty': 0, 'weird': 0, 'full': 0, 'no_buildings': 0, 'no_topos': 0}
+    idx = 0
+    for idx, parcel in enumerate(parcels.iterator(chunk_size=10)):
         if idx < start_idx: continue
-
         print(f'Index {idx}, apn={parcel.apn}. Slope Bucket Stats={bucket_stats}.'
-              f' {bucket_stats["no_buildings"]} lots w/o buildings. {len(error_parcels)} errors')
+              f' {bucket_stats["no_buildings"]} lots w/o buildings.'
+              f' {bucket_stats["no_topos"]} sites without topos. {len(error_parcels)} errors')
+        # print(f'Memory usage (MB):', tracemalloc.get_traced_memory()[0]/1e6, tracemalloc.get_traced_memory()[1]/1e6)
+        try:
+            # Make sure parcel we're analyzing has associated topo info
+            if not _check_parcel_has_topo(parcel, topo_areas):
+                bucket_stats["no_topos"] += 1
+                continue
+            # Close old plots to prevent memory growth
+            plt.close("all")
+            if idx % 10 == 0: gc.collect()
 
-        plt.close()  # close previous plot to protect memory.
+            topos = get_topo_lines(parcel)
+            topos_df = models_to_utm_gdf(topos, utm_crs)
+            plot = create_slopes_for_parcel(parcel, utm_crs, topos_df, bucket_stats)
 
-        topos = get_topo_lines(parcel)
-        topos_df = models_to_utm_gdf(topos, utm_crs)
-        plot = create_slopes_for_parcel(parcel, utm_crs, topos_df, bucket_stats)
-
-        # Finalize parcel plot with slope data, and save plot image to file
-        buildings = get_buildings(parcel)
-        if len(buildings) > 0:
-            buildings_df = models_to_utm_gdf(buildings, utm_crs)
-            buildings_df.plot(ax=plot, )
-        else:
-            print("NO BUILDINGS ON LOT")
-            bucket_stats["no_buildings"] += 1
-        topos_df.plot(ax=plot, color='gray')
-        plt.title('APN=' + str(parcel.apn))
-        plt.savefig("./world/data/topo-images/" + parcel.apn + ".jpg")
+            # Finalize parcel plot with slope data, and save plot image to file
+            buildings = get_buildings(parcel)
+            if len(buildings) > 0:
+                buildings_df = models_to_utm_gdf(buildings, utm_crs)
+                buildings_df.plot(ax=plot, )
+            else:
+                print("NO BUILDINGS ON LOT")
+                bucket_stats["no_buildings"] += 1
+            topos_df.plot(ax=plot, color='gray')
+            plt.title('APN=' + str(parcel.apn))
+            plt.savefig("./world/data/topo-images/" + parcel.apn + ".jpg")
+        except Exception as e:
+            print(f"ERROR in parcel {parcel.apn}: {e}")
+            error_parcels.append(parcel.apn)
 
     print(f'DONE. Completed {idx - start_idx + 1} parcels. '
           f'Final slope bucket stats={bucket_stats}. '
           f'{len(error_parcels)} failed. Failed parcels:')
     print(error_parcels)
+
+
+def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
+    """ Check if parcels to be analyzed within bounding box have topography data for them, and create plot to
+    visualize """
+    parcels = get_parcels_by_neighborhood(bounding_box)
+    topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
+    topos = TopographyLoads.objects.all()
+    for topo in topos:
+        topo_shapely = polygon_to_utm(topo.extents, pyproj.CRS(4326))
+        x,y = topo_shapely.exterior.xy
+        plt.plot(x,y)
+        name = re.sub(r'^Topo_2014_2Ft_(.*).gdb$', r'\1', topo.fname)
+        plt.text(topo_shapely.centroid.x-0.01, topo_shapely.centroid.y-0.1, name)
+
+    num_parcels = len(parcels)
+    print(f'Checking {num_parcels} parcels...')
+
+    topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
+    outside_parcels = 0
+    for idx, parcel in enumerate(parcels):
+        if idx % 5000 == 0:
+            print(f"Checking {idx} out of {num_parcels}")
+        if not _check_parcel_has_topo(parcel, topo_areas):
+            x = parcel.geom.centroid.x
+            y = parcel.geom.centroid.y
+            plt.plot(x, y, marker="o", markersize=2, markeredgecolor="red", markerfacecolor="yellow")
+            outside_parcels += 1
+        else:
+            x = parcel.geom.centroid.x
+            y = parcel.geom.centroid.y
+            plt.plot(x, y, marker="o", markersize=1, markeredgecolor="green", markerfacecolor="green")
+
+    print(f'Done. {outside_parcels} found outside the bounds of topo information.')
+    print("Close plot to end.")
+    plt.show()
 
 
 def create_slopes_for_parcel(parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geopandas.GeoDataFrame,
@@ -209,3 +252,11 @@ def _yield_grade_lines(parcel_df, topos_df):
     for x in range(xmin, xmax):
         intersect = topos_df.geometry.intersection(LineString([(x, ymin), (x, ymax)]))
         yield from _yield_grade_lines_from_intersections(intersect, topos_df)
+
+
+def _check_parcel_has_topo(parcel: Parcel, topo_areas: django.contrib.gis.geos.MultiPolygon):
+    if any([parcel.geom.within(x) for x in topo_areas]):
+        return True
+    else:
+        print("Parcel at location", parcel.geom.centroid, " not represented in Topo Areas!")
+        return False
