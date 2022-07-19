@@ -26,7 +26,7 @@ django.setup()
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
-SETBACK_WIDTHS = [3, 0.1, 0.1]
+SETBACK_WIDTHS = [25/3.28, 0.13, 0.13]
 BUFFER_SIZES = {
     "MAIN": 2,
     "ACCESSORY": 1.1,
@@ -331,16 +331,18 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         }
 
 
-def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS,
+def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes:[], utm_crs: pyproj.CRS,
                          save_file=False, save_dir=DEFAULT_SAVE_DIR,
                          limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
     if not save_dir:
         save_dir = DEFAULT_SAVE_DIR
-
-    bounding_box = django.contrib.gis.geos.Polygon.from_bbox(
-        hood_bounds_tuple)
-    parcels = get_parcels_by_neighborhood(bounding_box)
+    if zip_codes:
+        parcels = get_parcels_by_zip_codes(zip_codes)
+    else:
+        bounding_box = django.contrib.gis.geos.Polygon.from_bbox(
+            hood_bounds_tuple)
+        parcels = get_parcels_by_neighborhood(bounding_box)
 
     if (shuffle):
         parcels = list(parcels)
