@@ -3,8 +3,10 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing scores for scenarios, and running
 scenarios in general.
 """
-from typing import Tuple
 
+from lib.topo_lib import get_topo_lines
+from typing import Tuple
+from joblib import Parallel, delayed
 import random
 from pandas import DataFrame
 from lib.parcel_lib import *
@@ -17,7 +19,10 @@ import datetime
 import django
 import os
 
-from lib.topo_lib import get_topo_lines
+# TODO: It seems any workers we spawn will need django.setup(), so let's move
+# all the workers to a separate file so we don't pollute this file.
+django.setup()
+
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
@@ -303,6 +308,29 @@ def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=Fal
     return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file)
 
 
+def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
+                               save_file=False, save_dir=DEFAULT_SAVE_DIR,
+                               try_garage_conversion=True, try_split_lot=True, i: int = 0):
+    print(i, parcel.apn)
+    try:
+        result = _analyze_one_parcel(
+            parcel, utm_crs, show_plot=False, save_file=save_file,
+            save_dir=save_dir, try_garage_conversion=try_garage_conversion,
+            try_split_lot=try_split_lot)
+
+        # Shouldn't need this as result should never be null,
+        # but we keep it as a sanity check
+        assert(result is not None)
+        return result, None
+    except Exception as e:
+        print(f"Exception on parcel {parcel.apn}")
+        print(e)
+        return None, {
+            "apn": parcel.apn,
+            "error": e,
+        }
+
+
 def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS,
                          save_file=False, save_dir=DEFAULT_SAVE_DIR,
                          limit=None, shuffle=False, try_split_lot=True):
@@ -318,32 +346,43 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS,
         parcels = list(parcels)
         random.shuffle(parcels)
 
-    print(f"Found {len(parcels)} parcels. Analyzing {limit or len(parcels)}.")
+    num_analyze = min(len(parcels), int(limit)) if limit else len(parcels)
 
-    analyzed = []
-    errors = []
-    i = 0
-    for i, parcel in enumerate(parcels):
-        if limit and i >= int(limit):
-            print("Stopping at user-requested limit of parcels.")
-            break
-        print(i, parcel.apn)
-        try:
-            result = _analyze_one_parcel(
-                parcel, utm_crs, show_plot=False, save_file=save_file,
-                save_dir=save_dir, try_split_lot=try_split_lot)
+    print(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
 
-            # Shouldn't need this as result should never be null,
-            # but we keep it as a sanity check
-            if result is not None:
-                analyzed.append(result)
-        except Exception as e:
-            print(f"Exception on parcel {parcel.apn}")
-            print(e)
-            errors.append({
-                "apn": parcel.apn,
-                "error": e,
-            })
+    # Feature flag: this uses multiprocessing. Turn it off to go back to the original sequential method
+    if True:
+        parallel_results = Parallel(n_jobs=8)(delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
+                                                                                  save_dir=save_dir, try_split_lot=try_split_lot, i=i)
+                                              for i, parcel in zip(range(num_analyze), parcels))
+
+        analyzed = [x[0] for x in parallel_results if x[0] is not None]
+        errors = [x[1] for x in parallel_results if x[1] is not None]
+    else:
+        analyzed = []
+        errors = []
+        i = 0
+        for i, parcel in enumerate(parcels):
+            if limit and i >= int(limit):
+                print("Stopping at user-requested limit of parcels.")
+                break
+            print(i, parcel.apn)
+            try:
+                result = _analyze_one_parcel(
+                    parcel, utm_crs, show_plot=False, save_file=save_file,
+                    save_dir=save_dir, try_split_lot=try_split_lot)
+
+                # Shouldn't need this as result should never be null,
+                # but we keep it as a sanity check
+                if result is not None:
+                    analyzed.append(result)
+            except Exception as e:
+                print(f"Exception on parcel {parcel.apn}")
+                print(e)
+                errors.append({
+                    "apn": parcel.apn,
+                    "error": e,
+                })
 
     if save_file:
         # Export to csv
@@ -357,4 +396,4 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, utm_crs: pyproj.CRS,
         error_df = DataFrame.from_records(errors)
         error_df.to_csv("./world/data/scenario-images/errors.csv", index=False)
 
-    print(f"Done analyzing {i+1} parcels. {len(errors)} errors")
+    print(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
