@@ -2,7 +2,18 @@ import gc
 import re
 from typing import Dict
 
+from joblib import Parallel, delayed
+import pandas as pd
 import django
+
+# We need this to set up Django before any parallelization to work.
+# This is because when a new process is spawned, its memory isn't copied
+# over from the main process, so we need to set up Django again. Otherwise,
+# the other Django-related imports will all fail. Not sure if this is the best
+# way to do it, should experiment with others too.
+django.setup()
+
+
 import geopandas
 import pyproj
 import shapely
@@ -14,8 +25,71 @@ from shapely.ops import unary_union
 from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings, polygon_to_utm
 from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
 from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
-
 colors = {25: 'red', 20: 'orange', 15: 'gold', 10: 'greenyellow', 5: 'springgreen', 0: 'white'}
+
+
+def calculate_parcel_slope_worker(parcel: Parcel, utm_crs: pyproj.CRS, topo_areas, i):
+    # Prevent memory leak in matplotlib by using non-gui backend. see
+    # https://github.com/matplotlib/matplotlib/issues/20300
+    mpl.use('agg')
+
+    parcel_stat = {'apn': parcel.apn, 'empty': 0, 'weird': 0,
+                   'full': 0, 'no_buildings': 0, 'no_topos': 0, 'error': False}
+
+    print(f'apn={parcel.apn}.')
+    try:
+        # Make sure parcel we're analyzing has associated topo info
+        if not _check_parcel_has_topo(parcel, topo_areas):
+            parcel_stat["no_topos"] += 1
+            return parcel_stat
+        # Close old plots to prevent memory growth
+        plt.close("all")
+        if parcel.apn[-1] == '0':
+            gc.collect()
+
+        topos = get_topo_lines(parcel)
+        topos_df = models_to_utm_gdf(topos, utm_crs)
+        plot = create_slopes_for_parcel(parcel, utm_crs, topos_df, parcel_stat)
+
+        # Finalize parcel plot with slope data, and save plot image to file
+        buildings = get_buildings(parcel)
+        if len(buildings) > 0:
+            buildings_df = models_to_utm_gdf(buildings, utm_crs)
+            buildings_df.plot(ax=plot)
+        else:
+            print("NO BUILDINGS ON LOT")
+            parcel_stat["no_buildings"] += 1
+        topos_df.plot(ax=plot, color='gray')
+        plt.title('APN=' + str(parcel.apn))
+        plt.savefig("./world/data/topo-images/" + parcel.apn + ".jpg")
+
+    except Exception as e:
+        print(f"ERROR in parcel {parcel.apn}: {e}")
+        parcel_stat["error"] = True
+        return parcel_stat
+
+    print(i, "Done")
+    return parcel_stat
+
+
+def calculate_parcel_slopes_mp(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
+    topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
+    topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
+    parcels = get_parcels_by_neighborhood(bounding_box)
+    print(f'Analyzing {len(parcels)} parcels...')
+    parcels = parcels[start_idx:]
+    # bucket_stats_list is a list of dicts
+    bucket_stats_list = Parallel(n_jobs=8)(delayed(calculate_parcel_slope_worker)(
+        parcel, utm_crs, topo_areas, i
+    ) for i, parcel in enumerate(parcels))
+
+    bucket_stats_df = pd.DataFrame(bucket_stats_list)
+
+    # Now aggregate data
+    print(bucket_stats_df.sum(axis=0, numeric_only=True))
+    
+    print("APNs with errors:")
+    print(bucket_stats_df.loc[bucket_stats_df['error'] == True, 'apn'])
 
 
 def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
@@ -81,10 +155,10 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
     topos = TopographyLoads.objects.all()
     for topo in topos:
         topo_shapely = polygon_to_utm(topo.extents, pyproj.CRS(4326))
-        x,y = topo_shapely.exterior.xy
-        plt.plot(x,y)
+        x, y = topo_shapely.exterior.xy
+        plt.plot(x, y)
         name = re.sub(r'^Topo_2014_2Ft_(.*).gdb$', r'\1', topo.fname)
-        plt.text(topo_shapely.centroid.x-0.01, topo_shapely.centroid.y-0.1, name)
+        plt.text(topo_shapely.centroid.x - 0.01, topo_shapely.centroid.y - 0.1, name)
 
     num_parcels = len(parcels)
     print(f'Checking {num_parcels} parcels...')
@@ -194,7 +268,7 @@ class SortPoint(Point):
         return True if (self.x < other.x) else (self.x == other.x) and (self.y < other.y)
 
 
-def get_topo_lines(parcel: Parcel) -> [Topography]:
+def get_topo_lines(parcel: Parcel) -> list[Topography]:
     """ Get topo lines that intersect with a Django parcel. Returns a Queryset of Topography objects"""
     # Get the topography objects intersecting with a Django parcel instance under consideration. We make the DB
     # calculate the intersection. It's a raw query because Django won't let us overwrite a model field
