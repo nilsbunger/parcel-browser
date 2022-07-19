@@ -75,8 +75,18 @@ vectorSource.on('featuresloadend', (event) => {
     console.log(event.features[0].getGeometry());
     // console.log(event.features[0].values_);
     const parcelFeatures = pickFeatures(event.features[0].values_);
+
+    let aestheticAddress = "";
+    const construct = (string) => {
+        if (string !== null) {
+            aestheticAddress += string + " ";
+        } 
+    }
+    const addrVals = [parcelFeatures['situs_addr'], parcelFeatures['situs_pre_field'], parcelFeatures['situs_stre'], parcelFeatures['situs_suff'], parcelFeatures['situs_frac'], parcelFeatures['situs_buil'], parcelFeatures['situs_suit']];
+    addrVals.forEach(construct);
+
     let rightcol = document.getElementById('rightcol');
-    rightcol.innerHTML = "<p>" + latlong + "</p><p>Lot size:" + lotSize + " </p>";
+    rightcol.innerHTML = "<p>" + aestheticAddress + "</p><p>" + latlong + "</p><p>Lot size: " + lotSize + " </p>";
     let val: keyof typeof parcelFeatures;
     for (val in parcelFeatures) {
         console.log(val, parcelFeatures[val]);
