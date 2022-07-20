@@ -85,8 +85,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mygeo.wsgi.application'
 
-GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH')
-GEOS_LIBRARY_PATH = os.getenv('GEOS_LIBRARY_PATH')
+GDAL_LIBRARY_PATH = env('GDAL_LIBRARY_PATH')
+GEOS_LIBRARY_PATH = env('GEOS_LIBRARY_PATH')
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
