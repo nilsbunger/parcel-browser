@@ -16,12 +16,20 @@ from django.core.management.base import BaseCommand, CommandError
 
 class Neighborhood(Enum):
     # Mira Mesa neighborhood of San Diego
-    Miramesa = (-117.17987773162996, 32.930825570911985, -
-                117.12513392170659, 32.894946222075184)
+    # Miramesa = (-117.17987773162996, 32.930825570911985,
+    #             -117.12513392170659, 32.894946222075184)
+    Miramesa = [92126, 92121]
+    # PacificBeach = (-117.265947, 32.816972,
+    #                 -117.210592,32.781187,
+    # )
     # A subset of around 50 residential properties in Mira Mesa.
     # Can be used for testing
-    MiramesaSmall = (-117.135284737197, 32.905422120627904, -
-                     117.13317320050437, 32.90428935023001)
+    # MiramesaSmall = (-117.135284737197, 32.905422120627904, -
+    #                  117.13317320050437, 32.90428935023001),
+    SDSU = [92115, 92120],
+    Clairemont = [92117, 92111],
+    OceanBeach = [92107],
+
     # ... add more neighborhoods here
 
 
@@ -60,8 +68,9 @@ class Command(BaseCommand):
 
             pprint.pprint(results)
         elif options['neighborhood']:
-            analyze_neighborhood(Neighborhood[options['neighborhood']].value,
-                                 sd_utm_crs,
+            analyze_neighborhood(hood_bounds_tuple=None, # Neighborhood[options['neighborhood']].value,
+                                 zip_codes=Neighborhood[options['neighborhood']].value[0],
+                                 utm_crs=sd_utm_crs,
                                  save_file=options['save_file'],
                                  save_dir=options['save_dir'],
                                  limit=options['limit'],
