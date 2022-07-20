@@ -1,3 +1,5 @@
+from typing import List
+
 import django.contrib.gis.geos
 import geopandas
 import pyproj
@@ -11,7 +13,6 @@ import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
 from django.contrib.gis.geos import GEOSGeometry
-import matplotlib.pyplot as plt
 
 
 from rasterio import features, plot as rasterio_plot
@@ -50,10 +51,24 @@ def get_parcel_by_apn(apn: str):
     return Parcel.objects.get(apn=apn)
 
 
+def get_parcels_by_zip_codes(zip_codes: List) -> QuerySet:
+    # Returns a Queryset of parcels that are in the provided list of zip codes,
+    # and are not marked as skip in our analyzed table (so they are residential and match our criteria).
+    # Results are ordered by APN so there's a consistent analysis order (and can thus start midway if needed).
+    # NOTE: We should create a foreign key relationship so we don't need this ugly query.
+    query = '|'.join(str(zip_code) for zip_code in zip_codes)
+    return Parcel.objects.filter(situs_zip__regex=f'^({query})').extra(
+        tables=['world_analyzedparcel'],
+        where=['world_parcel.apn=world_analyzedparcel.apn',
+               'world_analyzedparcel.skip is false']
+    ).order_by('apn')
+
+
+
 def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry) -> QuerySet:
     # Returns a Queryset of parcels that intersect with the bounding box (are in a neighborhood)
     # and are not marked as skip in our analyzed table (so they are residential and match our criteria).
-    # Results ordered by APN so there's a consistent analysis order (and can thus start midway if needed).
+    # Results are ordered by APN so there's a consistent analysis order (and can thus start midway if needed).
     # NOTE: We should create a foreign key relationship so we don't need this ugly query.
 
     return Parcel.objects.filter(geom__intersects=bounding_box).extra(
