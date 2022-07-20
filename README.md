@@ -16,7 +16,7 @@ From the project directory:
 
 `source ./venv/bin/activate` activates the virtual env. You need to do this in any terminal window where you're running Django, Jupyter Lab, or related tools.
 
-`cp .env.example .env` -- create your .env file, get DB credentials from an admin (only needed for access to a cloud DB)
+`cp .env.example .env` -- create your .env file.
 
 # Install or update dependencies
 
@@ -38,9 +38,9 @@ You'll need a local DB or access to a cloud DB to run the service. A local DB is
 
 4. `createdb geodjango` -- postgres command to create the database
 
-5. `LOCAL_DB=1 ./manage.py migrate` -- apply django migrations to the local DB
+5. `./manage.py migrate` -- apply django migrations to the local DB
 
-6. `LOCAL_DB=1 ./manage.py createsuperuser` -- give yourself a superadmin account on django
+6. `./manage.py createsuperuser` -- give yourself a superadmin account on django
 
 The above is mostly a one-time setup. 
 
@@ -49,9 +49,8 @@ You'll need to run frontend and backend servers:
 
 `cd frontend && yarn dev` -- start frontend (parcel) dev server
 
-Now start the Django server with a cloud db or local db (remember to start the virtual env if you didn't already):
-1. RUNNING WITH CLOUD DB: `LOCAL_DB=0 ./manage.py runserver`
-2. RUNNING WITH LOCAL DB: `LOCAL_DB=1 ./manage.py runserver`
+Now start the Django server (remember to start the virtual env if you didn't already):
+`./manage.py runserver`
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
 
@@ -93,27 +92,52 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 1. Download Parcels, Building_outlines (under MISCELLANEOUS), Zoning_base_sd, Topos_2014_2Ft_PowayLaMesa ZIP, and Topos_2014_2Ft_LaJolla.gdb files from https://www.sangis.org/ . You'll need a free account. Get the associated PDF files as well, as they are useful in describing what the data means.
 2. Unzip and put all files in world/data/  
 3. Load the shape files into the DB:
-`LOCAL_DB=1 ./manage.py load Zoning`
+`./manage.py load Zoning`
 
-`LOCAL_DB=1 ./manage.py load Parcel`
+`./manage.py load Parcel`
 
-`LOCAL_DB=1 ./manage.py load Buildings`
+`./manage.py load Buildings`
 
-`LOCAL_DB=1 ./manage.py load Topography Topo_2014_2Ft_PowayLaMesa.gdb`
+`./manage.py load Topography Topo_2014_2Ft_PowayLaMesa.gdb`
 
-`LOCAL_DB=1 ./manage.py load Topography Topo_2014_2Ft_LaJolla.gdb`
+`./manage.py load Topography Topo_2014_2Ft_LaJolla.gdb`
 
 4. Run ETL jobs as necessary, eg:
-`LOCAL_DB=1 ./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+`./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
-Note: include LOCAL_DB=1 in all commands if using local database. Don't include the brackets!
 
+# Creating new GIS data tables from a shape file
+
+If you're adding a new class of GIS data based on a shape files, there are some tools to make it easier.
+
+1. Try inspecting your new shape file:
+- `ogrinfo <shapefile>.shp` -- shows layers  
+- `ogrinfo -so <shapefile>.shp <layername>` -- examines a layer
+
+2. Generate Django models and mapping automatically:
+- Use `./manage.py orginspect <shapefile> <ModelName> --srid=4326 --mapping --multi` 
+- Add the generated model and mapping to models.py.
+- `./manage.py makemigrations`  
+- `./manage.py migrate`
+
+Third, update the `load.py` management command to load this new type of shape file and then execute the load.
+
+See also the django GIS tutorial [here](https://docs.djangoproject.com/en/4.0/ref/contrib/gis/tutorial/#try-ogrinspect), which shows using ogrinspect this way 
+
+You'll need to manipulate the generated models in a few ways:
+1. Load will fail during load if any data field is empty. You'll need to add "blank=True null=True" to the models.py field that can be null, and make and run another migration. 
+2. There are no indexes or foreign keys in this model. Depending on how you intend to use it, you should consider adding those. They can be added later, of course.
 
 # Scripts
 
 We're working on several scripts that run outside a Django environment. This is in flux, but here's one you can try:
-`LOCAL_DB=1 ./manage.py runscript richard_parcel_test`
+`./manage.py runscript richard_parcel_test`
 This comes from the scripts/ directory, and you can create more files there.
+
+# Using a cloud DB instead of local DB
+
+The Django app can be pointed at a cloud DB easily. You just need to set the env variable LOCAL_DB=0. You can set that in your own .env file, or add it to each command line, or add it to the shell environment. At that point, all Django commands (like `migrate`, `runserver`, and our custom scripts) will access the cloud DB.
+
 
 # Copying data from one DB to another
 
