@@ -89,7 +89,7 @@ def calculate_parcel_slopes_mp(bounding_box: django.contrib.gis.geos.GEOSGeometr
     print(bucket_stats_df.sum(axis=0, numeric_only=True))
     
     print("APNs with errors:")
-    print(bucket_stats_df.loc[bucket_stats_df['error'] == True, 'apn'])
+    print(bucket_stats_df.loc[bucket_stats_df['error'] is True, 'apn'])
 
 
 def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):

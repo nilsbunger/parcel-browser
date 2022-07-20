@@ -1,11 +1,6 @@
-import django
-from django.contrib.gis.geos import Point
-from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
-
-from django.contrib.gis.db import models
 
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
@@ -115,7 +110,7 @@ class Parcel(models.Model):
     geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
 
     def __str__(self):
-        if (self.acreage > 0):
+        if self.acreage > 0:
             lot_str = "%s acres" % self.acreage
         else:
             lot_str = "%s lot" % self.usable_sq_field
@@ -181,7 +176,6 @@ class TopographyLoads(models.Model):
     run_date = models.DateField(auto_now=True)  # note: only updated on model.save
 
 
-
 class Topography(models.Model):  # model based on Topo_2014_2Ft_PowayLaMesa data set.
     elev = models.FloatField()
     ltype = models.IntegerField()
@@ -214,8 +208,8 @@ class ParcelScenario(models.Model):
         srid=4326, blank=True, null=True)
     avail_geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
 
-    parcel_area = models.FloatField()   # In square meters
-    area_added = models.FloatField()    # In square meters
+    parcel_area = models.FloatField()  # In square meters
+    area_added = models.FloatField()  # In square meters
 
     # Financial modelling details
     # Score info

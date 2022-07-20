@@ -14,7 +14,8 @@ from mygeo import settings
 # Proxy requests to JS front-end files that are served separately. This is needed to create a modern JS pipeline in
 # Django. We're using the "hybrid app" method as described in
 # https://fractalideas.com/blog/making-react-and-django-play-well-together-hybrid-app-model/
-# In dev, this requires running a frontend server at localhost:1234 in dev by executing `yarn dev` in the frontend/ directory.
+# In dev, this requires running a frontend server at localhost:1234 in dev by executing `yarn dev` in
+# the frontend/ directory.
 
 # TODO: prod version hasn't been set up
 frontend_proxy_prod_view = TemplateView.as_view(template_name='index.html')
