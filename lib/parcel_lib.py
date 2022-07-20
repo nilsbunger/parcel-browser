@@ -1,3 +1,5 @@
+from typing import List
+
 import django.contrib.gis.geos
 import geopandas
 import pyproj
@@ -11,7 +13,6 @@ import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
 from django.contrib.gis.geos import GEOSGeometry
-import matplotlib.pyplot as plt
 
 
 from rasterio import features, plot as rasterio_plot
@@ -48,6 +49,19 @@ def get_parcel_by_apn(apn: str):
         A Django Parcel model object
     """
     return Parcel.objects.get(apn=apn)
+
+
+def get_parcels_by_zip_codes(zip_codes: List) -> QuerySet:
+    print (zip_codes)
+    query = '|'.join(str(zip_code) for zip_code in zip_codes)
+    print (query)
+    print (Parcel.objects.filter(situs_zip__regex=f'^({query})').query)
+    return Parcel.objects.filter(situs_zip__regex=f'^({query})').extra(
+        tables=['world_analyzedparcel'],
+        where=['world_parcel.apn=world_analyzedparcel.apn',
+               'world_analyzedparcel.skip is false']
+    ).order_by('apn')
+
 
 
 def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry) -> QuerySet:
