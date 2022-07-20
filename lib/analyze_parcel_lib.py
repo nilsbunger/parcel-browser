@@ -76,9 +76,9 @@ def _get_existing_floor_area_stats(parcel, buildings):
     # as this is for analysis only
     parcel_size = parcel.geometry[0].area
     existing_living_area = parcel.total_lvg_field[0] / 10.764
-
-    garage_area = (int(parcel.garage_sta[0] or 0) +
-                   int(parcel.carport_st[0] or 0)) * 23.2
+    num_garages = int(parcel.garage_sta) if parcel.garage_sta else 0
+    num_carports = int(parcel.carport_st) if parcel.carport_st else 0
+    garage_area = (num_garages + num_carports) * 23.2
 
     # existing_living_area + carport/garage area
     existing_floor_area = existing_living_area + garage_area
@@ -171,7 +171,8 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         parcel_df, buildings)
 
     # Compute garage conversion fields
-    num_garages = int(parcel.garage_sta[0] or 0)
+    num_garages = int(parcel.garage_sta) if parcel.garage_sta else 0
+    num_carports = int(parcel.carport_st) if parcel.carport_st else 0
     garage_con_units = int(
         num_garages > 0) if try_garage_conversion else 0
     # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
@@ -243,7 +244,7 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         "apn": apn,
         "address": address,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
-        "carports": int(parcel_df.carport_st[0] or 0),
+        "carports": num_carports,
         "garages": num_garages,
 
         "parcel_size": parcel_size,
