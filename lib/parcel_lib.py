@@ -5,6 +5,7 @@ import geopandas
 import pyproj
 import shapely
 from django.db.models import QuerySet
+from geopandas import GeoDataFrame
 from shapely import wkt
 from shapely.validation import make_valid
 from shapely.geometry import Polygon, box, MultiPolygon, LineString
@@ -13,7 +14,6 @@ import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
 from django.contrib.gis.geos import GEOSGeometry
-
 
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
@@ -64,7 +64,6 @@ def get_parcels_by_zip_codes(zip_codes: List) -> QuerySet:
     ).order_by('apn')
 
 
-
 def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeometry) -> QuerySet:
     # Returns a Queryset of parcels that intersect with the bounding box (are in a neighborhood)
     # and are not marked as skip in our analyzed table (so they are residential and match our criteria).
@@ -112,7 +111,7 @@ def models_to_utm_gdf(
         'geojson', models, geometry_field=geometry_field)
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
-    df = data_frame.to_crs(utm_crs)
+    df: GeoDataFrame = data_frame.to_crs(utm_crs)
     # Temporarily, make sure our dataframe translated correctly by comparing it to how we used
     # to do it. We can remove this after we've run some cycles with it.
     df_old = data_frame.to_crs(data_frame.estimate_utm_crs())
@@ -164,7 +163,7 @@ def normalize_geometries(parcel, buildings):
         # for a sanity check.
         translated_building_multipoly = shapely.affinity.translate(
             building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1])
-        assert(len(translated_building_multipoly.geoms) == 1)
+        assert (len(translated_building_multipoly.geoms) == 1)
 
         building_polys.append(translated_building_multipoly[0])
 
@@ -200,6 +199,7 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
     """
     return parcel_geom.difference(cant_build_geom)
 
+
 # Find rectangles based on an answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
@@ -218,7 +218,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
         num_rects (int): The number of rectangles to find
         max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
         min_area (num or None): Minimum area of a building in square meters
-        max_area (num or None): Maximum area of a building in square meters
+        max_area_per_building (num or None): Maximum area of a building in square meters
 
     Returns:
         A list of biggest rectangles found.
@@ -387,7 +387,7 @@ def get_buffered_building_geom(buildings, buffer_sizes):
 
     Args:
         buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
-        buffer_size (float): The width of the buffer to apply to the buildings
+        buffer_sizes (float): The width of the buffer to apply to the buildings
 
     Returns:
         Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
@@ -402,8 +402,6 @@ def maximal_rectangles(matrix):
     m = len(matrix)
     n = len(matrix[0])
     # print (f'{m}x{n} grid (MxN)')
-    cur_bot = 0
-    cur_top = 0
 
     left = [0] * n  # initialize left as the leftmost boundary possible
     right = [n] * n  # initialize right as the rightmost boundary possible
@@ -448,15 +446,13 @@ def maximal_rectangles(matrix):
         for j in range(n):
             proposedarea = height[j] * (right[j] - left[j])
             rect = ((left[j], bot[j]), (right[j] - 1, top[j]))
-            if (height[j] >= 2):
+            if height[j] >= 2:
                 if ((rect[0]) not in dictrects) or (dictrects[rect[0]][0] < proposedarea):
                     dictrects[rect[0]] = (proposedarea, rect)
                 bigrects.append((proposedarea, rect))
-            if (proposedarea > maxarea):
+            if proposedarea > maxarea:
                 maxarea = proposedarea
                 # bigrects.append([proposedarea, rect])
-
-    bigrects = set(bigrects)
 
     return dictrects
 
@@ -490,7 +486,7 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
         # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
         # Scale down the square
         rect_to_place = shapely.affinity.scale(big_rect, xfact=(
-            sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
     elif x_len > y_len:
         # Squish the rectangle to the max_area
         # x is major axis. We want to scale it down
@@ -524,10 +520,8 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     # Now perform a translation that puts the building in the corner of the big
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
-    x_offset = big_rect_four_corners[closest_corner_index][0] - \
-        to_place_four_corners[closest_corner_index][0]
-    y_offset = big_rect_four_corners[closest_corner_index][1] - \
-        to_place_four_corners[closest_corner_index][1]
+    x_offset = big_rect_four_corners[closest_corner_index][0] - to_place_four_corners[closest_corner_index][0]
+    y_offset = big_rect_four_corners[closest_corner_index][1] - to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(
         rect_to_place, xoff=x_offset, yoff=y_offset)
 
@@ -573,7 +567,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         # transform=transform)
         b = features.rasterize([rot_geom_translated], raster_dims, )
 
-        if (do_plots):
+        if do_plots:
             p2 = geopandas.GeoSeries().plot()
             rasterio_plot.show(b)
             p2.set_title(f'{rot} deg; raster')
@@ -584,7 +578,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         sorted_keys = sorted(
             bigrects.keys(), key=lambda k: bigrects[k][0], reverse=True)
         # filter out rects which violate our optional aspect ratio constraint
-        if (max_aspect_ratio):
+        if max_aspect_ratio:
             sorted_keys = [k for k in sorted_keys if aspect_ratio(
                 bigrects[k][1]) <= max_aspect_ratio]
 
@@ -595,21 +589,21 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
         # print ("Biggest rect:", rectarea, rectbounds)
         rect = box(rectbounds[0][0], rectbounds[0][1],
                    rectbounds[1][0], rectbounds[1][1])
-        if (do_plots):
+        if do_plots:
             p1 = geopandas.GeoSeries(rot_geom_translated).plot()
             geopandas.GeoSeries(rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; rot+xlat map')
 
-        if (rectarea > biggest_area):
+        if rectarea > biggest_area:
             biggest_area = rectarea
             biggest_rect = rect
             biggest_rect_rot = rot
             biggest_rect_xlat_amount = translation_amount
-        if (do_plots):
+        if do_plots:
             p1 = geopandas.GeoSeries(avail_geom).plot()
             plot_rect = shapely.affinity.translate(
                 rect, xoff=translation_amount[0], yoff=translation_amount[1])
-            plot_rect = shapely.affinity.rotate(rect, -rot, origin=(0, 0))
+            plot_rect = shapely.affinity.rotate(plot_rect, -rot, origin=(0, 0))
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
 
@@ -700,7 +694,7 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
 
         # Should only intersect with 2 points. Draw a line using these intersections,
         # which effectively scales down our lines for easier drawing/debugging later on
-        assert(len(intersections.geoms) == 2)
+        assert (len(intersections.geoms) == 2)
         line = LineString(intersections.geoms)
         line = shapely.affinity.scale(line, 1.1, 1.1, 1.1)
 
@@ -709,7 +703,7 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
         split = shapely.ops.split(parcel.geometry[0], line)
 
         # Sanity check: Splitting it should only result in 2 polygons
-        assert(len(split.geoms) == 2)
+        assert (len(split.geoms) == 2)
 
         # Now append the lot that doesn't have the main house. Allow a margin of error
         second_lots.append(

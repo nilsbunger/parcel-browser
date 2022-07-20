@@ -1,5 +1,3 @@
-from django.contrib import admin
-
 # Register your models here.
 from django.contrib.gis import admin
 from .models import WorldBorder, Marker, Parcel, ZoningBase
@@ -28,4 +26,3 @@ class ZoningBaseAdmin(admin.OSMGeoAdmin):
 
     list_display = ("zone_name", "ordnum")
     search_fields = ("zone_name", "ordnum")
-

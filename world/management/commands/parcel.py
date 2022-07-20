@@ -1,17 +1,9 @@
-import json
 import pprint
-import geopandas
-import shapely
 from enum import Enum
-from django.core.serializers import serialize
-from shapely.geometry import MultiLineString
-from shapely.ops import triangulate
 from lib.analyze_parcel_lib import analyze_by_apn, analyze_neighborhood
 from lib.crs_lib import get_utm_crs
 
-from world.models import parcel_mapping, world_mapping, Parcel, ZoningBase, zoningbase_mapping, \
-    BuildingOutlines, buildingoutlines_mapping
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 
 class Neighborhood(Enum):
@@ -46,7 +38,8 @@ class Command(BaseCommand):
         parser.add_argument('--save-file', '-f', action='store_true',
                             help="Save the plot images to a file")
         parser.add_argument('--save-dir', action='store',
-                            help="Specify a custom directory to save files to. If none is provided, the default is used")
+                            help='Specify a custom directory to save files to.'
+                                 'If none is provided, the default is used')
         parser.add_argument('--limit', '-l', action='store',
                             help="Limit the number of parcels analyzed")
         parser.add_argument('--shuffle', '-s', action='store_true',
@@ -68,7 +61,7 @@ class Command(BaseCommand):
 
             pprint.pprint(results)
         elif options['neighborhood']:
-            analyze_neighborhood(hood_bounds_tuple=None, # Neighborhood[options['neighborhood']].value,
+            analyze_neighborhood(hood_bounds_tuple=tuple(),  # Neighborhood[options['neighborhood']].value,
                                  zip_codes=Neighborhood[options['neighborhood']].value[0],
                                  utm_crs=sd_utm_crs,
                                  save_file=options['save_file'],

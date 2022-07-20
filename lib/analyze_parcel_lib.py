@@ -23,10 +23,9 @@ import os
 # all the workers to a separate file so we don't pollute this file.
 django.setup()
 
-
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
-SETBACK_WIDTHS = [25/3.28, 0.13, 0.13]
+SETBACK_WIDTHS = [25 / 3.28, 0.13, 0.13]
 BUFFER_SIZES = {
     "MAIN": 2,
     "ACCESSORY": 1.1,
@@ -320,7 +319,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
 
         # Shouldn't need this as result should never be null,
         # but we keep it as a sanity check
-        assert(result is not None)
+        assert (result is not None)
         return result, None
     except Exception as e:
         print(f"Exception on parcel {parcel.apn}")
@@ -331,7 +330,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         }
 
 
-def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes:[], utm_crs: pyproj.CRS,
+def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: [], utm_crs: pyproj.CRS,
                          save_file=False, save_dir=DEFAULT_SAVE_DIR,
                          limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
@@ -354,9 +353,10 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes:[], utm_crs: pyproj
 
     # Feature flag: this uses multiprocessing. Turn it off to go back to the original sequential method
     if True:
-        parallel_results = Parallel(n_jobs=8)(delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
-                                                                                  save_dir=save_dir, try_split_lot=try_split_lot, i=i)
-                                              for i, parcel in zip(range(num_analyze), parcels))
+        parallel_results = Parallel(n_jobs=8)(
+            delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
+                                                save_dir=save_dir, try_split_lot=try_split_lot, i=i)
+            for i, parcel in zip(range(num_analyze), parcels))
 
         analyzed = [x[0] for x in parallel_results if x[0] is not None]
         errors = [x[1] for x in parallel_results if x[1] is not None]
