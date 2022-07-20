@@ -77,13 +77,12 @@ vectorSource.on('featuresloadend', (event) => {
     const parcelFeatures = pickFeatures(event.features[0].values_);
 
     let aestheticAddress = "";
-    const construct = (string) => {
+    const addrVals = [parcelFeatures['situs_addr'], parcelFeatures['situs_pre_field'], parcelFeatures['situs_stre'], parcelFeatures['situs_suff'], parcelFeatures['situs_frac'], parcelFeatures['situs_buil'], parcelFeatures['situs_suit']];
+    addrVals.forEach((string) => {
         if (string !== null) {
             aestheticAddress += string + " ";
         } 
-    }
-    const addrVals = [parcelFeatures['situs_addr'], parcelFeatures['situs_pre_field'], parcelFeatures['situs_stre'], parcelFeatures['situs_suff'], parcelFeatures['situs_frac'], parcelFeatures['situs_buil'], parcelFeatures['situs_suit']];
-    addrVals.forEach(construct);
+    });
 
     let rightcol = document.getElementById('rightcol');
     rightcol.innerHTML = "<p>" + aestheticAddress + "</p><p>" + latlong + "</p><p>Lot size: " + lotSize + " </p>";
