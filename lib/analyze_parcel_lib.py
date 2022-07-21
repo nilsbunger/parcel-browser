@@ -39,6 +39,8 @@ MAX_FAR = 0.6
 DEFAULT_SAVE_DIR = './world/data/scenario-images/'
 
 colorkeys = list(mcolors.XKCD_COLORS.keys())
+NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
+                       'lightpink', 'mediumorchid', 'hotpink']
 
 
 def get_cap_ratio_score():
@@ -97,7 +99,7 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
             existing_FAR, main_building_area, accessory_buildings_area)
 
 
-def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edges):
+def better_plot(apn, address, parcel, topos, new_buildings, open_space_poly, street_edges):
     # Plots a parcel, buildings, and new buildings
     p = parcel.plot()
     plt.title(apn + ':' + address)
@@ -108,9 +110,13 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edge
 
     geopandas.GeoSeries(street_edges.buffer(0.4)).plot(ax=p, color='brown')
 
-    for idx, poly in enumerate(polys):
+    # Plot new buildings
+    for idx, poly in enumerate(new_buildings):
         geopandas.GeoSeries(poly).plot(
-            ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
+            ax=p, color=NEW_BUILDING_COLORS[idx % len(NEW_BUILDING_COLORS)], alpha=0.6)
+
+        plt.annotate(text="{:.0f}".format(poly.area), xy=poly.representative_point().coords[:][0],
+                     ha='center')
 
 
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
