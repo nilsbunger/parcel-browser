@@ -76,8 +76,8 @@ def _get_existing_floor_area_stats(parcel, buildings):
     # as this is for analysis only
     parcel_size = parcel.geometry[0].area
     existing_living_area = parcel.total_lvg_field[0] / 10.764
-    num_garages = int(parcel.garage_sta) if parcel.garage_sta[0] else 0
-    num_carports = int(parcel.carport_st) if parcel.carport_st[0] else 0
+    num_garages = int(parcel.garage_sta[0]) if parcel.garage_sta[0] else 0
+    num_carports = int(parcel.carport_st[0]) if parcel.carport_st[0] else 0
     garage_area = (num_garages + num_carports) * 23.2
 
     # existing_living_area + carport/garage area
