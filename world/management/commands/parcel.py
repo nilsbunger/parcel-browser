@@ -9,11 +9,11 @@ from django.core.management.base import BaseCommand
 class Neighborhood(Enum):
     # Refer to this map of zip codes: https://www.titleadvantage.com/mdocs/SD_ZipCodes_South.pdf
     Miramesa = [92126, 92121]
-    SDSU = [92115, 92120],
-    Clairemont = [92117, 92111],
-    OceanBeach = [92107],
-    Encanto = [92114, 92139],
-    AlliedGardens = [92119, 92120, 92124],
+    SDSU = [92115, 92120]
+    Clairemont = [92117, 92111]
+    OceanBeach = [92107]
+    Encanto = [92114, 92139]
+    AlliedGardens = [92119, 92120, 92124]
 
     # ... add more neighborhoods here
 
@@ -55,7 +55,7 @@ class Command(BaseCommand):
             pprint.pprint(results)
         elif options['neighborhood']:
             analyze_neighborhood(hood_bounds_tuple=tuple(),  # Neighborhood[options['neighborhood']].value,
-                                 zip_codes=Neighborhood[options['neighborhood']].value[0],
+                                 zip_codes=Neighborhood[options['neighborhood']].value,
                                  utm_crs=sd_utm_crs,
                                  save_file=options['save_file'],
                                  save_dir=options['save_dir'],

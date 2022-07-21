@@ -371,8 +371,8 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
 
     if parcel.total_lvg_field[0]:
         # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
-        num_garages = int(parcel.garage_sta) if parcel.garage_sta else 0
-        num_carports = int(parcel.carport_st) if parcel.carport_st else 0
+        num_garages = int(parcel.garage_sta[0]) if parcel.garage_sta[0] else 0
+        num_carports = int(parcel.carport_st[0]) if parcel.carport_st[0] else 0
         garage_area = (num_garages + num_carports) * 23.2
         total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
         existing_floor_area = total_lvg_by_model + garage_area
@@ -487,7 +487,7 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
         # See if the square area of the minor axis is bigger than the max. If so, we do a scaled down square
         # Scale down the square
         rect_to_place = shapely.affinity.scale(big_rect, xfact=(
-                sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
+            sqrt(max_area) / x_len), yfact=(sqrt(max_area) / y_len))
     elif x_len > y_len:
         # Squish the rectangle to the max_area
         # x is major axis. We want to scale it down
@@ -521,8 +521,10 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     # Now perform a translation that puts the building in the corner of the big
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
-    x_offset = big_rect_four_corners[closest_corner_index][0] - to_place_four_corners[closest_corner_index][0]
-    y_offset = big_rect_four_corners[closest_corner_index][1] - to_place_four_corners[closest_corner_index][1]
+    x_offset = big_rect_four_corners[closest_corner_index][0] - \
+        to_place_four_corners[closest_corner_index][0]
+    y_offset = big_rect_four_corners[closest_corner_index][1] - \
+        to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(
         rect_to_place, xoff=x_offset, yoff=y_offset)
 
