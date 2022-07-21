@@ -7,20 +7,13 @@ from django.core.management.base import BaseCommand
 
 
 class Neighborhood(Enum):
-    # Mira Mesa neighborhood of San Diego
-    # Miramesa = (-117.17987773162996, 32.930825570911985,
-    #             -117.12513392170659, 32.894946222075184)
+    # Refer to this map of zip codes: https://www.titleadvantage.com/mdocs/SD_ZipCodes_South.pdf
     Miramesa = [92126, 92121]
-    # PacificBeach = (-117.265947, 32.816972,
-    #                 -117.210592,32.781187,
-    # )
-    # A subset of around 50 residential properties in Mira Mesa.
-    # Can be used for testing
-    # MiramesaSmall = (-117.135284737197, 32.905422120627904, -
-    #                  117.13317320050437, 32.90428935023001),
     SDSU = [92115, 92120],
     Clairemont = [92117, 92111],
     OceanBeach = [92107],
+    Encanto = [92114, 92139],
+    AlliedGardens = [92119, 92120, 92124],
 
     # ... add more neighborhoods here
 
