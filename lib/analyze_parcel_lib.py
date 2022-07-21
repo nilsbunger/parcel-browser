@@ -19,7 +19,7 @@ import datetime
 import django
 import os
 from lib.types import ParcelDC
-from lib.plot_lib import plot_new_buildings, plot_split_lot
+from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
