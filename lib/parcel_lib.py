@@ -371,8 +371,9 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
 
     if parcel.total_lvg_field[0]:
         # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
-        garage_area = (int(parcel.garage_sta[0] or 0) +
-                       int(parcel.carport_st[0] or 0)) * 23.2
+        num_garages = int(parcel.garage_sta) if parcel.garage_sta else 0
+        num_carports = int(parcel.carport_st) if parcel.carport_st else 0
+        garage_area = (num_garages + num_carports) * 23.2
         total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
         existing_floor_area = total_lvg_by_model + garage_area
     else:
