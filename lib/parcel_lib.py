@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Union
 
 import django.contrib.gis.geos
 import geopandas
 import pyproj
 import shapely
 from django.db.models import QuerySet
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, GeoSeries
+from lib.types import ParcelDC, Polygonal
 from shapely import wkt
 from shapely.validation import make_valid
 from shapely.geometry import Polygon, box, MultiPolygon, LineString
@@ -39,7 +40,7 @@ def aspect_ratio(extents):
     return aspect
 
 
-def get_parcel_by_apn(apn: str):
+def get_parcel_by_apn(apn: str) -> Parcel:
     """Returns a Parcel object from the database
 
     Args:
@@ -77,7 +78,7 @@ def get_parcels_by_neighborhood(bounding_box: django.contrib.gis.geos.GEOSGeomet
     ).order_by('apn')
 
 
-def get_buildings(parcel: Parcel):
+def get_buildings(parcel: Parcel) -> QuerySet:
     """Returns a list of BuildingOutlines objects from the database that intersect with
     the given parcel object.
 
@@ -93,7 +94,7 @@ def get_buildings(parcel: Parcel):
 def models_to_utm_gdf(
         models: list[django.contrib.gis.db.models],
         utm_crs: pyproj.CRS,
-        geometry_field='geom') -> geopandas.GeoDataFrame:
+        geometry_field: str = 'geom') -> GeoDataFrame:
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
 
@@ -108,16 +109,34 @@ def models_to_utm_gdf(
     if len(models) == 0:
         return geopandas.GeoDataFrame(columns=['feature'], geometry='feature')
     serialized_models = serialize(
-        'geojson', models, geometry_field=geometry_field)
+        'geojson', models, geometry_field=geometry_field, fields=(geometry_field,))
     data_frame = geopandas.GeoDataFrame.from_features(
         json.loads(serialized_models), crs="EPSG:4326")
     df: GeoDataFrame = data_frame.to_crs(utm_crs)
+
+    # Now, attach the original model objects to the GeoDataFrame
+    df['model'] = models
+
     # Temporarily, make sure our dataframe translated correctly by comparing it to how we used
     # to do it. We can remove this after we've run some cycles with it.
     df_old = data_frame.to_crs(data_frame.estimate_utm_crs())
     assert ((df['geometry'] == df_old['geometry']).all())
 
     return df
+
+
+def parcel_model_to_utm_dc(parcel_model: Parcel, utm_crs: pyproj.CRS) -> ParcelDC:
+    """Converts a Parcel model into the ParcelDC dataclass object.
+
+    Args:
+        parcel_model (Parcel): A Parcel model to convert
+        utm_crs: The destination projection
+
+    Returns:
+        GeoDataFrame: A GeoDataFrame representing the Parcel model
+    """
+    df = models_to_utm_gdf([parcel_model], utm_crs)
+    return ParcelDC(df.geometry[0], df.model[0])
 
 
 def polygon_to_utm(poly: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS):
@@ -186,7 +205,7 @@ def collapse_multipolygon_list(multipolygons):
     return MultiPolygon(res)
 
 
-def get_avail_geoms(parcel_geom, cant_build_geom):
+def get_avail_geoms(parcel_geom: MultiPolygon, cant_build_geom: Polygonal) -> Polygonal:
     """Returns a MultiPolygon representing the available space for a given parcel
 
     Args:
@@ -204,16 +223,17 @@ def get_avail_geoms(parcel_geom, cant_build_geom):
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
 
 
-def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects,
+def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Polygonal, num_rects,
                                           max_aspect_ratio=None, min_area=None,
-                                          max_total_area=float("inf"), max_area_per_building=float("inf")):
+                                          max_total_area=float("inf"), max_area_per_building=float("inf")) \
+        -> List[Polygon]:
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
     or maximum area are passed in, the rectangle sizes will be within that area. If not enough rectangles
     meet the minimum size, then only n < num_rects number of rectangles will be returned.
 
     Args:
         avail_geom (MultiPolygon): The available geometry to place extra structures
-        parcel_boundary (Geometry): A geometry (Polygon or Multipolygon) representing the boundary
+        parcel_geom (MultiPolygon): A geometry representing the boundary of the parcel
         or exterior of the parcel.
         num_rects (int): The number of rectangles to find
         max_aspect_ratio (int or None): Maximum aspect ratio of rectangles to return
@@ -228,7 +248,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
     # Placement approach: Place single biggest unit, then rerun analysis
     for i in range(num_rects):  # place 4 units
         biggest_poly = biggest_poly_over_rotation(
-            avail_geom, parcel_boundary, max_aspect_ratio=max_aspect_ratio,
+            avail_geom, parcel_geom.boundary, max_aspect_ratio=max_aspect_ratio,
             min_area=min_area, max_area=min(max_total_area, max_area_per_building))
 
         if biggest_poly is None:
@@ -242,14 +262,15 @@ def find_largest_rectangles_on_avail_geom(avail_geom, parcel_boundary, num_rects
     return placed_polys
 
 
-def get_street_side_boundaries(parcel: Parcel, utm_crs: pyproj.CRS):
+def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
+        -> tuple[MultiLineString, MultiLineString, MultiLineString]:
     """ Returns the edges of a parcel that are on the street side, the sides of the lot,
     and the back of the lot respectively as Shapely MultiLineStrings.
     Function can be greatly improved with road data, and other types of data we can
     layer on top.
 
     Args:
-        parcel (GeoDataFrame): A Django Parcel model
+        parcel (ParcelDC): A Django Parcel model
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
     Returns:
         (MultiLineString, MultiLineString, MultiLineString): A tuple of MultiLineStrings
@@ -257,9 +278,8 @@ def get_street_side_boundaries(parcel: Parcel, utm_crs: pyproj.CRS):
     """
 
     # Get our adjacent parcels
-    parcel_model = Parcel.objects.get(apn=parcel.apn[0])
     intersecting_parcels = Parcel.objects.filter(
-        geom__intersects=parcel_model.geom).exclude(apn=parcel.apn[0])
+        geom__intersects=parcel.model.geom).exclude(apn=parcel.model.apn)
     intersecting_utm = models_to_utm_gdf(intersecting_parcels, utm_crs)
 
     # First Heuristic for determining street side:
@@ -267,13 +287,13 @@ def get_street_side_boundaries(parcel: Parcel, utm_crs: pyproj.CRS):
     # Find the intersections between the adjacent parcels and the parcel
     other_parcels_geom = intersecting_utm.dissolve().geometry[0]
     parcels_intersection = other_parcels_geom.intersection(
-        parcel.geometry[0])  # MultiLineString
+        parcel.geometry)  # MultiLineString
 
     # The difference between the outline and the intersection is the street side
     # NOTE: this implementation to find the street side is not perfect. It's possible
     # that a side that doesn't have an adjacent parcel is the back of a lot, or just has
     # wilderness or something behind it.
-    street_edges = parcel.boundary[0].difference(
+    street_edges = parcel.geometry.boundary.difference(
         parcels_intersection)  # MultiLineString
 
     # The back is the union of all the line segments that don't touch any of the street edges
@@ -296,13 +316,13 @@ def get_street_side_boundaries(parcel: Parcel, utm_crs: pyproj.CRS):
     return street_edges, side_edges, back_edges
 
 
-def get_setback_geoms(parcel, setback_widths, edges):
+def get_setback_geoms(parcel_geom: MultiPolygon, setback_widths: tuple[float, float, float], edges):
     """Given setback widths and the front, side, and back edges, returns the geometry
     representing that setback.
 
     Args:
-        parcel (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
-        setback_widths ((num, num, num)): A tuple representing the setback widths (in meters)
+        parcel_geom (MultiPolygon): A MultiPolygon representing the parcel's geometry
+        setback_widths ((float, float, float)): A tuple representing the setback widths (in meters)
         for the front (street), side, and back edges
         edges: ((MultiLineString, MultiLineString, MultiLineString)): A tuple representing the edges
         of the parcel. The front, side, and back edges.
@@ -312,26 +332,22 @@ def get_setback_geoms(parcel, setback_widths, edges):
     """
     setbacks = []
     for setback_width, edges in zip(setback_widths, edges):
-        setback = edges.buffer(setback_width).intersection(parcel.geometry[0])
+        setback = edges.buffer(setback_width).intersection(parcel_geom)
         setbacks.append(setback)
     return setbacks
 
 
-def identify_building_types(parcel, buildings):
+def identify_building_types(parcel_geom: Polygonal, buildings: GeoDataFrame) -> None:
     """Identify the building type (Accessory, main, or encroachment) of a building
-    on a lot.
+    on a lot in-place
 
     Args:
-        parcel (GeoDataFrame): The parcel the building is on
+        parcel_geom (Polygon or MultiPolygon): The geometry of the parcel that the buildings' on
         buildings (GeoDataFrame): The buildings to identify
-
-    Returns:
-       void. Modifies the buildings in-place
     """
     # The percent of a building's area that must be inside the parcel
     # to be not considered an encroachment
     ENCROACHMENT_THRESHOLD = 0.4
-    parcel_geom = parcel.geometry[0]
 
     max_area = 0
     max_area_index = 0
@@ -351,14 +367,14 @@ def identify_building_types(parcel, buildings):
     buildings.loc[max_area_index, 'building_type'] = 'MAIN'
 
 
-def get_avail_floor_area(parcel, buildings, max_FAR):
+def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: float) -> float:
     """Returns the available floor area of a parcel in square meters such that
     the FAR constraints aren't violated. Uses the floor area as calculated by summing
     the garages and total living area that are on the model object. However, if total_lvg_field
     is missing, will default to use the floor area by building.
 
     Args:
-        parcel (GeoDataFrame): The parcel the building is on
+        parcel (ParcelDC): The parcel the building is on
         buildings (GeoDataFrame): The buildings on the parcel
         max_FAR (float): The maximum floor area to return. < 1
 
@@ -369,21 +385,23 @@ def get_avail_floor_area(parcel, buildings, max_FAR):
     # for i, bldg in buildings.iterrows():
     #     print(bldg.building_type)
 
-    if parcel.total_lvg_field[0]:
+    if parcel.model.total_lvg_field:
         # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
-        num_garages = int(parcel.garage_sta[0]) if parcel.garage_sta[0] else 0
-        num_carports = int(parcel.carport_st[0]) if parcel.carport_st[0] else 0
+        num_garages = int(
+            parcel.model.garage_sta) if parcel.model.garage_sta else 0
+        num_carports = int(
+            parcel.model.carport_st) if parcel.model.carport_st else 0
         garage_area = (num_garages + num_carports) * 23.2
-        total_lvg_by_model = parcel.total_lvg_field[0] / 10.764
+        total_lvg_by_model = parcel.model.total_lvg_field / 10.764
         existing_floor_area = total_lvg_by_model + garage_area
     else:
         existing_floor_area = sum([
             bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
 
-    return max(0, max_FAR * parcel.geometry[0].area - existing_floor_area)
+    return max(0, max_FAR * parcel.geometry.area - existing_floor_area)
 
 
-def get_buffered_building_geom(buildings, buffer_sizes):
+def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes) -> Polygonal:
     """Returns the geometry of buildings that's buffered by a certain width.
 
     Args:
@@ -393,6 +411,7 @@ def get_buffered_building_geom(buildings, buffer_sizes):
     Returns:
         Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
     """
+    # TODO: Fix buffer sizes
     # Buffer sizes according to building type, in meters
     return buildings.dissolve().buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2)
 
@@ -630,24 +649,19 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
     return biggest_rect
 
 
-def get_too_steep_polys(parcel_df: geopandas.GeoDataFrame, utm_crs: pyproj.CRS, max_slope: int):
+def get_too_steep_polys(parcel_model: Parcel, utm_crs: pyproj.CRS, max_slope: int):
     """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
 
     Args:
-        parcel_df (GeoDataFrame): A UTM-projected GeoDataFrame representing the parcel
+        parcel_model (Parcel): A Django Parcel model object
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         max_slope (int): The maximum slope to consider
 
     Returns:
         Multipolygon representing the area that's too steep
     """
-
-    parcel_in_4326 = parcel_df.to_crs('EPSG:4326')
-    wkt = parcel_in_4326.geometry.to_wkt()[0]
-    geo_django_geom = GEOSGeometry(wkt, srid=4326)
-
     polys = ParcelSlope.objects.filter(
-        polys__intersects=geo_django_geom, grade__gt=max_slope)
+        polys__intersects=parcel_model.geom, grade__gt=max_slope)
 
     polys = models_to_utm_gdf(polys, utm_crs, geometry_field='polys').geometry
 
@@ -664,7 +678,7 @@ def get_second_lot(lots, main_building):
     return [lot for lot in lots if lot.intersection(main_building).area < .1][0]
 
 
-def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
+def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_lot_ratio: float = 0.5):
     main_building = [
         bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"][0]
 
@@ -681,7 +695,7 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
 
     # Now calculate possibilities for a second parcel,
     # storing this into second_lots
-    parcel_bounds = parcel.geometry[0].boundary
+    parcel_bounds = parcel_geom.boundary
     second_lots = []
     lines = []
     for line in bb_lines:
@@ -703,7 +717,7 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
 
         lines.append(line)
 
-        split = shapely.ops.split(parcel.geometry[0], line)
+        split = shapely.ops.split(parcel_geom, line)
 
         # Sanity check: Splitting it should only result in 2 polygons
         assert (len(split.geoms) == 2)
@@ -714,7 +728,7 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
 
     biggest_lot_index = argmax([lot.area for lot in second_lots])
     biggest_lot = second_lots[biggest_lot_index]
-    biggest_lot_area_ratio = biggest_lot.area / parcel.geometry[0].area
+    biggest_lot_area_ratio = biggest_lot.area / parcel_geom.area
 
     # TODO: Consider L SHAPES if the lot is too small
     # If even the biggest lot we can get is too small, return None
@@ -738,9 +752,9 @@ def split_lot(parcel, buildings, target_second_lot_ratio=0.5):
         new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
 
         # Divide the lot
-        split = shapely.ops.split(parcel.geometry[0], new_div_line)
+        split = shapely.ops.split(parcel_geom, new_div_line)
         new_second_lot = get_second_lot(split.geoms, main_building)
-        new_area_ratio = new_second_lot.area / parcel.geometry[0].area
+        new_area_ratio = new_second_lot.area / parcel_geom.area
 
         if new_area_ratio > target_second_lot_ratio:
             start = mid
