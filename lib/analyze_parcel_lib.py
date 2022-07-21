@@ -45,16 +45,16 @@ def get_cap_ratio_score():
     return 0
 
 
-def get_open_space_score(avail_geom: Polygonal, parcel_geom: MultiPolygon, placed_buildings: list[Polygon]) -> tuple[Polygon, float]:
+def get_open_space_score(not_open_space: Polygonal, parcel_geom: MultiPolygon) -> tuple[Polygon, float]:
     """
     From Notion: Open space score: size and squareness of open space remaining after placing buildings that's
     at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100,
     where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
     into the open space. Value should typically be in range of 20-40.
     """
-    remaining_geom = avail_geom.difference(unary_union(placed_buildings))
+    remaining = parcel_geom.difference(not_open_space)
     open_space_poly = find_largest_rectangles_on_avail_geom(
-        remaining_geom, parcel_geom.boundary, num_rects=1, max_aspect_ratio=2)[0]
+        remaining, parcel_geom.boundary, num_rects=1, max_aspect_ratio=2)[0]
     area = open_space_poly.area
 
     # NOTE: For now, let's scale the factor by 3 to make the score relevant (arbitrary number).
@@ -170,6 +170,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     }, new_building_polys))
     address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'
 
+    # Get the open space available (for yard and stuff)'
+    # Question: Should setbacks be considered in open space?
+    not_open_space = unary_union(
+        [*buildings.geometry, *new_building_polys, *too_steep])
+
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
@@ -190,7 +195,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
-        avail_geom, parcel.geometry, new_building_polys)
+        not_open_space, parcel.geometry)
     project_size_score = get_project_size_score(total_added_building_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
