@@ -151,11 +151,11 @@ table can be exported and imported in a few minutes.
 
 Here's an example of copying from your local DB to our cloud DB:
 1. Make sure the destination table is empty: `Delete from world_*` on the correct DB would work. Just be careful!
-2. `pg_dump -a -t 'world_parcel' geodjango | gzip > world_dump.sql` where 'geodjango' is the local DB name and world_parcel is the DB table to export
+2. `pg_dump -a -t 'world_parcel' geodjango | gzip > world_parcel_dump.sql.gz` where 'geodjango' is the local DB name and world_parcel is the DB table to export
 4. Optional - Send the file to the remote machine to be close to the DB. Example for AcuGIS server:
     `scp -i id_rsa ../world_dump.sql.gz hgiswebg@us14.acugis-dns.com:~`
 6. Load the file into the new DB. Example for AcuGIS server:
-    `gunzip -c world_dump.sql.gz | psql -U hgiswebg_nils hgiswebg_geodjango`
+    `gunzip -c world_parcel_dump.sql.gz | psql -U hgiswebg_nils hgiswebg_geodjango`
 
 ## Moving data using Django commands. 
 You can move data with Django commands. But this is very slow (Parcel table would take ~20 hours) if django is running far away from the DB, eg
