@@ -27,7 +27,6 @@ django.setup()
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
-SETBACK_WIDTHS = [25 / 3.28, 0.13, 0.13]
 BUFFER_SIZES = {
     "MAIN": 2,
     "ACCESSORY": 1.1,
@@ -35,7 +34,6 @@ BUFFER_SIZES = {
 }
 MAX_NEW_BUILDINGS = 2
 MAX_ASPECT_RATIO = 2.5
-MAX_FAR = 0.6
 
 DEFAULT_SAVE_DIR = './world/data/scenario-images/'
 
@@ -129,11 +127,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     topos_df = models_to_utm_gdf(topos, utm_crs)
 
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
+    max_far = get_far(zone, parcel.geometry.area)
     buildings = models_to_utm_gdf(buildings, utm_crs)
 
     identify_building_types(parcel.geometry, buildings)
 
-    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
+    max_total_area = get_avail_floor_area(parcel, buildings, max_far)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -198,7 +197,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     if total_added_building_area < theoretical_avail_space:
         # Development potential not reached
-        if new_FAR > MAX_FAR - tolerance_FAR:
+        if new_FAR > max_far - tolerance_FAR:
             limiting_factor = 'FAR'
         else:
             limiting_factor = "Available Space"
@@ -283,6 +282,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "datetime_ran": datetime.datetime.now(),
 
         "front_setback": setback_widths[0],
+        "max_far": max_far,
 
         # To be ignored by CSV dump, but we still want to save these in the future
         # "buildings": buildings.to_json(),
@@ -293,7 +293,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             "building_buffer_sizes": BUFFER_SIZES,
             "max_new_buildings": MAX_NEW_BUILDINGS,
             "max_aspect_ratio": MAX_ASPECT_RATIO,
-            "FAR_ratio": MAX_FAR,
+            "FAR_ratio": max_far,
         },
         "no_build_zones": {
             "setbacks": setbacks,
