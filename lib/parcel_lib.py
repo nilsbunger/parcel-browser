@@ -19,7 +19,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
 
-from world.models import Parcel, BuildingOutlines, ParcelSlope
+from world.models import Parcel, BuildingOutlines, ParcelSlope, ZoningBase
 
 from numpy import argmax, argmin
 
@@ -89,6 +89,23 @@ def get_buildings(parcel: Parcel) -> QuerySet:
         A list of BuildingOutlines objects
     """
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+
+
+def get_parcel_zone(parcel_model: Parcel) -> str:
+    """Gets the zone of a parcel.
+
+    Args:
+        parcel_model (Parcel): A Django Parcel model object
+
+    Returns:
+        str: The zone of the parcel
+    """
+    zones = ZoningBase.objects.filter(geom__intersects=parcel_model.geom)
+
+    # Sanity check: There should only be one zone
+    assert(len(zones) == 1)
+
+    return zones[0].zone_name
 
 
 def models_to_utm_gdf(

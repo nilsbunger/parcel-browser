@@ -114,6 +114,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     """
     apn = parcel_model.apn
 
+    # Get parameters based on zoning
+    zone = get_parcel_zone(parcel_model)
+    # Technically don't need side or rear setbacks, but buffer by a small amount
+    # to account for errors
+    setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
+
     buildings = get_buildings(parcel_model)
 
     if (len(buildings)) == 0:
@@ -136,7 +142,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Then, the setbacks around the parcel edges
     parcel_edges = get_street_side_boundaries(parcel, utm_crs)
-    setbacks = get_setback_geoms(parcel.geometry, SETBACK_WIDTHS, parcel_edges)
+    setbacks = get_setback_geoms(parcel.geometry, setback_widths, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
     too_steep = get_too_steep_polys(parcel.model, utm_crs, max_slope=10)
@@ -236,6 +242,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     analyzed = {
         "apn": apn,
         "address": address,
+        "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
         "carports": num_carports,
         "garages": num_garages,
@@ -275,12 +282,14 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "git_commit_hash": git_sha,
         "datetime_ran": datetime.datetime.now(),
 
+        "front_setback": setback_widths[0],
+
         # To be ignored by CSV dump, but we still want to save these in the future
         # "buildings": buildings.to_json(),
         "buildings": "to be implemented",
         "new_buildings": new_building_info,
         "input_parameters": {
-            "setback_widths": SETBACK_WIDTHS,
+            "setback_widths": setback_widths,
             "building_buffer_sizes": BUFFER_SIZES,
             "max_new_buildings": MAX_NEW_BUILDINGS,
             "max_aspect_ratio": MAX_ASPECT_RATIO,
