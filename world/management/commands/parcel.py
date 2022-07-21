@@ -4,18 +4,7 @@ from lib.analyze_parcel_lib import analyze_by_apn, analyze_neighborhood
 from lib.crs_lib import get_utm_crs
 
 from django.core.management.base import BaseCommand
-
-
-class Neighborhood(Enum):
-    # Refer to this map of zip codes: https://www.titleadvantage.com/mdocs/SD_ZipCodes_South.pdf
-    Miramesa = [92126, 92121]
-    SDSU = [92115, 92120]
-    Clairemont = [92117, 92111]
-    OceanBeach = [92107]
-    Encanto = [92114, 92139]
-    AlliedGardens = [92119, 92120, 92124]
-
-    # ... add more neighborhoods here
+from lib.neighborhoods import Neighborhood
 
 
 class Command(BaseCommand):
