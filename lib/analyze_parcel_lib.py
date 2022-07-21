@@ -168,7 +168,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
-    # address = f'{parcel.model.situs_pre_field or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
     address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'
 
     # Get floor area info
