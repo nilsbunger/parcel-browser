@@ -22,7 +22,8 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
     p = lot_df.plot()
     plt.title(parcel.model.apn + ':' + address)
 
-    topos.plot(ax=p, color='gray')
+    if not topos.empty:
+        topos.plot(ax=p, color='gray')
     geopandas.GeoSeries(open_space_poly).plot(ax=p, alpha=0.4,
                                               color="lightgrey", edgecolor="green", hatch="..")
 
