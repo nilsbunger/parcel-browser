@@ -46,6 +46,7 @@ class Command(BaseCommand):
             analyze_neighborhood(hood_bounds_tuple=tuple(),  # Neighborhood[options['neighborhood']].value,
                                  zip_codes=Neighborhood[options['neighborhood']].value,
                                  utm_crs=sd_utm_crs,
+                                 hood_name=options['neighborhood'],
                                  save_file=options['save_file'],
                                  save_dir=options['save_dir'],
                                  limit=options['limit'],
