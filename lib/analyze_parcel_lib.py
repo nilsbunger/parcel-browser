@@ -19,6 +19,7 @@ import datetime
 import django
 import os
 from lib.types import ParcelDC
+from lib.plot_lib import plot_new_buildings, plot_split_lot
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
@@ -95,22 +96,6 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
 
     return (parcel_size, existing_living_area, existing_floor_area,
             existing_FAR, main_building_area, accessory_buildings_area)
-
-
-def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edges):
-    # Plots a parcel, buildings, and new buildings
-    p = parcel.plot()
-    plt.title(apn + ':' + address)
-
-    topos.plot(ax=p, color='gray')
-    geopandas.GeoSeries(open_space_poly).plot(ax=p, alpha=0.4,
-                                              color="lightgrey", edgecolor="green", hatch="..")
-
-    geopandas.GeoSeries(street_edges.buffer(0.4)).plot(ax=p, color='brown')
-
-    for idx, poly in enumerate(polys):
-        geopandas.GeoSeries(poly).plot(
-            ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
@@ -222,10 +207,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
-        lot_df = geopandas.GeoDataFrame(
-            geometry=[*buildings.geometry, parcel.geometry.boundary], crs="EPSG:4326")
-        better_plot(apn, address, lot_df, topos_df,
-                    new_building_polys, open_space_poly, parcel_edges[0])
+        plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
+                           new_building_polys, open_space_poly, parcel_edges[0])
 
         if save_file:
             if not os.path.isdir(save_dir):
@@ -235,10 +218,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             plt.close()
 
         if second_lot:
-            print(second_lot_area_ratio)
-            split_plot = lot_df.plot()
-            geopandas.GeoSeries(second_lot).plot(
-                ax=split_plot, color='cyan', alpha=0.7)
+            plot_split_lot(parcel, address, buildings, utm_crs, second_lot)
 
             if save_file:
                 plt.savefig(save_dir + "lot_split_" + apn + ".jpg")
