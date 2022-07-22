@@ -91,21 +91,27 @@ def get_buildings(parcel: Parcel) -> QuerySet:
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def get_parcel_zone(parcel_model: Parcel) -> str:
+def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> str:
     """Gets the zone of a parcel.
 
     Args:
-        parcel_model (Parcel): A Django Parcel model object
+        parcel(ParcelDC)
 
     Returns:
         str: The zone of the parcel
     """
-    zones = ZoningBase.objects.filter(geom__intersects=parcel_model.geom)
+    zones = ZoningBase.objects.filter(geom__intersects=parcel.model.geom)
 
-    # Sanity check: There should only be one zone
-    assert(len(zones) == 1)
-
-    return zones[0].zone_name
+    if (len(zones)) == 1:
+        return zones[0].zone_name
+    elif (len(zones)) == 2:
+        # We're ont he boundary of two zones. Find the one with the most overlap with parcel.
+        zones_df = models_to_utm_gdf(zones, utm_crs)
+        max_intersect_index = argmax(
+            [geom.intersection(parcel.geometry).area for geom in zones_df.geometry])
+        return zones[int(max_intersect_index)].zone_name
+    else:
+        raise Exception("Parcel has more than two zones")
 
 
 def models_to_utm_gdf(
