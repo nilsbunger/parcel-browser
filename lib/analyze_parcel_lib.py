@@ -18,6 +18,7 @@ import matplotlib.colors as mcolors
 import datetime
 import django
 import os
+from lib.types import ParcelDC
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
@@ -44,23 +45,23 @@ def get_cap_ratio_score():
     return 0
 
 
-def get_open_space_score(avail_geom, parcel, placed_buildings):
+def get_open_space_score(avail_geom: Polygonal, parcel_geom: MultiPolygon, placed_buildings: list[Polygon]) -> tuple[Polygon, float]:
     """
     From Notion: Open space score: size and squareness of open space remaining after placing buildings that's
-    at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100, 
+    at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100,
     where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
     into the open space. Value should typically be in range of 20-40.
     """
     remaining_geom = avail_geom.difference(unary_union(placed_buildings))
     open_space_poly = find_largest_rectangles_on_avail_geom(
-        remaining_geom, parcel.boundary[0], num_rects=1, max_aspect_ratio=2)[0]
+        remaining_geom, parcel_geom.boundary, num_rects=1, max_aspect_ratio=2)[0]
     area = open_space_poly.area
 
     # NOTE: For now, let's scale the factor by 3 to make the score relevant (arbitrary number).
     # We might want to continue tweaking this to get something that works better
     SCALING_FACTOR = 3
 
-    return open_space_poly, area / parcel.area[0] * 100 * SCALING_FACTOR
+    return open_space_poly, area / parcel_geom.area * 100 * SCALING_FACTOR
 
 
 def get_project_size_score(total_added_area):
@@ -70,14 +71,16 @@ def get_project_size_score(total_added_area):
     return total_added_area / 4
 
 
-def _get_existing_floor_area_stats(parcel, buildings):
+def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
     # Helper function to get existing stats
     # There's some overlap with parcel_lib, but keeping it here
     # as this is for analysis only
-    parcel_size = parcel.geometry[0].area
-    existing_living_area = parcel.total_lvg_field[0] / 10.764
-    num_garages = int(parcel.garage_sta[0]) if parcel.garage_sta[0] else 0
-    num_carports = int(parcel.carport_st[0]) if parcel.carport_st[0] else 0
+    parcel_size = parcel.geometry.area
+    existing_living_area = parcel.model.total_lvg_field / 10.764
+    num_garages = int(
+        parcel.model.garage_sta) if parcel.model.garage_sta else 0
+    num_carports = int(
+        parcel.model.carport_st) if parcel.model.carport_st else 0
     garage_area = (num_garages + num_carports) * 23.2
 
     # existing_living_area + carport/garage area
@@ -110,7 +113,7 @@ def better_plot(apn, address, parcel, topos, polys, open_space_poly, street_edge
             ax=p, color=colorkeys[idx % len(colorkeys)], alpha=0.6)
 
 
-def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
+def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
                         try_garage_conversion=True, try_split_lot=True):
     """Runs analysis on a single parcel of land
@@ -120,23 +123,26 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
         save_file (Boolean, optional): Saves the parcel to an image file. Defaults to False.
+        save_dir (str, optional): Directory to save the generated plots/csvs to. Defaults to DEFAULT_SAVE_DIR.
+        try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
+        try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
     """
-    apn = parcel.apn
+    apn = parcel_model.apn
 
-    buildings = get_buildings(parcel)
+    buildings = get_buildings(parcel_model)
 
     if (len(buildings)) == 0:
         raise Exception(f"No buildings found for parcel: {apn}")
 
-    topos = get_topo_lines(parcel)
+    topos = get_topo_lines(parcel_model)
     topos_df = models_to_utm_gdf(topos, utm_crs)
 
-    parcel_df = models_to_utm_gdf([parcel], utm_crs)
+    parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     buildings = models_to_utm_gdf(buildings, utm_crs)
 
-    identify_building_types(parcel_df, buildings)
+    identify_building_types(parcel.geometry, buildings)
 
-    max_total_area = get_avail_floor_area(parcel_df, buildings, MAX_FAR)
+    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -144,35 +150,36 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         buildings, BUFFER_SIZES)
 
     # Then, the setbacks around the parcel edges
-    parcel_edges = get_street_side_boundaries(parcel_df, utm_crs)
-    setbacks = get_setback_geoms(parcel_df, SETBACK_WIDTHS, parcel_edges)
+    parcel_edges = get_street_side_boundaries(parcel, utm_crs)
+    setbacks = get_setback_geoms(parcel.geometry, SETBACK_WIDTHS, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
-    too_steep = get_too_steep_polys(parcel_df, utm_crs, max_slope=10)
+    too_steep = get_too_steep_polys(parcel.model, utm_crs, max_slope=10)
 
     cant_build = unary_union(
         [*buffered_buildings_geom, *setbacks, *too_steep])
-    avail_geom = get_avail_geoms(parcel_df.geometry[0], cant_build)
+    avail_geom = get_avail_geoms(parcel.geometry, cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
-        avail_geom, parcel_df.boundary[0], num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
+        avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
-    p = dict(parcel_df.T.to_dict())[0]
-    address = f'{p["situs_pre_field"] or ""} {p["situs_addr"]} {p["situs_stre"]} {p["situs_suff"] or ""} {p["situs_post"] or ""}'
+    address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'
 
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
-        parcel_df, buildings)
+        parcel, buildings)
 
     # Compute garage conversion fields
-    num_garages = int(parcel.garage_sta) if parcel.garage_sta else 0
-    num_carports = int(parcel.carport_st) if parcel.carport_st else 0
+    num_garages = int(
+        parcel.model.garage_sta) if parcel.model.garage_sta else 0
+    num_carports = int(
+        parcel.model.carport_st) if parcel.model.carport_st else 0
     garage_con_units = int(
         num_garages > 0) if try_garage_conversion else 0
     # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
@@ -183,7 +190,7 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
     # Score stuff
     cap_ratio_score = get_cap_ratio_score()
     open_space_poly, open_space_score = get_open_space_score(
-        avail_geom, parcel_df, new_building_polys)
+        avail_geom, parcel.geometry, new_building_polys)
     project_size_score = get_project_size_score(total_added_building_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
@@ -203,14 +210,15 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
 
     # Logic for lot splits
     if try_split_lot:
-        second_lot, second_lot_area_ratio = split_lot(parcel_df, buildings)
+        second_lot, second_lot_area_ratio = split_lot(
+            parcel.geometry, buildings)
     else:
         second_lot, second_lot_area_ratio = None, None
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
         lot_df = geopandas.GeoDataFrame(
-            geometry=[*buildings.geometry, parcel_df.geometry[0].boundary], crs="EPSG:4326")
+            geometry=[*buildings.geometry, parcel.geometry.boundary], crs="EPSG:4326")
         better_plot(apn, address, lot_df, topos_df,
                     new_building_polys, open_space_poly, parcel_edges[0])
 
@@ -268,7 +276,7 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         "avail_area_by_FAR": max_total_area,
 
         "parcel_sloped_area": unary_union(too_steep).area,
-        "parcel_sloped_ratio": unary_union(too_steep).area / parcel_df.geometry[0].area,
+        "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry.area,
 
         "total_score": total_score,
         "cap_ratio_score": cap_ratio_score,
@@ -283,7 +291,8 @@ def _analyze_one_parcel(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
         "datetime_ran": datetime.datetime.now(),
 
         # To be ignored by CSV dump, but we still want to save these in the future
-        "buildings": buildings.to_json(),
+        # "buildings": buildings.to_json(),
+        "buildings": "to be implemented",
         "new_buildings": new_building_info,
         "input_parameters": {
             "setback_widths": SETBACK_WIDTHS,
@@ -331,7 +340,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         }
 
 
-def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: [], utm_crs: pyproj.CRS,
+def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs: pyproj.CRS,
                          save_file=False, save_dir=DEFAULT_SAVE_DIR,
                          limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
