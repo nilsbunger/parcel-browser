@@ -33,7 +33,8 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
         geopandas.GeoSeries(poly).plot(
             ax=p, color=NEW_BUILDING_COLORS[idx % len(NEW_BUILDING_COLORS)], alpha=0.6)
 
-        plt.annotate(text="{:.0f}".format(poly.area), xy=poly.representative_point().coords[:][0],
+        plt.annotate(text="${:.0f}ft^2$".format(poly.area * 10.7639),
+                     xy=poly.representative_point().coords[:][0],
                      ha='center')
 
 
