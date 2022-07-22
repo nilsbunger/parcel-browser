@@ -18,6 +18,7 @@ import matplotlib.colors as mcolors
 import datetime
 import django
 import os
+from datetime import date
 from lib.types import ParcelDC
 from lib.plot_lib import plot_new_buildings, plot_split_lot
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
@@ -95,6 +96,10 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
 
     return (parcel_size, existing_living_area, existing_floor_area,
             existing_FAR, main_building_area, accessory_buildings_area)
+
+
+def get_folder_name(neighborhood: str):
+    return f"{date.today()}-{neighborhood.lower()}"
 
 
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
@@ -217,17 +222,16 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
                            new_building_polys, open_space_poly, parcel_edges[0])
 
         if save_file:
-            if not os.path.isdir(save_dir):
-                os.makedirs(save_dir)
-
-            plt.savefig(save_dir + apn + ".jpg")
+            plt.savefig(os.path.join(
+                save_dir, "new-buildings", apn + ".jpg"))
             plt.close()
 
         if second_lot:
             plot_split_lot(parcel, address, buildings, utm_crs, second_lot)
 
             if save_file:
-                plt.savefig(save_dir + "lot_split_" + apn + ".jpg")
+                plt.savefig(os.path.join(
+                    save_dir, "lot-splits", "ls-" + apn + ".jpg"))
                 plt.close()
 
         if show_plot:
@@ -336,11 +340,24 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
 
 
 def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs: pyproj.CRS,
-                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
+                         hood_name: str = "", save_file=False, save_dir=None,
                          limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
+    folder_name = get_folder_name(hood_name)
     if not save_dir:
-        save_dir = DEFAULT_SAVE_DIR
+        save_dir = os.path.join(DEFAULT_SAVE_DIR, folder_name, "")
+    else:
+        # Add a trailing slash if there isn't
+        save_dir = os.path.join(save_dir, "")
+
+    # Make folder if doesn't exist
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    if not os.path.isdir(os.path.join(save_dir, "new-buildings")):
+        os.makedirs(os.path.join(save_dir, "new-buildings"))
+    if not os.path.isdir(os.path.join(save_dir, "lot-splits")):
+        os.makedirs(os.path.join(save_dir, "lot-splits"))
+
     if zip_codes:
         parcels = get_parcels_by_zip_codes(zip_codes)
     else:
@@ -399,8 +416,9 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs
             'new_buildings', 'avail_geom'])
         print(df)
         df.to_csv(
-            "./world/data/scenario-images/results.csv", index=False)
+            os.path.join(save_dir, f"{folder_name}-results.csv"), index=False)
         error_df = DataFrame.from_records(errors)
-        error_df.to_csv("./world/data/scenario-images/errors.csv", index=False)
+        error_df.to_csv(os.path.join(
+            save_dir, f"{folder_name}-errors.csv"), index=False)
 
     print(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
