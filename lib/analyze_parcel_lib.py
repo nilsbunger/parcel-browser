@@ -20,6 +20,7 @@ import django
 import os
 from lib.types import ParcelDC
 from lib.plot_lib import plot_new_buildings, plot_split_lot
+from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
@@ -27,7 +28,6 @@ django.setup()
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
-SETBACK_WIDTHS = [25 / 3.28, 0.13, 0.13]
 BUFFER_SIZES = {
     "MAIN": 2,
     "ACCESSORY": 1.1,
@@ -35,7 +35,6 @@ BUFFER_SIZES = {
 }
 MAX_NEW_BUILDINGS = 2
 MAX_ASPECT_RATIO = 2.5
-MAX_FAR = 0.6
 
 DEFAULT_SAVE_DIR = './world/data/scenario-images/'
 
@@ -114,6 +113,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     """
     apn = parcel_model.apn
 
+    # Get parameters based on zoning
+    zone = get_parcel_zone(parcel_model)
+    # Technically don't need side or rear setbacks, but buffer by a small amount
+    # to account for errors
+    setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
+
     buildings = get_buildings(parcel_model)
 
     if (len(buildings)) == 0:
@@ -123,11 +128,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     topos_df = models_to_utm_gdf(topos, utm_crs)
 
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
+    max_far = get_far(zone, parcel.geometry.area)
     buildings = models_to_utm_gdf(buildings, utm_crs)
 
     identify_building_types(parcel.geometry, buildings)
 
-    max_total_area = get_avail_floor_area(parcel, buildings, MAX_FAR)
+    max_total_area = get_avail_floor_area(parcel, buildings, max_far)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -136,7 +142,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Then, the setbacks around the parcel edges
     parcel_edges = get_street_side_boundaries(parcel, utm_crs)
-    setbacks = get_setback_geoms(parcel.geometry, SETBACK_WIDTHS, parcel_edges)
+    setbacks = get_setback_geoms(parcel.geometry, setback_widths, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
     too_steep = get_too_steep_polys(parcel.model, utm_crs, max_slope=10)
@@ -192,7 +198,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     if total_added_building_area < theoretical_avail_space:
         # Development potential not reached
-        if new_FAR > MAX_FAR - tolerance_FAR:
+        if new_FAR > max_far - tolerance_FAR:
             limiting_factor = 'FAR'
         else:
             limiting_factor = "Available Space"
@@ -236,6 +242,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     analyzed = {
         "apn": apn,
         "address": address,
+        "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
         "carports": num_carports,
         "garages": num_garages,
@@ -275,16 +282,19 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "git_commit_hash": git_sha,
         "datetime_ran": datetime.datetime.now(),
 
+        "front_setback": setback_widths[0],
+        "max_far": max_far,
+
         # To be ignored by CSV dump, but we still want to save these in the future
         # "buildings": buildings.to_json(),
         "buildings": "to be implemented",
         "new_buildings": new_building_info,
         "input_parameters": {
-            "setback_widths": SETBACK_WIDTHS,
+            "setback_widths": setback_widths,
             "building_buffer_sizes": BUFFER_SIZES,
             "max_new_buildings": MAX_NEW_BUILDINGS,
             "max_aspect_ratio": MAX_ASPECT_RATIO,
-            "FAR_ratio": MAX_FAR,
+            "FAR_ratio": max_far,
         },
         "no_build_zones": {
             "setbacks": setbacks,
