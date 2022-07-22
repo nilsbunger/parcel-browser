@@ -247,7 +247,7 @@ def get_avail_geoms(parcel_geom: MultiPolygon, cant_build_geom: Polygonal) -> Po
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Polygonal, num_rects,
-                                          max_aspect_ratio=None, min_area=None,
+                                          max_aspect_ratio=None, min_area: float = 0,
                                           max_total_area=float("inf"), max_area_per_building=float("inf")) \
         -> List[Polygon]:
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
@@ -270,6 +270,8 @@ def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Po
 
     # Placement approach: Place single biggest unit, then rerun analysis
     for i in range(num_rects):  # place 4 units
+        if max_total_area < min_area:
+            break
         biggest_poly = biggest_poly_over_rotation(
             avail_geom, parcel_geom.boundary, max_aspect_ratio=max_aspect_ratio,
             min_area=min_area, max_area=min(max_total_area, max_area_per_building))
@@ -573,8 +575,8 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     return rect_to_place
 
 
-def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None, min_area=None,
-                               max_area=None):
+def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None,
+                               min_area: float = 0, max_area=None):
     """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation.
     Polygon sizes can be clamped with optional min_area or max_area parameters. In the event when the initial
     rectangle found exceeds the max_area, an algorithm will scale the rectangle down to max_area. See implementation
@@ -658,7 +660,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
             biggest_rect, parcel_boundary, max_area, biggest_rect_rot, biggest_rect_xlat_amount)
 
     # If it's too small, we return None
-    if min_area is not None and biggest_rect.area < min_area:
+    if biggest_rect.area < min_area:
         return None
 
     # translate the biggest rect back into grid coordinates, undoing rotation and translation
