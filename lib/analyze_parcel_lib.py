@@ -116,10 +116,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
     """
-    apn = parcel_model.apn
+    parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
+    apn = parcel.model.apn
 
     # Get parameters based on zoning
-    zone = get_parcel_zone(parcel_model)
+    zone = get_parcel_zone(parcel, utm_crs)
     # Technically don't need side or rear setbacks, but buffer by a small amount
     # to account for errors
     setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
@@ -132,7 +133,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     topos = get_topo_lines(parcel_model)
     topos_df = models_to_utm_gdf(topos, utm_crs)
 
-    parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     max_far = get_far(zone, parcel.geometry.area)
     buildings = models_to_utm_gdf(buildings, utm_crs)
 
