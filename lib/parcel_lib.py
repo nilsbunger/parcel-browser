@@ -9,11 +9,13 @@ from geopandas import GeoDataFrame, GeoSeries
 from lib.types import ParcelDC, Polygonal
 from shapely import wkt
 from shapely.validation import make_valid
-from shapely.geometry import Polygon, box, MultiPolygon, LineString
+from shapely.geometry import Polygon, box, MultiPolygon, LineString, MultiPoint
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
+import matplotlib.pyplot as plt
+
 from django.contrib.gis.geos import GEOSGeometry
 
 from rasterio import features, plot as rasterio_plot
@@ -787,3 +789,83 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
             stop = mid
 
     return new_second_lot, new_area_ratio
+
+
+def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
+    MIN_STREET_FRONTAGE = 25 / 3.28
+    # print(front_street_edge)
+
+    # The front street edge should always be a line string, and let's assert it for now
+
+    # For the purposes of this function, we want front street edge to always be a LineString
+    # If it is a multiline string, convert it by taking the endpoints and drawing a straight line
+
+    if front_street_edge.length > MIN_STREET_FRONTAGE:
+        return None
+
+    print("Is a flag. Street edge length", front_street_edge.length)
+    # Find out which direction the lot is facing
+    if front_street_edge.parallel_offset(0.01, 'left').intersects(parcel.geometry):
+        side = 'left'
+    else:
+        side = 'right'
+
+    seek_line = shapely.affinity.scale(front_street_edge, 100, 100, 100)
+
+    stop = max([seek_line.distance(Point(point))
+                for point in parcel.geometry.geoms[0].exterior.coords])
+    # seek_line = seek_line.parallel_offset(stop, side)
+    seek_line = front_street_edge.parallel_offset(stop, side)
+
+    # print(seek_line.intersection(parcel.geometry.boundary))
+
+    start = 0
+
+    div_lines = []
+    # Use bianry search to seek until it gets to at least 1.3x the width, or until intersection turns into line
+    for i in range(30):
+        mid = (start + stop) / 2
+        new_div_line = front_street_edge.parallel_offset(mid, side)
+        div_lines.append(new_div_line)
+        new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
+
+        intersection = new_div_line.intersection(parcel.geometry.boundary)
+
+        if not isinstance(intersection, MultiPoint):
+            print("identify_flag binary search: breaking out of loop")
+            break
+
+        # Find the minimum distance between points. If there's more than two points,
+        # pick the two edges that are closest to front_street_edge. This is geometrically
+        # guaranteed to be the edges that lie on the flag
+        if len(intersection.geoms) > 2:
+            points = list(intersection.geoms)
+            points.sort(
+                key=lambda x: front_street_edge.distance(x))
+            flag_width = points[0].distance(points[1])
+        else:
+            flag_width = intersection.geoms[0].distance(intersection.geoms[1])
+
+        if flag_width > 1.3 * front_street_edge.length:
+            stop = mid
+        else:
+            start = mid
+
+    # Now find out the part of the parcel that is a flag
+    split = shapely.ops.split(parcel.geometry, new_div_line)
+
+    # POSSIBLE BUG: Watch out for concave parcel shapes
+    flag_poly = split.geoms[argmin([poly.area for poly in split.geoms])]
+
+    return flag_poly
+
+    # Uncomment below for optional debugging
+    new_line = front_street_edge.parallel_offset(mid, side)
+    lot_df = geopandas.GeoDataFrame(
+        geometry=[parcel.geometry.boundary], crs="EPSG:4326")
+    ax = lot_df.plot(aspect=1)
+    GeoSeries(front_street_edge).plot(ax=ax, color='red')
+    GeoSeries(new_line).plot(ax=ax, color='red')
+    GeoSeries(flag_poly).plot(ax=ax, color='cyan')
+
+    plt.show()
