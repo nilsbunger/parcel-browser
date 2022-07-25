@@ -792,12 +792,6 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
 
 def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
     MIN_STREET_FRONTAGE = 25 / 3.28
-    # print(front_street_edge)
-
-    # The front street edge should always be a line string, and let's assert it for now
-
-    # For the purposes of this function, we want front street edge to always be a LineString
-    # If it is a multiline string, convert it by taking the endpoints and drawing a straight line
 
     if front_street_edge.length > MIN_STREET_FRONTAGE:
         return None
@@ -810,21 +804,14 @@ def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
 
     seek_line = shapely.affinity.scale(front_street_edge, 100, 100, 100)
 
+    start = 0
     stop = max([seek_line.distance(Point(point))
                 for point in parcel.geometry.geoms[0].exterior.coords])
-    # seek_line = seek_line.parallel_offset(stop, side)
-    seek_line = front_street_edge.parallel_offset(stop, side)
 
-    # print(seek_line.intersection(parcel.geometry.boundary))
-
-    start = 0
-
-    div_lines = []
     # Use bianry search to seek until it gets to at least 1.3x the width, or until intersection turns into line
-    for i in range(30):
+    for i in range(15):
         mid = (start + stop) / 2
         new_div_line = front_street_edge.parallel_offset(mid, side)
-        div_lines.append(new_div_line)
         new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
 
         intersection = new_div_line.intersection(parcel.geometry.boundary)
