@@ -256,6 +256,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "address": address,
         "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
+        "is_flag_lot": flag_poly is not None,
         "carports": num_carports,
         "garages": num_garages,
 

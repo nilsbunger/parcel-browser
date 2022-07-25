@@ -14,7 +14,6 @@ from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
-import matplotlib.pyplot as plt
 
 from django.contrib.gis.geos import GEOSGeometry
 
@@ -803,7 +802,6 @@ def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
     if front_street_edge.length > MIN_STREET_FRONTAGE:
         return None
 
-    print("Is a flag. Street edge length", front_street_edge.length)
     # Find out which direction the lot is facing
     if front_street_edge.parallel_offset(0.01, 'left').intersects(parcel.geometry):
         side = 'left'
@@ -831,9 +829,8 @@ def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
 
         intersection = new_div_line.intersection(parcel.geometry.boundary)
 
-        if not isinstance(intersection, MultiPoint):
-            print("identify_flag binary search: breaking out of loop")
-            break
+        # Has to be a multi-point, otherwise there's some weird behavior
+        assert(isinstance(intersection, MultiPoint))
 
         # Find the minimum distance between points. If there's more than two points,
         # pick the two edges that are closest to front_street_edge. This is geometrically
@@ -858,14 +855,3 @@ def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
     flag_poly = split.geoms[argmin([poly.area for poly in split.geoms])]
 
     return flag_poly
-
-    # Uncomment below for optional debugging
-    new_line = front_street_edge.parallel_offset(mid, side)
-    lot_df = geopandas.GeoDataFrame(
-        geometry=[parcel.geometry.boundary], crs="EPSG:4326")
-    ax = lot_df.plot(aspect=1)
-    GeoSeries(front_street_edge).plot(ax=ax, color='red')
-    GeoSeries(new_line).plot(ax=ax, color='red')
-    GeoSeries(flag_poly).plot(ax=ax, color='cyan')
-
-    plt.show()
