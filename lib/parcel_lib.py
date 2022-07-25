@@ -790,9 +790,22 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
     return new_second_lot, new_area_ratio
 
 
-def identify_flag(parcel: ParcelDC, front_street_edge: LineString):
-    MIN_STREET_FRONTAGE = 25 / 3.28
+def identify_flag(parcel: ParcelDC, front_street_edge: LineString) -> Union[Polygon, None]:
+    """Will return a polygon representing the area of the "flag handle" if the lot is a flag.
+    If it isn't, returns None. Uses Binary search to find when the length of the handle blows up,
+    in which case we have the start and end points of the flag.
 
+    Args:
+        parcel (ParcelDC): The ParcelDC to identify
+        front_street_edge (LineString): The edge of the front street
+
+    Returns:
+        Polygon: Representing the flag
+    """
+    # A flag is a lot that has a very small street frontage. This street frontage is less than
+    # the minimum. Most lots have a minimum street frontage of 25 feet, so we picked 24.
+    # NOTE: This could change in the future with more info. Tweak this to be right.
+    MIN_STREET_FRONTAGE = 24 / 3.28
     if front_street_edge.length > MIN_STREET_FRONTAGE:
         return None
 
