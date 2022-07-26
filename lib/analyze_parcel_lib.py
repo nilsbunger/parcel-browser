@@ -154,6 +154,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     cant_build = unary_union(
         [*buffered_buildings_geom, *setbacks, *too_steep])
+
+    flag_poly = identify_flag(parcel, parcel_edges[0])
+    if flag_poly:
+        cant_build = unary_union([cant_build, flag_poly])
+
     avail_geom = get_avail_geoms(parcel.geometry, cant_build)
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
@@ -170,6 +175,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # Question: Should setbacks be considered in open space?
     not_open_space = unary_union(
         [*buildings.geometry, *new_building_polys, *too_steep])
+
+    if flag_poly:
+        not_open_space = unary_union([not_open_space, flag_poly])
 
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
@@ -221,7 +229,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
         # Generate the figures
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
-                                               new_building_polys, open_space_poly, parcel_edges[0])
+                                               new_building_polys, open_space_poly, parcel_edges[0], flag_poly)
 
         if second_lot:
             split_lot_fig = plot_split_lot(
@@ -252,6 +260,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "address": address,
         "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
+        "is_flag_lot": flag_poly is not None,
         "carports": num_carports,
         "garages": num_garages,
 

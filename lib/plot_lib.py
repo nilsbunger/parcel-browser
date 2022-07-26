@@ -12,7 +12,8 @@ NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
 
 def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
                        address: str, topos: GeoDataFrame, new_buildings: list[Polygon],
-                       open_space_poly: Polygonal, street_edges: MultiLineString):
+                       open_space_poly: Polygonal, street_edges: MultiLineString,
+                       flag_poly: Union[Polygon, None]):
 
     # Create the lot dataframe, which contains the parcel outline and existing buildings
     lot_df = geopandas.GeoDataFrame(
@@ -40,6 +41,8 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
                      xy=poly.representative_point().coords[:][0],
                      ha='center')
 
+    if flag_poly is not None:
+        geopandas.GeoSeries(flag_poly).plot(ax=ax, color='cyan', alpha=0.2)
     return fig
 
 

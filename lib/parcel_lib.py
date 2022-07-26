@@ -9,11 +9,12 @@ from geopandas import GeoDataFrame, GeoSeries
 from lib.types import ParcelDC, Polygonal
 from shapely import wkt
 from shapely.validation import make_valid
-from shapely.geometry import Polygon, box, MultiPolygon, LineString
+from shapely.geometry import Polygon, box, MultiPolygon, LineString, MultiPoint
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
 from math import sqrt
+
 from django.contrib.gis.geos import GEOSGeometry
 
 from rasterio import features, plot as rasterio_plot
@@ -787,3 +788,74 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
             stop = mid
 
     return new_second_lot, new_area_ratio
+
+
+def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, LineString]) -> Union[Polygon, None]:
+    """Will return a polygon representing the area of the "flag handle" if the lot is a flag.
+    If it isn't, returns None. Uses Binary search to find when the length of the handle blows up,
+    in which case we have the start and end points of the flag.
+
+    Args:
+        parcel (ParcelDC): The ParcelDC to identify
+        front_street_edge (LineString): The edge of the front street
+
+    Returns:
+        Polygon: Representing the flag
+    """
+    # A flag is a lot that has a very small street frontage. This street frontage is less than
+    # the minimum. Most lots have a minimum street frontage of 30 feet, so we picked 30.
+    # NOTE: This could change in the future with more info. Tweak this to be right.
+    # A flag's street-facing edge should also just be a straight line, so if it's a multi-line
+    # string or a curve, it's not a flag
+    MIN_STREET_FRONTAGE = 30 / 3.28
+    if front_street_edge.length > MIN_STREET_FRONTAGE or \
+            isinstance(front_street_edge, MultiLineString) or \
+            len(front_street_edge.coords) > 2:
+        return None
+
+    # Find out which direction the lot is facing
+    if front_street_edge.parallel_offset(0.01, 'left').intersects(parcel.geometry):
+        side = 'left'
+    else:
+        side = 'right'
+
+    seek_line = shapely.affinity.scale(front_street_edge, 100, 100, 100)
+
+    start = 0
+    stop = max([seek_line.distance(Point(point))
+                for point in parcel.geometry.geoms[0].exterior.coords])
+
+    # Use bianry search to seek until it gets to at least 1.3x the width, or until intersection turns into line
+    for i in range(15):
+        mid = (start + stop) / 2
+        new_div_line = front_street_edge.parallel_offset(mid, side)
+        new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
+
+        intersection = new_div_line.intersection(parcel.geometry.boundary)
+
+        # Has to be a multi-point, otherwise there's some weird behavior
+        assert(isinstance(intersection, MultiPoint))
+
+        # Find the minimum distance between points. If there's more than two points,
+        # pick the two edges that are closest to front_street_edge. This is geometrically
+        # guaranteed to be the edges that lie on the flag
+        if len(intersection.geoms) > 2:
+            points = list(intersection.geoms)
+            points.sort(
+                key=lambda x: front_street_edge.distance(x))
+            flag_width = points[0].distance(points[1])
+        else:
+            flag_width = intersection.geoms[0].distance(intersection.geoms[1])
+
+        if flag_width > 1.3 * front_street_edge.length:
+            stop = mid
+        else:
+            start = mid
+
+    # Now find out the part of the parcel that is a flag
+    split = shapely.ops.split(parcel.geometry, new_div_line)
+
+    # POSSIBLE BUG: Watch out for concave parcel shapes
+    flag_poly = split.geoms[argmin([poly.area for poly in split.geoms])]
+
+    return flag_poly
