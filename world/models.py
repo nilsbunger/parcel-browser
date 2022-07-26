@@ -233,6 +233,72 @@ class BuildingOnScenario(models.Model):
     type = models.CharField(max_length=15, choices=BuildingType.choices)
 
 
+class Roads(models.Model):
+    fnode = models.BigIntegerField()
+    tnode = models.BigIntegerField()
+    length = models.FloatField()
+    roadsegid = models.BigIntegerField()
+    postid = models.CharField(max_length=20)
+    postdate = models.DateField()
+    roadid = models.BigIntegerField()
+    rightway = models.IntegerField()
+    addsegdt = models.DateField(blank=True, null=True)
+    segstat = models.CharField(max_length=1, blank=True, null=True)
+    dedstat = models.CharField(max_length=1, blank=True, null=True)
+    funclass = models.CharField(max_length=1)
+    oneway = models.CharField(max_length=1, blank=True, null=True)
+    subdivid = models.BigIntegerField()
+    segclass = models.CharField(max_length=1)
+    ljurisdic = models.CharField(max_length=2, blank=True, null=True)
+    llowaddr = models.BigIntegerField()
+    lhighaddr = models.BigIntegerField()
+    rjurisdic = models.CharField(max_length=2, blank=True, null=True)
+    rlowaddr = models.BigIntegerField()
+    rhighaddr = models.BigIntegerField()
+    lmixaddr = models.CharField(max_length=1, blank=True, null=True)
+    rmixaddr = models.CharField(max_length=1, blank=True, null=True)
+    pending = models.CharField(max_length=1, blank=True, null=True)
+    abloaddr = models.BigIntegerField()
+    abhiaddr = models.BigIntegerField()
+    nad83n = models.FloatField()
+    nad83e = models.FloatField()
+    speed = models.IntegerField()
+    l_zip = models.BigIntegerField()
+    r_zip = models.BigIntegerField()
+    lpsjur = models.CharField(max_length=2, blank=True, null=True)
+    rpsjur = models.CharField(max_length=2, blank=True, null=True)
+    carto = models.CharField(max_length=1)
+    obmh = models.CharField(max_length=1, blank=True, null=True)
+    firedriv = models.CharField(max_length=1, blank=True, null=True)
+    l_block = models.BigIntegerField()
+    r_block = models.BigIntegerField()
+    l_tract = models.BigIntegerField()
+    r_tract = models.BigIntegerField()
+    l_beat = models.IntegerField()
+    r_beat = models.IntegerField()
+    frxcoord = models.FloatField()
+    frycoord = models.FloatField()
+    midxcoord = models.FloatField()
+    midycoord = models.FloatField()
+    toxcoord = models.FloatField()
+    toycoord = models.FloatField()
+    f_level = models.IntegerField()
+    t_level = models.IntegerField()
+    l_psblock = models.BigIntegerField()
+    r_psblock = models.BigIntegerField()
+    rd20pred = models.CharField(max_length=1, blank=True, null=True)
+    rd20name = models.CharField(max_length=20)
+    rd20sfx = models.CharField(max_length=2, blank=True, null=True)
+    rd20full = models.CharField(max_length=25)
+    rd30pred = models.CharField(max_length=2, blank=True, null=True)
+    rd30name = models.CharField(max_length=30)
+    rd30sfx = models.CharField(max_length=4, blank=True, null=True)
+    rd30postd = models.CharField(max_length=2, blank=True, null=True)
+    rd30full = models.CharField(max_length=41)
+    shape_stle = models.FloatField()
+    geom = models.MultiLineStringField(srid=4326)
+
+
 world_mapping = {
     'fips': 'FIPS',
     'iso2': 'ISO2',
@@ -344,5 +410,71 @@ topography_mapping = {
     'ltype': 'LTYPE',
     'index_field': 'INDEX_',
     'shape_length': 'Shape_Length',
+    'geom': 'MULTILINESTRING',
+}
+
+roads_mapping = {
+    'fnode': 'FNODE',
+    'tnode': 'TNODE',
+    'length': 'LENGTH',
+    'roadsegid': 'ROADSEGID',
+    'postid': 'POSTID',
+    'postdate': 'POSTDATE',
+    'roadid': 'ROADID',
+    'rightway': 'RIGHTWAY',
+    'addsegdt': 'ADDSEGDT',
+    'segstat': 'SEGSTAT',
+    'dedstat': 'DEDSTAT',
+    'funclass': 'FUNCLASS',
+    'oneway': 'ONEWAY',
+    'subdivid': 'SUBDIVID',
+    'segclass': 'SEGCLASS',
+    'ljurisdic': 'LJURISDIC',
+    'llowaddr': 'LLOWADDR',
+    'lhighaddr': 'LHIGHADDR',
+    'rjurisdic': 'RJURISDIC',
+    'rlowaddr': 'RLOWADDR',
+    'rhighaddr': 'RHIGHADDR',
+    'lmixaddr': 'LMIXADDR',
+    'rmixaddr': 'RMIXADDR',
+    'pending': 'PENDING',
+    'abloaddr': 'ABLOADDR',
+    'abhiaddr': 'ABHIADDR',
+    'nad83n': 'NAD83N',
+    'nad83e': 'NAD83E',
+    'speed': 'SPEED',
+    'l_zip': 'L_ZIP',
+    'r_zip': 'R_ZIP',
+    'lpsjur': 'LPSJUR',
+    'rpsjur': 'RPSJUR',
+    'carto': 'CARTO',
+    'obmh': 'OBMH',
+    'firedriv': 'FIREDRIV',
+    'l_block': 'L_BLOCK',
+    'r_block': 'R_BLOCK',
+    'l_tract': 'L_TRACT',
+    'r_tract': 'R_TRACT',
+    'l_beat': 'L_BEAT',
+    'r_beat': 'R_BEAT',
+    'frxcoord': 'FRXCOORD',
+    'frycoord': 'FRYCOORD',
+    'midxcoord': 'MIDXCOORD',
+    'midycoord': 'MIDYCOORD',
+    'toxcoord': 'TOXCOORD',
+    'toycoord': 'TOYCOORD',
+    'f_level': 'F_LEVEL',
+    't_level': 'T_LEVEL',
+    'l_psblock': 'L_PSBLOCK',
+    'r_psblock': 'R_PSBLOCK',
+    'rd20pred': 'RD20PRED',
+    'rd20name': 'RD20NAME',
+    'rd20sfx': 'RD20SFX',
+    'rd20full': 'RD20FULL',
+    'rd30pred': 'RD30PRED',
+    'rd30name': 'RD30NAME',
+    'rd30sfx': 'RD30SFX',
+    'rd30postd': 'RD30POSTD',
+    'rd30full': 'RD30FULL',
+    'shape_stle': 'SHAPE_STLe',
     'geom': 'MULTILINESTRING',
 }

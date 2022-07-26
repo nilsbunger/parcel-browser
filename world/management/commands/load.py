@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+import geopandas
 
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry
@@ -7,7 +8,8 @@ from django.contrib.gis.utils import LayerMapping
 
 from mygeo.util import eprint
 from world.models import parcel_mapping, Parcel, ZoningBase, zoningbase_mapping, \
-    BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping, TopographyLoads
+    BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping, TopographyLoads, Roads, \
+    roads_mapping
 from django.core.management.base import BaseCommand
 
 
@@ -16,6 +18,7 @@ class LoadModel(Enum):
     Zoning = 2
     Buildings = 3
     Topography = 4
+    Roads = 5
 
 
 class Command(BaseCommand):
@@ -24,6 +27,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', choices=LoadModel.__members__)
         parser.add_argument('fname', nargs='?')
+        parser.add_argument('--check-null-fields', action='store_true',
+                            help="Don't load data, but print out the fields which contain null values.")
 
     def handle(self, model, fname=None, *args, **options):
 
@@ -37,9 +42,25 @@ class Command(BaseCommand):
             (fname, db_model, mapper) = ('BUILDING_OUTLINES.shp', BuildingOutlines, buildingoutlines_mapping)
         elif model == "Topography":
             (db_model, mapper) = (Topography, topography_mapping)
+        elif model == "Roads":
+            (fname, db_model, mapper) = (
+                'Roads_All/ROADS_ALL.shp', Roads, roads_mapping)
         else:
             eprint("Unknown model!")
             return
+
+        if options["check_null_fields"]:
+            """Helps check for which fields have null values. When creating new models for
+            the first time, run this, and then add "blank=True, null=True" to the models.
+            Works by loading the shapefile into a data frame, and then checking which columns
+            contain null values.
+            """
+            print("Checking nullable fields...")
+            df = geopandas.read_file("./world/data/Roads_All/ROADS_ALL.shp")
+            nullable_fields = [c for c in df if df[c].isnull().values.any()]
+            print("Nullable fields:", nullable_fields)
+            return
+
         # Do the actual load
         lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
         lm.save(strict=True, verbose=False, progress=True)
