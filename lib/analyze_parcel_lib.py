@@ -227,7 +227,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # Do plotting stuff if necessary
     if show_plot or save_file:
         plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
-                           new_building_polys, open_space_poly, parcel_edges[0])
+                           new_building_polys, open_space_poly, parcel_edges[0],
+                           flag_poly)
 
         if save_file:
             plt.savefig(os.path.join(
