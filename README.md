@@ -120,12 +120,14 @@ If you're adding a new class of GIS data based on a shape files, there are some 
 - `./manage.py makemigrations`  
 - `./manage.py migrate`
 
-Third, update the `load.py` management command to load this new type of shape file and then execute the load.
+3. Check which fields are nullable by running `load.py MODEL_NAME --check-null-fields`. This will print out which fields have null in them. You'll need to add `blank=True null=True` to the respective models.py fields.
+
+4. Update the `load.py` management command to load this new type of shape file and then execute the load.
 
 See also the django GIS tutorial [here](https://docs.djangoproject.com/en/4.0/ref/contrib/gis/tutorial/#try-ogrinspect), which shows using ogrinspect this way 
 
 You'll need to manipulate the generated models in a few ways:
-1. Load will fail during load if any data field is empty. You'll need to add "blank=True null=True" to the models.py field that can be null, and make and run another migration. 
+1. Load still might fail during load if any data field is empty. You'll need to add `blank=True null=True` to the models.py field that can be null, and make and run another migration. 
 2. There are no indexes or foreign keys in this model. Depending on how you intend to use it, you should consider adding those. They can be added later, of course.
 
 # Scripts
