@@ -102,6 +102,8 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 `./manage.py load Topography Topo_2014_2Ft_LaJolla.gdb`
 
+`./manage.py load Roads`
+
 4. Run ETL jobs as necessary, eg:
 `./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
 
