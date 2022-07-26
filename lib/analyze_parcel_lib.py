@@ -226,25 +226,28 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
-        plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
-                           new_building_polys, open_space_poly, parcel_edges[0],
-                           flag_poly)
 
-        if save_file:
-            plt.savefig(os.path.join(
-                save_dir, "new-buildings", apn + ".jpg"))
-            plt.close()
+        # Generate the figures
+        new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
+                                               new_building_polys, open_space_poly, parcel_edges[0], flag_poly)
 
         if second_lot:
-            plot_split_lot(parcel, address, buildings, utm_crs, second_lot)
+            split_lot_fig = plot_split_lot(
+                parcel, address, buildings, utm_crs, second_lot)
 
-            if save_file:
-                plt.savefig(os.path.join(
-                    save_dir, "lot-splits", "ls-" + apn + ".jpg"))
-                plt.close()
+        # Save figures
+        if save_file:
+            new_buildings_fig.savefig(os.path.join(
+                save_dir, "new-buildings", apn + ".jpg"))
 
+            if second_lot:
+                split_lot_fig.savefig(os.path.join(
+                    save_dir, "lot-splits", apn + ".jpg"))
+
+        # Show figures
         if show_plot:
             plt.show()
+        plt.close()
 
     # Get git info
     repo = git.Repo(search_parent_directories=True)
