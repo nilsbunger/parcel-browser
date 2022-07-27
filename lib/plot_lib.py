@@ -20,7 +20,7 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
 
     # Plots a parcel, buildings, and new buildings
-    fig = plt.figure("new_buildings")
+    fig = plt.figure(f"new_buildings-{parcel.model.apn}")
     ax = fig.add_subplot()
     lot_df.plot(ax=ax)
     plt.title(parcel.model.apn + ':' + address)
@@ -47,7 +47,7 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
 
 
 def plot_split_lot(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_crs: pyproj.CRS, second_lot: Polygonal):
-    fig = plt.figure("lot_split")
+    fig = plt.figure(f"lot_split-{parcel.model.apn}")
     ax = fig.add_subplot()
     lot_df = geopandas.GeoDataFrame(
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
