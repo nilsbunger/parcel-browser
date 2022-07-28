@@ -277,6 +277,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "total_new_units": garage_con_units + len(new_building_polys),
         "total_added_area": garage_con_area + total_added_building_area,
         "new_FAR": new_FAR,
+        "max_FAR": max_far,
+        "potential_FAR": max_far - existing_FAR,
         "limiting_factor": limiting_factor,
 
         "main_building_poly_area": main_building_area,
@@ -300,7 +302,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "datetime_ran": datetime.datetime.now(),
 
         "front_setback": setback_widths[0],
-        "max_far": max_far,
 
         # To be ignored by CSV dump, but we still want to save these in the future
         # "buildings": buildings.to_json(),
