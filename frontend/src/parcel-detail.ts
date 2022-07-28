@@ -41,13 +41,19 @@ const topoTileLayer = new VectorTileLayer({
 });
 
 
+
 // TODO: we should use local data from the template (parcelData and buildingData) instead of fetching
 // it.
 let vectorSource = new VectorSource({
     format: new GeoJSON(),
-    url: url + '/geodata'
+    url: url + '/geodata',
 });
 console.log (vectorSource.getFeatures());
+
+let vectorSourceNeighbor = new VectorSource({
+    format: new GeoJSON(),
+    url: url + '/geodata/neighbor',
+});
 
 let view = new View({
     center: fromLonLat([-117.19905688459625, 32.78415286818754]),
@@ -62,7 +68,28 @@ let map = new Map({
             source: new OSM()
         }),
         new VectorLayer({
+            source: vectorSourceNeighbor,
+            style: new Style({
+                stroke: new Stroke({
+                    color: 'rgba(8,45,122,0.3)',
+                    width: 1
+                }),
+                fill: new Fill({
+                color: 'rgba(8,45,122,0.1)',
+              }),
+            })
+        }),
+        new VectorLayer({
             source: vectorSource,
+            style: new Style({
+                stroke: new Stroke({
+                    color: 'rgba(8,45,122,0.85)',
+                    width: 1
+                }),
+                fill: new Fill({
+                color: 'rgba(8,45,122,0.15)',
+              }),
+            })
         }),
         topoTileLayer
     ],

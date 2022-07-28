@@ -90,3 +90,12 @@ class ParcelDetailData(LoginRequiredMixin, View):
         serialized = serialize('geojson', chain([parcel], buildings),
                                geometry_field='geom', )  # fields=('apn', 'geom',))
         return HttpResponse(serialized, content_type='application/json')
+
+# ajax call to get neighboring building data
+class IsolatedNeighborDetailData(LoginRequiredMixin, View):
+    def get(self, request, apn, *args, **kwargs):
+        parcel = Parcel.objects.get(apn=apn)
+        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
+        serializedBuildings = serialize('geojson', buildings, geometry_field='geom') 
+
+        return HttpResponse(serializedBuildings, content_type='application/json')

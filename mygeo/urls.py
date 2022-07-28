@@ -18,7 +18,7 @@ from django.urls import path, include, re_path
 
 from world import views
 from world.infra_views import frontend_proxy_view
-from world.views import MapView, ParcelDetailView, ParcelDetailData
+from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNeighborDetailData
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,6 +29,7 @@ urlpatterns = [
     # path("api/", include("world.api")),
     path('parcel/<str:apn>', ParcelDetailView.as_view()),
     path('parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
+    path('parcel/<str:apn>/geodata/neighbor', IsolatedNeighborDetailData.as_view()),
     path('frontend/<path:path>', frontend_proxy_view),
 
 ]
