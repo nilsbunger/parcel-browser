@@ -10,20 +10,38 @@ NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
                        'lightpink', 'mediumorchid', 'hotpink']
 
 
+def plot_parcel_boundary_lengths(parcel: ParcelDC, axes):
+    # Logic to plot the side lengths
+    # The parcel geometry boundary is always a MultiLineString.
+    for line_string in parcel.geometry.boundary.geoms:
+        x, y = line_string.coords.xy
+        line_segments = [LineString([(x[i], y[i]), (x[i + 1], y[i + 1])])
+                         for i in range(len(x) - 1)]
+
+        for line in line_segments:
+            # Only plot side lengths if they're not super short (like if they're parts)
+            # of a curve.
+            if line.length > 2.5:
+                axes.annotate(text="{:.0f}m".format(line.length),
+                              xy=line.centroid.coords[:][0],
+                              ha='center')
+
+
 def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
                        address: str, topos: GeoDataFrame, new_buildings: list[Polygon],
                        open_space_poly: Polygonal, street_edges: MultiLineString,
                        flag_poly: Union[Polygon, None]):
 
+    fig = plt.figure(f"new_buildings-{parcel.model.apn}")
+    ax = fig.add_subplot()
+    plt.title(parcel.model.apn + ':' + address)
+
     # Create the lot dataframe, which contains the parcel outline and existing buildings
     lot_df = geopandas.GeoDataFrame(
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
-
-    # Plots a parcel, buildings, and new buildings
-    fig = plt.figure(f"new_buildings-{parcel.model.apn}")
-    ax = fig.add_subplot()
     lot_df.plot(ax=ax)
-    plt.title(parcel.model.apn + ':' + address)
+
+    plot_parcel_boundary_lengths(parcel, ax)
 
     if not topos.empty:
         topos.plot(ax=ax, color='gray')
@@ -37,9 +55,9 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
         geopandas.GeoSeries(poly).plot(
             ax=ax, color=NEW_BUILDING_COLORS[idx % len(NEW_BUILDING_COLORS)], alpha=0.6)
 
-        plt.annotate(text="${:.0f}ft^2$".format(poly.area * 10.7639),
-                     xy=poly.representative_point().coords[:][0],
-                     ha='center')
+        ax.annotate(text="${:.0f}ft^2$".format(poly.area * 10.7639),
+                    xy=poly.representative_point().coords[:][0],
+                    ha='center')
 
     if flag_poly is not None:
         geopandas.GeoSeries(flag_poly).plot(ax=ax, color='cyan', alpha=0.2)
@@ -52,6 +70,7 @@ def plot_split_lot(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_
     lot_df = geopandas.GeoDataFrame(
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
     lot_df.plot(ax=ax)
+    plot_parcel_boundary_lengths(parcel, ax)
     plt.title("Lot split: " + parcel.model.apn + ';' + address)
     geopandas.GeoSeries(second_lot).plot(
         ax=ax, color='cyan', alpha=0.7)
