@@ -56,7 +56,7 @@ class Command(BaseCommand):
             contain null values.
             """
             print("Checking nullable fields...")
-            df = geopandas.read_file("./world/data/Roads_All/ROADS_ALL.shp")
+            df = geopandas.read_file(data_dir / fname)
             nullable_fields = [c for c in df if df[c].isnull().values.any()]
             print("Nullable fields:", nullable_fields)
             return
