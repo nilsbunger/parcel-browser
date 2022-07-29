@@ -1,4 +1,5 @@
 from typing import List, Union
+from lib.shapely_lib import multi_line_string_split
 
 import django.contrib.gis.geos
 import geopandas
@@ -9,7 +10,8 @@ from geopandas import GeoDataFrame, GeoSeries
 from lib.types import ParcelDC, Polygonal
 from shapely import wkt
 from shapely.validation import make_valid
-from shapely.geometry import Polygon, box, MultiPolygon, LineString, MultiPoint
+from shapely.ops import unary_union
+from shapely.geometry import Polygon, box, MultiPolygon, LineString, MultiPoint, GeometryCollection
 from django.core.serializers import serialize
 import json
 from shapely.geometry import MultiLineString, Point
@@ -859,3 +861,63 @@ def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, Li
     flag_poly = split.geoms[argmin([poly.area for poly in split.geoms])]
 
     return flag_poly
+
+
+def get_too_high_or_low(parcel: ParcelDC, buildings: GeoDataFrame, topos: GeoDataFrame, utm_crs):
+    # Elevations are in feet
+    MAX_ELEV_DIFF = 20  # in feet
+    # Ensure there are rows in the topos dataframe
+    if topos.empty:
+        return GeoDataFrame(), GeoDataFrame(), Polygon()
+
+    main_building = [
+        bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"][0]
+
+    # Find the elevation of the main building
+    main_building_topo_index = argmin([main_building.centroid.distance(topo.geometry)
+                                       for i, topo in topos.iterrows()])
+    main_building_elev = topos.model[main_building_topo_index].elev
+    # print(main_building_elev)
+
+    max_elev = main_building_elev + MAX_ELEV_DIFF
+    min_elev = main_building_elev - MAX_ELEV_DIFF
+
+    # Get range of the elevations
+    elev_list = [t.elev for t in topos.model]
+    # If the ranges are within the main building elevation, nothing to be done
+    if max(elev_list) < max_elev and min(elev_list) > min_elev:
+        return GeoDataFrame(), GeoDataFrame(), Polygon()
+
+    # print(sorted(elev_list))
+
+    # Get rid of everything in the dataframe that's in the range, so we only have too high/low
+    too_high = topos[[t.elev >= max_elev for t in topos.model]]
+    too_low = topos[[t.elev <= min_elev for t in topos.model]]
+
+    # Now check for the ones that are too high
+    cant_build = Point()
+    if not too_high.empty:
+        i = argmin([t.elev for t in too_high.model])
+        to_split = too_high.iloc[i].geometry
+        if isinstance(to_split, MultiLineString):
+            split_list = multi_line_string_split(parcel.geometry, to_split)
+        else:
+            split_list = shapely.ops.split(parcel.geometry, to_split).geoms
+        # Just get the one without main building on it
+        too_high_poly = [
+            poly for poly in split_list if not poly.intersects(main_building)]
+        cant_build = unary_union([cant_build, *too_high_poly])
+
+    # Now check for the ones that are too low
+    if not too_low.empty:
+        i = argmax([t.elev for t in too_low.model])
+        to_split = too_low.iloc[i].geometry
+        if isinstance(to_split, MultiLineString):
+            split_list = multi_line_string_split(parcel.geometry, to_split)
+        else:
+            split_list = shapely.ops.split(parcel.geometry, to_split).geoms
+        too_low_poly = [
+            poly for poly in split_list if not poly.intersects(main_building)]
+        cant_build = unary_union([cant_build, *too_low_poly])
+
+    return too_high, too_low, cant_build

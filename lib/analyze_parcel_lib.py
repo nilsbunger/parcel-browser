@@ -152,8 +152,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
     too_steep = get_too_steep_polys(parcel.model, utm_crs, max_slope=10)
 
+    too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(
+        parcel, buildings, topos_df, utm_crs)
+
     cant_build = unary_union(
-        [*buffered_buildings_geom, *setbacks, *too_steep])
+        [*buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
 
     flag_poly = identify_flag(parcel, parcel_edges[0])
     if flag_poly:
@@ -174,7 +177,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # Get the open space available (for yard and stuff)'
     # Question: Should setbacks be considered in open space?
     not_open_space = unary_union(
-        [*buildings.geometry, *new_building_polys, *too_steep])
+        [*buildings.geometry, *new_building_polys, *too_steep, cant_build_elev])
 
     if flag_poly:
         not_open_space = unary_union([not_open_space, flag_poly])
