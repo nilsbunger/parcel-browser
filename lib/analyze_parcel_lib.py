@@ -231,7 +231,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     if show_plot or save_file:
 
         # Generate the figures
-        new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df,
+        new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df, too_high_df, too_low_df,
                                                new_building_polys, open_space_poly, parcel_edges[0], flag_poly)
 
         if second_lot:

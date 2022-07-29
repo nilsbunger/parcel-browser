@@ -11,7 +11,9 @@ NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
 
 
 def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
-                       address: str, topos: GeoDataFrame, new_buildings: list[Polygon],
+                       address: str, topos: GeoDataFrame,
+                       too_high_topos: GeoDataFrame, too_low_topos: GeoDataFrame,
+                       new_buildings: list[Polygon],
                        open_space_poly: Polygonal, street_edges: MultiLineString,
                        flag_poly: Union[Polygon, None]):
 
@@ -27,6 +29,13 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
 
     if not topos.empty:
         topos.plot(ax=ax, color='gray')
+
+    if not too_high_topos.empty:
+        too_high_topos.plot(ax=ax, color='red')
+
+    if not too_low_topos.empty:
+        too_low_topos.plot(ax=ax, color='purple')
+
     geopandas.GeoSeries(open_space_poly).plot(ax=ax, alpha=0.4,
                                               color="lightgrey", edgecolor="green", hatch="..")
 
