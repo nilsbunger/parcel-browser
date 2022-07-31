@@ -120,7 +120,8 @@ class Parcel(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['apn'])
+            models.Index(fields=['apn']),
+            models.Index(fields=['situs_addr'])
         ]
 
 
@@ -297,6 +298,35 @@ class Roads(models.Model):
     rd30full = models.CharField(max_length=41)
     shape_stle = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
+
+
+class PropertyListing(models.Model):
+    class ListingStatus(models.TextChoices):
+        ACTIVE = 'ACTIVE'
+        PENDING = 'PENDING'
+        SOLD = 'SOLD'
+        MISSING = 'MISSING'
+        WITHDRAWN = 'WITHDRAWN'
+
+    price = models.IntegerField(blank=True, null=True)
+    addr = models.CharField(max_length=80)  # street number and name
+    zipcode = models.IntegerField(blank=True, null=True)
+    br = models.IntegerField()
+    ba = models.IntegerField()
+    founddate = models.DateTimeField(auto_now_add=True)
+    seendate = models.DateTimeField(auto_now=True)  # when last seen (date of sale when sold)
+    mlsid = models.CharField(max_length=20)
+    size = models.IntegerField()  # living area size in sq ft.
+    thumbnail = models.CharField(max_length=200)
+    listing_url = models.CharField(max_length=100)
+    soldprice = models.IntegerField(blank=True, null=True)
+    status = models.CharField(max_length=15, choices=ListingStatus.choices)
+    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['zipcode'])
+        ]
 
 
 world_mapping = {
