@@ -1,6 +1,6 @@
 import pprint
 from enum import Enum
-from lib.analyze_parcel_lib import analyze_by_apn, analyze_neighborhood
+from lib.analyze_parcel_lib import analyze_by_apn, analyze_batch
 from lib.crs_lib import get_utm_crs
 
 from django.core.management.base import BaseCommand
@@ -43,14 +43,14 @@ class Command(BaseCommand):
 
             pprint.pprint(results)
         elif options['neighborhood']:
-            analyze_neighborhood(hood_bounds_tuple=tuple(),  # Neighborhood[options['neighborhood']].value,
-                                 zip_codes=Neighborhood[options['neighborhood']].value,
-                                 utm_crs=sd_utm_crs,
-                                 hood_name=options['neighborhood'],
-                                 save_file=options['save_file'],
-                                 save_dir=options['save_dir'],
-                                 limit=options['limit'],
-                                 shuffle=options['shuffle'],
-                                 try_split_lot=not options['skip_lot_splits'])
+            analyze_batch(parcels=[],
+                          zip_codes=Neighborhood[options['neighborhood']].value,
+                          utm_crs=sd_utm_crs,
+                          hood_name=options['neighborhood'],
+                          save_file=options['save_file'],
+                          save_dir=options['save_dir'],
+                          limit=options['limit'],
+                          shuffle=options['shuffle'],
+                          try_split_lot=not options['skip_lot_splits'])
         else:
             print("Failed. Please specify either an APN or a neighborhood")

@@ -356,9 +356,9 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         }
 
 
-def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs: pyproj.CRS,
-                         hood_name: str = "", save_file=False, save_dir=None,
-                         limit=None, shuffle=False, try_split_lot=True):
+def analyze_batch(parcels: [Parcel], zip_codes: list[str], utm_crs: pyproj.CRS,
+                  hood_name: str = "", save_file=False, save_dir=None,
+                  limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
     folder_name = get_folder_name(hood_name)
     if not save_dir:
@@ -375,12 +375,8 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs
     if not os.path.isdir(os.path.join(save_dir, "lot-splits")):
         os.makedirs(os.path.join(save_dir, "lot-splits"))
 
-    if zip_codes:
+    if not parcels:
         parcels = get_parcels_by_zip_codes(zip_codes)
-    else:
-        bounding_box = django.contrib.gis.geos.Polygon.from_bbox(
-            hood_bounds_tuple)
-        parcels = get_parcels_by_neighborhood(bounding_box)
 
     if (shuffle):
         parcels = list(parcels)
@@ -439,3 +435,4 @@ def analyze_neighborhood(hood_bounds_tuple: Tuple, zip_codes: list[str], utm_crs
             save_dir, f"{folder_name}-errors.csv"), index=False)
 
     print(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
+    return analyzed, errors
