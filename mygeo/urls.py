@@ -21,6 +21,8 @@ urlpatterns = [
     path('dj/api/topotile/<int:z>/<int:x>/<int:y>',
          views.TopoTileData.as_view(), name="topo-tile"),
     path('dj/api/listings', views.ListingsData.as_view(), name="listings"),
+    path('dj/api/listings/<str:apn>',
+         views.ListingDetailData.as_view(), name="listings"),
     path('dj/parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
     path('dj/parcel/<str:apn>/geodata/neighbor',
          IsolatedNeighborDetailData.as_view()),

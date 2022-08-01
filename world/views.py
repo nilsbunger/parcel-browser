@@ -91,9 +91,17 @@ class ParcelDetailView(LoginRequiredMixin, View):
 # ajax call to get current MLS listings
 class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        # dummy data, get from actual model table
+        # Pickled data. later, grab this from a database table
         df = pandas.read_pickle('./world/data/pickled_scrape')
         df_json = json.loads(df.to_json(orient="table"))
+        return JsonResponse(df_json, content_type='application/json', safe=False)
+
+
+class ListingDetailData(LoginRequiredMixin, View):
+    def get(self, request, apn, *args, **kwargs):
+        # Pickled data. later, grab this from a database table
+        df = pandas.read_pickle('./world/data/pickled_scrape')
+        df_json = json.loads(df.loc[apn].to_json())
         return JsonResponse(df_json, content_type='application/json', safe=False)
 
 # ajax call to get parcel and building info
