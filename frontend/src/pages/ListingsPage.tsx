@@ -7,6 +7,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
+import { fetcher } from '../utils/fetcher';
 
 function snakeCaseToTitleCase(word: string) {
   const tokenized = word.toLowerCase().split('_');
@@ -17,7 +18,6 @@ function snakeCaseToTitleCase(word: string) {
   return tokenized.join(' ');
 }
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
 const columnHelper = createColumnHelper();
 
 export function ListingsPage() {
