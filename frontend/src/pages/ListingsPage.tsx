@@ -35,7 +35,7 @@ export function ListingsPage() {
                     {row.getValue('apn')}
                   </Link>
                 )
-              : undefined,
+              : ({ row }) => row.getValue(field.name),
         })
       )
     : [];
