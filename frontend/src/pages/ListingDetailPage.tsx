@@ -15,8 +15,24 @@ export function ListingDetailPage({}) {
 
   return (
     <>
-      <h1>Hello world from pages/ListingDETAILPage.tsx!</h1>
-      <p>{JSON.stringify(data)}</p>
+      <h1>{data.address}</h1>
+      <h2>{params.listingId}</h2>
+      <img src={data.thumbnail} />
+      <h3>New Buildings analysis</h3>
+      <img src={`/temp_computed_imgs/new-buildings/${params.listingId}.jpg`} />
+      {data.can_lot_split && (
+        <>
+          <h3>Lot Split:</h3>
+          <img src={`/temp_computed_imgs/lot-splits/${params.listingId}.jpg`} />
+        </>
+      )}
+      {Object.keys(data).map((key) => {
+        return (
+          <p>
+            {key}: {data[key]}
+          </p>
+        );
+      })}
     </>
   );
 }

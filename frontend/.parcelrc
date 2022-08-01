@@ -3,5 +3,6 @@
   "transformers": {
     "jsx:*.svg": ["...", "@parcel/transformer-svg-react"],
     "jsx:*": ["..."]
-  }
+  },
+  "reporters":  ["...", "parcel-reporter-static-files-copy"]
 }

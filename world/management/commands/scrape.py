@@ -81,8 +81,8 @@ class Command(BaseCommand):
         # -----
         sd_utm_crs = get_utm_crs()
         results, errors = analyze_batch(
-            parcels_to_analyze, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True
-        )
+            parcels_to_analyze, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
+            save_dir="./frontend/static/temp_computed_imgs")
         print("HALLELUJAH")
         # TODO: here's where item #1 from the July 30 H3-GIS feature needs should pick up.
 
