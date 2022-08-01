@@ -1,18 +1,5 @@
-"""mygeo URL Configuration
+"""mygeo URL Configuration"""
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include, re_path
 
@@ -21,15 +8,20 @@ from world.infra_views import frontend_proxy_view
 from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNeighborDetailData
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
-    path('map/', MapView.as_view()),
-    path('parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
-    path('topotile/<int:z>/<int:x>/<int:y>', views.TopoTileData.as_view(), name="topo-tile"),
+    # Django-rendered routes
+    path('dj/admin', admin.site.urls),
+    path('dj/accounts', include('django.contrib.auth.urls')),
+    path('dj/map', MapView.as_view()),
     # path("api/", include("world.api")),
-    path('parcel/<str:apn>', ParcelDetailView.as_view()),
-    path('parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
-    path('parcel/<str:apn>/geodata/neighbor', IsolatedNeighborDetailData.as_view()),
-    path('frontend/<path:path>', frontend_proxy_view),
+    path('dj/parcel/<str:apn>', ParcelDetailView.as_view()),
+
+    # Django-generated API routes
+    path('dj/api/parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
+    path('dj/api/topotile/<int:z>/<int:x>/<int:y>', views.TopoTileData.as_view(), name="topo-tile"),
+    path('dj/parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
+    path('dj/parcel/<str:apn>/geodata/neighbor', IsolatedNeighborDetailData.as_view()),
+
+    # All other routes - send to React for rendering
+    re_path(r'^(.*)$', frontend_proxy_view),
 
 ]

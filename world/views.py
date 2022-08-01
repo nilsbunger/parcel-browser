@@ -4,7 +4,7 @@ from itertools import chain
 
 import geopandas as geopandas
 from django.core.serializers import serialize
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView, ListView
@@ -81,6 +81,12 @@ class ParcelDetailView(LoginRequiredMixin, View):
                        'lot_size': lot_square_feet
                        })
 
+
+# ajax call to get current MLS listings
+class ListingsData(LoginRequiredMixin, View):
+    def get(self, request, apn, *args, **kwargs):
+        listings = [{id: 1, price: 950000}, {id: 2, price: 500000}, ]   # dummy data, get from actual model table
+        return JsonResponse(listings, content_type='application/json')
 
 # ajax call to get parcel and building info
 class ParcelDetailData(LoginRequiredMixin, View):

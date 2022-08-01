@@ -20,7 +20,7 @@ let topoVectorSource = new VectorTileSource({
     format: new MVT({
       idProperty: 'iso_a3',
     }),
-    url: '/topotile/{z}/{x}/{y}',
+    url: '/dj/api/topotile/{z}/{x}/{y}',
     wrapX: false,
 });
 
@@ -124,7 +124,7 @@ vectorSource.on('featuresloadend', (event) => {
     view.fit( event.features[0].getGeometry() as SimpleGeometry,{padding: [100, 100, 100, 100]})
     let center = view.getCenter();
     let maplink = document.getElementById('map-header-link');
-    maplink.href = new URL("/map?center="+center, maplink.href);
+    maplink.href = new URL("/dj/map?center="+center, maplink.href);
 })
 
 

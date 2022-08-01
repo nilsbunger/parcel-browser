@@ -13,7 +13,7 @@ let parcelVectorSource = new VectorTileSource({
     format: new MVT({
       idProperty: 'iso_a3',
     }),
-    url: '/parceltile/{z}/{x}/{y}',
+    url: '/dj/api/parceltile/{z}/{x}/{y}',
     wrapX: false,
 });
 
@@ -35,7 +35,7 @@ let topoVectorSource = new VectorTileSource({
     format: new MVT({
       idProperty: 'iso_a3',
     }),
-    url: '/topotile/{z}/{x}/{y}',
+    url: '/dj/api/topotile/{z}/{x}/{y}',
     wrapX: false,
 });
 
@@ -104,7 +104,7 @@ map.on(['click'], function (event) {
     console.log ("Features:", features[0]);
     if (features[0]?.properties_.apn) {
         document.body.style.cursor = "wait";
-        window.location.href = "/parcel/" + features[0].properties_.apn;
+        window.location.href = "/dj/parcel/" + features[0].properties_.apn;
     }
     // vtLayer.getFeatures(event.pixel).then(function (features) {
     //     console.log ("Features:", features);
