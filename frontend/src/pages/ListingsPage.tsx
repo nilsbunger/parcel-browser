@@ -6,6 +6,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { Link } from 'react-router-dom';
 
 function snakeCaseToTitleCase(word: string) {
   const tokenized = word.toLowerCase().split('_');
@@ -27,6 +28,14 @@ export function ListingsPage() {
     ? data.schema.fields.map((field) =>
         columnHelper.accessor(field.name, {
           header: snakeCaseToTitleCase(field.name),
+          cell:
+            field.name === 'apn'
+              ? ({ row }) => (
+                  <Link to={{ pathname: `/listings/${row.getValue('apn')}` }}>
+                    {row.getValue('apn')}
+                  </Link>
+                )
+              : undefined,
         })
       )
     : [];
