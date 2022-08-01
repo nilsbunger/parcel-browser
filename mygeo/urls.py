@@ -18,6 +18,7 @@ urlpatterns = [
     # Django-generated API routes
     path('dj/api/parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
     path('dj/api/topotile/<int:z>/<int:x>/<int:y>', views.TopoTileData.as_view(), name="topo-tile"),
+    path('dj/api/listings', views.ListingsData.as_view(), name="listings"),
     path('dj/parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
     path('dj/parcel/<str:apn>/geodata/neighbor', IsolatedNeighborDetailData.as_view()),
 

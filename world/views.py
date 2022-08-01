@@ -2,6 +2,8 @@ import json
 import pprint
 from itertools import chain
 
+import pandas
+import json
 import geopandas as geopandas
 from django.core.serializers import serialize
 from django.http import HttpResponse, JsonResponse
@@ -90,8 +92,9 @@ class ParcelDetailView(LoginRequiredMixin, View):
 class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         # dummy data, get from actual model table
-        listings = [{'id': 1, 'price': 950000}, {'id': 2, 'price': 500000}, ]
-        return JsonResponse(listings, content_type='application/json', safe=False)
+        df = pandas.read_pickle('./world/data/pickled_scrape')
+        df_json = json.loads(df.to_json(orient="index"))
+        return JsonResponse(df_json, content_type='application/json', safe=False)
 
 # ajax call to get parcel and building info
 

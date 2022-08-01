@@ -33,22 +33,24 @@ class Command(BaseCommand):
         # -----
         # 1. Scrape latest listings
         # -----
-        zip_groups = []
-        for hood_group in neighborhood_groups:
-            hood_zips = [h for sublist in hood_group for h in sublist.value]
-            zip_groups.append(hood_zips)
+        if False:
+            zip_groups = []
+            for hood_group in neighborhood_groups:
+                hood_zips = [
+                    h for sublist in hood_group for h in sublist.value]
+                zip_groups.append(hood_zips)
 
-        stats = scrape_san_diego_listings_by_zip_groups(
-            zip_groups, localhost_mode=LOCALHOST_MODE)
+            stats = scrape_san_diego_listings_by_zip_groups(
+                zip_groups, localhost_mode=LOCALHOST_MODE)
 
-        print(f'\nCRAWLER DONE.\nFound {stats.get_value("listing/no_change")} entries with no change, '
-              f' {stats.get_value("listing/new_or_update")} new or updated')
-        print(f'{stats.get_value("response_received_count")} responses received'
-              f' (of which, {stats.get_value("httpcache/hit")} were from CACHE)')
-        error_pages = stats.get_value('httperror/response_ignored_count')
-        sys.stdout.flush()
-        if (error_pages):
-            eprint(f'!! {error_pages} error responses')
+            print(f'\nCRAWLER DONE.\nFound {stats.get_value("listing/no_change")} entries with no change, '
+                  f' {stats.get_value("listing/new_or_update")} new or updated')
+            print(f'{stats.get_value("response_received_count")} responses received'
+                  f' (of which, {stats.get_value("httpcache/hit")} were from CACHE)')
+            error_pages = stats.get_value('httperror/response_ignored_count')
+            sys.stdout.flush()
+            if (error_pages):
+                eprint(f'!! {error_pages} error responses')
 
         # -----
         # 2. Associate listings with parcels
@@ -116,3 +118,5 @@ class Command(BaseCommand):
         print(df)
         df.to_csv(
             os.path.join('./world/data/test.csv'), index=False)
+
+        df.to_pickle('./world/data/pickled_scrape')
