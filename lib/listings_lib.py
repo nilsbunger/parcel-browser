@@ -56,6 +56,7 @@ def listing_to_parcel(l: PropertyListing) -> (Parcel | None,str | None):
     parcels = Parcel.objects.filter(situs_addr=addr_num, situs_stre__istartswith=street_name)
     matched_parcel = None
     if len(parcels) > 1:
+        # more than one match using street name -- see if the street suffix ('way', 'rd', ...) disambiguates it
         matched_parcel_candidates = list()
         for p in parcels:
             if p.situs_suff.lower() == street_suffix:
@@ -63,11 +64,12 @@ def listing_to_parcel(l: PropertyListing) -> (Parcel | None,str | None):
         if len(matched_parcel_candidates) == 1:
             matched_parcel = matched_parcel_candidates[0]
         else:
-            print(f"Multiple matches! Found {len(parcels)} matches. DEBUG THIS")
-            print(f'  ... and found {len(matched_parcel_candidates)} after reviewing')
+            print(f"Multiple matches ({len(parcels)}) for {addr_normalized}!")
             return None, 'multimatch'
     elif len(parcels) == 0:
-        if (hyphenated_addr_num):
+        if hyphenated_addr_num:
+            # Need to build out this case: we found a hyphenated address, but the first address didn't work.
+            # Maybe another address in the hyphen range would?
             raise
         print(f"No match in Parcel table for {addr_normalized}")
         return None, 'unmatched'

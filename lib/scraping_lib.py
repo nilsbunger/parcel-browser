@@ -125,15 +125,15 @@ class SanDiegoMlsSpider(scrapy.Spider):
         return url
 
 
-def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode):
-    download_delay = 3.0 if localhost_mode else 25
+def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode, cache=True):
+    download_delay = 2.0 if localhost_mode else 25
     crawl_settings = {
         "ITEM_PIPELINES": {
             'lib.scraping_lib.MyItemPipeline': 100,
         },
         "COOKIES_ENABLED": False,
         'DOWNLOAD_DELAY': download_delay,  # Delay in seconds between pages (with randomized jitter)
-        "HTTPCACHE_ENABLED": True,
+        "HTTPCACHE_ENABLED": cache,
         "HTTPCACHE_STORAGE": 'scrapy.extensions.httpcache.FilesystemCacheStorage',
         "HTTPCACHE_POLICY": 'scrapy.extensions.httpcache.DummyPolicy',
         "MIDDLEWARE": {
@@ -144,7 +144,6 @@ def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode):
         'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
         'DOWNLOAD_TIMEOUT': 60
     }
-
     process = CrawlerProcess(settings=crawl_settings)
     crawler = process.create_crawler(SanDiegoMlsSpider)
     process.crawl(crawler, zip_groups=zip_groups, localhost_mode=localhost_mode)
