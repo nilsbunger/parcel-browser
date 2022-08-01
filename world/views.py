@@ -55,19 +55,23 @@ class ParcelDetailView(LoginRequiredMixin, View):
 
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+        buildings = BuildingOutlines.objects.filter(
+            geom__intersects=parcel.geom)
         # Example of how to combine two objects into one geojson serialization:
         # serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
 
         # Serializing the data into the template. There's unneeded duplication since we also get the
         # data via JSON, but I haven't figured out how to get the mapping library to use this data.
-        serialized_parcel = serialize('geojson', [parcel], geometry_field='geom', fields=('apn', 'geom',))
-        serialized_buildings = serialize('geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
+        serialized_parcel = serialize(
+            'geojson', [parcel], geometry_field='geom', fields=('apn', 'geom',))
+        serialized_buildings = serialize(
+            'geojson', buildings, geometry_field='geom', fields=('apn', 'geom',))
 
         # https://photon.komoot.io/ -- address resolution
         # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
         utm_crs = get_utm_crs()
-        parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
+        parcel_data_frame = geopandas.GeoDataFrame.from_features(
+            json.loads(serialized_parcel), crs="EPSG:4326")
         parcel_in_utm = parcel_data_frame.to_crs(utm_crs)
         lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
         print(repr(parcel))
@@ -84,24 +88,32 @@ class ParcelDetailView(LoginRequiredMixin, View):
 
 # ajax call to get current MLS listings
 class ListingsData(LoginRequiredMixin, View):
-    def get(self, request, apn, *args, **kwargs):
-        listings = [{id: 1, price: 950000}, {id: 2, price: 500000}, ]   # dummy data, get from actual model table
-        return JsonResponse(listings, content_type='application/json')
+    def get(self, request, *args, **kwargs):
+        # dummy data, get from actual model table
+        listings = [{'id': 1, 'price': 950000}, {'id': 2, 'price': 500000}, ]
+        return JsonResponse(listings, content_type='application/json', safe=False)
 
 # ajax call to get parcel and building info
+
+
 class ParcelDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+        buildings = BuildingOutlines.objects.filter(
+            geom__intersects=parcel.geom)
         serialized = serialize('geojson', chain([parcel], buildings),
                                geometry_field='geom', )  # fields=('apn', 'geom',))
         return HttpResponse(serialized, content_type='application/json')
 
 # ajax call to get neighboring building data
+
+
 class IsolatedNeighborDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
-        serializedBuildings = serialize('geojson', buildings, geometry_field='geom') 
+        buildings = BuildingOutlines.objects.filter(
+            geom__intersects=parcel.geom.buffer(0.001))
+        serializedBuildings = serialize(
+            'geojson', buildings, geometry_field='geom')
 
         return HttpResponse(serializedBuildings, content_type='application/json')
