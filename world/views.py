@@ -93,7 +93,7 @@ class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         # dummy data, get from actual model table
         df = pandas.read_pickle('./world/data/pickled_scrape')
-        df_json = json.loads(df.to_json(orient="index"))
+        df_json = json.loads(df.to_json(orient="table"))
         return JsonResponse(df_json, content_type='application/json', safe=False)
 
 # ajax call to get parcel and building info
