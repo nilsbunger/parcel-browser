@@ -72,7 +72,7 @@ class Command(BaseCommand):
         # -----
 
         # Associate parcel IDs where possible
-        listings = PropertyListing.objects.filter(status='ACTIVE')
+        listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET'])
         parcels_to_analyze = set()
         stats = defaultdict(int)
         print(f'Found {len(listings)} properties to associate')

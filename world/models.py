@@ -307,6 +307,7 @@ class PropertyListing(models.Model):
         SOLD = 'SOLD'
         MISSING = 'MISSING'
         WITHDRAWN = 'WITHDRAWN'
+        OFFMARKET = 'OFFMARKET'
 
     price = models.IntegerField(blank=True, null=True)
     addr = models.CharField(max_length=80)  # street number and name
