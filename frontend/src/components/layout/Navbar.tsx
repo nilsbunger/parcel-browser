@@ -1,36 +1,37 @@
-import { Disclosure, Menu, Transition } from '@headlessui/react'
-import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline'
-import { Fragment } from 'react'
-import { IoPersonCircleOutline } from 'react-icons/io5'
-import {Link, NavLink} from "react-router-dom";
-import Home3Logo from "./Home3Logo";
+import React from 'react';
+import { Disclosure, Menu, Transition } from '@headlessui/react';
+import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
+import { Fragment } from 'react';
+import { IoPersonCircleOutline } from 'react-icons/io5';
+import { Link, NavLink } from 'react-router-dom';
+import Home3Logo from './Home3Logo';
 
 const user = {
   name: 'Tom Cook',
   email: 'tom@example.com',
   imageUrl:
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-}
+};
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 export default function Navbar(_props) {
   // const { logIn, logOut, isAuthenticated, currentUser } = useAuth()
-  const isAuthenticated = false
+  const isAuthenticated = false;
   const navigation = [
-    { name: 'Listings', href: '/listings'},
+    { name: 'Listings', href: '/listings' },
     // { name: 'Debug', href: routes.debug(), current: false },
     // { name: 'Team', href: '#', current: false },
     // { name: 'Projects', href: '#', current: false },
     // { name: 'Calendar', href: '#', current: false },
     // { name: 'Reports', href: '#', current: false },
-  ]
+  ];
   const userNavigation = [
     { name: 'Profile', href: '#' },
     // { name: 'Settings', href: '#' },
     { name: 'Sign out', href: '#' },
-  ]
+  ];
 
   return (
     <>
@@ -43,7 +44,7 @@ export default function Navbar(_props) {
                 <div className="flex items-center justify-between h-16">
                   <div className="flex items-center">
                     {/* Logo:*/}
-                    <Link to='/'>
+                    <Link to="/">
                       <Home3Logo />
                     </Link>
                     {/* desktop menu items */}
@@ -54,8 +55,9 @@ export default function Navbar(_props) {
                             key={item.name}
                             to={item.href}
                             className={({ isActive }) =>
-                                (isActive ? 'bg-gray-100' : 'hover:bg-gray-300') + ' px-3 py-2 rounded-md text-sm font-medium'
-                          }
+                              (isActive ? 'bg-gray-100' : 'hover:bg-gray-300') +
+                              ' px-3 py-2 rounded-md text-sm font-medium'
+                            }
                           >
                             {item.name}
                           </NavLink>
@@ -205,5 +207,5 @@ export default function Navbar(_props) {
         </Disclosure>
       </div>
     </>
-  )
+  );
 }
