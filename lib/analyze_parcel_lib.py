@@ -356,7 +356,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         }
 
 
-def analyze_batch(parcels: [Parcel], zip_codes: list[str], utm_crs: pyproj.CRS,
+def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.CRS,
                   hood_name: str = "", save_file=False, save_dir=None,
                   limit=None, shuffle=False, try_split_lot=True):
     # Temporary, if none is provided
