@@ -20,6 +20,13 @@ export function ListingDetailPage({}) {
       <img src={data.thumbnail} />
       <h3>New Buildings analysis</h3>
       <img src={`/temp_computed_imgs/new-buildings/${params.listingId}.jpg`} />
+      <h3>Unbuildable land analysis</h3>
+      <h4>Legend info:</h4>
+      <p>Red: Too steep</p>
+      <p>Cyan: Buffered buildings</p>
+      <p>Orange: Setbacks</p>
+      <p>Green: Flagpole part of the lot</p>
+      <img src={`/temp_computed_imgs/cant-build/${params.listingId}.jpg`} />
       {data.can_lot_split && (
         <>
           <h3>Lot Split:</h3>

@@ -20,7 +20,7 @@ import django
 import os
 from datetime import date
 from lib.types import ParcelDC
-from lib.plot_lib import plot_new_buildings, plot_split_lot
+from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
@@ -229,10 +229,13 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Do plotting stuff if necessary
     if show_plot or save_file:
+        plt.close()
 
         # Generate the figures
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df, too_high_df, too_low_df,
                                                new_building_polys, open_space_poly, parcel_edges[0], flag_poly)
+        cant_build_fig = plot_cant_build(
+            parcel, address, buildings, utm_crs, buffered_buildings_geom, setbacks, too_steep, flag_poly, parcel_edges[0])
 
         if second_lot:
             split_lot_fig = plot_split_lot(
@@ -242,6 +245,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         if save_file:
             new_buildings_fig.savefig(os.path.join(
                 save_dir, "new-buildings", apn + ".jpg"))
+            cant_build_fig.savefig(os.path.join(
+                save_dir, "cant-build", apn + ".jpg"))
 
             if second_lot:
                 split_lot_fig.savefig(os.path.join(
@@ -250,7 +255,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         # Show figures
         if show_plot:
             plt.show()
-        plt.close()
 
     # Get git info
     repo = git.Repo(search_parent_directories=True)
@@ -374,6 +378,8 @@ def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.C
         os.makedirs(os.path.join(save_dir, "new-buildings"))
     if not os.path.isdir(os.path.join(save_dir, "lot-splits")):
         os.makedirs(os.path.join(save_dir, "lot-splits"))
+    if not os.path.isdir(os.path.join(save_dir, "cant-build")):
+        os.makedirs(os.path.join(save_dir, "cant-build"))
 
     if not parcels:
         parcels = get_parcels_by_zip_codes(zip_codes)

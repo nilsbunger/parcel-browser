@@ -85,3 +85,37 @@ def plot_split_lot(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_
         ax=ax, color='cyan', alpha=0.7)
 
     return fig
+
+
+def plot_cant_build(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
+                    buffered_buildings: Polygonal, setbacks: list[Polygonal], too_steep: list[Polygonal],
+                    flag_poly: Union[Polygon, None], street_edges: MultiLineString):
+    fig = plt.figure(f"cant_build-{parcel.model.apn}")
+    ax = fig.add_subplot()
+    lot_df = geopandas.GeoDataFrame(
+        geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
+    lot_df.plot(ax=ax)
+    plt.title("Cant build: " + parcel.model.apn + ';' + address)
+
+    geopandas.GeoSeries(street_edges.buffer(0.4)).plot(
+        ax=ax, color='brown')
+
+    geopandas.GeoSeries(buffered_buildings).plot(
+        ax=ax, color='cyan', alpha=0.7)
+
+    if too_steep:
+        # We only want to plot the parts of too_steep that are intersecting with parcel
+        too_steep_intersecting = unary_union(
+            too_steep).intersection(parcel.geometry)
+        geopandas.GeoSeries(too_steep_intersecting).plot(
+            ax=ax, color='red', alpha=0.7)
+
+    for poly in setbacks:
+        geopandas.GeoSeries(poly).plot(
+            ax=ax, color='orange', alpha=0.7)
+
+    if flag_poly:
+        geopandas.GeoSeries(flag_poly).plot(
+            ax=ax, color='green', alpha=0.3)
+
+    return fig
