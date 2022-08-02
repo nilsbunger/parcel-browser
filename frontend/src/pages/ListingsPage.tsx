@@ -96,7 +96,10 @@ export function ListingsPage() {
           cell:
             field.name === 'apn'
               ? ({ row }) => (
-                  <Link to={{ pathname: `/listings/${row.getValue('apn')}` }}>
+                  <Link
+                    to={{ pathname: `/listings/${row.getValue('apn')}` }}
+                    className="underline text-darkblue"
+                  >
                     {row.getValue('apn')}
                   </Link>
                 )
