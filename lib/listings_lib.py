@@ -53,13 +53,17 @@ def listing_to_parcel(l: PropertyListing) -> (Parcel | None,str | None):
     if hyphenated_addr_num:
         print(f"Hyphenated address -- {addr_normalized}")
         addr_num = hyphenated_addr_num.groups()[0]
-    parcels = Parcel.objects.filter(situs_addr=addr_num, situs_stre__istartswith=street_name)
+    try:
+        parcels = Parcel.objects.filter(situs_addr=addr_num, situs_stre__istartswith=street_name)
+    except Exception as e:
+        print (f"Error processing {addr_normalized}")
+        return None, 'dberror'
     matched_parcel = None
     if len(parcels) > 1:
         # more than one match using street name -- see if the street suffix ('way', 'rd', ...) disambiguates it
         matched_parcel_candidates = list()
         for p in parcels:
-            if p.situs_suff.lower() == street_suffix:
+            if p.situs_suff and (p.situs_suff.lower() == street_suffix):
                 matched_parcel_candidates.append(p)
         if len(matched_parcel_candidates) == 1:
             matched_parcel = matched_parcel_candidates[0]
