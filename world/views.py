@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import TemplateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
+# from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
@@ -30,19 +30,19 @@ pp = pprint.PrettyPrinter(indent=2)
 # ------------------------------------------------------
 
 # main map page
-class MapView(LoginRequiredMixin, TemplateView):
+class MapView(TemplateView): #LoginRequiredMixin
     template_name = 'map2.html'
 
 
 # ajax call for vector tiles for big map
-class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
+class ParcelTileData(MVTView, ListView):  #LoginRequiredMixin
     model = Parcel
     vector_tile_layer_name = "parcels"
     vector_tile_fields = ('apn',)
 
 
 # ajax call for topo tiles for big map
-class TopoTileData(LoginRequiredMixin, MVTView, ListView):
+class TopoTileData(MVTView, ListView):  #LoginRequiredMixin
     model = Topography
     vector_tile_layer_name = "topogrpahy"
     # vector_tile_fields = ('apn',)
@@ -53,7 +53,7 @@ class TopoTileData(LoginRequiredMixin, MVTView, ListView):
 # ------------------------------------------------------
 
 # main detail page
-class ParcelDetailView(LoginRequiredMixin, View):
+class ParcelDetailView(View):  #LoginRequiredMixin
     template_name = 'parcel-detail.html'
 
     def tuple_sub(self, t1, t2):
@@ -93,7 +93,7 @@ class ParcelDetailView(LoginRequiredMixin, View):
 
 
 # ajax call to get current MLS listings
-class ListingsData(LoginRequiredMixin, View):
+class ListingsData(View):  #LoginRequiredMixin
     def get(self, request, *args, **kwargs):
         # Pickled data. later, grab this from a database table
         df = pandas.read_pickle('./world/data/pickled_scrape')
@@ -158,7 +158,7 @@ class ListingsData(LoginRequiredMixin, View):
         return JsonResponse({"msg": "success", "apn": apn}, content_type='application/json', safe=False)
 
 
-class ListingDetailData(LoginRequiredMixin, View):
+class ListingDetailData(View):  #LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         # Pickled data. later, grab this from a database table
         df = pandas.read_pickle('./world/data/pickled_scrape')
@@ -166,7 +166,7 @@ class ListingDetailData(LoginRequiredMixin, View):
         return JsonResponse(df_json, content_type='application/json', safe=False)
 
 
-class GetParcelByAddressSearch(LoginRequiredMixin, View):
+class GetParcelByAddressSearch(View):  #LoginRequiredMixin
     def get(self, request, address, *args, **kwargs):
         # Takes in an address. Returns a list of possible parcels/APNs
         # Temporary. Let's clean this up later
@@ -181,7 +181,7 @@ class GetParcelByAddressSearch(LoginRequiredMixin, View):
         return JsonResponse({"apn": parcel.apn}, content_type='application/json')
 
 
-class ParcelDetailData(LoginRequiredMixin, View):
+class ParcelDetailData(View):  #LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(
@@ -193,7 +193,7 @@ class ParcelDetailData(LoginRequiredMixin, View):
 # ajax call to get neighboring building data
 
 
-class IsolatedNeighborDetailData(LoginRequiredMixin, View):
+class IsolatedNeighborDetailData(View):  #LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(
