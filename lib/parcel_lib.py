@@ -113,8 +113,11 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> str:
         max_intersect_index = argmax(
             [geom.intersection(parcel.geometry).area for geom in zones_df.geometry])
         return zones[int(max_intersect_index)].zone_name
+    elif (len(zones)) == 0:
+        raise Exception("Parcel has no zoning info.")
     else:
-        raise Exception("Parcel has more than two zones")
+        raise Exception(
+            f"Parcel has more than two zones. {[z.zone_name for z in zones]}")
 
 
 def models_to_utm_gdf(
