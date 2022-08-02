@@ -4,6 +4,7 @@ import HomeLayout from './layouts/HomeLayout';
 import * as React from 'react';
 import { ListingsPage } from './pages/ListingsPage';
 import { ListingDetailPage } from './pages/ListingDetailPage';
+import { NewListingPage } from './pages/NewListingPage';
 
 export function MyRoutes() {
   return (
@@ -17,6 +18,7 @@ export function MyRoutes() {
                 <Route index element={<ListingsPage />} />
                 <Route path=":listingId" element={<ListingDetailPage />} />
               </Route>
+              <Route path="new-listing" element={<NewListingPage />} />
             </Route>
           </Route>
           <Route path="*" element={<PageNotFound />} />
