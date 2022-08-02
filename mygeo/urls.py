@@ -23,6 +23,8 @@ urlpatterns = [
     path('dj/api/listings', views.ListingsData.as_view(), name="listings"),
     path('dj/api/listings/<str:apn>',
          views.ListingDetailData.as_view(), name="listings"),
+    path('dj/api/address-search/<str:address>',
+         views.GetParcelByAddressSearch.as_view(), name="address-search"),
     path('dj/parcel/<str:apn>/geodata', ParcelDetailData.as_view()),
     path('dj/parcel/<str:apn>/geodata/neighbor',
          IsolatedNeighborDetailData.as_view()),

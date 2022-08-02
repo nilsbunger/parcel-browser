@@ -104,7 +104,12 @@ class ListingDetailData(LoginRequiredMixin, View):
         df_json = json.loads(df.loc[apn].to_json())
         return JsonResponse(df_json, content_type='application/json', safe=False)
 
-# ajax call to get parcel and building info
+
+class GetParcelByAddressSearch(LoginRequiredMixin, View):
+    def get(self, request, address, *args, **kwargs):
+        # Takes in an address. Returns a list of possible parcels/APNs
+        # Temporary. Let's clean this up later
+        return JsonResponse("Success", content_type='application/json', safe=False)
 
 
 class ParcelDetailData(LoginRequiredMixin, View):
