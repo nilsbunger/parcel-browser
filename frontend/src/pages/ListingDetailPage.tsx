@@ -15,24 +15,35 @@ export function ListingDetailPage({}) {
 
   return (
     <>
-      <h1>{data.address}</h1>
-      <h2>{params.listingId}</h2>
-      <img src={data.thumbnail} />
-      <h3>New Buildings analysis</h3>
-      <img src={`/temp_computed_imgs/new-buildings/${params.listingId}.jpg`} />
-      <h3>Unbuildable land analysis</h3>
-      <h4>Legend info:</h4>
-      <p>Red: Too steep</p>
-      <p>Cyan: Buffered buildings</p>
-      <p>Orange: Setbacks</p>
-      <p>Green: Flagpole part of the lot</p>
-      <img src={`/temp_computed_imgs/cant-build/${params.listingId}.jpg`} />
-      {data.can_lot_split && (
-        <>
-          <h3>Lot Split:</h3>
-          <img src={`/temp_computed_imgs/lot-splits/${params.listingId}.jpg`} />
-        </>
-      )}
+      <h1 className="text-4xl">{data.address}</h1>
+      <h2>APN: {params.listingId}</h2>
+      <img src={data.thumbnail} className="min-w-[25%] min-h-[25%]" />
+      <div className="flex flex-row flex-wrap mt-6">
+        <div>
+          <h2 className="font-semibold">New Buildings analysis</h2>
+          <img
+            src={`/temp_computed_imgs/new-buildings/${params.listingId}.jpg`}
+          />
+        </div>
+        <div>
+          <h2 className="font-semibold">Unbuildable land analysis</h2>
+          <h3>Legend info:</h3>
+          <p>Red: Too steep</p>
+          <p>Cyan: Buffered buildings</p>
+          <p>Orange: Setbacks</p>
+          <p>Green: Flagpole part of the lot</p>
+          <img src={`/temp_computed_imgs/cant-build/${params.listingId}.jpg`} />
+        </div>
+        {data.can_lot_split && (
+          <div>
+            <h2 className="font-semibold">Lot Split:</h2>
+            <img
+              src={`/temp_computed_imgs/lot-splits/${params.listingId}.jpg`}
+            />
+          </div>
+        )}
+      </div>
+      <h2>Details:</h2>
       {Object.keys(data).map((key) => {
         return (
           <p>
