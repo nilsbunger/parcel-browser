@@ -126,8 +126,7 @@ export function ListingsPage() {
   // console.log(table.getRowModel());
   return (
     <>
-      <h1>Hello world from pages/ListingsPage.tsx!</h1>
-      <table>
+      <table className="table-auto border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -137,7 +136,7 @@ export function ListingsPage() {
                     <div
                       {...{
                         className: header.column.getCanSort()
-                          ? 'cursor-pointer select-none'
+                          ? 'cursor-pointer select-none '
                           : '',
                         onClick: header.column.getToggleSortingHandler(),
                       }}
