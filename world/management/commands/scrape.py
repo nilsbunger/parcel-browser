@@ -48,7 +48,7 @@ class Command(BaseCommand):
         # 1. Scrape latest listings if directed to.
         # -----
         if options['fetch'] or options['fetch_local']:
-            print ("Fetching from MLS service")
+            print("Fetching from MLS service")
             zip_groups = []
             for hood_group in neighborhood_groups:
                 hood_zips = [
@@ -72,7 +72,8 @@ class Command(BaseCommand):
         # -----
 
         # Associate parcel IDs where possible
-        listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET'])
+        listings = PropertyListing.objects.filter(
+            status__in=['ACTIVE', 'OFFMARKET'])
         parcels_to_analyze = set()
         stats = defaultdict(int)
         print(f'Found {len(listings)} properties to associate')
@@ -92,7 +93,7 @@ class Command(BaseCommand):
         print(dict(stats))
 
         if options['skip_analysis']:
-            print ("SKIPPING parcel analysis / generating picklefile")
+            print("SKIPPING parcel analysis / generating picklefile")
         else:
             # -----
             # 3. Generate parcel analysis for all the parcels
@@ -131,7 +132,6 @@ class Command(BaseCommand):
                 df.loc[l.parcel.apn, 'soldprice'] = l.soldprice
                 df.loc[l.parcel.apn, 'status'] = l.status
 
-            print(df)
             df.to_csv(
                 os.path.join('./world/data/test.csv'), index=False)
 

@@ -14,10 +14,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
+from lib.analyze_parcel_lib import analyze_by_apn
 
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
-from world.models import Parcel, BuildingOutlines, Topography
+from world.models import Parcel, BuildingOutlines, Topography, PropertyListing
+from lib.crs_lib import get_utm_crs
+
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -96,6 +99,63 @@ class ListingsData(LoginRequiredMixin, View):
         df = pandas.read_pickle('./world/data/pickled_scrape')
         df_json = json.loads(df.to_json(orient="table"))
         return JsonResponse(df_json, content_type='application/json', safe=False)
+
+    def post(self, request, *args, **kwargs):
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        apn = body['apn']
+
+        # First, make sure it doesn't already exist in the database
+        existing_listings = PropertyListing.objects.filter(parcel__apn=apn)
+        if len(existing_listings) > 0:
+            return JsonResponse({'error': 'listing already exists'})
+        parcel = Parcel.objects.get(apn=apn)
+
+        # Then, we unpickle, save to dataframe, and pickle again
+        sd_utm_crs = get_utm_crs()
+        try:
+            result = analyze_by_apn(
+                apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs")
+
+            # Add it as a listing
+            listing = PropertyListing(
+                addr=result['address'], br=parcel.bedrooms, ba=parcel.baths,
+                size=result['existing_living_area'], status="OFFMARKET", parcel=parcel)
+            listing.save()
+        except Exception as e:
+            return JsonResponse({'error': str(e)})
+
+        # This is mainly copied from scrape.py. Refactor later to make it cleaner
+        new_df = pandas.DataFrame.from_records([result], exclude=[
+            'buildings', 'input_parameters', 'no_build_zones',
+            'new_buildings', 'avail_geom'])
+        new_df.set_index('apn', inplace=True)
+
+        new_df.loc[apn, 'address'] = listing.addr
+        new_df.loc[apn, 'bedrooms'] = listing.br
+        new_df.loc[apn, 'bathrooms'] = listing.ba
+
+        # Now append stuff about the listing
+        new_df.loc[apn, 'price'] = listing.price
+        new_df.loc[apn, 'zipcode'] = listing.zipcode
+        new_df.loc[apn, 'founddate'] = listing.founddate
+        new_df.loc[apn, 'seendate'] = listing.seendate
+        new_df.loc[apn, 'mlsid'] = listing.mlsid
+        new_df.loc[apn, 'mls_floor_area'] = listing.size
+        new_df.loc[apn, 'thumbnail'] = listing.thumbnail
+        new_df.loc[apn, 'listing_url'] = listing.listing_url
+        new_df.loc[apn, 'soldprice'] = listing.soldprice
+        new_df.loc[apn, 'status'] = listing.status
+
+        # Now append the new df to the old one
+        df = pandas.read_pickle('./world/data/pickled_scrape')
+        df = pandas.concat([df, new_df])
+
+        # Save it
+        df.to_pickle('./world/data/pickled_scrape')
+
+        # Return a success message, at which point browser would redirect to that screen
+        return JsonResponse({"msg": "success", "apn": apn}, content_type='application/json', safe=False)
 
 
 class ListingDetailData(LoginRequiredMixin, View):

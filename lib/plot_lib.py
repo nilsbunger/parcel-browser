@@ -1,10 +1,12 @@
 # Helper functions to plot geographical data
 
+import pyproj
+from lib.types import ParcelDC
+import matplotlib.pyplot as plt
 from lib.parcel_lib import *
 import geopandas
-import matplotlib.pyplot as plt
-from lib.types import ParcelDC
-import pyproj
+import matplotlib
+matplotlib.use('Agg')
 
 NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
                        'lightpink', 'mediumorchid', 'hotpink']
