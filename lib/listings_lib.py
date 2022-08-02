@@ -29,14 +29,19 @@ normalize_prefix = {
 }
 
 
-def listing_to_parcel(l: PropertyListing) -> (Parcel | None,str | None):
+def listing_to_parcel(l: PropertyListing) -> (Parcel | None, str | None):
     """ Take a current property listing object, and find its associated Parcel"""
+    return address_to_parcel(l.addr)
+
+
+def address_to_parcel(addr: str) -> (Parcel | None, str | None):
     street_suffix = None
     street_prefix = None
-    addr_normalized = re.sub(r'\.', '', l.addr.lower())
+    addr_normalized = re.sub(r'\.', '', addr.lower())
     addr_num, *rest = addr_normalized.split()
     # If the first word needs to be normalized, do so:
-    if rest[0] == 'mount': rest[0] = 'mt'
+    if rest[0] == 'mount':
+        rest[0] = 'mt'
     if len(rest) > 1:
         if rest[0] in ['south', 'north', 'east', 'west', 'n', 'w', 'e', 's']:
             street_prefix = normalize_prefix.get(rest[0], rest[0])
@@ -54,9 +59,10 @@ def listing_to_parcel(l: PropertyListing) -> (Parcel | None,str | None):
         print(f"Hyphenated address -- {addr_normalized}")
         addr_num = hyphenated_addr_num.groups()[0]
     try:
-        parcels = Parcel.objects.filter(situs_addr=addr_num, situs_stre__istartswith=street_name)
+        parcels = Parcel.objects.filter(
+            situs_addr=addr_num, situs_stre__istartswith=street_name)
     except Exception as e:
-        print (f"Error processing {addr_normalized}")
+        print(f"Error processing {addr_normalized}")
         return None, 'dberror'
     matched_parcel = None
     if len(parcels) > 1:

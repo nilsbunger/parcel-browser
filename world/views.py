@@ -16,6 +16,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
+from lib.listings_lib import address_to_parcel
 from world.models import Parcel, BuildingOutlines, Topography
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -109,7 +110,15 @@ class GetParcelByAddressSearch(LoginRequiredMixin, View):
     def get(self, request, address, *args, **kwargs):
         # Takes in an address. Returns a list of possible parcels/APNs
         # Temporary. Let's clean this up later
-        return JsonResponse("Success", content_type='application/json', safe=False)
+        try:
+            parcel, error = address_to_parcel(address)
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
+
+        if error:
+            return JsonResponse({"error": f"An error occured: {error}"}, content_type='application/json')
+
+        return JsonResponse({"apn": parcel.apn}, content_type='application/json')
 
 
 class ParcelDetailData(LoginRequiredMixin, View):
