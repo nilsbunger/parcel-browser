@@ -316,10 +316,10 @@ class PropertyListing(models.Model):
     ba = models.IntegerField()
     founddate = models.DateTimeField(auto_now_add=True)
     seendate = models.DateTimeField(auto_now=True)  # when last seen (date of sale when sold)
-    mlsid = models.CharField(max_length=20)
+    mlsid = models.CharField(max_length=20, blank=True, null=True)
     size = models.IntegerField()  # living area size in sq ft.
-    thumbnail = models.CharField(max_length=200)
-    listing_url = models.CharField(max_length=100)
+    thumbnail = models.CharField(max_length=200, blank=True, null=True)
+    listing_url = models.CharField(max_length=100, blank=True, null=True)
     soldprice = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=ListingStatus.choices)
     parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
