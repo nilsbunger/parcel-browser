@@ -106,9 +106,7 @@ class Command(BaseCommand):
             # -----
             # 4. Save analysis to pickle file for display
             # -----
-            df = DataFrame.from_records(results, exclude=[
-                'buildings', 'input_parameters', 'no_build_zones',
-                'new_buildings', 'avail_geom'])
+            df = DataFrame.from_records(results)
             df.set_index('apn', inplace=True)
 
             for l in listings:

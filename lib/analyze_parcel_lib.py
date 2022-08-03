@@ -20,6 +20,7 @@ import django
 import os
 from datetime import date
 from lib.types import ParcelDC
+from world.models import AnalyzedListing
 from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
@@ -104,7 +105,7 @@ def get_folder_name(neighborhood: str):
 
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
-                        try_garage_conversion=True, try_split_lot=True):
+                        try_garage_conversion=True, try_split_lot=True, save_as_model=False):
     """Runs analysis on a single parcel of land
 
     Args:
@@ -262,7 +263,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
-    analyzed = {
+    datetime_ran = datetime.datetime.now()
+
+    details = {
         "apn": apn,
         "address": address,
         "zone": zone,
@@ -306,21 +309,20 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "new_lot_area": second_lot.area if second_lot else None,
 
         "git_commit_hash": git_sha,
-        "datetime_ran": datetime.datetime.now(),
-
         "front_setback": setback_widths[0],
+    }
 
-        # To be ignored by CSV dump, but we still want to save these in the future
-        # "buildings": buildings.to_json(),
+    input_parameters = {
+        "setback_widths": setback_widths,
+        "building_buffer_sizes": BUFFER_SIZES,
+        "max_new_buildings": MAX_NEW_BUILDINGS,
+        "max_aspect_ratio": MAX_ASPECT_RATIO,
+        "FAR_ratio": max_far,
+    }
+
+    geometry_details = {
         "buildings": "to be implemented",
         "new_buildings": new_building_info,
-        "input_parameters": {
-            "setback_widths": setback_widths,
-            "building_buffer_sizes": BUFFER_SIZES,
-            "max_new_buildings": MAX_NEW_BUILDINGS,
-            "max_aspect_ratio": MAX_ASPECT_RATIO,
-            "FAR_ratio": max_far,
-        },
         "no_build_zones": {
             "setbacks": setbacks,
             "buffered_buildings": buffered_buildings_geom,
@@ -329,12 +331,22 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "avail_geom": avail_geom,
     }
 
-    return analyzed
+    if save_as_model:
+        # Save it as a database model, and return it
+        a = AnalyzedListing(datetime_ran=datetime_ran, details=details,
+                            input_parameters=input_parameters, geometry_details=geometry_details)
+        a.save()
+        return a
+    else:
+        # LEGACY. Return analyzed as a dictionary with everything in it
+        details['datetime_ran'] = datetime_ran
+        return details
 
 
-def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False, save_dir=DEFAULT_SAVE_DIR):
+def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
+                   save_dir=DEFAULT_SAVE_DIR, save_as_model=False):
     parcel = get_parcel_by_apn(apn)
-    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir)
+    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir, save_as_model=save_as_model)
 
 
 def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
@@ -430,9 +442,7 @@ def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.C
     if save_file:
         # Export to csv
         # First, create a Pandas dataframe
-        df = DataFrame.from_records(analyzed, exclude=[
-            'buildings', 'input_parameters', 'no_build_zones',
-            'new_buildings', 'avail_geom'])
+        df = DataFrame.from_records(analyzed)
         print(df)
         df.to_csv(
             os.path.join(save_dir, f"{folder_name}-results.csv"), index=False)

@@ -126,14 +126,17 @@ class Parcel(models.Model):
 
 
 class ParcelSlope(models.Model):
-    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn')
+    parcel = models.ForeignKey(
+        Parcel, on_delete=models.CASCADE, to_field='apn')
     grade = models.IntegerField()
     polys = models.MultiPolygonField(blank=True, null=True)
-    run_date = models.DateField(auto_now=True)  # note: only updated on model.save
+    # note: only updated on model.save
+    run_date = models.DateField(auto_now=True)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['parcel', 'grade'], name='unique_parcel_grade_bucket'),
+            models.UniqueConstraint(
+                fields=['parcel', 'grade'], name='unique_parcel_grade_bucket'),
         ]
 
 
@@ -174,10 +177,12 @@ class WorldBorder(models.Model):
 class TopographyLoads(models.Model):
     fname = models.CharField('filename', max_length=200)
     extents = models.PolygonField(srid=4326, unique=True)
-    run_date = models.DateField(auto_now=True)  # note: only updated on model.save
+    # note: only updated on model.save
+    run_date = models.DateField(auto_now=True)
 
 
-class Topography(models.Model):  # model based on Topo_2014_2Ft_PowayLaMesa data set.
+# model based on Topo_2014_2Ft_PowayLaMesa data set.
+class Topography(models.Model):
     elev = models.FloatField()
     ltype = models.IntegerField()
     index_field = models.IntegerField()
@@ -315,20 +320,36 @@ class PropertyListing(models.Model):
     br = models.IntegerField()
     ba = models.IntegerField()
     founddate = models.DateTimeField(auto_now_add=True)
-    seendate = models.DateTimeField(auto_now=True)  # when last seen (date of sale when sold)
+    # when last seen (date of sale when sold)
+    seendate = models.DateTimeField(auto_now=True)
     mlsid = models.CharField(max_length=20, blank=True, null=True)
     size = models.IntegerField()  # living area size in sq ft.
     thumbnail = models.CharField(max_length=200, blank=True, null=True)
     listing_url = models.CharField(max_length=100, blank=True, null=True)
     soldprice = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=ListingStatus.choices)
-    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
-    prev_listing = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
+    parcel = models.ForeignKey(
+        Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
+    prev_listing = models.ForeignKey(
+        "self", on_delete=models.CASCADE, blank=True, null=True)
+
     class Meta:
         indexes = [
             models.Index(fields=['zipcode']),
             models.Index(fields=['mlsid'])
         ]
+
+
+class AnalyzedListing(models.Model):
+    # Sometimes, we want to analyze a parcel without saving a listing, so this field
+    # should be kept blank. Maybe later we can keep a reference back to the parcel?
+    listing = models.ForeignKey(
+        PropertyListing, on_delete=models.CASCADE, null=True, blank=True)
+
+    datetime_ran = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField()
+    input_parameters = models.JSONField()
+    geometry_details = models.JSONField()
 
 
 world_mapping = {
