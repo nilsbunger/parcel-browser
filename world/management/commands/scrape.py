@@ -74,6 +74,8 @@ class Command(BaseCommand):
         # Associate parcel IDs where possible
         listings = PropertyListing.objects.filter(
             status__in=['ACTIVE', 'OFFMARKET'])
+
+        # A set of tuples (parcel, listing)
         parcels_to_analyze = set()
         stats = defaultdict(int)
         print(f'Found {len(listings)} properties to associate')
@@ -87,7 +89,7 @@ class Command(BaseCommand):
                 # Got matched parcel, record the foreign key link in the listing.
                 l.parcel = matched_parcel
                 l.save(update_fields={'parcel'})
-                parcels_to_analyze.add(matched_parcel)
+                parcels_to_analyze.add((matched_parcel, l))
             # print("SAVED")
         print("DONE. Final stats associating parcels with listings:")
         print(dict(stats))
@@ -98,39 +100,11 @@ class Command(BaseCommand):
             # -----
             # 3. Generate parcel analysis for all the parcels
             # -----
+            parcels, parcel_listings = zip(*parcels_to_analyze)
             sd_utm_crs = get_utm_crs()
             results, errors = analyze_batch(
-                parcels_to_analyze, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
-                save_dir="./frontend/static/temp_computed_imgs")
+                parcels, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
+                save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listings=parcel_listings)
 
-            # -----
-            # 4. Save analysis to pickle file for display
-            # -----
-            df = DataFrame.from_records(results)
-            df.set_index('apn', inplace=True)
-
-            for l in listings:
-                if not l.parcel or not l.parcel.apn in df.index:
-                    continue
-
-                # Replace fields with data from the scraped listing (which are the more accurate versions)
-                df.loc[l.parcel.apn, 'address'] = l.addr
-                df.loc[l.parcel.apn, 'bedrooms'] = l.br
-                df.loc[l.parcel.apn, 'bathrooms'] = l.ba
-
-                # Now append stuff about the listing
-                df.loc[l.parcel.apn, 'price'] = l.price
-                df.loc[l.parcel.apn, 'zipcode'] = l.zipcode
-                df.loc[l.parcel.apn, 'founddate'] = l.founddate
-                df.loc[l.parcel.apn, 'seendate'] = l.seendate
-                df.loc[l.parcel.apn, 'mlsid'] = l.mlsid
-                df.loc[l.parcel.apn, 'mls_floor_area'] = l.size
-                df.loc[l.parcel.apn, 'thumbnail'] = l.thumbnail
-                df.loc[l.parcel.apn, 'listing_url'] = l.listing_url
-                df.loc[l.parcel.apn, 'soldprice'] = l.soldprice
-                df.loc[l.parcel.apn, 'status'] = l.status
-
-            df.to_csv(
-                os.path.join('./world/data/test.csv'), index=False)
-
-            df.to_pickle('./world/data/pickled_scrape')
+        print(
+            f"We're done! There are {len(results)} successes and {len(errors)} errors.")

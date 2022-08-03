@@ -18,7 +18,7 @@ from lib.analyze_parcel_lib import analyze_by_apn
 
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
-from world.models import Parcel, BuildingOutlines, Topography, PropertyListing
+from world.models import AnalyzedListing, Parcel, BuildingOutlines, Topography, PropertyListing
 from lib.crs_lib import get_utm_crs
 
 
@@ -95,10 +95,24 @@ class ParcelDetailView(View):  # LoginRequiredMixin
 # ajax call to get current MLS listings
 class ListingsData(View):  # LoginRequiredMixin
     def get(self, request, *args, **kwargs):
-        # Pickled data. later, grab this from a database table
-        df = pandas.read_pickle('./world/data/pickled_scrape')
-        df_json = json.loads(df.to_json(orient="table"))
-        return JsonResponse(df_json, content_type='application/json', safe=False)
+        listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').filter(
+            analyzedlisting__isnull=False)
+        serialized_listings = serialize('json', listings)
+
+        # An ad-hoc way of doing formatting for now
+        listings_formatted = []
+        for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
+            latest_analysis = listing.analyzedlisting_set.latest(
+                'datetime_ran')
+            l = latest_analysis.details
+            l.update(listing_dict['fields'])
+            l['datetime_ran'] = latest_analysis.datetime_ran
+            del l['parcel']
+            del l['addr']
+            del l['prev_listing']
+            listings_formatted.append(l)
+
+        return JsonResponse(listings_formatted, content_type='application/json', safe=False)
 
     def post(self, request, *args, **kwargs):
         body_unicode = request.body.decode('utf-8')

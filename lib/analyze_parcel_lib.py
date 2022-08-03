@@ -105,7 +105,7 @@ def get_folder_name(neighborhood: str):
 
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
-                        try_garage_conversion=True, try_split_lot=True, save_as_model=False):
+                        try_garage_conversion=True, try_split_lot=True, save_as_model=False, listing=None):
     """Runs analysis on a single parcel of land
 
     Args:
@@ -333,8 +333,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     if save_as_model:
         # Save it as a database model, and return it
-        a = AnalyzedListing(datetime_ran=datetime_ran, details=details,
-                            input_parameters=input_parameters, geometry_details=geometry_details)
+        a = AnalyzedListing(listing=listing, datetime_ran=datetime_ran, details=details,
+                            input_parameters=input_parameters, geometry_details={})
         a.save()
         return a
     else:
@@ -351,13 +351,14 @@ def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=Fal
 
 def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                                save_file=False, save_dir=DEFAULT_SAVE_DIR,
-                               try_garage_conversion=True, try_split_lot=True, i: int = 0):
+                               try_garage_conversion=True, try_split_lot=True,
+                               i: int = 0, save_as_model=False, listing=None):
     print(i, parcel.apn)
     try:
         result = _analyze_one_parcel(
             parcel, utm_crs, show_plot=False, save_file=save_file,
             save_dir=save_dir, try_garage_conversion=try_garage_conversion,
-            try_split_lot=try_split_lot)
+            try_split_lot=try_split_lot, save_as_model=save_as_model, listing=listing)
 
         # Shouldn't need this as result should never be null,
         # but we keep it as a sanity check
@@ -374,7 +375,12 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
 
 def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.CRS,
                   hood_name: str = "", save_file=False, save_dir=None,
-                  limit=None, shuffle=False, try_split_lot=True):
+                  limit=None, shuffle=False, try_split_lot=True, save_as_model=False, listings=None):
+    """
+    Notable arguments:
+        listings: Optional parameter - a list of listings of same length as parcels. Maps each
+        parcel to a listing to save, if preferred
+    """
     # Temporary, if none is provided
     folder_name = get_folder_name(hood_name)
     if not save_dir:
@@ -404,12 +410,17 @@ def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.C
 
     print(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
 
+    # There probably is a cleaner way of doing this
+    if listings is None:
+        listings = [None] * len(parcels)
+
     # Feature flag: this uses multiprocessing. Turn it off to go back to the original sequential method
     if True:
         parallel_results = Parallel(n_jobs=8)(
             delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
-                                                save_dir=save_dir, try_split_lot=try_split_lot, i=i)
-            for i, parcel in zip(range(num_analyze), parcels))
+                                                save_dir=save_dir, try_split_lot=try_split_lot, i=i,
+                                                save_as_model=save_as_model, listing=listing)
+            for i, parcel, listing in zip(range(num_analyze), parcels, listings))
 
         analyzed = [x[0] for x in parallel_results if x[0] is not None]
         errors = [x[1] for x in parallel_results if x[1] is not None]
@@ -438,6 +449,9 @@ def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.C
                     "apn": parcel.apn,
                     "error": e,
                 })
+
+    if save_as_model:
+        return analyzed, errors
 
     if save_file:
         # Export to csv

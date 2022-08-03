@@ -90,11 +90,11 @@ export function ListingsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const columns = data
-    ? data.schema.fields.map((field) =>
-        columnHelper.accessor(field.name, {
-          header: snakeCaseToTitleCase(field.name),
+    ? Object.keys(data[0]).map((field) =>
+        columnHelper.accessor(field, {
+          header: snakeCaseToTitleCase(field),
           cell:
-            field.name === 'apn'
+            field === 'apn'
               ? ({ row }) => (
                   <Link
                     to={{ pathname: `/listings/${row.getValue('apn')}` }}
@@ -103,15 +103,15 @@ export function ListingsPage() {
                     {row.getValue('apn')}
                   </Link>
                 )
-              : ['price', 'bedrooms', 'bathrooms'].includes(field.name) // fields which should not get rounded
-              ? ({ row }) => row.getValue(field.name)
-              : ({ row }) => roundIfNumber(row.getValue(field.name)),
+              : ['price', 'bedrooms', 'bathrooms'].includes(field) // fields which should not get rounded
+              ? ({ row }) => row.getValue(field)
+              : ({ row }) => roundIfNumber(row.getValue(field)),
         })
       )
     : [];
 
   const table = useReactTable({
-    data: data ? data.data : [],
+    data: data ? data : [],
     columns,
     state: {
       columnVisibility,
