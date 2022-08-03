@@ -344,9 +344,10 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
 
 def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
-                   save_dir=DEFAULT_SAVE_DIR, save_as_model=False):
+                   save_dir=DEFAULT_SAVE_DIR, save_as_model=False, listing=None):
     parcel = get_parcel_by_apn(apn)
-    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir, save_as_model=save_as_model)
+    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir,
+                               save_as_model=save_as_model, listing=listing)
 
 
 def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,

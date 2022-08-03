@@ -119,58 +119,43 @@ class ListingsData(View):  # LoginRequiredMixin
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         apn = body['apn']
+        add_as_listing = body['add_as_listing']
+        print(add_as_listing)
 
-        # First, make sure it doesn't already exist in the database
-        existing_listings = PropertyListing.objects.filter(parcel__apn=apn)
-        if len(existing_listings) > 0:
-            return JsonResponse({'error': 'listing already exists'})
-        parcel = Parcel.objects.get(apn=apn)
+        # If the listing exists in the database, show that listing
+        existing_listing = PropertyListing.objects.filter(
+            parcel__apn=apn)
+        if existing_listing:
+            latest_listing = existing_listing.latest('founddate')
+            latest_analysis = latest_listing.analyzedlisting_set.latest(
+                'datetime_ran')
+            return JsonResponse({"status": "LISTING_EXISTS", "analysis_id": latest_analysis.id})
 
-        # Then, we unpickle, save to dataframe, and pickle again
-        sd_utm_crs = get_utm_crs()
+        # Run as analysis, passing in listing if we want to create a listing for it
         try:
-            result = analyze_by_apn(
-                apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs")
+            parcel = Parcel.objects.get(apn=apn)
+            sd_utm_crs = get_utm_crs()
 
-            # Add it as a listing
-            listing = PropertyListing(
-                addr=result['address'], br=parcel.bedrooms, ba=parcel.baths,
-                size=result['existing_living_area'], status="OFFMARKET", parcel=parcel)
-            listing.save()
+            if add_as_listing:
+                new_listing = PropertyListing(
+                    br=parcel.bedrooms, ba=parcel.baths, status="OFFMARKET", parcel=parcel,
+                    addr="", size=0)
+                new_listing.save()
+                analysis = analyze_by_apn(
+                    apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs", True, new_listing)
+
+                new_listing.addr = analysis.details['address']
+                new_listing.size = analysis.details['existing_living_area']
+                new_listing.save()
+                status = "LISTING_CREATED"
+            else:
+                analysis = analyze_by_apn(
+                    apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs", True, None)
+                status = "NO_LISTING"
+
+            return JsonResponse({"status": status, "analysis_id": analysis.id})
         except Exception as e:
             return JsonResponse({'error': str(e)})
-
-        # This is mainly copied from scrape.py. Refactor later to make it cleaner
-        new_df = pandas.DataFrame.from_records([result], exclude=[
-            'buildings', 'input_parameters', 'no_build_zones',
-            'new_buildings', 'avail_geom'])
-        new_df.set_index('apn', inplace=True)
-
-        new_df.loc[apn, 'address'] = listing.addr
-        new_df.loc[apn, 'bedrooms'] = listing.br
-        new_df.loc[apn, 'bathrooms'] = listing.ba
-
-        # Now append stuff about the listing
-        new_df.loc[apn, 'price'] = listing.price
-        new_df.loc[apn, 'zipcode'] = listing.zipcode
-        new_df.loc[apn, 'founddate'] = listing.founddate
-        new_df.loc[apn, 'seendate'] = listing.seendate
-        new_df.loc[apn, 'mlsid'] = listing.mlsid
-        new_df.loc[apn, 'mls_floor_area'] = listing.size
-        new_df.loc[apn, 'thumbnail'] = listing.thumbnail
-        new_df.loc[apn, 'listing_url'] = listing.listing_url
-        new_df.loc[apn, 'soldprice'] = listing.soldprice
-        new_df.loc[apn, 'status'] = listing.status
-
-        # Now append the new df to the old one
-        df = pandas.read_pickle('./world/data/pickled_scrape')
-        df = pandas.concat([df, new_df])
-
-        # Save it
-        df.to_pickle('./world/data/pickled_scrape')
-
-        # Return a success message, at which point browser would redirect to that screen
-        return JsonResponse({"msg": "success", "apn": apn}, content_type='application/json', safe=False)
 
 
 class AnalysisDetailData(View):  # LoginRequiredMixin

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetcher } from '../utils/fetcher';
@@ -6,8 +6,9 @@ import { fetcher } from '../utils/fetcher';
 export function NewListingPage() {
   const navigate = useNavigate();
 
-  const [addressSearch, setAddressSearch] = React.useState('');
-  const [err, setErr] = React.useState('');
+  const [addressSearch, setAddressSearch] = useState('');
+  const [addAsListing, setAddAsListing] = useState(false);
+  const [err, setErr] = useState('');
 
   // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
@@ -39,6 +40,7 @@ export function NewListingPage() {
       },
       body: JSON.stringify({
         apn: data.apn,
+        add_as_listing: addAsListing,
       }),
     });
     const res = await fetchResponse.json();
@@ -48,15 +50,15 @@ export function NewListingPage() {
       console.log('An error has occured');
       setErr(res.error);
     }
-    if (res.msg == 'success') {
-      console.log('Successfully added listing');
-      navigate(`/listings/${res.apn}`);
+    if (res.analysis_id) {
+      console.log('Redirecting');
+      navigate(`/analysis/${res.analysis_id}`);
     }
   };
 
   return (
     <>
-      <h1>Manually add a listing</h1>
+      <h1>Analyze an Address</h1>
       <p>
         Important note: After you get redirected to the new listing, please
         restart the server for images to load properly.
@@ -68,6 +70,16 @@ export function NewListingPage() {
           value={addressSearch}
           onChange={handleAddressSearch}
         />
+        <label>
+          <input
+            type="checkbox"
+            checked={addAsListing}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setAddAsListing(e.target.checked)
+            }
+          />
+          Add as a listing
+        </label>
       </form>
       {data?.apn ? (
         <>
