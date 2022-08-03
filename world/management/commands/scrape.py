@@ -106,5 +106,10 @@ class Command(BaseCommand):
                 parcels, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
                 save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listings=parcel_listings)
 
+            # Save the errors to a csv
+            error_df = DataFrame.from_records(errors)
+        error_df.to_csv(
+            "./frontend/static/temp_computed_imgs/errors.csv", index=False)
+
         print(
             f"We're done! There are {len(results)} successes and {len(errors)} errors.")
