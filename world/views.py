@@ -107,6 +107,7 @@ class ListingsData(View):  # LoginRequiredMixin
             l = latest_analysis.details
             l.update(listing_dict['fields'])
             l['datetime_ran'] = latest_analysis.datetime_ran
+            l['analysis_id'] = latest_analysis.id
             del l['parcel']
             del l['addr']
             del l['prev_listing']
@@ -172,12 +173,22 @@ class ListingsData(View):  # LoginRequiredMixin
         return JsonResponse({"msg": "success", "apn": apn}, content_type='application/json', safe=False)
 
 
-class ListingDetailData(View):  # LoginRequiredMixin
-    def get(self, request, apn, *args, **kwargs):
-        # Pickled data. later, grab this from a database table
-        df = pandas.read_pickle('./world/data/pickled_scrape')
-        df_json = json.loads(df.loc[apn].to_json())
-        return JsonResponse(df_json, content_type='application/json', safe=False)
+class AnalysisDetailData(View):  # LoginRequiredMixin
+    def get(self, request, id, *args, **kwargs):
+        analysis = AnalyzedListing.objects.get(id=id)
+
+        # An ad-hoc way of doing formatting for now
+        d = analysis.details
+        d['datetime_ran'] = analysis.datetime_ran
+
+        if analysis.listing:
+            listing_dict = json.loads(serialize('json', [analysis.listing]))[0]
+            d.update(listing_dict['fields'])
+            del d['parcel']
+            del d['addr']
+            del d['prev_listing']
+
+        return JsonResponse(d, content_type='application/json', safe=False)
 
 
 class GetParcelByAddressSearch(View):  # LoginRequiredMixin

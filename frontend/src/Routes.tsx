@@ -16,7 +16,9 @@ export function MyRoutes() {
               <Route index element={<HomePage />} />
               <Route path="listings">
                 <Route index element={<ListingsPage />} />
-                <Route path=":listingId" element={<ListingDetailPage />} />
+              </Route>
+              <Route path="analysis">
+                <Route path=":analysisId" element={<ListingDetailPage />} />
               </Route>
               <Route path="new-listing" element={<NewListingPage />} />
             </Route>

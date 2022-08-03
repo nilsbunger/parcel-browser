@@ -6,7 +6,7 @@ import { fetcher } from '../utils/fetcher';
 export function ListingDetailPage({}) {
   const params = useParams();
   const { data, error } = useSWR(
-    `/dj/api/listings/${params.listingId}`,
+    `/dj/api/analysis/${params.analysisId}`,
     fetcher
   );
 
@@ -16,14 +16,12 @@ export function ListingDetailPage({}) {
   return (
     <>
       <h1 className="text-4xl">{data.address}</h1>
-      <h2>APN: {params.listingId}</h2>
+      <h2>APN: {data.apn}</h2>
       <img src={data.thumbnail} className="min-w-[25%] min-h-[25%]" />
       <div className="flex flex-row flex-wrap mt-6">
         <div>
           <h2 className="font-semibold">New Buildings analysis</h2>
-          <img
-            src={`/temp_computed_imgs/new-buildings/${params.listingId}.jpg`}
-          />
+          <img src={`/temp_computed_imgs/new-buildings/${data.apn}.jpg`} />
         </div>
         <div>
           <h2 className="font-semibold">Unbuildable land analysis</h2>
@@ -32,21 +30,19 @@ export function ListingDetailPage({}) {
           <p>Cyan: Buffered buildings</p>
           <p>Orange: Setbacks</p>
           <p>Green: Flagpole part of the lot</p>
-          <img src={`/temp_computed_imgs/cant-build/${params.listingId}.jpg`} />
+          <img src={`/temp_computed_imgs/cant-build/${data.apn}.jpg`} />
         </div>
         {data.can_lot_split && (
           <div>
             <h2 className="font-semibold">Lot Split:</h2>
-            <img
-              src={`/temp_computed_imgs/lot-splits/${params.listingId}.jpg`}
-            />
+            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`} />
           </div>
         )}
       </div>
       <h2>Details:</h2>
       {Object.keys(data).map((key) => {
         return (
-          <p>
+          <p key={key}>
             {key}: {data[key]}
           </p>
         );

@@ -77,7 +77,6 @@ const initialColumnState = {
 
 function roundIfNumber(val: any): any {
   if (typeof val == 'number') {
-    console.log(val + ' is a number');
     return val.toPrecision(3);
   }
   return val;
@@ -97,7 +96,9 @@ export function ListingsPage() {
             field === 'apn'
               ? ({ row }) => (
                   <Link
-                    to={{ pathname: `/listings/${row.getValue('apn')}` }}
+                    to={{
+                      pathname: `/analysis/${row.getValue('analysis_id')}`,
+                    }}
                     className="underline text-darkblue"
                   >
                     {row.getValue('apn')}
@@ -125,8 +126,6 @@ export function ListingsPage() {
 
   if (error) return <div>failed to load</div>;
   if (!data) return <div>loading...</div>;
-  console.log(columnVisibility);
-  // console.log(table.getRowModel());
   return (
     <>
       <table className="table-auto border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
