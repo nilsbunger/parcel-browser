@@ -96,7 +96,7 @@ class ParcelDetailView(View):  # LoginRequiredMixin
 class ListingsData(View):  # LoginRequiredMixin
     def get(self, request, *args, **kwargs):
         listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').filter(
-            analyzedlisting__isnull=False)
+            analyzedlisting__isnull=False).distinct()
         serialized_listings = serialize('json', listings)
 
         # An ad-hoc way of doing formatting for now
