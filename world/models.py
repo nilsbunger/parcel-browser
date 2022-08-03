@@ -323,10 +323,11 @@ class PropertyListing(models.Model):
     soldprice = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=ListingStatus.choices)
     parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
-
+    prev_listing = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
     class Meta:
         indexes = [
-            models.Index(fields=['zipcode'])
+            models.Index(fields=['zipcode']),
+            models.Index(fields=['mlsid'])
         ]
 
 

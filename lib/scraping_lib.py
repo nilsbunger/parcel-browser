@@ -25,18 +25,29 @@ class MyItemPipeline:
         return cls(crawler.stats)
 
     def process_item(self, item, spider):
-        del item['listing_url']  # listing URL is not stable between passes, so don't consider it in get_or_creating.
+        """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
+        saved_list_url = item['listing_url']  # listing URL is not stable between passes, so don't consider it in get_or_creating.
+        saved_thumbnail = item['thumbnail']
+        del item['listing_url']
+        del item['thumbnail']
+        item['price'] -= 2 # TODO: REMOVE THIS!!! FOR TESTING ONLY
         property, created = PropertyListing.objects.get_or_create(
             **item, status=PropertyListing.ListingStatus.ACTIVE
         )
-        if (created):
-            # object with same parameters (price / etc) not found, so record this instance
+        property.thumbnail = saved_thumbnail
+        property.listing_url = saved_list_url
+        if created:
+            # object with same parameters (price / etc) not found, so record this instance and include a link to
+            # the most recent previous entry if it exists.
+            prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id).order_by(
+                '-seendate')
+            property.prev_listing = prev_listing[0]
             property.clean()
             property.save()
             self.stats.inc_value('listing/new_or_update')
         else:
-            # Property WITH these parameters seen, so update the "seendate" (which is automatic)
-            property.save(update_fields=['seendate'])
+            # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
+            property.save(update_fields=['seendate', 'thumbnail', 'listing_url'])
             self.stats.inc_value('listing/no_change')
 
 
@@ -73,7 +84,8 @@ class SanDiegoMlsSpider(scrapy.Spider):
     }
 
     def parse(self, response, orig_url=None):
-
+        """ Parse property listings from an HTML response and yield the result as a dictionary (to be processed
+            by MyItemPipeline )"""
         for listing in response.css('div.row.results'):
             listing_data = defaultdict()
             listing_data['thumbnail'] = listing.css('.property-thumb img::attr(src)').get()
