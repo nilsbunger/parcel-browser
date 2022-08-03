@@ -30,7 +30,6 @@ class MyItemPipeline:
         saved_thumbnail = item['thumbnail']
         del item['listing_url']
         del item['thumbnail']
-        item['price'] -= 2 # TODO: REMOVE THIS!!! FOR TESTING ONLY
         property, created = PropertyListing.objects.get_or_create(
             **item, status=PropertyListing.ListingStatus.ACTIVE
         )
