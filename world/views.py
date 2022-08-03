@@ -30,19 +30,19 @@ pp = pprint.PrettyPrinter(indent=2)
 # ------------------------------------------------------
 
 # main map page
-class MapView(TemplateView): #LoginRequiredMixin
+class MapView(TemplateView):  # LoginRequiredMixin
     template_name = 'map2.html'
 
 
 # ajax call for vector tiles for big map
-class ParcelTileData(MVTView, ListView):  #LoginRequiredMixin
+class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Parcel
     vector_tile_layer_name = "parcels"
     vector_tile_fields = ('apn',)
 
 
 # ajax call for topo tiles for big map
-class TopoTileData(MVTView, ListView):  #LoginRequiredMixin
+class TopoTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Topography
     vector_tile_layer_name = "topogrpahy"
     # vector_tile_fields = ('apn',)
@@ -53,7 +53,7 @@ class TopoTileData(MVTView, ListView):  #LoginRequiredMixin
 # ------------------------------------------------------
 
 # main detail page
-class ParcelDetailView(View):  #LoginRequiredMixin
+class ParcelDetailView(View):  # LoginRequiredMixin
     template_name = 'parcel-detail.html'
 
     def tuple_sub(self, t1, t2):
@@ -93,7 +93,7 @@ class ParcelDetailView(View):  #LoginRequiredMixin
 
 
 # ajax call to get current MLS listings
-class ListingsData(View):  #LoginRequiredMixin
+class ListingsData(View):  # LoginRequiredMixin
     def get(self, request, *args, **kwargs):
         # Pickled data. later, grab this from a database table
         df = pandas.read_pickle('./world/data/pickled_scrape')
@@ -158,7 +158,7 @@ class ListingsData(View):  #LoginRequiredMixin
         return JsonResponse({"msg": "success", "apn": apn}, content_type='application/json', safe=False)
 
 
-class ListingDetailData(View):  #LoginRequiredMixin
+class ListingDetailData(View):  # LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         # Pickled data. later, grab this from a database table
         df = pandas.read_pickle('./world/data/pickled_scrape')
@@ -166,7 +166,7 @@ class ListingDetailData(View):  #LoginRequiredMixin
         return JsonResponse(df_json, content_type='application/json', safe=False)
 
 
-class GetParcelByAddressSearch(View):  #LoginRequiredMixin
+class GetParcelByAddressSearch(View):  # LoginRequiredMixin
     def get(self, request, address, *args, **kwargs):
         # Takes in an address. Returns a list of possible parcels/APNs
         # Temporary. Let's clean this up later
@@ -181,7 +181,7 @@ class GetParcelByAddressSearch(View):  #LoginRequiredMixin
         return JsonResponse({"apn": parcel.apn}, content_type='application/json')
 
 
-class ParcelDetailData(View):  #LoginRequiredMixin
+class ParcelDetailData(View):  # LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(
@@ -193,7 +193,7 @@ class ParcelDetailData(View):  #LoginRequiredMixin
 # ajax call to get neighboring building data
 
 
-class IsolatedNeighborDetailData(View):  #LoginRequiredMixin
+class IsolatedNeighborDetailData(View):  # LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)
         buildings = BuildingOutlines.objects.filter(
