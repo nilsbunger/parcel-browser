@@ -73,6 +73,7 @@ const initialColumnState = {
   listing_url: false,
   soldprice: false,
   status: true,
+  analysis_id: false,
 };
 
 function roundIfNumber(val: any): any {
