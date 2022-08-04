@@ -318,7 +318,7 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
     # Find the intersections between the adjacent parcels and the parcel
     other_parcels_geom = intersecting_utm.dissolve().geometry[0]
     parcels_intersection = other_parcels_geom.intersection(
-        parcel.geometry)  # MultiLineString
+        parcel.geometry.boundary)  # MultiLineString
 
     # The difference between the outline and the intersection is the street side
     # NOTE: this implementation to find the street side is not perfect. It's possible
@@ -807,6 +807,10 @@ def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, Li
     Returns:
         Polygon: Representing the flag
     """
+    # Sometimes, the front street edge is empty, like in weird RM cases
+    if front_street_edge.empty:
+        return None
+
     # A flag is a lot that has a very small street frontage. This street frontage is less than
     # the minimum. Most lots have a minimum street frontage of 30 feet, so we picked 30.
     # NOTE: This could change in the future with more info. Tweak this to be right.
