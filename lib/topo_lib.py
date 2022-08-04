@@ -1,3 +1,14 @@
+from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
+from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
+from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings, polygon_to_utm
+from shapely.ops import unary_union
+from shapely.validation import make_valid
+from shapely.geometry import Polygon, Point, LineString
+from matplotlib import pyplot as plt
+import matplotlib as mpl
+import shapely
+import pyproj
+import geopandas
 import gc
 import re
 from typing import Dict
@@ -5,6 +16,8 @@ from typing import Dict
 from joblib import Parallel, delayed
 import pandas as pd
 import django
+
+from lib.types import ParcelDC
 
 # We need this to set up Django before any parallelization to work.
 # This is because when a new process is spawned, its memory isn't copied
@@ -14,18 +27,8 @@ import django
 django.setup()
 
 
-import geopandas
-import pyproj
-import shapely
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-from shapely.geometry import Polygon, Point, LineString
-from shapely.ops import unary_union
-
-from lib.parcel_lib import get_parcels_by_neighborhood, models_to_utm_gdf, get_buildings, polygon_to_utm
-from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
-from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
-colors = {25: 'red', 20: 'orange', 15: 'gold', 10: 'greenyellow', 5: 'springgreen', 0: 'white'}
+colors = {25: 'red', 20: 'orange', 15: 'gold',
+          10: 'greenyellow', 5: 'springgreen', 0: 'white'}
 
 
 def calculate_parcel_slope_worker(parcel: Parcel, utm_crs: pyproj.CRS, topo_areas, i):
@@ -87,7 +90,7 @@ def calculate_parcel_slopes_mp(bounding_box: django.contrib.gis.geos.GEOSGeometr
 
     # Now aggregate data
     print(bucket_stats_df.sum(axis=0, numeric_only=True))
-    
+
     print("APNs with errors:")
     print(bucket_stats_df.loc[bucket_stats_df['error'] is True, 'apn'])
 
@@ -151,6 +154,43 @@ def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, 
     print(error_parcels)
 
 
+def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int,
+                                use_cache=True):
+
+    cached_slopes = ParcelSlope.objects.filter(parcel=parcel.model)
+    if use_cache and len(cached_slopes) > 0:
+        polys = models_to_utm_gdf(
+            cached_slopes.filter(grade__gt=max_slope), utm_crs, geometry_field='polys').geometry
+        print(polys)
+    else:
+        cached_slopes.delete()
+        # Rebuild parcel slopes
+        topo_list = list(
+            TopographyLoads.objects.values_list('extents', flat=True))
+        topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
+
+        # Will we need this line?
+        if not _check_parcel_has_topo(parcel.model, topo_areas):
+            print("Something weird happened. No topos for parcel")
+            return []
+
+        topos = get_topo_lines(parcel.model)
+        topos_df = models_to_utm_gdf(topos, utm_crs)
+        plot, grade_polys = create_slopes_for_parcel(
+            parcel.model, utm_crs, topos_df)
+
+        polys = [grade_polys[grade]
+                 for grade in grade_polys if grade > max_slope]
+
+    # Make each poly valid
+    # We need this because sometimes, the ParcelSlope polys are invalid geometries
+    # We may want to go through all the ParcelSlope polys and correct the invalid ones/figure
+    # out which ones are invalid
+    polys = [make_valid(poly) for poly in polys]
+
+    return polys
+
+
 def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
     """ Check if parcels to be analyzed within bounding box have topography data for them, and create plot to
     visualize """
@@ -192,7 +232,7 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
 
 
 def create_slopes_for_parcel(parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geopandas.GeoDataFrame,
-                             bucket_stats: Dict):
+                             bucket_stats: Dict = None):
     """ Create slope polygons and store them in the database for a given parcel. Assumes that topo data is
         present for the parcel.
     """
@@ -241,21 +281,22 @@ def create_slopes_for_parcel(parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geop
 
         # Store MultiPolygon into bucket
         grade_polys[bucket] = grade_poly
-        if throwaways:
-            print("THROWING AWAY", throwaways)
-            print("KEEPING", list(grade_poly.geoms))
-            bucket_stats['weird'] += 1
-        if grade_poly.is_empty:
-            bucket_stats['empty'] += 1
-        else:
-            bucket_stats['full'] += 1
+        if bucket_stats:
+            if throwaways:
+                print("THROWING AWAY", throwaways)
+                print("KEEPING", list(grade_poly.geoms))
+                bucket_stats['weird'] += 1
+            if grade_poly.is_empty:
+                bucket_stats['empty'] += 1
+            else:
+                bucket_stats['full'] += 1
 
         # Save this slope bucket to the database
         save_slope_object(parcel, bucket, grade_poly, utm_crs)
         # Plot this slope bucket
         if not grade_poly.is_empty:
             geopandas.GeoSeries(grade_poly).plot(ax=p1, color=colors[bucket])
-    return p1
+    return p1, grade_polys
 
 
 def save_slope_object(parcel: Parcel, bucket: int, grade_poly: shapely.geometry, utm_crs: pyproj.CRS):
@@ -272,6 +313,7 @@ def save_slope_object(parcel: Parcel, bucket: int, grade_poly: shapely.geometry,
             grade_poly.wkt, srid=int(utm_crs.srs.split(':')[1]))
         slope.polys.transform('EPSG:4326')  # in-place conversion to lat-long
     slope.save()
+    return slope
 
 
 class SortPoint(Point):
@@ -305,9 +347,9 @@ def _yield_pts(intersect, topos_df):
             continue
         if (pt.geom_type == 'MultiPoint'):
             for inner_pt in pt.geoms:
-                yield (SortPoint(inner_pt), topos_df['elev'][index], index)
+                yield (SortPoint(inner_pt), topos_df.model.iloc[index].elev, index)
         else:
-            yield (SortPoint(pt), topos_df['elev'][index], index)
+            yield (SortPoint(pt), topos_df.model.iloc[index].elev, index)
 
 
 def _yield_grade_lines_from_intersections(intersections, topos_df):

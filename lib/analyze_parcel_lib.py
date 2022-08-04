@@ -4,7 +4,7 @@ generation of new buildings/repurpose of old one, computing scores for scenarios
 scenarios in general.
 """
 
-from lib.topo_lib import get_topo_lines
+from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 from typing import Tuple
 from joblib import Parallel, delayed
 import random
@@ -124,7 +124,13 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     zone = get_parcel_zone(parcel, utm_crs)
     # Technically don't need side or rear setbacks, but buffer by a small amount
     # to account for errors
-    setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
+
+    zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
+
+    if zone_has_data:
+        setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
+    else:
+        setback_widths = (8, 0.1, 0.1)
 
     buildings = get_buildings(parcel_model)
 
@@ -134,7 +140,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     topos = get_topo_lines(parcel_model)
     topos_df = models_to_utm_gdf(topos, utm_crs)
 
-    max_far = get_far(zone, parcel.geometry.area)
+    if zone_has_data:
+        max_far = get_far(zone, parcel.geometry.area)
+    else:
+        max_far = 0.6
+
     buildings = models_to_utm_gdf(buildings, utm_crs)
 
     identify_building_types(parcel.geometry, buildings)
@@ -151,7 +161,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     setbacks = get_setback_geoms(parcel.geometry, setback_widths, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
-    too_steep = get_too_steep_polys(parcel.model, utm_crs, max_slope=10)
+    too_steep = calculate_slopes_for_parcel(
+        parcel, utm_crs, 10, use_cache=True)
 
     too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(
         parcel, buildings, topos_df, utm_crs)

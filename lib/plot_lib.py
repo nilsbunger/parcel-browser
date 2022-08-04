@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from lib.parcel_lib import *
 import geopandas
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 NEW_BUILDING_COLORS = ['orchid', 'plum', 'violet', 'thistle',
                        'lightpink', 'mediumorchid', 'hotpink']

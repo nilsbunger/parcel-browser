@@ -107,7 +107,7 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> str:
 
     if (len(zones)) == 1:
         return zones[0].zone_name
-    elif (len(zones)) == 2:
+    elif (len(zones)) > 1:
         # We're ont he boundary of two zones. Find the one with the most overlap with parcel.
         zones_df = models_to_utm_gdf(zones, utm_crs)
         max_intersect_index = argmax(
@@ -680,7 +680,7 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
     return biggest_rect
 
 
-def get_too_steep_polys(parcel_model: Parcel, utm_crs: pyproj.CRS, max_slope: int):
+def get_too_steep_polys(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int):
     """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
 
     Args:
@@ -692,7 +692,7 @@ def get_too_steep_polys(parcel_model: Parcel, utm_crs: pyproj.CRS, max_slope: in
         Multipolygon representing the area that's too steep
     """
     polys = ParcelSlope.objects.filter(
-        polys__intersects=parcel_model.geom, grade__gt=max_slope)
+        polys__intersects=parcel.model.geom, grade__gt=max_slope)
 
     polys = models_to_utm_gdf(polys, utm_crs, geometry_field='polys').geometry
 
