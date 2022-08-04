@@ -6,19 +6,27 @@ from world.models import PropertyListing, Parcel
 
 
 street_suffixes = [
-    'dr', 'drive', 'way', 'ave', 'avenue', 'ct', 'court', 'blvd', 'st', 'street', 'pl', 'place', 'rd', 'road', 'ln',
-    'lane', 'cove', 'cir', 'circle', 'w']
+    'dr', 'drive', 'way', 'ave', 'avenue', 'ct', 'court', 'blvd', 'boulevard', 'st', 'street', 'pl', 'place', 'rd', 'road', 'ln',
+    'lane', 'cove', 'cv', 'cir', 'circle', 'w', 'trail', 'trl', 'ridge', 'rdg', 'highway', 'hwy',
+    'parkway', 'pkwy', 'terrace', 'ter']
 
 normalize_suffix = {
-    'cove': 'cv',
-    'court': 'ct',
-    'street': 'st',
-    'place': 'pl',
+    'avenue': 'ave',
+    'boulevard': 'blvd',
     'circle': 'cir',
+    'court': 'ct',
+    'cove': 'cv',
     'drive': 'dr',
-    'road': 'rd',
+    'highway': 'hwy',
     'lane': 'ln',
-    'w': 'way'
+    'place': 'pl',
+    'road': 'rd',
+    'parkway': 'pkwy',
+    'ridge': 'rdg',
+    'street': 'st',
+    'terrace': 'ter',
+    'trail': 'trl',
+    'w': 'way',
 }
 
 normalize_prefix = {
@@ -35,6 +43,7 @@ def listing_to_parcel(l: PropertyListing) -> (Parcel | None, str | None):
 
 
 def address_to_parcel(addr: str) -> (Parcel | None, str | None):
+    """ Take a street address and look for a matching Parcel. Return the Parcel or an error string"""
     street_suffix = None
     street_prefix = None
     addr_normalized = re.sub(r'\.', '', addr.lower())

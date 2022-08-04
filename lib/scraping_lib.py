@@ -5,8 +5,10 @@ from collections import defaultdict
 from urllib.parse import urljoin
 
 import scrapy
+from django.core.exceptions import MultipleObjectsReturned
 from scraper_api import ScraperAPIClient
 from scrapy.crawler import CrawlerProcess
+from scrapy.exceptions import CloseSpider
 
 from mygeo.settings import env
 from world.models import PropertyListing
@@ -26,28 +28,53 @@ class MyItemPipeline:
 
     def process_item(self, item, spider):
         """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
-        saved_list_url = item['listing_url']  # listing URL is not stable between passes, so don't consider it in get_or_creating.
+        saved_list_url = item[
+            'listing_url']  # listing URL is not stable between passes, so don't consider it in get_or_creating.
         saved_thumbnail = item['thumbnail']
         del item['listing_url']
         del item['thumbnail']
-        property, created = PropertyListing.objects.get_or_create(
-            **item, status=PropertyListing.ListingStatus.ACTIVE
-        )
-        property.thumbnail = saved_thumbnail
-        property.listing_url = saved_list_url
-        if created:
-            # object with same parameters (price / etc) not found, so record this instance and include a link to
-            # the most recent previous entry if it exists.
-            prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id).order_by(
-                '-seendate')
-            property.prev_listing = prev_listing[0]
-            property.clean()
-            property.save()
-            self.stats.inc_value('listing/new_or_update')
-        else:
-            # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
-            property.save(update_fields=['seendate', 'thumbnail', 'listing_url'])
-            self.stats.inc_value('listing/no_change')
+
+        try:
+            try:
+                property, created = PropertyListing.objects.get_or_create(
+                    **item, status=PropertyListing.ListingStatus.ACTIVE
+                )
+            except MultipleObjectsReturned as e:
+                # uniqueness constraint violated - price,addr,br,ba,mlsid,size,status should be a unique entry. fix it up
+                listings = PropertyListing.objects.filter(
+                    **item, status=PropertyListing.ListingStatus.ACTIVE).order_by('founddate')
+                # most likely case here is the first listing has the found date we want but still has a zip code,
+                # which we deprecated in the listing.
+                print(f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}")
+                if len(listings) != 2:
+                    print ("NEED TO DEBUG THIS CASE")
+
+                # take listings[1] as the listing going forward, patching up its found-date.
+                listings[1].founddate = listings[0].founddate
+                listings[1].save()
+                property = listings[1]
+                created = False
+                listings[0].delete()
+
+            property.thumbnail = saved_thumbnail
+            property.listing_url = saved_list_url
+            if created:
+                # object with same parameters (price / etc) not found, so record this instance and include a link to
+                # the most recent previous entry if it exists.
+                prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id).order_by(
+                    '-seendate')
+                if len(prev_listing) > 0:
+                    property.prev_listing = prev_listing[0]
+                property.clean()
+                property.save()
+                self.stats.inc_value('listing/new_or_update')
+            else:
+                # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
+                property.save(update_fields=['seendate', 'thumbnail', 'listing_url'])
+                self.stats.inc_value('listing/no_change')
+        except Exception as e:
+            print(e)
+            raise CloseSpider()
 
 
 class SanDiegoMlsSpider(scrapy.Spider):
@@ -56,8 +83,15 @@ class SanDiegoMlsSpider(scrapy.Spider):
     def __init__(self, zip_groups, localhost_mode, **kwargs):
         self.zip_groups = zip_groups
         self.localhost_mode = localhost_mode
-        logger = logging.getLogger('scrapy.core.scraper')
-        logger.setLevel(logging.INFO)
+        # Need to adjust logging, scrapy is very verbose!
+        log_levels = (
+            ('scrapy.core.scraper', logging.INFO),
+            ('scrapy.middleware', logging.WARNING),
+            ('scrapy.crawler', logging.WARNING),
+        )
+        for logger,level in log_levels:
+            logging.getLogger(logger).setLevel(level)
+
         super().__init__(**kwargs)
 
     def start_requests(self):
