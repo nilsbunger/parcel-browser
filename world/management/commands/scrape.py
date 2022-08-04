@@ -64,7 +64,7 @@ class Command(BaseCommand):
                   f' (of which, {stats.get_value("httpcache/hit")} were from CACHE)')
             error_pages = stats.get_value('httperror/response_ignored_count')
             sys.stdout.flush()
-            if (error_pages):
+            if error_pages:
                 eprint(f'!! {error_pages} error responses')
 
         # -----
@@ -85,17 +85,22 @@ class Command(BaseCommand):
             if error:
                 stats[error] += 1
             else:
-                stats['success'] += 1
                 # Got matched parcel, record the foreign key link in the listing.
+                stats['success'] += 1
                 l.parcel = matched_parcel
                 l.save(update_fields={'parcel'})
-                parcels_to_analyze.add((matched_parcel, l))
+                if matched_parcel.situs_juri == 'SD':
+                    parcels_to_analyze.add((matched_parcel, l))
+                else:
+                    print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre},"
+                          f"{matched_parcel.situs_juri} is NOT in SD City")
+                    stats['not_in_city'] += 1
             # print("SAVED")
         print("DONE. Final stats associating parcels with listings:")
         print(dict(stats))
 
         if options['skip_analysis']:
-            print("SKIPPING parcel analysis / generating picklefile")
+            print("SKIPPING parcel analysis")
         else:
             # -----
             # 3. Generate parcel analysis for all the parcels
@@ -108,8 +113,8 @@ class Command(BaseCommand):
 
             # Save the errors to a csv
             error_df = DataFrame.from_records(errors)
-        error_df.to_csv(
-            "./frontend/static/temp_computed_imgs/errors.csv", index=False)
+            error_df.to_csv(
+                "./frontend/static/temp_computed_imgs/errors.csv", index=False)
 
-        print(
-            f"We're done! There are {len(results)} successes and {len(errors)} errors.")
+            print(
+                f"Analysis done! There are {len(results)} successes and {len(errors)} errors.")
