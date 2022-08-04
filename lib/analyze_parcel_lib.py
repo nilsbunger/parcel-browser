@@ -3,6 +3,10 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing scores for scenarios, and running
 scenarios in general.
 """
+import django
+# TODO: It seems any workers we spawn will need django.setup(), so let's move
+# all the workers to a separate file so we don't pollute this file.
+django.setup()
 
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 from typing import Tuple
@@ -16,7 +20,6 @@ import matplotlib.pyplot as plt
 import git
 import matplotlib.colors as mcolors
 import datetime
-import django
 import os
 from datetime import date
 from lib.types import ParcelDC
@@ -24,9 +27,6 @@ from world.models import AnalyzedListing
 from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
-# TODO: It seems any workers we spawn will need django.setup(), so let's move
-# all the workers to a separate file so we don't pollute this file.
-django.setup()
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
