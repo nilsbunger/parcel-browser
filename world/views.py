@@ -1,11 +1,14 @@
 import json
 import pprint
+from collections import OrderedDict
 from itertools import chain
+from zoneinfo import ZoneInfo
 
 import pandas
 import json
 import geopandas as geopandas
 from django.core.serializers import serialize
+from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
@@ -92,16 +95,28 @@ class ParcelDetailView(View):  # LoginRequiredMixin
                        })
 
 
-# ajax call to get current MLS listings
+def listing_prev_values(listing):
+    """ Return dict of relevant values that changed in the listing since the previously
+        linked listing."""
+    retval = dict()
+    if not listing.prev_listing:
+        return retval
+    for field in ['price', 'status', 'br', 'ba', 'size', 'addr', 'soldprice']:
+        if getattr(listing, field) != getattr(listing.prev_listing, field):
+            retval[field] = getattr(listing.prev_listing, field)
+    return retval
+
+# ajax call to get current MLS listings. Return them from most recently created / updated to least.
 class ListingsData(View):  # LoginRequiredMixin
     def get(self, request, *args, **kwargs):
         listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').filter(
-            analyzedlisting__isnull=False).distinct()
+            analyzedlisting__isnull=False).distinct().order_by('-founddate')
         serialized_listings = serialize('json', listings)
 
         # An ad-hoc way of doing formatting for now
-        listings_formatted = []
+        listings_formatted = OrderedDict()
         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
+            founddate = str(listing.founddate.astimezone(tz=ZoneInfo("America/Los_Angeles")).date())
             latest_analysis = listing.analyzedlisting_set.latest(
                 'datetime_ran')
             l = latest_analysis.details
@@ -111,11 +126,21 @@ class ListingsData(View):  # LoginRequiredMixin
             del l['parcel']
             del l['addr']
             del l['prev_listing']
-            listings_formatted.append(l)
+            # Record new and updated listings
+            if not listing.prev_listing:
+                l['category'] = 'new'
+            else:
+                l['category'] = 'updated'
+                l['prev_values'] = listing_prev_values(listing)
+            if founddate in listings_formatted:
+                listings_formatted[founddate].append(l)
+            else:
+                listings_formatted[founddate] = [l]
 
         return JsonResponse(listings_formatted, content_type='application/json', safe=False)
 
     def post(self, request, *args, **kwargs):
+        """ajax post to manually add a 'listing' entry for a property not listed."""
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         apn = body['apn']

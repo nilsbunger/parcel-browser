@@ -331,7 +331,11 @@ class PropertyListing(models.Model):
     parcel = models.ForeignKey(
         Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
     prev_listing = models.ForeignKey(
-        "self", on_delete=models.CASCADE, blank=True, null=True)
+        "self", on_delete=models.CASCADE, blank=True, null=True,
+        # note: related_name provides the name used in a *reverse* lookup, from an old listing to the newer one,
+        #  hence the name is semantically opposite of previous.
+        related_name='next_listing'
+    )
 
     class Meta:
         indexes = [
