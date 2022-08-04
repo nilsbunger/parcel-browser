@@ -146,11 +146,6 @@ def models_to_utm_gdf(
     # Now, attach the original model objects to the GeoDataFrame
     df['model'] = models
 
-    # Temporarily, make sure our dataframe translated correctly by comparing it to how we used
-    # to do it. We can remove this after we've run some cycles with it.
-    df_old = data_frame.to_crs(data_frame.estimate_utm_crs())
-    assert ((df['geometry'] == df_old['geometry']).all())
-
     return df
 
 
