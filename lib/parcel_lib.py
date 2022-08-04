@@ -655,6 +655,9 @@ def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color='green')
             p1.set_title(f'{rot} deg; unrotated back')
 
+    if not biggest_rect:
+        return None
+
     if max_area is not None and biggest_rect.area > max_area:
         # If it's too big, we want to do some processing to trim it down.
         biggest_rect = clamp_placed_polygon_to_size(
