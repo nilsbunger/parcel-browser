@@ -161,7 +161,6 @@ def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope
     if use_cache and len(cached_slopes) > 0:
         polys = models_to_utm_gdf(
             cached_slopes.filter(grade__gt=max_slope), utm_crs, geometry_field='polys').geometry
-        print(polys)
     else:
         cached_slopes.delete()
         # Rebuild parcel slopes
@@ -186,7 +185,7 @@ def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope
     # We need this because sometimes, the ParcelSlope polys are invalid geometries
     # We may want to go through all the ParcelSlope polys and correct the invalid ones/figure
     # out which ones are invalid
-    polys = [make_valid(poly) for poly in polys]
+    polys = [make_valid(poly) for poly in polys if poly]
 
     return polys
 
@@ -259,7 +258,7 @@ def create_slopes_for_parcel(parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geop
         throwaways = []
         # Put together all the areas with the given grade into one polygon or multipolygon
         grade_poly = unary_union([line.buffer(1)
-                                 for line in grade_buckets[bucket]])
+                                  for line in grade_buckets[bucket]])
         # Clip the poly to the parcel and reduce points by simplifying the poly
         grade_poly = grade_poly.intersection(parcel_poly).simplify(1)
         grade_poly, throwaway_inner = regularize_to_multipolygon(grade_poly)
