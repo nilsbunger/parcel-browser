@@ -2,6 +2,8 @@ from typing import List, Union
 from lib.shapely_lib import multi_line_string_split
 
 import django.contrib.gis.geos
+from django.contrib.gis.measure import D
+from django.contrib.gis.db.models.functions import Distance
 import geopandas
 import pyproj
 import shapely
@@ -22,7 +24,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
 
-from world.models import Parcel, BuildingOutlines, ParcelSlope, ZoningBase
+from world.models import Parcel, BuildingOutlines, ParcelSlope, Roads, ZoningBase
 
 from numpy import argmax, argmin
 
@@ -289,7 +291,7 @@ def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Po
 
 
 def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
-        -> tuple[MultiLineString, MultiLineString, MultiLineString]:
+        -> dict:
     """ Returns the edges of a parcel that are on the street side, the sides of the lot,
     and the back of the lot respectively as Shapely MultiLineStrings.
     Function can be greatly improved with road data, and other types of data we can
@@ -302,6 +304,12 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
         (MultiLineString, MultiLineString, MultiLineString): A tuple of MultiLineStrings
         representing the front (street), side, and back edges respectively.
     """
+    d = {
+        "front": None,
+        "side": None,
+        "back": None,
+        "alley": None
+    }
 
     # Get our adjacent parcels
     intersecting_parcels = Parcel.objects.filter(
@@ -320,7 +328,26 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
     # that a side that doesn't have an adjacent parcel is the back of a lot, or just has
     # wilderness or something behind it.
     street_edges = parcel.geometry.boundary.difference(
-        parcels_intersection)  # MultiLineString
+        parcels_intersection)  # MultiLineString or Linestring
+
+    # Flag for Alley analysis. The is_alley_edge function is currently slow, but it works.
+    # See the function for more details
+    ANALYZE_ALLEYS = False
+    if ANALYZE_ALLEYS:
+        # If there's only one side, we can assume it's not alley facing.
+        if isinstance(street_edges, LineString) or len(street_edges.geoms) == 1:
+            d["front"] = street_edges
+        else:
+            front_lines, alley_lines = [], []
+            for edge in street_edges.geoms:
+                if is_alley_edge(edge, utm_crs):
+                    alley_lines.append(edge)
+                else:
+                    front_lines.append(edge)
+            d["front"] = MultiLineString(front_lines)
+            d["alley"] = MultiLineString(alley_lines)
+    else:
+        d['front'] = street_edges
 
     # The back is the union of all the line segments that don't touch any of the street edges
     # The lines that do touch are the sides.
@@ -336,13 +363,13 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) \
             side_lines.append(line)
         else:
             back_lines.append(line)
-    side_edges = MultiLineString(side_lines)
-    back_edges = MultiLineString(back_lines)
+    d['side'] = MultiLineString(side_lines)
+    d['back'] = MultiLineString(back_lines)
 
-    return street_edges, side_edges, back_edges
+    return d
 
 
-def get_setback_geoms(parcel_geom: MultiPolygon, setback_widths: tuple[float, float, float], edges):
+def get_setback_geoms(parcel_geom: MultiPolygon, setback_widths: dict, edges: dict):
     """Given setback widths and the front, side, and back edges, returns the geometry
     representing that setback.
 
@@ -357,9 +384,11 @@ def get_setback_geoms(parcel_geom: MultiPolygon, setback_widths: tuple[float, fl
         (Geometry, Geometry, Geometry): A tuple of Geometry representing the front, side, and back setbacks
     """
     setbacks = []
-    for setback_width, edges in zip(setback_widths, edges):
-        setback = edges.buffer(setback_width).intersection(parcel_geom)
-        setbacks.append(setback)
+    for key in setback_widths:
+        if setback_widths[key]:
+            setback = edges[key].buffer(
+                setback_widths[key]).intersection(parcel_geom)
+            setbacks.append(setback)
     return setbacks
 
 
@@ -926,3 +955,31 @@ def get_too_high_or_low(parcel: ParcelDC, buildings: GeoDataFrame, topos: GeoDat
         cant_build = unary_union([cant_build, *too_low_poly])
 
     return too_high, too_low, cant_build
+
+
+def is_alley_edge(edge: LineString, utm_crs: pyproj.CRS):
+    # Detects if an edge of a parcel is facing an alley.
+    # NOTE: The query in this function runs very slowly. For testing purposes
+    # we may not want to run such an analysis, or improve it before we do.
+    # Projections for transforming a line in UTM to 4326
+    wgs84 = pyproj.CRS('EPSG:4326')
+    projection = pyproj.Transformer.from_crs(
+        utm_crs, wgs84, always_xy=True).transform
+
+    # Convert the line to the wgs
+    transformed = shapely.ops.transform(projection, edge)
+
+    line_geos = GEOSGeometry(transformed.wkt, srid=4326)
+
+    # NOTE: This is a very slow query. It seems querying by distance is slow.
+    nearest_road = Roads.objects.annotate(distance=Distance(
+        'geom', line_geos)).order_by('distance').first()
+
+    # Hardcoded, in meters
+    if nearest_road.distance.m > 25:
+        # Not really a street facing edge. Probably facing wilderness
+        return False
+    elif nearest_road.rd30full == "ALLEY":
+        return True
+
+    return False

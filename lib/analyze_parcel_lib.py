@@ -127,10 +127,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
 
-    if zone_has_data:
-        setback_widths = (ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28, 0.1, 0.1)
-    else:
-        setback_widths = (8, 0.1, 0.1)
+    setback_widths = {
+        'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] if zone_has_data else 5,
+        'side': None,
+        'back': None,
+        'alley': None,
+    }
 
     buildings = get_buildings(parcel_model)
 
@@ -143,6 +145,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     if zone_has_data:
         max_far = get_far(zone, parcel.geometry.area)
     else:
+        # Placeholder. Change this to be correct later
         max_far = 0.6
 
     buildings = models_to_utm_gdf(buildings, utm_crs)
@@ -170,7 +173,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     cant_build = unary_union(
         [*buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
 
-    flag_poly = identify_flag(parcel, parcel_edges[0])
+    flag_poly = identify_flag(parcel, parcel_edges['front'])
     if flag_poly:
         cant_build = unary_union([cant_build, flag_poly])
 
@@ -245,9 +248,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
         # Generate the figures
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df, too_high_df, too_low_df,
-                                               new_building_polys, open_space_poly, parcel_edges[0], flag_poly)
+                                               new_building_polys, open_space_poly, parcel_edges['front'], flag_poly)
         cant_build_fig = plot_cant_build(
-            parcel, address, buildings, utm_crs, buffered_buildings_geom, setbacks, too_steep, flag_poly, parcel_edges[0])
+            parcel, address, buildings, utm_crs, buffered_buildings_geom, setbacks, too_steep, flag_poly, parcel_edges['front'])
 
         if second_lot:
             split_lot_fig = plot_split_lot(
@@ -282,6 +285,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
         "is_flag_lot": flag_poly is not None,
+        "is_alley_lot": parcel_edges['alley'] is not None,
         "carports": num_carports,
         "garages": num_garages,
 
@@ -320,7 +324,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "new_lot_area": second_lot.area if second_lot else None,
 
         "git_commit_hash": git_sha,
-        "front_setback": setback_widths[0],
+        "front_setback": setback_widths['front'],
     }
 
     input_parameters = {
