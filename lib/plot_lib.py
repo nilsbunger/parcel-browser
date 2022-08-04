@@ -113,8 +113,9 @@ def plot_cant_build(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm
             ax=ax, color='red', alpha=0.7)
 
     for poly in setbacks:
-        geopandas.GeoSeries(poly).plot(
-            ax=ax, color='orange', alpha=0.7)
+        if not poly.empty:
+            geopandas.GeoSeries(poly).plot(
+                ax=ax, color='orange', alpha=0.7)
 
     if flag_poly:
         geopandas.GeoSeries(flag_poly).plot(
