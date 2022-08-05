@@ -3,29 +3,28 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing scores for scenarios, and running
 scenarios in general.
 """
+from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
+from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
+from world.models import AnalyzedListing
+from lib.types import ParcelDC
+from datetime import date
+import os
+import datetime
+import matplotlib.colors as mcolors
+import git
+import matplotlib.pyplot as plt
+import geopandas
+from shapely.ops import unary_union
+from lib.parcel_lib import *
+from pandas import DataFrame
+import random
+from joblib import Parallel, delayed
+from typing import Tuple
+from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 import django
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
 django.setup()
-
-from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
-from typing import Tuple
-from joblib import Parallel, delayed
-import random
-from pandas import DataFrame
-from lib.parcel_lib import *
-from shapely.ops import unary_union
-import geopandas
-import matplotlib.pyplot as plt
-import git
-import matplotlib.colors as mcolors
-import datetime
-import os
-from datetime import date
-from lib.types import ParcelDC
-from world.models import AnalyzedListing
-from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
-from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
 
 MIN_BUILDING_AREA = 11  # ~150sqft
@@ -128,7 +127,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
 
     setback_widths = {
-        'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] if zone_has_data else 5,
+        'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28 if zone_has_data else 5,
         'side': None,
         'back': None,
         'alley': None,
