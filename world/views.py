@@ -1,9 +1,10 @@
 import json
 import pprint
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import chain
 from zoneinfo import ZoneInfo
 
+import matplotlib
 import pandas
 import json
 import geopandas as geopandas
@@ -123,15 +124,17 @@ class ListingsData(View):  # LoginRequiredMixin
             l.update(listing_dict['fields'])
             l['datetime_ran'] = latest_analysis.datetime_ran
             l['analysis_id'] = latest_analysis.id
+            l['metadata'] = defaultdict()
             del l['parcel']
             del l['addr']
             del l['prev_listing']
             # Record new and updated listings
             if not listing.prev_listing:
-                l['category'] = 'new'
+                l['metadata']['category'] = 'new'
+                l['metadata']['prev_values'] = {}
             else:
-                l['category'] = 'updated'
-                l['prev_values'] = listing_prev_values(listing)
+                l['metadata']['category'] = 'updated'
+                l['metadata']['prev_values'] = listing_prev_values(listing)
             if founddate in listings_formatted:
                 listings_formatted[founddate].append(l)
             else:
@@ -141,11 +144,14 @@ class ListingsData(View):  # LoginRequiredMixin
 
     def post(self, request, *args, **kwargs):
         """ajax post to manually add a 'listing' entry for a property not listed."""
+
+        # Use Matplotlib in non-interactive mode, preventing errors and python crash
+        matplotlib.use('Agg')
+
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         apn = body['apn']
         add_as_listing = body['add_as_listing']
-        print(add_as_listing)
 
         # If the listing exists in the database, show that listing
         existing_listing = PropertyListing.objects.filter(
@@ -167,7 +173,14 @@ class ListingsData(View):  # LoginRequiredMixin
                     addr="", size=0)
                 new_listing.save()
                 analysis = analyze_by_apn(
-                    apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs", True, new_listing)
+                    apn,
+                    sd_utm_crs,
+                    show_plot=False,
+                    save_file=True,
+                    save_dir="./frontend/static/temp_computed_imgs",
+                    save_as_model=True,
+                    listing=new_listing
+                )
 
                 new_listing.addr = analysis.details['address']
                 new_listing.size = analysis.details['existing_living_area']

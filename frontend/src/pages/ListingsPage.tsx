@@ -25,13 +25,28 @@ const columnHelper = createColumnHelper();
 const basicAccessor = (cell) => cell.getValue()
 
 const apnAccessor = ({row}) => (
+<>
   <Link to={{pathname: `/analysis/${row.getValue('analysis_id')}`,}} className="underline text-darkblue">
     {row.getValue('apn')}
-  </Link>)
-
-const roundingAccessor = (cell) => (
-  cell.getValue().toPrecision(3)
+  </Link>
+</>
 )
+
+const roundingAccessor = ({cell}) => {
+  return cell.getValue().toPrecision(3)
+}
+
+const priceAccessor = ({cell}) => {
+  console.log(cell);
+  const prev_value = cell.row.getValue('metadata')['prev_values'][cell.column.id]
+  if (prev_value) {
+    return <span><s> {prev_value} </s> {cell.getValue()} </span>
+  } else { return cell.getValue()}
+}
+
+const statusAccessor = ({row}) => {
+    return row.getValue('metadata')['category']=='new' ? <div className='badge badge-accent'>NEW</div> : ''
+}
 
 const initialColumnState = {
   apn: {visible: true, accessor: apnAccessor,},
@@ -74,7 +89,7 @@ const initialColumnState = {
   front_setback: {visible: false,},
   br: {visible: true,},
   ba: {visible: true,},
-  price: {visible: true,},
+  price: {visible: true, accessor: priceAccessor},
   zipcode: {visible: false,},
   founddate: {visible: false,},
   seendate: {visible: false,},
@@ -83,8 +98,9 @@ const initialColumnState = {
   thumbnail: {visible: false,},
   listing_url: {visible: false,},
   soldprice: {visible: false,},
-  status: {visible: true,},
+  status: {visible: true, accessor: statusAccessor},
   analysis_id: {visible: false,},
+  metadata: {visible: false,}, // Need to make this one ALWAYS invisible
 };
 
 
@@ -111,7 +127,7 @@ export function ListingsPage() {
   }
   // Render each date as a separate table
   return <div id='tablegrouper'>
-
+    <div className="badge badge-primary">neutral</div>
     {dates.map((date) =>
       <ListingTable key={date} date={date} data={data[date]} columnVisibility={columnVisibility}/>
     )}
