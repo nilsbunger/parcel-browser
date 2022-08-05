@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Dict
 from lib.shapely_lib import multi_line_string_split
 
 import django.contrib.gis.geos
@@ -250,7 +250,7 @@ def get_avail_geoms(parcel_geom: MultiPolygon, cant_build_geom: Polygonal) -> Po
 
 
 def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Polygonal, num_rects,
-                                          max_aspect_ratio=None, min_area: float = 0,
+                                          max_aspect_ratio: float, min_area: float = 0,
                                           max_total_area=float("inf"), max_area_per_building=float("inf")) \
         -> List[Polygon]:
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
@@ -456,12 +456,12 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
     return max(0, max_FAR * parcel.geometry.area - existing_floor_area)
 
 
-def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes) -> Polygonal:
+def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes: Dict) -> Polygonal:
     """Returns the geometry of buildings that's buffered by a certain width.
 
     Args:
         buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
-        buffer_sizes (float): The width of the buffer to apply to the buildings
+        buffer_sizes (Dict): The width of the buffer to apply to the buildings
 
     Returns:
         Geometry: A geometry (Polygon or MultiPolygon) representing the buffered buildings
@@ -596,16 +596,16 @@ def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_par
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
     x_offset = big_rect_four_corners[closest_corner_index][0] - \
-        to_place_four_corners[closest_corner_index][0]
+               to_place_four_corners[closest_corner_index][0]
     y_offset = big_rect_four_corners[closest_corner_index][1] - \
-        to_place_four_corners[closest_corner_index][1]
+               to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(
         rect_to_place, xoff=x_offset, yoff=y_offset)
 
     return rect_to_place
 
 
-def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio=None,
+def biggest_poly_over_rotation(avail_geom, parcel_boundary, do_plots=False, max_aspect_ratio: float = None,
                                min_area: float = 0, max_area=None):
     """Find an approximately biggest rectangle that can be placed in an available space at arbitrary rotation.
     Polygon sizes can be clamped with optional min_area or max_area parameters. In the event when the initial
