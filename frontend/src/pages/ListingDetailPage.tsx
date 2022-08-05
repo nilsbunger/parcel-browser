@@ -10,7 +10,7 @@ export function ListingDetailPage({}) {
     fetcher
   );
 
-  if (error) return <div>failed to load</div>;
+  if (error) return <div>ListingDetailPage failed its AJAX call. {error}</div>;
   if (!data) return <div>loading...</div>;
 
   return (
