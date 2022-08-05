@@ -18,12 +18,13 @@ from django.urls import path, include, re_path
 
 from world import views
 from world.infra_views import frontend_proxy_view
-from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNeighborDetailData
+from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNeighborDetailData, AddressToLatLong
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('map/', MapView.as_view()),
+    path('map/search/<str:address>', AddressToLatLong.as_view()),
     path('parceltile/<int:z>/<int:x>/<int:y>', views.ParcelTileData.as_view(), name="parcel-tile"),
     path('topotile/<int:z>/<int:x>/<int:y>', views.TopoTileData.as_view(), name="topo-tile"),
     # path("api/", include("world.api")),

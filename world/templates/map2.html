@@ -16,6 +16,13 @@
 {% endblock %}
 
 {% block content %}
+    <div>
+        <form id="search" action="/map/search/" method="get">
+            <input type="text" id="addr" name="addr" placeholder="Address">
+            <button type="submit">Search</button>
+        </form>
+        <p id="log"></p>
+    </div>
     <div id="map" class="map" tabindex="0"></div>
 {% endblock %}
 

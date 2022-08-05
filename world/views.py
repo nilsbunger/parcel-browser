@@ -99,3 +99,18 @@ class IsolatedNeighborDetailData(LoginRequiredMixin, View):
         serializedBuildings = serialize('geojson', buildings, geometry_field='geom') 
 
         return HttpResponse(serializedBuildings, content_type='application/json')
+
+
+class AddressToLatLong(LoginRequiredMixin, View):
+    def get(self, request, address):
+        addr = address.split(' ')
+        if len(addr) == 2:
+            try:
+                parcel = Parcel.objects.get(situs_addr__iexact=addr[0], situs_stre__iexact=addr[1])
+            except Parcel.DoesNotExist:
+                pass
+
+            coords = parcel.geom.centroid
+            return HttpResponse(json.dumps({'x': coords.x, 'y': coords.y}), content_type='application/json')
+        else:
+            return HttpResponse('404')
