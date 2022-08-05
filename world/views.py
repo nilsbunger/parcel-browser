@@ -143,7 +143,8 @@ class ListingsData(View):  # LoginRequiredMixin
         return JsonResponse(listings_formatted, content_type='application/json', safe=False)
 
     def post(self, request, *args, **kwargs):
-        """ajax post to manually add a 'listing' entry for a property not listed."""
+        """ajax post to manually add a 'listing' entry for a property not listed, or redo the analysis
+        for an existing entry."""
 
         # Use Matplotlib in non-interactive mode, preventing errors and python crash
         matplotlib.use('Agg')
@@ -152,17 +153,18 @@ class ListingsData(View):  # LoginRequiredMixin
         body = json.loads(body_unicode)
         apn = body['apn']
         add_as_listing = body['add_as_listing']
+        redo_analysis = body['redo_analysis']
+        assert (not add_as_listing or not redo_analysis)
 
-        # If the listing exists in the database, show that listing
-        existing_listing = PropertyListing.objects.filter(
-            parcel__apn=apn)
-        if existing_listing:
+        existing_listing = PropertyListing.objects.filter(parcel__apn=apn)
+        if existing_listing and not redo_analysis:
+            # The property listing exists in the database, show its analysis
             latest_listing = existing_listing.latest('founddate')
             latest_analysis = latest_listing.analyzedlisting_set.latest(
                 'datetime_ran')
             return JsonResponse({"status": "LISTING_EXISTS", "analysis_id": latest_analysis.id})
 
-        # Run as analysis, passing in listing if we want to create a listing for it
+        # Run an analysis, passing in listing if we want to create a listing for it
         try:
             parcel = Parcel.objects.get(apn=apn)
             sd_utm_crs = get_utm_crs()
@@ -187,9 +189,18 @@ class ListingsData(View):  # LoginRequiredMixin
                 new_listing.save()
                 status = "LISTING_CREATED"
             else:
+                # there *could* be an existing listing if this is redoing an analysis
+                listing = existing_listing.latest('founddate') if existing_listing else None
                 analysis = analyze_by_apn(
-                    apn, sd_utm_crs, False, True, "./frontend/static/temp_computed_imgs", True, None)
-                status = "NO_LISTING"
+                    apn,
+                    sd_utm_crs,
+                    show_plot=False,
+                    save_file=True,
+                    save_dir="./frontend/static/temp_computed_imgs",
+                    save_as_model=True,
+                    listing=listing
+                )
+                status = "NO_LISTING" if not listing else "LISTING_EXISTS"
 
             return JsonResponse({"status": status, "analysis_id": analysis.id})
         except Exception as e:
@@ -239,8 +250,6 @@ class ParcelDetailData(View):  # LoginRequiredMixin
         return HttpResponse(serialized, content_type='application/json')
 
 # ajax call to get neighboring building data
-
-
 class IsolatedNeighborDetailData(View):  # LoginRequiredMixin
     def get(self, request, apn, *args, **kwargs):
         parcel = Parcel.objects.get(apn=apn)

@@ -41,6 +41,7 @@ export function NewListingPage() {
       body: JSON.stringify({
         apn: data.apn,
         add_as_listing: addAsListing,
+        redo_analysis: false,
       }),
     });
     const res = await fetchResponse.json();
