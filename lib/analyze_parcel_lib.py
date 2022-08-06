@@ -123,6 +123,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     apn = parcel.model.apn
     messages = {'info': [], 'warning': [], 'error': []}
 
+    # *** 1. Get information about the parcel
+
+
     # Get parameters based on zoning
     zone = get_parcel_zone(parcel, utm_crs)
     # Technically don't need side or rear setbacks, but buffer by a small amount
@@ -181,6 +184,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         cant_build = unary_union([cant_build, flag_poly])
 
     avail_geom = get_avail_geoms(parcel.geometry, cant_build)
+
+    # *** 2. See what we can build on the lot
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
@@ -245,7 +250,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     else:
         second_lot, second_lot_area_ratio = None, None
 
-    # Do plotting stuff if necessary
+    # 3. *** Plot and save results
     if show_plot or save_file:
         plt.close()
 
@@ -274,7 +279,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
-    datetime_ran = datetime.datetime.now()
 
     details = OrderedDict({
         "apn": apn,
@@ -345,6 +349,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "avail_geom": avail_geom,
     }
 
+    datetime_ran = datetime.datetime.now()
     if save_as_model:
         # Save it as a database model, and return it
         a = AnalyzedListing(listing=listing, datetime_ran=datetime_ran, details=details,
