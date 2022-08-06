@@ -125,6 +125,8 @@ class ListingsData(View):  # LoginRequiredMixin
             l['datetime_ran'] = latest_analysis.datetime_ran
             l['analysis_id'] = latest_analysis.id
             l['metadata'] = defaultdict()
+            l['centroid_x'] = listing.parcel.geom.centroid.coords[0]
+            l['centroid_y'] = listing.parcel.geom.centroid.coords[1]
             del l['parcel']
             del l['addr']
             del l['prev_listing']
@@ -207,6 +209,8 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         if analysis.listing:
             listing_dict = json.loads(serialize('json', [analysis.listing]))[0]
             d.update(listing_dict['fields'])
+            d['centroid_x'] = analysis.listing.parcel.geom.centroid.coords[0]
+            d['centroid_y'] = analysis.listing.parcel.geom.centroid.coords[1]
             del d['parcel']
             del d['addr']
             del d['prev_listing']

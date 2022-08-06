@@ -41,7 +41,6 @@ const roundingAccessor = ({ cell }) => {
 };
 
 const priceAccessor = ({ cell }) => {
-  console.log(cell);
   const prev_value =
     cell.row.getValue('metadata')['prev_values'][cell.column.id];
   if (prev_value) {
@@ -143,46 +142,77 @@ export function ListingsPage() {
   };
   // Render each date as a separate table
   return (
-    <div id="tablegrouper">
-      <div className="badge badge-primary">neutral</div>
-      {dates.map((date) => (
-        <ListingTable
-          key={date}
-          date={date}
-          data={data[date]}
-          columnVisibility={columnVisibility}
+    <div>
+      <MapContainer
+        center={[data[dates[0]][0].centroid_y, data[dates[0]][0].centroid_x]}
+        zoom={13}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-      ))}
+        {Object.values(data).map((listings) =>
+          (listings as unknown[]).map((listing) => (
+            <Marker position={[listing.centroid_y, listing.centroid_x]}>
+              <Popup>
+                <p>
+                  APN:
+                  <Link
+                    to={{
+                      pathname: `/analysis/${listing.analysis_id}`,
+                    }}
+                    className="underline text-darkblue"
+                  >
+                    {listing.apn}
+                  </Link>
+                </p>
+              </Popup>
+            </Marker>
+          ))
+        )}
+      </MapContainer>
+      <div id="tablegrouper">
+        <div className="badge badge-primary">neutral</div>
+        {dates.map((date) => (
+          <ListingTable
+            key={date}
+            date={date}
+            data={data[date]}
+            columnVisibility={columnVisibility}
+          />
+        ))}
 
-      {/*Render column visibility checkboxes*/}
-      <label>
-        <input
-          {...{
-            type: 'checkbox',
-            readOnly: true,
-            // checked: table.getIsAllColumnsVisible(),
-            // onChange: table.getToggleAllColumnsVisibilityHandler(),
-          }}
-        />{' '}
-        Toggle All
-      </label>
-      {Object.keys(initialVisibility).map((columnKey) => {
-        return (
-          <div key={(columnKey += 'viz_chkbx')} className="px-1">
-            <label>
-              <input
-                id={columnKey}
-                {...{
-                  type: 'checkbox',
-                  checked: columnVisibility[columnKey],
-                  onChange: toggleVisibility,
-                }}
-              />{' '}
-              {columnKey}
-            </label>
-          </div>
-        );
-      })}
+        {/*Render column visibility checkboxes*/}
+        <label>
+          <input
+            {...{
+              type: 'checkbox',
+              readOnly: true,
+              // checked: table.getIsAllColumnsVisible(),
+              // onChange: table.getToggleAllColumnsVisibilityHandler(),
+            }}
+          />{' '}
+          Toggle All
+        </label>
+        {Object.keys(initialVisibility).map((columnKey) => {
+          return (
+            <div key={(columnKey += 'viz_chkbx')} className="px-1">
+              <label>
+                <input
+                  id={columnKey}
+                  {...{
+                    type: 'checkbox',
+                    checked: columnVisibility[columnKey],
+                    onChange: toggleVisibility,
+                  }}
+                />{' '}
+                {columnKey}
+              </label>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
