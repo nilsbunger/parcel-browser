@@ -15,6 +15,18 @@ ZONING_FRONT_SETBACKS_IN_FEET = {
     "RS-1-12": 15,
     "RS-1-13": 15,
     "RS-1-14": 15,
+    "RM-1-1": 15,   # RM zone setbacks are a minimum for 50% of frontage, and minimum+5' for other 50%.
+    "RM-1-2": 15,
+    "RM-1-3": 15,
+    "RM-2-4": 15,
+    "RM-2-5": 15,
+    "RM-2-6": 15,
+    "RM-3-7": 10,
+    "RM-3-8": 10,
+    "RM-3-9": 10,
+    "RM-4-10": 15,  # "Varies" according to table, need to check
+    "RM-4-11": 15,  # "Varies" according to table, need to check
+    "RM-5-12": 15,
 }
 
 ZONING_FAR = {
@@ -26,6 +38,24 @@ ZONING_FAR = {
     "RS-1-12": 0.6,
     "RS-1-13": 0.6,
     "RS-1-14": 0.6,
+    "RM-1-1": 0.75,
+    "RM-1-2": 0.9,
+    "RM-1-3": 1.05,
+    "RM-2-4": 1.2,
+    "RM-2-5": 1.35,
+    "RM-2-6": 1.5,
+    "RM-3-7": 1.8,
+    "RM-3-8": 2.25,
+    "RM-3-9": 2.7,
+    "RM-4-10": 3.6,
+    "RM-4-11": 7.2,
+    "RM-5-12": 1.8,
+}
+
+ZONING_HEIGHT = {
+    "RS-1": 24,
+    "RM-1": 30,
+    "RM-2": 40
 }
 
 
