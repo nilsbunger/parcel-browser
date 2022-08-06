@@ -117,7 +117,8 @@ class ListingsData(View):  # LoginRequiredMixin
         # An ad-hoc way of doing formatting for now
         listings_formatted = OrderedDict()
         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
-            founddate = str(listing.founddate.astimezone(tz=ZoneInfo("America/Los_Angeles")).date())
+            founddate = str(listing.founddate.astimezone(
+                tz=ZoneInfo("America/Los_Angeles")).date())
             latest_analysis = listing.analyzedlisting_set.latest(
                 'datetime_ran')
             l = latest_analysis.details
