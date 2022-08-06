@@ -2,13 +2,13 @@ import Home3Footer from "../components/layout/Home3Footer";
 import Navbar from "../components/layout/Navbar";
 import {Outlet} from "react-router-dom";
 
-const HomeLayout = ({children = undefined}) => {
+const HomeLayout = () => {
     return (
         <>
-            <div className="min-h-full">
+            <div className="min-h-screen">
                 <Navbar/>
                 <main>
-                    <div className="md:container px-8 lg:px-16 py-3">
+                    <div className="md:container px-8 lg:px-16 pt-2">
                         <Outlet/>
                     </div>
                 </main>

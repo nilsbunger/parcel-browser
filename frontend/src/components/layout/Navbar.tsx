@@ -37,7 +37,7 @@ export default function Navbar(_props) {
   return (
     <>
       <div className="h-1 w-full bg-pinkpop"></div>
-      <div className="md:container px-8 lg:px-16 py-3">
+      <div className="md:container px-8 lg:px-16 pt-2">
         <Disclosure as="nav" className="">
           {({ open }) => (
             <>

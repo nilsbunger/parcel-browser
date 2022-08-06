@@ -12,6 +12,9 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fetcher } from '../utils/fetcher';
 
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28)
+const asFt = (m) => Math.round(m * 3.28)
+
 function snakeCaseToTitleCase(word: string) {
   const tokenized = word.toLowerCase().split('_');
   for (let i = 0; i < tokenized.length; i++) {
@@ -36,8 +39,10 @@ const apnAccessor = ({ row }) => (
   </>
 );
 
+const asSqFtAccessor = ({cell}) => asSqFt(cell.getValue())
+
 const roundingAccessor = ({ cell }) => {
-  return cell.getValue().toPrecision(3);
+  return cell.getValue().toPrecision(2);
 };
 
 const priceAccessor = ({ cell }) => {
@@ -63,58 +68,58 @@ const statusAccessor = ({ row }) => {
 };
 
 const initialColumnState = {
-  apn: { visible: true, accessor: apnAccessor },
-  address: { visible: true },
-  zone: { visible: true },
-  num_existing_buildings: { visible: false },
-  is_flag_lot: { visible: false },
-  carports: { visible: false },
-  garages: { visible: false },
-  parcel_size: { visible: true, accessor: roundingAccessor },
-  existing_living_area: { visible: false },
-  existing_floor_area: { visible: false },
-  existing_FAR: { visible: true, accessor: roundingAccessor },
-  num_new_buildings: { visible: false },
-  new_building_areas: { visible: false },
-  total_added_building_area: { visible: false },
-  garage_con_units: { visible: false },
-  garage_con_area: { visible: false },
-  total_new_units: { visible: false },
-  total_added_area: { visible: false },
-  new_FAR: { visible: false },
-  max_FAR: { visible: true, accessor: roundingAccessor },
-  potential_FAR: { visible: true, accessor: roundingAccessor },
-  limiting_factor: { visible: false },
-  main_building_poly_area: { visible: false },
-  accessory_buildings_polys_area: { visible: false },
-  avail_geom_area: { visible: false },
-  avail_area_by_FAR: { visible: true, accessor: roundingAccessor },
-  parcel_sloped_area: { visible: false },
-  parcel_sloped_ratio: { visible: false },
-  total_score: { visible: false },
-  cap_ratio_score: { visible: false },
-  open_space_score: { visible: false },
-  project_size_score: { visible: false },
-  can_lot_split: { visible: false },
-  new_lot_area_ratio: { visible: false },
-  new_lot_area: { visible: false },
-  git_commit_hash: { visible: false },
-  datetime_ran: { visible: false },
-  front_setback: { visible: false },
-  br: { visible: true },
-  ba: { visible: true },
-  price: { visible: true, accessor: priceAccessor },
-  zipcode: { visible: false },
-  founddate: { visible: false },
-  seendate: { visible: false },
-  mlsid: { visible: false },
-  mls_floor_area: { visible: false },
-  thumbnail: { visible: false },
-  listing_url: { visible: false },
-  soldprice: { visible: false },
-  status: { visible: true, accessor: statusAccessor },
-  analysis_id: { visible: false },
-  metadata: { visible: false }, // Need to make this one ALWAYS invisible
+  apn: {visible: true, accessor: apnAccessor,},
+  address: {visible: true},
+  zone: {visible: true,},
+  num_existing_buildings: {visible: false,},
+  is_flag_lot: {visible: false,},
+  carports: {visible: false,},
+  garages: {visible: false,},
+  parcel_size: {visible: true, accessor: asSqFtAccessor},
+  existing_living_area: {visible: false, accessor: asSqFtAccessor},
+  existing_floor_area: {visible: false, accessor: asSqFtAccessor},
+  existing_FAR: {visible: true, accessor: roundingAccessor},
+  num_new_buildings: {visible: false,},
+  new_building_areas: {visible: false,},
+  total_added_building_area: {visible: false,},
+  garage_con_units: {visible: false,},
+  garage_con_area: {visible: false,},
+  total_new_units: {visible: false,},
+  total_added_area: {visible: false,},
+  new_FAR: {visible: false,},
+  max_FAR: {visible: true, accessor: roundingAccessor},
+  potential_FAR: {visible: true, accessor: roundingAccessor},
+  limiting_factor: {visible: false,},
+  main_building_poly_area: {visible: false,},
+  accessory_buildings_polys_area: {visible: false,},
+  avail_geom_area: {visible: true, accessor: asSqFtAccessor},
+  avail_area_by_FAR: {visible: true, accessor: asSqFtAccessor},
+  parcel_sloped_area: {visible: false,},
+  parcel_sloped_ratio: {visible: false,},
+  total_score: {visible: false,},
+  cap_ratio_score: {visible: false,},
+  open_space_score: {visible: false,},
+  project_size_score: {visible: false,},
+  can_lot_split: {visible: false,},
+  new_lot_area_ratio: {visible: false,},
+  new_lot_area: {visible: false,},
+  git_commit_hash: {visible: false,},
+  datetime_ran: {visible: false,},
+  front_setback: {visible: false,},
+  br: {visible: true,},
+  ba: {visible: true,},
+  price: {visible: true, accessor: priceAccessor},
+  zipcode: {visible: false,},
+  founddate: {visible: false,},
+  seendate: {visible: false,},
+  mlsid: {visible: false,},
+  mls_floor_area: {visible: false,},
+  thumbnail: {visible: false,},
+  listing_url: {visible: false,},
+  soldprice: {visible: false,},
+  status: {visible: true, accessor: statusAccessor},
+  analysis_id: {visible: false,},
+  metadata: {visible: false,}, // Need to make this one ALWAYS invisible
 };
 
 export function ListingsPage() {
