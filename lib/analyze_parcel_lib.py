@@ -3,6 +3,14 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing scores for scenarios, and running
 scenarios in general.
 """
+from collections import OrderedDict
+
+import django
+
+# TODO: It seems any workers we spawn will need django.setup(), so let's move
+# all the workers to a separate file so we don't pollute this file.
+django.setup()
+
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
 from world.models import AnalyzedListing
@@ -21,11 +29,6 @@ import random
 from joblib import Parallel, delayed
 from typing import Tuple
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
-import django
-# TODO: It seems any workers we spawn will need django.setup(), so let's move
-# all the workers to a separate file so we don't pollute this file.
-django.setup()
-
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
@@ -118,6 +121,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     """
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     apn = parcel.model.apn
+    messages = {'info': [], 'warning': [], 'error': []}
 
     # Get parameters based on zoning
     zone = get_parcel_zone(parcel, utm_crs)
@@ -125,7 +129,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # to account for errors
 
     zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
-
+    messages['warning'].append("Missing front zoning information")
     setback_widths = {
         'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28 if zone_has_data else 5,
         'side': None,
@@ -147,11 +151,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         # Placeholder. Change this to be correct later
         max_far = 0.6
 
-    buildings = models_to_utm_gdf(buildings, utm_crs)
+    buildings = models_to_utm_gdf(list(buildings), utm_crs)
 
     identify_building_types(parcel.geometry, buildings)
 
-    max_total_area = get_avail_floor_area(parcel, buildings, max_far)
+    avail_area_by_far = get_avail_floor_area(parcel, buildings, max_far)
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
@@ -180,7 +184,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
-        min_area=MIN_BUILDING_AREA, max_total_area=max_total_area, max_area_per_building=MAX_BUILDING_AREA)
+        min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
     # Add more fields as necessary
     new_building_info = list(map(lambda poly: {
         'geometry': poly,
@@ -249,42 +253,34 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df, too_high_df, too_low_df,
                                                new_building_polys, open_space_poly, parcel_edges['front'], flag_poly)
         cant_build_fig = plot_cant_build(
-            parcel, address, buildings, utm_crs, buffered_buildings_geom, setbacks, too_steep, flag_poly, parcel_edges['front'])
+            parcel, address, buildings, utm_crs, buffered_buildings_geom,
+            list(setbacks), too_steep, flag_poly, parcel_edges['front']
+        )
 
         if second_lot:
-            split_lot_fig = plot_split_lot(
-                parcel, address, buildings, utm_crs, second_lot)
+            split_lot_fig = plot_split_lot(parcel, address, buildings, utm_crs, second_lot)
 
         # Save figures
         if save_file:
-            new_buildings_fig.savefig(os.path.join(
-                save_dir, "new-buildings", apn + ".jpg"))
-            cant_build_fig.savefig(os.path.join(
-                save_dir, "cant-build", apn + ".jpg"))
+            new_buildings_fig.savefig(os.path.join(save_dir, "new-buildings", apn + ".jpg"))
+            cant_build_fig.savefig(os.path.join(save_dir, "cant-build", apn + ".jpg"))
 
             if second_lot:
-                split_lot_fig.savefig(os.path.join(
-                    save_dir, "lot-splits", apn + ".jpg"))
+                split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
 
         # Show figures
         if show_plot:
             plt.show()
 
-    # Get git info
-    repo = git.Repo(search_parent_directories=True)
-    git_sha = repo.head.object.hexsha
-
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
     datetime_ran = datetime.datetime.now()
 
-    details = {
+    details = OrderedDict({
         "apn": apn,
         "address": address,
         "zone": zone,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
-        "is_flag_lot": flag_poly is not None,
-        "is_alley_lot": parcel_edges['alley'] is not None,
         "carports": num_carports,
         "garages": num_garages,
 
@@ -292,6 +288,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "existing_living_area": existing_living_area,
         "existing_floor_area": existing_floor_area,
         "existing_FAR": existing_FAR,
+        "max_FAR": max_far,
+        "potential_FAR": max_far - existing_FAR,
+        "avail_area_by_FAR": avail_area_by_far,
 
         "num_new_buildings": len(new_building_polys),
         "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
@@ -301,14 +300,14 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "total_new_units": garage_con_units + len(new_building_polys),
         "total_added_area": garage_con_area + total_added_building_area,
         "new_FAR": new_FAR,
-        "max_FAR": max_far,
-        "potential_FAR": max_far - existing_FAR,
-        "limiting_factor": limiting_factor,
+        # "limiting_factor": limiting_factor,
+
+        "is_flag_lot": flag_poly is not None,
+        "is_alley_lot": parcel_edges['alley'] is not None,
 
         "main_building_poly_area": main_building_area,
         "accessory_buildings_polys_area": accessory_buildings_area,
         "avail_geom_area": avail_geom.area,
-        "avail_area_by_FAR": max_total_area,
 
         "parcel_sloped_area": unary_union(too_steep).area,
         "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry.area,
@@ -322,9 +321,10 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "new_lot_area_ratio": second_lot_area_ratio,
         "new_lot_area": second_lot.area if second_lot else None,
 
-        "git_commit_hash": git_sha,
+        "git_commit_hash": git.Repo(search_parent_directories=True).head.object.hexsha,
         "front_setback": setback_widths['front'],
-    }
+        'messages': messages,
+    })
 
     input_parameters = {
         "setback_widths": setback_widths,

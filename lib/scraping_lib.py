@@ -51,6 +51,7 @@ class MyItemPipeline:
 
                 # take listings[1] as the listing going forward, patching up its found-date.
                 listings[1].founddate = listings[0].founddate
+                listings[1].clean()
                 listings[1].save()
                 property = listings[1]
                 created = False
@@ -70,6 +71,7 @@ class MyItemPipeline:
                 self.stats.inc_value('listing/new_or_update')
             else:
                 # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
+                property.clean()
                 property.save(update_fields=['seendate', 'thumbnail', 'listing_url'])
                 self.stats.inc_value('listing/no_change')
         except Exception as e:

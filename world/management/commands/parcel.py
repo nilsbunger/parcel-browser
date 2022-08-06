@@ -1,4 +1,5 @@
 import pprint
+from collections import OrderedDict
 from enum import Enum
 from lib.analyze_parcel_lib import analyze_by_apn, analyze_batch
 from lib.crs_lib import get_utm_crs
@@ -38,8 +39,8 @@ class Command(BaseCommand):
                                      sd_utm_crs,
                                      show_plot=options['show_plot'],
                                      save_file=options['save_file'])
-            results = {k: v for (k, v) in results.items() if k not in
-                       ['buildings', 'no_build_zones', 'datetime_ran', 'avail_geom', 'git_commit_hash']}
+            results =OrderedDict({k: v for (k, v) in results.items() if k not in
+                       ['buildings', 'no_build_zones', 'datetime_ran', 'avail_geom', 'git_commit_hash']})
 
             pprint.pprint(results)
         elif options['neighborhood']:

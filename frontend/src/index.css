@@ -10,28 +10,28 @@
 
 @layer components {
   .btn-lg {
-    @apply px-8 py-3 md:py-4 text-lg md:text-xl md:px-10 whitespace-nowrap;
+    /*@apply px-8 py-3 md:py-4 text-lg md:text-xl md:px-10 whitespace-nowrap;*/
   }
   a.btn-lg {
-    @apply py-3.5 md:py-[18px];
+    /*@apply py-3.5 md:py-[18px];*/
   }
   .btn-md {
-    @apply px-5 py-2 text-sm md:py-3 md:text-base md:px-7 whitespace-nowrap;
+    /*@apply px-5 py-2 text-sm md:py-3 md:text-base md:px-7 whitespace-nowrap;*/
   }
   a.btn-md {
-    @apply py-2.5 md:py-3.5;
+    /*@apply py-2.5 md:py-3.5;*/
   }
   .btn-sm {
-    @apply px-3 py-1.5 md:py-2 text-xs md:text-sm md:px-5;
+    /*@apply md:py-2 text-xs md:text-sm md:px-5;*/
   }
   a.btn-sm {
-    @apply py-2 md:py-2.5;
+    /*@apply py-2 md:py-2.5;*/
   }
   .btn-xs {
-    @apply px-2 py-1 md:py-1.5 text-xs md:text-sm md:px-3;
+    /*@apply px-2 py-1 md:py-1.5 text-xs md:text-sm md:px-3;*/
   }
   a.btn-xs {
-    @apply py-1 md:py-1.5;
+    /*@apply py-1 md:py-1.5;*/
   }
   /*.btn-primary {*/
   /*  @apply outline inline-block mx-[2px] my-[2px] font-medium items-center justify-center rounded-md text-white bg-primary-500 outline-primary-500 hover:outline-primarylight hover:bg-primarylight;*/
@@ -49,13 +49,13 @@
     color: theme('colors.gray.500');
   }
   h1 {
-    @apply text-2xl;
-    @apply text-gray-900;
+    @apply text-3xl;
+    @apply text-gray-800;
     @apply font-medium;
   }
   h2 {
     @apply text-xl;
-    @apply text-gray-900;
+    @apply text-gray-800;
     @apply font-medium;
   }
   h3 {
