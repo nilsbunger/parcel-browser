@@ -7,8 +7,8 @@ from world.models import PropertyListing, Parcel
 
 street_suffixes = [
     'dr', 'drive', 'way', 'ave', 'avenue', 'ct', 'court', 'blvd', 'boulevard', 'st', 'street', 'pl', 'place', 'rd', 'road', 'ln',
-    'lane', 'cove', 'cv', 'cir', 'circle', 'w', 'trail', 'trl', 'ridge', 'rdg', 'highway', 'hwy',
-    'parkway', 'pkwy', 'terrace', 'ter']
+    'lane', 'cove', 'cv', 'cir', 'circle', 'glen', 'gln', 'w', 'loop', 'trail', 'trl', 'ridge', 'rdg', 'highway', 'hwy',
+    'parkway', 'pkwy', 'terrace', 'ter', 'terr']
 
 normalize_suffix = {
     'avenue': 'ave',
@@ -25,8 +25,10 @@ normalize_suffix = {
     'ridge': 'rdg',
     'street': 'st',
     'terrace': 'ter',
+    'terr': 'ter',
     'trail': 'trl',
     'w': 'way',
+    'glen': 'gln',
 }
 
 normalize_prefix = {
@@ -39,10 +41,10 @@ normalize_prefix = {
 
 def listing_to_parcel(l: PropertyListing) -> (Parcel | None, str | None):
     """ Take a current property listing object, and find its associated Parcel"""
-    return address_to_parcel(l.addr)
+    return address_to_parcel(l.addr, l.neighborhood)
 
 
-def address_to_parcel(addr: str) -> (Parcel | None, str | None):
+def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, str | None):
     """ Take a street address and look for a matching Parcel. Return the Parcel or an error string"""
     street_suffix = None
     street_prefix = None
@@ -51,10 +53,16 @@ def address_to_parcel(addr: str) -> (Parcel | None, str | None):
     # If the first word needs to be normalized, do so:
     if rest[0] == 'mount':
         rest[0] = 'mt'
+    if rest[0] == 'saint':
+        rest[0] = 'st'
     if len(rest) > 1:
         if rest[0] in ['south', 'north', 'east', 'west', 'n', 'w', 'e', 's']:
             street_prefix = normalize_prefix.get(rest[0], rest[0])
             rest = rest[1:]
+    # Check for a postfix and remove if present
+    if rest[-1] in ['n', 's', 'w', 'e']:
+        postfix = rest[-1]
+        rest = rest[:-1]
     # Separate the street suffix if it exists
     if rest[-1] in street_suffixes:
         street_name = ' '.join(rest[:-1])
@@ -69,7 +77,7 @@ def address_to_parcel(addr: str) -> (Parcel | None, str | None):
         addr_num = hyphenated_addr_num.groups()[0]
     try:
         parcels = Parcel.objects.filter(
-            situs_addr=addr_num, situs_stre__istartswith=street_name)
+            situs_addr=addr_num, situs_stre__istartswith=street_name,)
     except Exception as e:
         print(f"Error processing {addr_normalized}")
         return None, 'dberror'
@@ -77,20 +85,29 @@ def address_to_parcel(addr: str) -> (Parcel | None, str | None):
     if len(parcels) > 1:
         # more than one match using street name -- see if the street suffix ('way', 'rd', ...) disambiguates it
         matched_parcel_candidates = list()
+        matched_jurisdiction_candidates = list()
+        jurisdictions = set()
         for p in parcels:
             if p.situs_suff and (p.situs_suff.lower() == street_suffix):
                 matched_parcel_candidates.append(p)
-        if len(matched_parcel_candidates) == 1:
+            jurisdictions.add(p.situs_juri)
+            if p.situs_juri == 'SD':
+                matched_jurisdiction_candidates.append(p)
+        if len(matched_jurisdiction_candidates) == 1:
+            matched_parcel = matched_jurisdiction_candidates[0]
+        elif len(matched_jurisdiction_candidates) == 0:
+            return None, 'match_out_of_jurisdiction'
+        elif len(matched_parcel_candidates) == 1 and matched_parcel_candidates[0].situs_juri == 'SD':
             matched_parcel = matched_parcel_candidates[0]
         else:
-            print(f"Multiple matches ({len(parcels)}) for {addr_normalized}!")
-            return None, 'multimatch'
+            print(f"Multiple matches ({len(parcels)}) for {addr_normalized} in jurisdiction SD")
+            return None, f'multimatch_{jurisdictions}'
     elif len(parcels) == 0:
         if hyphenated_addr_num:
             # Need to build out this case: we found a hyphenated address, but the first address didn't work.
             # Maybe another address in the hyphen range would?
-            raise
-        print(f"No match in Parcel table for {addr_normalized}")
+            raise NotImplementedError("hyphenated address and didn't find it")
+        print(f"No match in Parcel table for {addr_normalized}, {neighborhood}")
         return None, 'unmatched'
     else:
         # Found exactly one match, that's good

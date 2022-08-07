@@ -28,52 +28,50 @@ class MyItemPipeline:
 
     def process_item(self, item, spider):
         """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
-        saved_list_url = item[
-            'listing_url']  # listing URL is not stable between passes, so don't consider it in get_or_creating.
-        saved_thumbnail = item['thumbnail']
-        del item['listing_url']
-        del item['thumbnail']
-
+        default_fields = {k: item[k] for k in ['price', 'addr', 'br', 'ba', 'mlsid', 'size'] if k in item}
         try:
             try:
+                # Create a new entry when the price, addr or status changes on an entry
                 property, created = PropertyListing.objects.get_or_create(
-                    **item, status=PropertyListing.ListingStatus.ACTIVE
+                    **default_fields, status=PropertyListing.ListingStatus.ACTIVE
                 )
             except MultipleObjectsReturned as e:
                 # uniqueness constraint violated - price,addr,br,ba,mlsid,size,status should be a unique entry. fix it up
                 listings = PropertyListing.objects.filter(
-                    **item, status=PropertyListing.ListingStatus.ACTIVE).order_by('founddate')
-                # most likely case here is the first listing has the found date we want but still has a zip code,
+                    **default_fields, status=PropertyListing.ListingStatus.ACTIVE).order_by('founddate')
+                # most likely case is the first listing has the found date we want but still has a zip code,
                 # which we deprecated in the listing.
                 print(f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}")
+                self.stats.inc_value('error:listing/multiple_entries_in_db')
                 if len(listings) != 2:
                     print ("NEED TO DEBUG THIS CASE")
 
                 # take listings[1] as the listing going forward, patching up its found-date.
                 listings[1].founddate = listings[0].founddate
-                listings[1].clean()
+                listings[1].full_clean()
                 listings[1].save()
+                listings[0].delete()
                 property = listings[1]
                 created = False
-                listings[0].delete()
 
-            property.thumbnail = saved_thumbnail
-            property.listing_url = saved_list_url
+            property.thumbnail = item['thumbnail']
+            property.listing_url = item['listing_url']
+            property.neighborhood = item['neighborhood']
             if created:
                 # object with same parameters (price / etc) not found, so record this instance and include a link to
                 # the most recent previous entry if it exists.
-                prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id).order_by(
-                    '-seendate')
+                prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id)\
+                    .order_by('-seendate')
                 if len(prev_listing) > 0:
                     property.prev_listing = prev_listing[0]
-                property.clean()
+                property.full_clean()
                 property.save()
-                self.stats.inc_value('listing/new_or_update')
+                self.stats.inc_value('info:listing/new_or_update')
             else:
                 # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
-                property.clean()
-                property.save(update_fields=['seendate', 'thumbnail', 'listing_url'])
-                self.stats.inc_value('listing/no_change')
+                property.full_clean()
+                property.save(update_fields=['seendate', 'thumbnail', 'listing_url', 'neighborhood'])
+                self.stats.inc_value('info:listing/no_change')
         except Exception as e:
             print(e)
             raise CloseSpider()
@@ -109,6 +107,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
                 url = client.scrapyGet(url)
+            print(f"*** Spider requesting zips={zips}")
             yield scrapy.Request(url, headers=headers, cb_kwargs={'orig_url': orig_url})
 
     name_subs = {
@@ -125,11 +124,14 @@ class SanDiegoMlsSpider(scrapy.Spider):
             listing_data = defaultdict()
             listing_data['thumbnail'] = listing.css('.property-thumb img::attr(src)').get()
             listing_data['listing_url'] = listing.css('a::attr(href)').get()
-            addr = listing.css('.address::text').get().split(',')[0]
+            addr, neighborhood = listing.css('.address::text').get().split(',')[0:2]
+            addr = addr.strip()
+            neighborhood = neighborhood.strip()
             price = listing.css('.price::text').get().strip()
             price = int(re.sub(r'[\$,]', '', price))
             listing_data['price'] = price
             listing_data['addr'] = addr
+            listing_data['neighborhood'] = neighborhood
             # extract BR, BA, MLS #, and sq ft:
             for detail in listing.css(".featured-details .detail"):
                 detail_name = detail.css('.detail-title::text').get()
