@@ -121,24 +121,24 @@ class Command(BaseCommand):
                 stats['success'] += 1
                 l.parcel = matched_parcel
                 l.save(update_fields={'parcel'})
-                zip = matched_parcel.situs_zip
+                zipcode = matched_parcel.situs_zip
                 if matched_parcel.situs_juri == 'SD':
                     parcels_to_analyze.add((matched_parcel, l))
-                    zip = matched_parcel.situs_zip
-                    if zip:
-                        stats[f'info_sd_{zip[0:5]}'] += 1
-                        if int(zip[0:5]) not in AllSdCityZips:
-                            stats[f'error_city_zip_{zip[0:5]}_missing'] +=1
+                    zipcode = matched_parcel.situs_zip
+                    if zipcode:
+                        stats[f'info_sd_{zipcode[0:5]}'] += 1
+                        if int(zipcode[0:5]) not in AllSdCityZips:
+                            stats[f'error_city_zip_{zipcode[0:5]}_missing'] +=1
                     else:
                         stats[f'info_sd_unknown_zip'] += 1
                 else:
-                    if zip:
-                        if int(zip[0:5]) in AllSdCityZips:
+                    if zipcode:
+                        if int(zipcode[0:5]) in AllSdCityZips:
                             # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
                             #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
-                            stats[f'error_city_zip_with_non_city_jurisdiction_{zip[0:5]}_{matched_parcel.situs_juri}'] += 1
+                            stats[f'error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
                         else:
-                            stats[f'info_skipping_non_city_zip{zip[0:5]}_{matched_parcel.situs_juri}'] += 1
+                            stats[f'info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
             # print("SAVED")
         print("DONE. Final stats associating parcels with listings:")
         pprint.pprint(dict(stats))
