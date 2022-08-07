@@ -26,7 +26,9 @@ function snakeCaseToTitleCase(word: string) {
 
 const columnHelper = createColumnHelper();
 
-const basicAccessor = (cell) => cell.getValue();
+const basicAccessor = (cell) => {
+  return String(cell.getValue()).slice(0,20);
+}
 
 const apnAccessor = ({ row }) => (
   <>
@@ -75,6 +77,7 @@ const initialColumnState = {
   is_flag_lot: {visible: false,},
   carports: {visible: false,},
   garages: {visible: false,},
+  neighborhood: {visible: true,},
   parcel_size: {visible: true, accessor: asSqFtAccessor},
   existing_living_area: {visible: false, accessor: asSqFtAccessor},
   existing_floor_area: {visible: false, accessor: asSqFtAccessor},
@@ -226,13 +229,13 @@ function ListingTable({ date, data, columnVisibility }) {
   // Render a single day's listing table
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const columns = Object.keys(initialColumnState).map((field) =>
-    columnHelper.accessor(field, {
-      header: snakeCaseToTitleCase(field),
-      cell: initialColumnState[field].accessor || basicAccessor,
+  const columns = Object.keys(initialColumnState).map((fieldname) =>
+    ({
+      accessorKey: fieldname,
+      cell: initialColumnState[fieldname].accessor || basicAccessor,
+      header: snakeCaseToTitleCase(fieldname),
     })
   );
-
   const table = useReactTable({
     data: data,
     columns,

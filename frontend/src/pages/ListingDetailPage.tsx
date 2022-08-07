@@ -55,6 +55,7 @@ export function ListingDetailPage({}) {
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
           <h1>{data.address}</h1>
+          <p>{data.neighborhood}</p>
           <p>APN: {data.apn}</p>
           <p>Build Sq Ft by FAR: {asSqFt(data.avail_area_by_FAR)}</p>
           <p>Sq Ft open area: {asSqFt(data.avail_geom_area)}</p>
