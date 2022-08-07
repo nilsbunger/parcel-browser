@@ -96,6 +96,17 @@ export function ListingDetailPage({}) {
             </div>
           </div>
         </div>
+
+      <iframe
+        width="450"
+        height="250"
+        frameBorder={0}
+        style={{ border: 0 }}
+        referrerPolicy="no-referrer-when-downgrade"
+        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.address} San Diego`}
+        allowFullScreen
+      ></iframe>
+
         {false && data.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
@@ -136,15 +147,6 @@ export function ListingDetailPage({}) {
           </p>
         );
       })}
-      <iframe
-        width="450"
-        height="250"
-        frameBorder={0}
-        style={{ border: 0 }}
-        referrerPolicy="no-referrer-when-downgrade"
-        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.address} San Diego`}
-        allowFullScreen
-      ></iframe>
     </>
   );
 }
