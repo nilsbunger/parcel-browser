@@ -316,6 +316,7 @@ class PropertyListing(models.Model):
 
     price = models.IntegerField(blank=True, null=True)
     addr = models.CharField(max_length=80)  # street number and name
+    neighborhood = models.CharField(max_length=80, null=True, blank=True)  # city or neighborhood
     zipcode = models.IntegerField(blank=True, null=True)
     br = models.IntegerField()
     ba = models.IntegerField()
