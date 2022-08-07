@@ -25,7 +25,6 @@ from lib.listings_lib import address_to_parcel
 from world.models import AnalyzedListing, Parcel, BuildingOutlines, Topography, PropertyListing
 from lib.crs_lib import get_utm_crs
 
-
 pp = pprint.PrettyPrinter(indent=2)
 
 
@@ -107,11 +106,13 @@ def listing_prev_values(listing):
             retval[field] = getattr(listing.prev_listing, field)
     return retval
 
+
 # ajax call to get current MLS listings. Return them from most recently created / updated to least.
 class ListingsData(View):  # LoginRequiredMixin
     def get(self, request, *args, **kwargs):
-        listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').filter(
-            analyzedlisting__isnull=False).distinct().order_by('-founddate')
+        listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
+            'prev_listing').filter(
+            analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
         serialized_listings = serialize('json', listings)
 
         # An ad-hoc way of doing formatting for now
@@ -253,6 +254,7 @@ class ParcelDetailData(View):  # LoginRequiredMixin
         serialized = serialize('geojson', chain([parcel], buildings),
                                geometry_field='geom', )  # fields=('apn', 'geom',))
         return HttpResponse(serialized, content_type='application/json')
+
 
 # ajax call to get neighboring building data
 class IsolatedNeighborDetailData(View):  # LoginRequiredMixin
