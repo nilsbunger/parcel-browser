@@ -5,6 +5,8 @@ import { Listing } from '../../types';
 
 type Props = { listings: Listing[] };
 
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
+
 function ListingsMap({ listings }: Props) {
   return (
     <MapContainer
@@ -19,17 +21,18 @@ function ListingsMap({ listings }: Props) {
       {listings.map((listing) => (
         <Marker position={[listing.centroid_y, listing.centroid_x]}>
           <Popup>
-            <p>
-              APN:
-              <Link
-                to={{
-                  pathname: `/analysis/${listing.analysis_id}`,
-                }}
-                className="underline text-darkblue"
-              >
-                {listing.apn}
-              </Link>
-            </p>
+            <Link
+              to={{
+                pathname: `/analysis/${listing.analysis_id}`,
+              }}
+              className="underline text-darkblue"
+            >
+              {listing.address}
+            </Link>
+            <p>APN: {listing.apn}</p>
+            <p>Avail building area: {asSqFt(listing.avail_geom_area)}sqft</p>
+            <p>FAR potential: {listing.potential_FAR.toPrecision(2)}</p>
+            {/* Add any other information we want */}
           </Popup>
         </Marker>
       ))}

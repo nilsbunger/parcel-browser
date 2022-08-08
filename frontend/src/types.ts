@@ -3,5 +3,7 @@ export type Listing = {
   apn: string;
   centroid_x: number;
   centroid_y: number;
+  avail_geom_area: number;
+  potential_FAR: number;
   [key: string]: string | number | boolean;
 };
