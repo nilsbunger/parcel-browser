@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import * as React from 'react';
-import { useState } from 'react';
+import {useState} from 'react';
 import {
   createColumnHelper,
   flexRender,
@@ -9,10 +9,10 @@ import {
   getSortedRowModel,
   SortingState,
 } from '@tanstack/react-table';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import { fetcher } from '../utils/fetcher';
-import { Listing } from '../types';
+import {MapContainer, TileLayer, Marker, Popup} from 'react-leaflet';
+import {Link} from 'react-router-dom';
+import {fetcher} from '../utils/fetcher';
+import {Listing} from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
@@ -33,38 +33,49 @@ const basicAccessor = (cell) => {
   return String(cell.getValue()).slice(0, 20);
 };
 
-const apnAccessor = ({ row }) => (
-  <>
-    <Link
-      to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
-      className="underline text-darkblue"
-    >
-      {row.getValue('apn')}
-    </Link>
-  </>
+const apnAccessor = ({row}) => (
+  <Link
+    to={{pathname: `/analysis/${row.getValue('analysis_id')}`}}
+    className="underline text-darkblue"
+  >
+    {row.getValue('apn')}
+  </Link>
 );
 
-const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue());
+const addressAccessor = ({row}) => (
+  <div className={'relative'}>
+    <Link
+      to={{pathname: `/analysis/${row.getValue('analysis_id')}`}}
+      className="underline text-darkblue"
+    >
+      {row.getValue('address').slice(0,20)}
+    </Link>
+    {row.getValue('metadata')['category'] == 'new' &&
+        <div className="badge badge-accent text-2xs absolute top-[-6px] px-1 right-0">NEW</div>}
+  </div>
+);
 
-const roundingAccessor = ({ cell }) => {
+const asSqFtAccessor = ({cell}) => asSqFt(cell.getValue()).toLocaleString();
+
+const roundingAccessor = ({cell}) => {
   return cell.getValue().toPrecision(2);
 };
 
-const priceAccessor = ({ cell }) => {
+const priceAccessor = ({cell}) => {
   const prev_value =
     cell.row.getValue('metadata')['prev_values'][cell.column.id];
   if (prev_value) {
     return (
       <span>
-        <s> {prev_value} </s> {cell.getValue()}{' '}
+        ${cell.getValue().toLocaleString()} <s> {prev_value} </s>
       </span>
     );
   } else {
-    return cell.getValue();
+    return "$" + cell.getValue().toLocaleString();
   }
 };
 
-const statusAccessor = ({ row }) => {
+const statusAccessor = ({row}) => {
   return row.getValue('metadata')['category'] == 'new' ? (
     <div className="badge badge-accent">NEW</div>
   ) : (
@@ -73,59 +84,59 @@ const statusAccessor = ({ row }) => {
 };
 
 const initialColumnState = {
-  apn: { visible: true, accessor: apnAccessor },
-  address: { visible: true },
-  zone: { visible: true },
-  num_existing_buildings: { visible: false },
-  is_flag_lot: { visible: false },
-  carports: { visible: false },
-  garages: { visible: false },
-  neighborhood: { visible: true },
-  parcel_size: { visible: true, accessor: asSqFtAccessor },
-  existing_living_area: { visible: false, accessor: asSqFtAccessor },
-  existing_floor_area: { visible: false, accessor: asSqFtAccessor },
-  existing_FAR: { visible: true, accessor: roundingAccessor },
-  num_new_buildings: { visible: false },
-  new_building_areas: { visible: false },
-  total_added_building_area: { visible: false },
-  garage_con_units: { visible: false },
-  garage_con_area: { visible: false },
-  total_new_units: { visible: false },
-  total_added_area: { visible: false },
-  new_FAR: { visible: false },
-  max_FAR: { visible: true, accessor: roundingAccessor },
-  potential_FAR: { visible: true, accessor: roundingAccessor },
-  limiting_factor: { visible: false },
-  main_building_poly_area: { visible: false },
-  accessory_buildings_polys_area: { visible: false },
-  avail_geom_area: { visible: true, accessor: asSqFtAccessor },
-  avail_area_by_FAR: { visible: true, accessor: asSqFtAccessor },
-  parcel_sloped_area: { visible: false },
-  parcel_sloped_ratio: { visible: false },
-  total_score: { visible: false },
-  cap_ratio_score: { visible: false },
-  open_space_score: { visible: false },
-  project_size_score: { visible: false },
-  can_lot_split: { visible: false },
-  new_lot_area_ratio: { visible: false },
-  new_lot_area: { visible: false },
-  git_commit_hash: { visible: false },
-  datetime_ran: { visible: false },
-  front_setback: { visible: false },
-  br: { visible: true },
-  ba: { visible: true },
-  price: { visible: true, accessor: priceAccessor },
-  zipcode: { visible: false },
-  founddate: { visible: false },
-  seendate: { visible: false },
-  mlsid: { visible: false },
-  mls_floor_area: { visible: false },
-  thumbnail: { visible: false },
-  listing_url: { visible: false },
-  soldprice: { visible: false },
-  status: { visible: true, accessor: statusAccessor },
-  analysis_id: { visible: false },
-  metadata: { visible: false }, // Need to make this one ALWAYS invisible
+  apn: {visible: false, accessor: apnAccessor},
+  address: {visible: true, accessor: addressAccessor},
+  zone: {visible: true},
+  num_existing_buildings: {visible: false},
+  is_flag_lot: {visible: false},
+  carports: {visible: false},
+  garages: {visible: false},
+  neighborhood: {visible: true},
+  parcel_size: {visible: true, headername:"Lot size", accessor: asSqFtAccessor},
+  existing_living_area: {visible: false, accessor: asSqFtAccessor},
+  existing_floor_area: {visible: false, accessor: asSqFtAccessor},
+  existing_FAR: {visible: false, accessor: roundingAccessor},
+  num_new_buildings: {visible: false},
+  new_building_areas: {visible: false},
+  total_added_building_area: {visible: false},
+  garage_con_units: {visible: false},
+  garage_con_area: {visible: false},
+  total_new_units: {visible: false},
+  total_added_area: {visible: false},
+  new_FAR: {visible: false},
+  max_FAR: {visible: false, accessor: roundingAccessor},
+  potential_FAR: {visible: false, accessor: roundingAccessor},
+  limiting_factor: {visible: false},
+  main_building_poly_area: {visible: false},
+  accessory_buildings_polys_area: {visible: false},
+  avail_geom_area: {visible: false, accessor: asSqFtAccessor},
+  avail_area_by_FAR: {visible: true, headername:"Build sqft", accessor: asSqFtAccessor},
+  parcel_sloped_area: {visible: false},
+  parcel_sloped_ratio: {visible: false},
+  total_score: {visible: false},
+  cap_ratio_score: {visible: false},
+  open_space_score: {visible: false},
+  project_size_score: {visible: false},
+  can_lot_split: {visible: false},
+  new_lot_area_ratio: {visible: false},
+  new_lot_area: {visible: false},
+  git_commit_hash: {visible: false},
+  datetime_ran: {visible: false},
+  front_setback: {visible: false},
+  br: {visible: true},
+  ba: {visible: true},
+  price: {visible: true, accessor: priceAccessor},
+  zipcode: {visible: false},
+  founddate: {visible: false},
+  seendate: {visible: false},
+  mlsid: {visible: false},
+  mls_floor_area: {visible: false},
+  thumbnail: {visible: false},
+  listing_url: {visible: false},
+  soldprice: {visible: false},
+  status: {visible: false, accessor: statusAccessor},
+  analysis_id: {visible: false},
+  metadata: {visible: false}, // Need to make this one ALWAYS invisible
 };
 
 // The return type of the listings from the server
@@ -134,7 +145,7 @@ type FetchListingsResponse = {
 };
 
 export function ListingsPage() {
-  const { data, error } = useSWR<FetchListingsResponse>(
+  const {data, error} = useSWR<FetchListingsResponse>(
     '/dj/api/listings',
     fetcher
   );
@@ -161,10 +172,11 @@ export function ListingsPage() {
   };
   // Render each date as a separate table
   return (
-    <div>
-      <ListingsMap listings={Object.values(data).flat(1)} />
-      <div id="tablegrouper">
-        <div className="badge badge-primary">neutral</div>
+    <div className={'flex flex-row'}>
+
+      <ListingsMap listings={Object.values(data).flat(1)}/>
+      <div id="tablegrouper" className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}>
+        {/*<div className="badge badge-primary">neutral</div>*/}
         {dates.map((date) => (
           <ListingTable
             key={date}
@@ -206,14 +218,14 @@ export function ListingsPage() {
   );
 }
 
-function ListingTable({ date, data, columnVisibility }) {
+function ListingTable({date, data, columnVisibility}) {
   // Render a single day's listing table
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const columns = Object.keys(initialColumnState).map((fieldname) => ({
     accessorKey: fieldname,
     cell: initialColumnState[fieldname].accessor || basicAccessor,
-    header: snakeCaseToTitleCase(fieldname),
+    header: initialColumnState[fieldname].headername || snakeCaseToTitleCase(fieldname),
   }));
   const table = useReactTable({
     data: data,
@@ -230,60 +242,60 @@ function ListingTable({ date, data, columnVisibility }) {
 
   return (
     <>
-      <h1 className="pt-8">{date} Listings</h1>
-      <table className="table-auto border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
+      <h1>{date} Listings</h1>
+      <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {header.isPlaceholder ? null : (
-                    <div
-                      {...{
-                        className: header.column.getCanSort()
-                          ? 'cursor-pointer select-none '
-                          : '',
-                        onClick: header.column.getToggleSortingHandler(),
-                      }}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: ' 🔼',
-                        desc: ' 🔽',
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </div>
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
+        {table.getHeaderGroups().map((headerGroup) => (
+          <tr key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <th key={header.id}>
+                {header.isPlaceholder ? null : (
+                  <div
+                    {...{
+                      className: header.column.getCanSort()
+                        ? 'cursor-pointer select-none '
+                        : '',
+                      onClick: header.column.getToggleSortingHandler(),
+                    }}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {{
+                      asc: ' 🔼',
+                      desc: ' 🔽',
+                    }[header.column.getIsSorted() as string] ?? null}
+                  </div>
+                )}
+              </th>
+            ))}
+          </tr>
+        ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => {
-                let foo = flexRender(
-                  cell.column.columnDef.cell,
-                  cell.getContext()
+        {table.getRowModel().rows.map((row) => (
+          <tr key={row.id}>
+            {row.getVisibleCells().map((cell) => {
+              let foo = flexRender(
+                cell.column.columnDef.cell,
+                cell.getContext()
+              );
+              if (foo === null || foo.props.renderValue() === null) {
+                return <td key={cell.id}>None </td>;
+              }
+              if (typeof foo.props.renderValue() === 'object') {
+                console.log(
+                  'WE have a problem in table cell rendering: ',
+                  foo.props.renderValue()
                 );
-                if (foo === null || foo.props.renderValue() === null) {
-                  return <td key={cell.id}>None </td>;
-                }
-                if (typeof foo.props.renderValue() === 'object') {
-                  console.log(
-                    'WE have a problem in table cell rendering: ',
-                    foo.props.renderValue()
-                  );
-                  return <td key={cell.id}>BAD</td>;
-                } else {
-                  return <td key={cell.id}> {foo} </td>;
-                }
-              })}
-            </tr>
-          ))}
+                return <td key={cell.id}>BAD</td>;
+              } else {
+                return <td key={cell.id}> {foo} </td>;
+              }
+            })}
+          </tr>
+        ))}
         </tbody>
       </table>
     </>

@@ -5,9 +5,9 @@ import Home3Logo from "./Home3Logo";
 export default function Home3Footer() {
   return (
     <footer
-      className="py-8 md:py-12 bg-pinkfade w-full"
+      className="py-3 md:py-6 bg-pinkfade w-full flex-none"
     >
-      <div className="md:container py-4 px-8 lg:px-16">
+      <div className="md:container py-2 px-8 lg:px-16">
         <div className="flex flex-col gap-4">
           {/*center logo and LI/etc icons vertically and spread horizontally*/}
           <div className="flex flex-row flex-grow items-center justify-between">
