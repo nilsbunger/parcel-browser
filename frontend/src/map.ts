@@ -14,17 +14,18 @@ const log = document.getElementById('log');
 async function search(event) {
     event.preventDefault();
     let center;
-
     const addr = document.getElementById('addr').value;
-    log.textContent = `Searching for ${addr}. Time stamp: ${event.timeStamp}`;
     
     await fetch(`/map/search/${addr}`)
     .then(response => { return response.json() })
     .then(coords => {
-        center = fromLonLat([coords.x, coords.y]);
+        if (coords == '404') {
+            log.textContent = `Could not find ${addr}.`;
+        } else {
+            center = fromLonLat([coords.x, coords.y]);
+            window.location.href = `/map/?center=${center[0]},${center[1]}`;
+        }
     });
-
-    window.location.href = `/map/?center=${center[0]},${center[1]}`;
 }
 
 form.addEventListener('submit', search);
