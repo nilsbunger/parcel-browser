@@ -125,7 +125,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # *** 1. Get information about the parcel
 
-
     # Get parameters based on zoning
     zone = get_parcel_zone(parcel, utm_crs)
     # Technically don't need side or rear setbacks, but buffer by a small amount
@@ -177,7 +176,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         parcel, buildings, topos_df, utm_crs)
 
     cant_build = unary_union(
-        [*buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
+        [buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
 
     flag_poly = identify_flag(parcel, parcel_edges['front'])
     if flag_poly:

@@ -468,7 +468,7 @@ def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes: Dict) -> P
     """
     # TODO: Fix buffer sizes
     # Buffer sizes according to building type, in meters
-    return buildings.dissolve().buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2)
+    return unary_union(buildings.geometry.buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2))
 
 
 def maximal_rectangles(matrix):
