@@ -262,15 +262,19 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         )
 
         if second_lot:
-            split_lot_fig = plot_split_lot(parcel, address, buildings, utm_crs, second_lot)
+            split_lot_fig = plot_split_lot(
+                parcel, address, buildings, utm_crs, second_lot)
 
         # Save figures
         if save_file:
-            new_buildings_fig.savefig(os.path.join(save_dir, "new-buildings", apn + ".jpg"))
-            cant_build_fig.savefig(os.path.join(save_dir, "cant-build", apn + ".jpg"))
+            new_buildings_fig.savefig(os.path.join(
+                save_dir, "new-buildings", apn + ".jpg"))
+            cant_build_fig.savefig(os.path.join(
+                save_dir, "cant-build", apn + ".jpg"))
 
             if second_lot:
-                split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
+                split_lot_fig.savefig(os.path.join(
+                    save_dir, "lot-splits", apn + ".jpg"))
 
         # Show figures
         if show_plot:
