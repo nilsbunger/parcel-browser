@@ -13,6 +13,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fetcher } from '../utils/fetcher';
 import { Listing } from '../types';
+import ListingsMap from '../components/layout/ListingsMap';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 const asFt = (m) => Math.round(m * 3.28);
@@ -161,35 +162,7 @@ export function ListingsPage() {
   // Render each date as a separate table
   return (
     <div>
-      <MapContainer
-        center={[data[dates[0]][0].centroid_y, data[dates[0]][0].centroid_x]}
-        zoom={13}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {Object.values(data).map((listings) =>
-          listings.map((listing) => (
-            <Marker position={[listing.centroid_y, listing.centroid_x]}>
-              <Popup>
-                <p>
-                  APN:
-                  <Link
-                    to={{
-                      pathname: `/analysis/${listing.analysis_id}`,
-                    }}
-                    className="underline text-darkblue"
-                  >
-                    {listing.apn}
-                  </Link>
-                </p>
-              </Popup>
-            </Marker>
-          ))
-        )}
-      </MapContainer>
+      <ListingsMap listings={Object.values(data).flat(1)} />
       <div id="tablegrouper">
         <div className="badge badge-primary">neutral</div>
         {dates.map((date) => (
