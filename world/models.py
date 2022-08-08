@@ -304,6 +304,12 @@ class Roads(models.Model):
     shape_stle = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
 
+class TransitPriorityArea(models.Model):
+    name = models.CharField(max_length=30)
+    shape_star = models.FloatField()
+    shape_stle = models.FloatField()
+    geom = models.MultiPolygonField(srid=4326)
+
 
 class PropertyListing(models.Model):
     class ListingStatus(models.TextChoices):
@@ -535,4 +541,13 @@ roads_mapping = {
     'rd30full': 'RD30FULL',
     'shape_stle': 'SHAPE_STLe',
     'geom': 'MULTILINESTRING',
+}
+
+
+# Auto-generated `LayerMapping` dictionary for TransitPriorityArea model
+transitpriorityarea_mapping = {
+    'name': 'NAME',
+    'shape_star': 'Shape_STAr',
+    'shape_stle': 'Shape_STLe',
+    'geom': 'MULTIPOLYGON',
 }

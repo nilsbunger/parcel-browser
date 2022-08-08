@@ -9,7 +9,7 @@ from django.contrib.gis.utils import LayerMapping
 from mygeo.util import eprint
 from world.models import parcel_mapping, Parcel, ZoningBase, zoningbase_mapping, \
     BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping, TopographyLoads, Roads, \
-    roads_mapping
+    roads_mapping, TransitPriorityArea, transitpriorityarea_mapping
 from django.core.management.base import BaseCommand
 
 
@@ -19,6 +19,7 @@ class LoadModel(Enum):
     Buildings = 3
     Topography = 4
     Roads = 5
+    TPA = 6
 
 
 class Command(BaseCommand):
@@ -27,8 +28,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('model', choices=LoadModel.__members__)
         parser.add_argument('fname', nargs='?')
-        parser.add_argument('--check-null-fields', action='store_true',
-                            help="Don't load data, but print out the fields which contain null values.")
+        parser.add_argument('--check-nulls', action='store_true',
+                            help="Don't load data, but print out fields which contain null values (and need "
+                                 "blank=True null=True in the model).")
 
     def handle(self, model, fname=None, *args, **options):
 
@@ -45,11 +47,14 @@ class Command(BaseCommand):
         elif model == "Roads":
             (fname, db_model, mapper) = (
                 'Roads_All/ROADS_ALL.shp', Roads, roads_mapping)
+        elif model == "TPA":
+            (fname, db_model, mapper) = (
+                'TRANSIT_PRIORITY_AREA.shp', TransitPriorityArea, transitpriorityarea_mapping)
         else:
             eprint("Unknown model!")
             return
 
-        if options["check_null_fields"]:
+        if options["check_nulls"]:
             """Helps check for which fields have null values. When creating new models for
             the first time, run this, and then add "blank=True, null=True" to the models.
             Works by loading the shapefile into a data frame, and then checking which columns
