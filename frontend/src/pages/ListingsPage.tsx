@@ -1,5 +1,6 @@
 import useSWR from 'swr';
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import {
   createColumnHelper,
   flexRender,
@@ -11,9 +12,10 @@ import {
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fetcher } from '../utils/fetcher';
+import { Listing } from '../types';
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28)
-const asFt = (m) => Math.round(m * 3.28)
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
+const asFt = (m) => Math.round(m * 3.28);
 
 function snakeCaseToTitleCase(word: string) {
   const tokenized = word.toLowerCase().split('_');
@@ -27,8 +29,8 @@ function snakeCaseToTitleCase(word: string) {
 const columnHelper = createColumnHelper();
 
 const basicAccessor = (cell) => {
-  return String(cell.getValue()).slice(0,20);
-}
+  return String(cell.getValue()).slice(0, 20);
+};
 
 const apnAccessor = ({ row }) => (
   <>
@@ -41,7 +43,7 @@ const apnAccessor = ({ row }) => (
   </>
 );
 
-const asSqFtAccessor = ({cell}) => asSqFt(cell.getValue())
+const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue());
 
 const roundingAccessor = ({ cell }) => {
   return cell.getValue().toPrecision(2);
@@ -70,63 +72,71 @@ const statusAccessor = ({ row }) => {
 };
 
 const initialColumnState = {
-  apn: {visible: true, accessor: apnAccessor,},
-  address: {visible: true},
-  zone: {visible: true,},
-  num_existing_buildings: {visible: false,},
-  is_flag_lot: {visible: false,},
-  carports: {visible: false,},
-  garages: {visible: false,},
-  neighborhood: {visible: true,},
-  parcel_size: {visible: true, accessor: asSqFtAccessor},
-  existing_living_area: {visible: false, accessor: asSqFtAccessor},
-  existing_floor_area: {visible: false, accessor: asSqFtAccessor},
-  existing_FAR: {visible: true, accessor: roundingAccessor},
-  num_new_buildings: {visible: false,},
-  new_building_areas: {visible: false,},
-  total_added_building_area: {visible: false,},
-  garage_con_units: {visible: false,},
-  garage_con_area: {visible: false,},
-  total_new_units: {visible: false,},
-  total_added_area: {visible: false,},
-  new_FAR: {visible: false,},
-  max_FAR: {visible: true, accessor: roundingAccessor},
-  potential_FAR: {visible: true, accessor: roundingAccessor},
-  limiting_factor: {visible: false,},
-  main_building_poly_area: {visible: false,},
-  accessory_buildings_polys_area: {visible: false,},
-  avail_geom_area: {visible: true, accessor: asSqFtAccessor},
-  avail_area_by_FAR: {visible: true, accessor: asSqFtAccessor},
-  parcel_sloped_area: {visible: false,},
-  parcel_sloped_ratio: {visible: false,},
-  total_score: {visible: false,},
-  cap_ratio_score: {visible: false,},
-  open_space_score: {visible: false,},
-  project_size_score: {visible: false,},
-  can_lot_split: {visible: false,},
-  new_lot_area_ratio: {visible: false,},
-  new_lot_area: {visible: false,},
-  git_commit_hash: {visible: false,},
-  datetime_ran: {visible: false,},
-  front_setback: {visible: false,},
-  br: {visible: true,},
-  ba: {visible: true,},
-  price: {visible: true, accessor: priceAccessor},
-  zipcode: {visible: false,},
-  founddate: {visible: false,},
-  seendate: {visible: false,},
-  mlsid: {visible: false,},
-  mls_floor_area: {visible: false,},
-  thumbnail: {visible: false,},
-  listing_url: {visible: false,},
-  soldprice: {visible: false,},
-  status: {visible: true, accessor: statusAccessor},
-  analysis_id: {visible: false,},
-  metadata: {visible: false,}, // Need to make this one ALWAYS invisible
+  apn: { visible: true, accessor: apnAccessor },
+  address: { visible: true },
+  zone: { visible: true },
+  num_existing_buildings: { visible: false },
+  is_flag_lot: { visible: false },
+  carports: { visible: false },
+  garages: { visible: false },
+  neighborhood: { visible: true },
+  parcel_size: { visible: true, accessor: asSqFtAccessor },
+  existing_living_area: { visible: false, accessor: asSqFtAccessor },
+  existing_floor_area: { visible: false, accessor: asSqFtAccessor },
+  existing_FAR: { visible: true, accessor: roundingAccessor },
+  num_new_buildings: { visible: false },
+  new_building_areas: { visible: false },
+  total_added_building_area: { visible: false },
+  garage_con_units: { visible: false },
+  garage_con_area: { visible: false },
+  total_new_units: { visible: false },
+  total_added_area: { visible: false },
+  new_FAR: { visible: false },
+  max_FAR: { visible: true, accessor: roundingAccessor },
+  potential_FAR: { visible: true, accessor: roundingAccessor },
+  limiting_factor: { visible: false },
+  main_building_poly_area: { visible: false },
+  accessory_buildings_polys_area: { visible: false },
+  avail_geom_area: { visible: true, accessor: asSqFtAccessor },
+  avail_area_by_FAR: { visible: true, accessor: asSqFtAccessor },
+  parcel_sloped_area: { visible: false },
+  parcel_sloped_ratio: { visible: false },
+  total_score: { visible: false },
+  cap_ratio_score: { visible: false },
+  open_space_score: { visible: false },
+  project_size_score: { visible: false },
+  can_lot_split: { visible: false },
+  new_lot_area_ratio: { visible: false },
+  new_lot_area: { visible: false },
+  git_commit_hash: { visible: false },
+  datetime_ran: { visible: false },
+  front_setback: { visible: false },
+  br: { visible: true },
+  ba: { visible: true },
+  price: { visible: true, accessor: priceAccessor },
+  zipcode: { visible: false },
+  founddate: { visible: false },
+  seendate: { visible: false },
+  mlsid: { visible: false },
+  mls_floor_area: { visible: false },
+  thumbnail: { visible: false },
+  listing_url: { visible: false },
+  soldprice: { visible: false },
+  status: { visible: true, accessor: statusAccessor },
+  analysis_id: { visible: false },
+  metadata: { visible: false }, // Need to make this one ALWAYS invisible
+};
+
+// The return type of the listings from the server
+type FetchListingsResponse = {
+  [key: string]: Listing[];
 };
 
 export function ListingsPage() {
-  const { data, error } = useSWR('/dj/api/listings', fetcher);
+  const { data, error } = useSWR<FetchListingsResponse>(
+    '/dj/api/listings',
+    fetcher
+  );
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
   );
@@ -138,7 +148,7 @@ export function ListingsPage() {
 
   const dates = Object.keys(data).sort().reverse();
 
-  const toggleVisibility = (event, x) => {
+  const toggleVisibility = (event) => {
     console.log('Vis = ', columnVisibility);
     console.log('Should toggle', event.target.id);
     setColumnVisibility((prev) => {
@@ -161,7 +171,7 @@ export function ListingsPage() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {Object.values(data).map((listings) =>
-          (listings as unknown[]).map((listing) => (
+          listings.map((listing) => (
             <Marker position={[listing.centroid_y, listing.centroid_x]}>
               <Popup>
                 <p>
@@ -209,11 +219,9 @@ export function ListingsPage() {
               <label>
                 <input
                   id={columnKey}
-                  {...{
-                    type: 'checkbox',
-                    checked: columnVisibility[columnKey],
-                    onChange: toggleVisibility,
-                  }}
+                  type="checkbox"
+                  checked={columnVisibility[columnKey]}
+                  onChange={toggleVisibility}
                 />{' '}
                 {columnKey}
               </label>
@@ -229,13 +237,11 @@ function ListingTable({ date, data, columnVisibility }) {
   // Render a single day's listing table
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
-  const columns = Object.keys(initialColumnState).map((fieldname) =>
-    ({
-      accessorKey: fieldname,
-      cell: initialColumnState[fieldname].accessor || basicAccessor,
-      header: snakeCaseToTitleCase(fieldname),
-    })
-  );
+  const columns = Object.keys(initialColumnState).map((fieldname) => ({
+    accessorKey: fieldname,
+    cell: initialColumnState[fieldname].accessor || basicAccessor,
+    header: snakeCaseToTitleCase(fieldname),
+  }));
   const table = useReactTable({
     data: data,
     columns,
