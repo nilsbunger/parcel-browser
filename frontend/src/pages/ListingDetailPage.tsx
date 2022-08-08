@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
@@ -18,9 +18,8 @@ async function getAnalysis(e, apn) {
   return fetchResponse.json();
 }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28)
-const asFt = (m) => Math.round(m * 3.28)
-
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
+const asFt = (m) => Math.round(m * 3.28);
 
 export function ListingDetailPage({}) {
   const params = useParams();
@@ -37,20 +36,30 @@ export function ListingDetailPage({}) {
     navigate('/analysis/' + res.analysis_id, { replace: true });
   }
 
-  console.log(data)
+  console.log(data);
   return (
     <>
-      {data.messages && data.messages.warning.map((warn) =>
-        <div className="alert alert-warning shadow-lg py-1 rounded-lg">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none"
-                 viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            <span>{warn}</span>
+      {data.messages &&
+        data.messages.warning.map((warn) => (
+          <div className="alert alert-warning shadow-lg py-1 rounded-lg">
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current flex-shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <span>{warn}</span>
+            </div>
           </div>
-        </div>)}
+        ))}
       {/*Show building and land plots */}
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
@@ -69,8 +78,13 @@ export function ListingDetailPage({}) {
           <p>{data.garages + data.carports} garage</p>
         </div>
         <div className={'justify-end'}>
-          <img src={data.thumbnail} className="min-w-[25%] min-h-[25%]"/>
-          <button className='btn btn-secondary btn-xs mt-3' onClick={onRedoAnalysis}>Re-analyze</button>
+          <img src={data.thumbnail} className="min-w-[25%] min-h-[25%]" />
+          <button
+            className="btn btn-secondary btn-xs mt-3"
+            onClick={onRedoAnalysis}
+          >
+            Re-analyze
+          </button>
         </div>
       </div>
       <div className="flex flex-row mt-6">
@@ -98,20 +112,20 @@ export function ListingDetailPage({}) {
           </div>
         </div>
 
-      <iframe
-        width="450"
-        height="250"
-        frameBorder={0}
-        style={{ border: 0 }}
-        referrerPolicy="no-referrer-when-downgrade"
-        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.address} San Diego`}
-        allowFullScreen
-      ></iframe>
+        <iframe
+          width="450"
+          height="250"
+          frameBorder={0}
+          style={{ border: 0 }}
+          referrerPolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.address} San Diego`}
+          allowFullScreen
+        ></iframe>
 
         {false && data.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
-            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`}/>
+            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`} />
           </div>
         )}
       </div>
@@ -124,7 +138,9 @@ export function ListingDetailPage({}) {
             <p>Current FAR: {data.existing_FAR.toFixed(2)}</p>
             <p>Max FAR: {data.max_FAR.toFixed(2)}</p>
             <p>Parcel size: {asSqFt(data.parcel_size)}</p>
-            <p>Buildable sq ft based on FAR: {asSqFt(data.avail_area_by_FAR)}</p>
+            <p>
+              Buildable sq ft based on FAR: {asSqFt(data.avail_area_by_FAR)}
+            </p>
             {/*<div className="card-actions justify-end">*/}
             {/*  <button className="btn btn-primary">Buy Now</button>*/}
             {/*</div>*/}
@@ -144,7 +160,10 @@ export function ListingDetailPage({}) {
       {Object.keys(data).map((key) => {
         return (
           <p key={key}>
-            {key}: {(typeof (data[key]) == 'object') ? JSON.stringify(data[key]) : data[key]}
+            {key}:{' '}
+            {typeof data[key] == 'object'
+              ? JSON.stringify(data[key])
+              : data[key]}
           </p>
         );
       })}
