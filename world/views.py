@@ -99,3 +99,57 @@ class IsolatedNeighborDetailData(LoginRequiredMixin, View):
         serializedBuildings = serialize('geojson', buildings, geometry_field='geom') 
 
         return HttpResponse(serializedBuildings, content_type='application/json')
+
+
+class AddressToLatLong(LoginRequiredMixin, View):
+    def get(self, request, address):
+        suffixDict = {'Alley': 'ALY', 'Avenue': 'AVE', 'Boulevard': 'BLVD', 'Causeway': 'CSWY', 'Center': 'CTR', 'Circle':'CIR', 'Court': 'CT', 'Cove': 'CV', 'Crossing': 'XING', 'Drive': 'DR', 'Expressway': 'EXPY', 'Extension': 'EXT', 'Freeway': 'FWY', 'Grove': 'GRV', 'Highway': 'HWY', 'Hollow': 'HOLW', 'Junction': 'JCT', 'Lane': 'LN', 'Motorway': 'MTWY', 'Overpass': 'OPAS', 'Park': 'PARK', 'Parkway': 'PKWY', 'Place': 'PL', 'Plaza': 'PLZ', 'Point': 'PT', 'Road': 'RD', 'Route': 'RTE', 'Skyway': 'SKWY', 'Square': 'SQ', 'Street': 'ST', 'Terrace': 'TER', 'Trail': 'TRL', 'Way': 'WAY'}
+        addr = address.split(' ')
+        print(addr)
+
+        if len(addr) == 2:
+            return self.search(addr)
+        
+        elif len(addr) == 3:
+            suff = self.isStreetSuffix(addr[2], suffixDict)
+            if bool(suff):
+                addr[2] = suff
+                return self.search(addr)
+            else:
+                addr[1] = addr[1] + " " + addr.pop(2)
+                return self.search(addr)
+
+        elif len(addr) == 4:
+            suff = self.isStreetSuffix(addr.pop(3), suffixDict)
+            addr[1] = addr[1] + " " + addr.pop(2)
+            addr.append(suff)
+            return self.search(addr)
+        
+        else:
+            return HttpResponse('404')
+    
+    def isStreetSuffix(self, string, suffixDict):
+        if string.upper() in list(suffixDict.values()):
+            return string.upper()
+        elif string.title() in list(suffixDict.keys()):
+            return suffixDict[string.title()]
+        else:
+            return False
+
+    def search(self, addr):
+        parcel = None
+        if len(addr) == 2:
+            try:
+                parcel = Parcel.objects.get(situs_addr__iexact=addr[0], situs_stre__iexact=addr[1])
+            except Parcel.DoesNotExist:
+                pass
+        elif len(addr) == 3:
+            try:
+                parcel = Parcel.objects.get(situs_addr__iexact=addr[0], situs_stre__iexact=addr[1], situs_suff__iexact=addr[2])
+            except Parcel.DoesNotExist:
+                pass
+        
+        if parcel != None:
+            coords = parcel.geom.centroid
+            return HttpResponse(json.dumps({'x': coords.x, 'y': coords.y}), content_type='application/json')
+        return HttpResponse('404')
