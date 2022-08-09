@@ -116,10 +116,10 @@ class ListingsData(View):  # LoginRequiredMixin
         serialized_listings = serialize('json', listings)
 
         # An ad-hoc way of doing formatting for now
-        listings_formatted = OrderedDict()
+        listings_formatted = []
         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
-            founddate = str(listing.founddate.astimezone(
-                tz=ZoneInfo("America/Los_Angeles")).date())
+            # founddate = str(listing.founddate.astimezone(
+            #     tz=ZoneInfo("America/Los_Angeles")).date())
             latest_analysis = listing.analyzedlisting_set.latest(
                 'datetime_ran')
             l = latest_analysis.details
@@ -139,10 +139,11 @@ class ListingsData(View):  # LoginRequiredMixin
             else:
                 l['metadata']['category'] = 'updated'
                 l['metadata']['prev_values'] = listing_prev_values(listing)
-            if founddate in listings_formatted:
-                listings_formatted[founddate].append(l)
-            else:
-                listings_formatted[founddate] = [l]
+            listings_formatted.append(l)
+            # if founddate in listings_formatted:
+            #     listings_formatted[founddate].append(l)
+            # else:
+            #     listings_formatted[founddate] = [l]
 
         return JsonResponse(listings_formatted, content_type='application/json', safe=False)
 
@@ -194,7 +195,8 @@ class ListingsData(View):  # LoginRequiredMixin
                 status = "LISTING_CREATED"
             else:
                 # there *could* be an existing listing if this is redoing an analysis
-                listing = existing_listing.latest('founddate') if existing_listing else None
+                listing = existing_listing.latest(
+                    'founddate') if existing_listing else None
                 analysis = analyze_by_apn(
                     apn,
                     sd_utm_crs,

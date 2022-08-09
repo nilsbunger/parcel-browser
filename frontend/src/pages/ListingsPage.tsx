@@ -150,16 +150,8 @@ const initialColumnState = {
   metadata: { visible: false }, // Need to make this one ALWAYS invisible
 };
 
-// The return type of the listings from the server
-type FetchListingsResponse = {
-  [key: string]: Listing[];
-};
-
 export function ListingsPage() {
-  const { data, error } = useSWR<FetchListingsResponse>(
-    '/dj/api/listings',
-    fetcher
-  );
+  const { data, error } = useSWR<Listing[]>('/dj/api/listings', fetcher);
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
   );
@@ -168,8 +160,6 @@ export function ListingsPage() {
 
   if (error) return <div>failed to load</div>;
   if (!data) return <div>loading...</div>;
-
-  const dates = Object.keys(data).sort().reverse();
 
   const toggleVisibility = (event) => {
     console.log('Vis = ', columnVisibility);
@@ -189,15 +179,7 @@ export function ListingsPage() {
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
-        {/*<div className="badge badge-primary">neutral</div>*/}
-        {dates.map((date) => (
-          <ListingTable
-            key={date}
-            date={date}
-            data={data[date]}
-            columnVisibility={columnVisibility}
-          />
-        ))}
+        <ListingTable data={data} columnVisibility={columnVisibility} />
 
         {/*Render column visibility checkboxes*/}
         <label>
@@ -231,7 +213,13 @@ export function ListingsPage() {
   );
 }
 
-function ListingTable({ date, data, columnVisibility }) {
+function ListingTable({
+  data,
+  columnVisibility,
+}: {
+  data: Listing[];
+  columnVisibility: Record<string, boolean>;
+}) {
   // Render a single day's listing table
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -257,7 +245,6 @@ function ListingTable({ date, data, columnVisibility }) {
 
   return (
     <>
-      <h1>{date} Listings</h1>
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
