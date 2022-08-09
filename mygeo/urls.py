@@ -6,10 +6,11 @@ from django.urls import path, include, re_path
 from world import views
 from world.infra_views import frontend_proxy_view
 from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNeighborDetailData
-
+from world.api import api as world_api
 urlpatterns = [
     # Django-rendered routes
     path('dj/admin', admin.site.urls),
+    path('api/', world_api.urls ),
     path('dj/accounts', include('django.contrib.auth.urls')),
     path('dj/map', MapView.as_view()),
     # path("api/", include("world.api")),
@@ -20,6 +21,9 @@ urlpatterns = [
          views.ParcelTileData.as_view(), name="parcel-tile"),
     path('dj/api/topotile/<int:z>/<int:x>/<int:y>',
          views.TopoTileData.as_view(), name="topo-tile"),
+    path('dj/api/tpatile/<int:z>/<int:x>/<int:y>',
+         views.TpaTileData.as_view(), name="tpa-tile"),
+
     path('dj/api/listings', views.ListingsData.as_view(), name="listings"),
     path('dj/api/analysis/<int:id>',
          views.AnalysisDetailData.as_view(), name="listing analysis"),

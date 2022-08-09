@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
+import {ListingHistory} from "../components/ListingHistory";
 
 async function getAnalysis(e, apn) {
   const fetchResponse = await fetch(`/dj/api/listings`, {
@@ -64,6 +65,7 @@ export function ListingDetailPage({}) {
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
           <h1>{data.address}</h1>
+          {data.is_tpa && <div className="badge badge-primary">TPA</div>}
           <p>{data.neighborhood}</p>
           <p>APN: {data.apn}</p>
           <p>Build Sq Ft by FAR: {asSqFt(data.avail_area_by_FAR)}</p>
@@ -112,6 +114,7 @@ export function ListingDetailPage({}) {
           </div>
         </div>
 
+        {/* Google maps embed*/}
         <iframe
           width="450"
           height="250"
@@ -122,6 +125,7 @@ export function ListingDetailPage({}) {
           allowFullScreen
         ></iframe>
 
+        {/* Lot split overview */}
         {false && data.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
@@ -132,7 +136,7 @@ export function ListingDetailPage({}) {
 
       {/* Show cards for FAR and geometry calculation */}
       <div className="flex flex-row w-full justify-left space-x-4 items-top">
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">FAR calculations</h2>
             <p>Current FAR: {data.existing_FAR.toFixed(2)}</p>
@@ -146,7 +150,7 @@ export function ListingDetailPage({}) {
             {/*</div>*/}
           </div>
         </div>
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">Geometry calculations</h2>
             <p>Buildable area by geometry: {asSqFt(data.avail_geom_area)}</p>
@@ -156,14 +160,14 @@ export function ListingDetailPage({}) {
           </div>
         </div>
       </div>
-      <h2>Details:</h2>
+      <h1 className={'mt-5'}>Listing history</h1>
+      <ListingHistory mlsid={data.mlsid}/>
+      <h1>Details</h1>
       {Object.keys(data).map((key) => {
         return (
           <p key={key}>
             {key}:{' '}
-            {typeof data[key] == 'object'
-              ? JSON.stringify(data[key])
-              : data[key]}
+            {JSON.stringify(data[key]).replace(/^"|"$/g, '')}
           </p>
         );
       })}
