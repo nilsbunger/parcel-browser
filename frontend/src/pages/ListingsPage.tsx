@@ -8,6 +8,7 @@ import {
   useReactTable,
   getSortedRowModel,
   SortingState,
+  getFilteredRowModel,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
@@ -152,6 +153,7 @@ const initialColumnState = {
 
 export function ListingsPage() {
   const { data, error } = useSWR<Listing[]>('/dj/api/listings', fetcher);
+
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
   );
@@ -171,6 +173,7 @@ export function ListingsPage() {
     });
     console.log(columnVisibility);
   };
+
   // Render each date as a separate table
   return (
     <div className={'flex flex-row'}>
@@ -222,6 +225,9 @@ function ListingTable({
 }) {
   // Render a single day's listing table
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [minBuildableFilter, setMinBuildingableFilter] = useState<number>(0);
+  const [maxBuildableFilter, setMaxBuildingableFilter] =
+    useState<number>(10000);
 
   const columns = Object.keys(initialColumnState).map((fieldname) => ({
     accessorKey: fieldname,
@@ -238,13 +244,79 @@ function ListingTable({
       sorting,
     },
     // onColumnVisibilityChange: setColumnVisibility,
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const handleMinChange = (e) => {
+    // Ensure we convert back to sqft
+    table
+      .getColumn('avail_area_by_FAR')
+      .setFilterValue((old: [number, number]) => [
+        e.target.value / 10.7639,
+        old?.[1],
+      ]);
+    setMinBuildingableFilter(e.target.value ? Number(e.target.value) : 0);
+  };
+
+  const handleMaxChange = (e) => {
+    table
+      .getColumn('avail_area_by_FAR')
+      .setFilterValue((old: [number, number]) => [
+        old?.[0],
+        e.target.value / 10.7639,
+      ]);
+    setMaxBuildingableFilter(e.target.value ? Number(e.target.value) : 0);
+  };
+
   return (
     <>
+      <p>Min</p>
+      <DebouncedInput
+        type="number"
+        min={Number(
+          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[0] ??
+            ''
+        )}
+        max={Number(
+          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
+            ''
+        )}
+        value={minBuildableFilter}
+        onChange={(value) =>
+          table
+            .getColumn('avail_area_by_FAR')
+            .setFilterValue((old: [number, number]) => [
+              Number(value) / 10.7639,
+              old?.[1],
+            ])
+        }
+        className="input input-bordered w-full max-w-xs"
+      />
+      <p>Max</p>
+      <DebouncedInput
+        type="number"
+        min={Number(
+          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[0] ??
+            ''
+        )}
+        max={Number(
+          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
+            ''
+        )}
+        value={maxBuildableFilter}
+        onChange={(value) =>
+          table
+            .getColumn('avail_area_by_FAR')
+            .setFilterValue((old: [number, number]) => [
+              old?.[0],
+              Number(value) / 10.7639,
+            ])
+        }
+        className="input input-bordered w-full max-w-xs"
+      />
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -301,5 +373,40 @@ function ListingTable({
         </tbody>
       </table>
     </>
+  );
+}
+
+// A debounced input react component
+// from https://tanstack.com/table/v8/docs/examples/react/filters
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}: {
+  value: string | number;
+  onChange: (value: string | number) => void;
+  debounce?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
+  const [value, setValue] = React.useState(initialValue);
+
+  React.useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value);
+    }, debounce);
+
+    return () => clearTimeout(timeout);
+  }, [value]);
+
+  return (
+    <input
+      {...props}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
   );
 }
