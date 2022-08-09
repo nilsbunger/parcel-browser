@@ -10,6 +10,7 @@ import {
   SortingState,
   getFilteredRowModel,
   Table,
+  Column,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
@@ -247,48 +248,12 @@ export function ListingsPage() {
 function ListingTable({ table }: { table: Table<Listing> }) {
   return (
     <>
-      <p>Min</p>
-      <DebouncedInput
-        type="number"
-        min={Number(
-          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[0] ??
-            ''
-        )}
-        max={Number(
-          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
-            ''
-        )}
-        value={4}
-        onChange={(value) =>
-          table
-            .getColumn('avail_area_by_FAR')
-            .setFilterValue((old: [number, number]) => [
-              Number(value) / 10.7639,
-              old?.[1],
-            ])
-        }
+      <MinMaxFilter
+        column={table.getColumn('avail_area_by_FAR')}
+        filterName="Buildable sqft"
+        convertBy={1 / 10.7639}
       />
-      <p>Max</p>
-      <DebouncedInput
-        type="number"
-        min={Number(
-          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[0] ??
-            ''
-        )}
-        max={Number(
-          table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
-            ''
-        )}
-        value={100000}
-        onChange={(value) =>
-          table
-            .getColumn('avail_area_by_FAR')
-            .setFilterValue((old: [number, number]) => [
-              old?.[0],
-              Number(value) / 10.7639,
-            ])
-        }
-      />
+      <MinMaxFilter column={table.getColumn('price')} filterName="Price" />
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -348,6 +313,56 @@ function ListingTable({ table }: { table: Table<Listing> }) {
   );
 }
 
+function MinMaxFilter({
+  column,
+  filterName,
+  convertBy,
+}: {
+  column: Column<any, unknown>;
+  filterName: string;
+  convertBy?: number;
+}) {
+  return (
+    <div className="mt-3 mb-3">
+      <h3>{filterName}</h3>
+      <div className="flex flex-row gap-8">
+        <div>
+          <p>Min</p>
+          <DebouncedInput
+            type="number"
+            min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+            max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+            // Todo: Don't hardcode this value
+            value={0}
+            onChange={(value) =>
+              column.setFilterValue((old: [number, number]) => [
+                Number(value) * (convertBy ?? 1),
+                old?.[1],
+              ])
+            }
+          />
+        </div>
+        <div>
+          <p>Max</p>
+          <DebouncedInput
+            type="number"
+            min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+            max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+            // Todo: Don't hardcode this value
+            value={1000000}
+            onChange={(value) =>
+              column.setFilterValue((old: [number, number]) => [
+                old?.[0],
+                Number(value) * (convertBy ?? 1),
+              ])
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // A debounced input react component
 // from https://tanstack.com/table/v8/docs/examples/react/filters
 function DebouncedInput({
@@ -379,7 +394,7 @@ function DebouncedInput({
       {...props}
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      className="input input-bordered w-full max-w-xs"
+      className="input input-bordered w-[200px] max-w-xs"
     />
   );
 }
