@@ -1,5 +1,5 @@
-# h3-gis
-Home3 GIS application for evaluating parcels for upzoning.
+# Parsnip
+Home3 application for evaluating parcels for upzoning.
 
 # Setup steps
 This is currently working on a Mac with M1 processor. Will need tweaks for other environments.
