@@ -22,7 +22,7 @@ from lib.analyze_parcel_lib import analyze_by_apn
 
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
-from world.models import AnalyzedListing, Parcel, BuildingOutlines, Topography, PropertyListing
+from world.models import AnalyzedListing, Parcel, BuildingOutlines, Topography, PropertyListing, TransitPriorityArea
 from lib.crs_lib import get_utm_crs
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -37,7 +37,7 @@ class MapView(TemplateView):  # LoginRequiredMixin
     template_name = 'map2.html'
 
 
-# ajax call for vector tiles for big map
+# ajax call for parcel tiles for big map
 class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Parcel
     vector_tile_layer_name = "parcels"
@@ -47,8 +47,12 @@ class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
 # ajax call for topo tiles for big map
 class TopoTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Topography
-    vector_tile_layer_name = "topogrpahy"
-    # vector_tile_fields = ('apn',)
+    vector_tile_layer_name = "topography"
+
+
+class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
+    model = TransitPriorityArea
+    vector_tile_layer_name = "tpa"
 
 
 # ------------------------------------------------------
@@ -231,7 +235,6 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
             del d['prev_listing']
 
         return JsonResponse(d, content_type='application/json', safe=False)
-
 
 class GetParcelByAddressSearch(View):  # LoginRequiredMixin
     def get(self, request, address, *args, **kwargs):
