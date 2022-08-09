@@ -126,12 +126,13 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # *** 1. Get information about the parcel
 
     # Get parameters based on zoning
-    zone = get_parcel_zone(parcel, utm_crs)
+    zone, is_tpa = get_parcel_zone(parcel, utm_crs)
     # Technically don't need side or rear setbacks, but buffer by a small amount
     # to account for errors
 
     zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
-    messages['warning'].append("Missing front zoning information")
+    if not zone_has_data:
+        messages['warning'].append("Missing front zoning information")
     setback_widths = {
         'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28 if zone_has_data else 5,
         'side': None,
@@ -194,8 +195,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
-    address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'
-
+    address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'.strip()
     # Get the open space available (for yard and stuff)'
     # Question: Should setbacks be considered in open space?
     not_open_space = unary_union(
@@ -287,6 +287,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "apn": apn,
         "address": address,
         "zone": zone,
+        "is_tpa": is_tpa,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
         "carports": num_carports,
         "garages": num_garages,

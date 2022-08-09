@@ -1,4 +1,4 @@
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Tuple
 from lib.shapely_lib import multi_line_string_split
 
 import django.contrib.gis.geos
@@ -24,7 +24,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from rasterio import features, plot as rasterio_plot
 import shapely.ops
 
-from world.models import Parcel, BuildingOutlines, ParcelSlope, Roads, ZoningBase
+from world.models import Parcel, BuildingOutlines, ParcelSlope, Roads, ZoningBase, TransitPriorityArea
 
 from numpy import argmax, argmin
 
@@ -96,7 +96,7 @@ def get_buildings(parcel: Parcel) -> QuerySet:
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> str:
+def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool]:
     """Gets the zone of a parcel.
 
     Args:
@@ -106,15 +106,16 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> str:
         str: The zone of the parcel
     """
     zones = ZoningBase.objects.filter(geom__intersects=parcel.model.geom)
-
+    tpa = TransitPriorityArea.objects.filter(geom__intersects=parcel.model.geom)
+    tpa_bool = len(tpa) > 0
     if (len(zones)) == 1:
-        return zones[0].zone_name
+        return zones[0].zone_name, tpa_bool
     elif (len(zones)) > 1:
         # We're ont he boundary of two zones. Find the one with the most overlap with parcel.
         zones_df = models_to_utm_gdf(zones, utm_crs)
         max_intersect_index = argmax(
             [geom.intersection(parcel.geometry).area for geom in zones_df.geometry])
-        return zones[int(max_intersect_index)].zone_name
+        return zones[int(max_intersect_index)].zone_name, tpa_bool
     elif (len(zones)) == 0:
         raise Exception("Parcel has no zoning info.")
     else:
