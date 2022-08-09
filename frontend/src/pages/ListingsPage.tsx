@@ -9,6 +9,7 @@ import {
   getSortedRowModel,
   SortingState,
   getFilteredRowModel,
+  Table,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
@@ -160,9 +161,6 @@ export function ListingsPage() {
   const [columnVisibility, setColumnVisibility] =
     useState<Record<string, boolean>>(initialVisibility);
 
-  if (error) return <div>failed to load</div>;
-  if (!data) return <div>loading...</div>;
-
   const toggleVisibility = (event) => {
     console.log('Vis = ', columnVisibility);
     console.log('Should toggle', event.target.id);
@@ -174,15 +172,45 @@ export function ListingsPage() {
     console.log(columnVisibility);
   };
 
+  // Render a single day's listing table
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  const columns = Object.keys(initialColumnState).map((fieldname) => ({
+    accessorKey: fieldname,
+    cell: initialColumnState[fieldname].accessor || basicAccessor,
+    header:
+      initialColumnState[fieldname].headername ||
+      snakeCaseToTitleCase(fieldname),
+  }));
+  const table = useReactTable({
+    data: data,
+    columns,
+    state: {
+      columnVisibility,
+      sorting,
+    },
+    // onColumnVisibilityChange: setColumnVisibility,
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  if (error) return <div>failed to load</div>;
+  if (!data) return <div>loading...</div>;
+
   // Render each date as a separate table
   return (
     <div className={'flex flex-row'}>
-      <ListingsMap listings={Object.values(data).flat(1)} />
+      <ListingsMap
+        listings={table.getRowModel().rows.map((row) => row.original)}
+      />
       <div
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
-        <ListingTable data={data} columnVisibility={columnVisibility} />
+        <p>Got {table.getRowModel().rows.length} listings</p>
+        <ListingTable table={table} />
 
         {/*Render column visibility checkboxes*/}
         <label>
@@ -216,61 +244,7 @@ export function ListingsPage() {
   );
 }
 
-function ListingTable({
-  data,
-  columnVisibility,
-}: {
-  data: Listing[];
-  columnVisibility: Record<string, boolean>;
-}) {
-  // Render a single day's listing table
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [minBuildableFilter, setMinBuildingableFilter] = useState<number>(0);
-  const [maxBuildableFilter, setMaxBuildingableFilter] =
-    useState<number>(10000);
-
-  const columns = Object.keys(initialColumnState).map((fieldname) => ({
-    accessorKey: fieldname,
-    cell: initialColumnState[fieldname].accessor || basicAccessor,
-    header:
-      initialColumnState[fieldname].headername ||
-      snakeCaseToTitleCase(fieldname),
-  }));
-  const table = useReactTable({
-    data: data,
-    columns,
-    state: {
-      columnVisibility,
-      sorting,
-    },
-    // onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
-
-  const handleMinChange = (e) => {
-    // Ensure we convert back to sqft
-    table
-      .getColumn('avail_area_by_FAR')
-      .setFilterValue((old: [number, number]) => [
-        e.target.value / 10.7639,
-        old?.[1],
-      ]);
-    setMinBuildingableFilter(e.target.value ? Number(e.target.value) : 0);
-  };
-
-  const handleMaxChange = (e) => {
-    table
-      .getColumn('avail_area_by_FAR')
-      .setFilterValue((old: [number, number]) => [
-        old?.[0],
-        e.target.value / 10.7639,
-      ]);
-    setMaxBuildingableFilter(e.target.value ? Number(e.target.value) : 0);
-  };
-
+function ListingTable({ table }: { table: Table<Listing> }) {
   return (
     <>
       <p>Min</p>
@@ -284,7 +258,7 @@ function ListingTable({
           table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
             ''
         )}
-        value={minBuildableFilter}
+        value={4}
         onChange={(value) =>
           table
             .getColumn('avail_area_by_FAR')
@@ -293,7 +267,6 @@ function ListingTable({
               old?.[1],
             ])
         }
-        className="input input-bordered w-full max-w-xs"
       />
       <p>Max</p>
       <DebouncedInput
@@ -306,7 +279,7 @@ function ListingTable({
           table.getColumn('avail_area_by_FAR').getFacetedMinMaxValues()?.[1] ??
             ''
         )}
-        value={maxBuildableFilter}
+        value={100000}
         onChange={(value) =>
           table
             .getColumn('avail_area_by_FAR')
@@ -315,7 +288,6 @@ function ListingTable({
               Number(value) / 10.7639,
             ])
         }
-        className="input input-bordered w-full max-w-xs"
       />
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
@@ -407,6 +379,7 @@ function DebouncedInput({
       {...props}
       value={value}
       onChange={(e) => setValue(e.target.value)}
+      className="input input-bordered w-full max-w-xs"
     />
   );
 }
