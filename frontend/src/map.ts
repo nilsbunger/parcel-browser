@@ -8,6 +8,27 @@ import VectorTileLayer from "ol/layer/VectorTile";
 import VectorTileSource from "ol/source/VectorTile";
 import {Fill, Stroke, Style} from "ol/style";
 
+const form = document.getElementById('search');
+const log = document.getElementById('log');
+
+async function search(event) {
+    event.preventDefault();
+    let center;
+    const addr = document.getElementById('addr').value;
+    
+    await fetch(`/map/search/${addr}`)
+    .then(response => { return response.json() })
+    .then(coords => {
+        if (coords == '404') {
+            log.textContent = `Could not find ${addr}.`;
+        } else {
+            center = fromLonLat([coords.x, coords.y]);
+            window.location.href = `/map/?center=${center[0]},${center[1]}`;
+        }
+    });
+}
+
+form.addEventListener('submit', search);
 
 let parcelVectorSource = new VectorTileSource({
     format: new MVT({
@@ -58,14 +79,14 @@ const topoTileLayer = new VectorTileLayer({
 
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
-const centerStr = urlParams.get('center')?.split(',')
+const centerStr = urlParams.get('center')?.split(',');
 let viewCenter = fromLonLat([-117.19905688459625, 32.78415286818754]) // 2210 Illion St, San Diego, 92110],
-let zoom = 18
-console.log (viewCenter)
+let zoom = 18;
+console.log (viewCenter);
 if (centerStr) {
     viewCenter = [parseFloat(centerStr[0]), parseFloat(centerStr[1])]
 }
-console.log (viewCenter)
+console.log (viewCenter);
 
 let map = new Map({
     layers: [
