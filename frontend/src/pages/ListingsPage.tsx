@@ -58,8 +58,10 @@ const addressAccessor = ({ row }) => (
         NEW
       </div>
     )}
-  </div>
-);
+    {' '}{row.original.is_tpa &&
+          <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
+    }
+  </div>)
 
 const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue()).toLocaleString();
 
