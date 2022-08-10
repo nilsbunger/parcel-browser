@@ -46,7 +46,7 @@ const apnAccessor = ({ row }) => (
 );
 
 const addressAccessor = ({ row }) => (
-  <div className={'relative'}>
+  <div className={'relative ' + (row.getValue("apn").slice(8,10)!=="00" ? "bg-gray-300" : "")}>
     <Link
       to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
       className="underline text-darkblue"
@@ -165,14 +165,14 @@ export function ListingsPage() {
     useState<Record<string, boolean>>(initialVisibility);
 
   const toggleVisibility = (event) => {
-    console.log('Vis = ', columnVisibility);
-    console.log('Should toggle', event.target.id);
+    // console.log('Vis = ', columnVisibility);
+    // console.log('Should toggle', event.target.id);
     setColumnVisibility((prev) => {
       const new_vis = Object.assign({}, prev);
       new_vis[event.target.id] = !new_vis[event.target.id];
       return new_vis;
     });
-    console.log(columnVisibility);
+    // console.log(columnVisibility);
   };
 
   // Render a single day's listing table
@@ -339,7 +339,7 @@ function MinMaxFilter({
             onChange={(value) =>
               column.setFilterValue((old: [number, number]) => [
                 Number(value) * (convertBy ?? 1),
-                old?.[1],
+                old?.[1], // keep old maximum
               ])
             }
           />
@@ -354,7 +354,7 @@ function MinMaxFilter({
             value={1000000}
             onChange={(value) =>
               column.setFilterValue((old: [number, number]) => [
-                old?.[0],
+                old?.[0], // keep old minimum
                 Number(value) * (convertBy ?? 1),
               ])
             }
