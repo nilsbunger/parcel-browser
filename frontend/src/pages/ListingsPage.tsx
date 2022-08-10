@@ -57,11 +57,12 @@ const addressAccessor = ({ row }) => (
       <div className="badge badge-accent text-2xs absolute top-[-6px] px-1 right-0">
         NEW
       </div>
+    )}{' '}
+    {row.original.is_tpa && (
+      <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
     )}
-    {' '}{row.original.is_tpa &&
-          <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
-    }
-  </div>)
+  </div>
+);
 
 const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue()).toLocaleString();
 
@@ -155,8 +156,43 @@ const initialColumnState = {
   metadata: { visible: false }, // Need to make this one ALWAYS invisible
 };
 
+type QueryResponse = {
+  items: (Listing & { analyzedlisting_set: { details: object } })[];
+  count: number;
+};
+
 export function ListingsPage() {
-  const { data, error } = useSWR<Listing[]>('/dj/api/listings', fetcher);
+  const [minPrice, setMinPrice] = useState();
+  const [maxPrice, setMaxPrice] = useState();
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+
+  const { data, error } = useSWR<QueryResponse>(
+    [
+      'api/listings',
+      {
+        params: {
+          limit: pageSize,
+          offset: pageIndex * pageSize,
+        },
+      },
+    ],
+    fetcher
+  );
+
+  // We gotta do this weird conversion as the data comes in weirdly shaped from the backend
+  // Fix the backend to get this to be the correct shape
+  const listings = data
+    ? (data.items.map((item) => ({
+        ...item,
+        // This weird type casting helps squash errors. Only temporary
+        ...item.analyzedlisting_set.details,
+        metadata: {
+          category: 'new',
+          prev_values: {},
+        },
+      })) as Listing[])
+    : [];
 
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
@@ -186,17 +222,23 @@ export function ListingsPage() {
       snakeCaseToTitleCase(fieldname),
   }));
   const table = useReactTable({
-    data: data,
+    data: listings,
     columns,
     state: {
       columnVisibility,
       sorting,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
     // onColumnVisibilityChange: setColumnVisibility,
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,
+    pageCount: data ? Math.ceil(data.count / pageSize) : null,
   });
 
   if (error) return <div>failed to load</div>;
@@ -212,6 +254,62 @@ export function ListingsPage() {
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
+        <div className="pagination">
+          <button
+            onClick={() => setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<<'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex((prev) => prev - 1)}
+            disabled={!table.getCanPreviousPage()}
+          >
+            {'<'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex((prev) => prev + 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+          >
+            {'>>'}
+          </button>{' '}
+          <span>
+            Page{' '}
+            <strong>
+              {pageIndex + 1} of {table.getPageCount()}
+            </strong>{' '}
+          </span>
+          <span>
+            | Go to page:{' '}
+            <input
+              type="number"
+              value={pageIndex + 1}
+              onChange={(e) => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                setPageIndex(page);
+              }}
+              style={{ width: '100px' }}
+            />
+          </span>{' '}
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+            }}
+          >
+            {[10, 20, 30, 40, 50].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
         <p>Got {table.getRowModel().rows.length} listings</p>
         <ListingTable table={table} />
 
@@ -250,12 +348,12 @@ export function ListingsPage() {
 function ListingTable({ table }: { table: Table<Listing> }) {
   return (
     <>
-      <MinMaxFilter
+      {/* <MinMaxFilter
         column={table.getColumn('avail_area_by_FAR')}
         filterName="Buildable sqft"
         convertBy={1 / 10.7639}
       />
-      <MinMaxFilter column={table.getColumn('price')} filterName="Price" />
+      <MinMaxFilter column={table.getColumn('price')} filterName="Price" /> */}
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
