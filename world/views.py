@@ -273,7 +273,7 @@ class IsolatedNeighborDetailData(View):  # LoginRequiredMixin
         return HttpResponse(serializedBuildings, content_type='application/json')
 
 
-class AddressToLatLong(LoginRequiredMixin, View):
+class AddressToLatLong(View): # LoginRequiredMixin,
     def get(self, request, address):
         suffixDict = {'Alley': 'ALY', 'Avenue': 'AVE', 'Boulevard': 'BLVD', 'Causeway': 'CSWY', 'Center': 'CTR', 'Circle':'CIR', 'Court': 'CT', 'Cove': 'CV', 'Crossing': 'XING', 'Drive': 'DR', 'Expressway': 'EXPY', 'Extension': 'EXT', 'Freeway': 'FWY', 'Grove': 'GRV', 'Highway': 'HWY', 'Hollow': 'HOLW', 'Junction': 'JCT', 'Lane': 'LN', 'Motorway': 'MTWY', 'Overpass': 'OPAS', 'Park': 'PARK', 'Parkway': 'PKWY', 'Place': 'PL', 'Plaza': 'PLZ', 'Point': 'PT', 'Road': 'RD', 'Route': 'RTE', 'Skyway': 'SKWY', 'Square': 'SQ', 'Street': 'ST', 'Terrace': 'TER', 'Trail': 'TRL', 'Way': 'WAY'}
         addr = address.split(' ')
