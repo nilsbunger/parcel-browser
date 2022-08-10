@@ -258,35 +258,39 @@ export function ListingsPage() {
           <button
             onClick={() => setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
+            className="btn btn-xs btn-outline btn-square"
           >
             {'<<'}
           </button>{' '}
           <button
             onClick={() => setPageIndex((prev) => prev - 1)}
             disabled={!table.getCanPreviousPage()}
+            className="btn btn-xs btn-outline btn-square"
           >
             {'<'}
           </button>{' '}
           <button
             onClick={() => setPageIndex((prev) => prev + 1)}
             disabled={!table.getCanNextPage()}
+            className="btn btn-xs btn-outline btn-square"
           >
             {'>'}
           </button>{' '}
           <button
             onClick={() => setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
+            className="btn btn-xs btn-outline btn-square"
           >
             {'>>'}
           </button>{' '}
-          <span>
+          <span className="ml-4 mr-4">
             Page{' '}
             <strong>
               {pageIndex + 1} of {table.getPageCount()}
             </strong>{' '}
           </span>
           <span>
-            | Go to page:{' '}
+            Go to page:{' '}
             <input
               type="number"
               value={pageIndex + 1}
@@ -295,6 +299,7 @@ export function ListingsPage() {
                 setPageIndex(page);
               }}
               style={{ width: '100px' }}
+              className="border rounded px-2 border-gray-400"
             />
           </span>{' '}
           <select
@@ -302,15 +307,15 @@ export function ListingsPage() {
             onChange={(e) => {
               setPageSize(Number(e.target.value));
             }}
+            className="ml-4"
           >
-            {[10, 20, 30, 40, 50].map((pageSize) => (
+            {[10, 25, 50, 100, 250, 500].map((pageSize) => (
               <option key={pageSize} value={pageSize}>
                 Show {pageSize}
               </option>
             ))}
           </select>
         </div>
-        <p>Got {table.getRowModel().rows.length} listings</p>
         <ListingTable table={table} />
 
         {/*Render column visibility checkboxes*/}
@@ -352,8 +357,8 @@ function ListingTable({ table }: { table: Table<Listing> }) {
         column={table.getColumn('avail_area_by_FAR')}
         filterName="Buildable sqft"
         convertBy={1 / 10.7639}
-      />
-      <MinMaxFilter column={table.getColumn('price')} filterName="Price" /> */}
+      /> */}
+      {/* <MinMaxFilter column={table.getColumn('price')} filterName="Price" /> */}
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
