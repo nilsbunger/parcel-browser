@@ -52,7 +52,12 @@ const apnAccessor = ({ row }) => (
 );
 
 const addressAccessor = ({ row }) => (
-  <div className={'relative'}>
+  <div
+    className={
+      'relative ' +
+      (row.getValue('apn').slice(8, 10) !== '00' ? 'bg-gray-300' : '')
+    }
+  >
     <Link
       to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
       className="underline text-darkblue"
@@ -224,14 +229,14 @@ export function ListingsPage() {
     useState<Record<string, boolean>>(initialVisibility);
 
   const toggleVisibility = (event) => {
-    console.log('Vis = ', columnVisibility);
-    console.log('Should toggle', event.target.id);
+    // console.log('Vis = ', columnVisibility);
+    // console.log('Should toggle', event.target.id);
     setColumnVisibility((prev) => {
       const new_vis = Object.assign({}, prev);
       new_vis[event.target.id] = !new_vis[event.target.id];
       return new_vis;
     });
-    console.log(columnVisibility);
+    // console.log(columnVisibility);
   };
 
   const columns = Object.keys(initialColumnState).map((fieldname) => ({

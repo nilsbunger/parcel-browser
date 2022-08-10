@@ -29,6 +29,7 @@ class MyItemPipeline:
     def process_item(self, item, spider):
         """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
         default_fields = {k: item[k] for k in ['price', 'addr', 'br', 'ba', 'mlsid', 'size'] if k in item}
+        logging.debug(f"Found listing: {item}")
         try:
             try:
                 # Create a new entry when the price, addr or status changes on an entry
@@ -86,10 +87,12 @@ class SanDiegoMlsSpider(scrapy.Spider):
         # Need to adjust logging, scrapy is very verbose!
         log_levels = (
             ('scrapy.core.scraper', logging.INFO),
-            ('scrapy.middleware', logging.WARNING),
+            ('scrapy.middleware', logging.ERROR),
             ('scrapy.crawler', logging.WARNING),
+            ('scrapy.extensions.telnet', logging.WARNING),
+            ('scrapy.utils.log', logging.WARNING),
         )
-        for logger,level in log_levels:
+        for logger, level in log_levels:
             logging.getLogger(logger).setLevel(level)
 
         super().__init__(**kwargs)
@@ -104,10 +107,11 @@ class SanDiegoMlsSpider(scrapy.Spider):
         for zips in self.zip_groups:
             url = self.san_diego_listings_url(zips)
             orig_url = url
+            logging.debug(f"URL to crawl: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
                 url = client.scrapyGet(url)
-            print(f"*** Spider requesting zips={zips}")
+            logging.debug(f"*** Spider requesting zips={zips}")
             yield scrapy.Request(url, headers=headers, cb_kwargs={'orig_url': orig_url})
 
     name_subs = {
@@ -145,11 +149,10 @@ class SanDiegoMlsSpider(scrapy.Spider):
         if next_url:
             url = urljoin(orig_url, next_url)
             orig_url = url
+            logging.debug(f"URL to crawl next: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
                 url = client.scrapyGet(url)
-            print("*** NEW URL ***")
-            print(url)
 
             yield scrapy.Request(url, self.parse, cb_kwargs={'orig_url': orig_url})
 
@@ -191,8 +194,11 @@ def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode, cache=Tr
         'AUTOTHROTTLE_ENABLED': True,
         'CONCURRENT_REQUESTS': 1,
         'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
-        'DOWNLOAD_TIMEOUT': 60
+        'DOWNLOAD_TIMEOUT': 60,
+        'LOG_ENABLED': False,
     }
+    logging.getLogger('scrapy.crawler').setLevel('WARNING')
+
     process = CrawlerProcess(settings=crawl_settings)
     crawler = process.create_crawler(SanDiegoMlsSpider)
     process.crawl(crawler, zip_groups=zip_groups, localhost_mode=localhost_mode)
