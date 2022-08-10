@@ -9,6 +9,16 @@ from world.models import AnalyzedListing, PropertyListing
 api = NinjaAPI()
 
 
+def field_exists_on_model(model, field: str) -> bool:
+    # A simple function to check if a field exists on a model
+    try:
+        # Check if this exists
+        model._meta.get_field(field)
+        return True
+    except:
+        return False
+
+
 class ListingHistorySchema(ModelSchema):
 
     class Config:
@@ -62,16 +72,23 @@ class ListingsFilters(Schema):
 
 @api.get("/listings", response=List[ListingSchema])
 @paginate
-def get_listings(request, filters: ListingsFilters = Query(...)):
-    print(filters.dict())
+def get_listings(request, order_by: str = 'founddate', asc: bool = False,
+                 filters: ListingsFilters = Query(...)):
 
     # Temporary way to build a new dict
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
             filter_params[key] = filters.dict()[key]
-    print(filter_params)
+
+    # If the field doesn't exist on the PropertyListing model, it probably exists
+    # in the details JSON on the AnalyzedListing model, so let's prefix it
+    if not field_exists_on_model(PropertyListing, order_by):
+        order_by = 'analyzedlisting__details__' + order_by
+
+    if not asc:
+        order_by = '-' + order_by
 
     return PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
         'prev_listing').filter(
-        analyzedlisting__isnull=False).distinct().order_by('-founddate')
+        analyzedlisting__isnull=False, **filter_params).distinct().order_by(order_by)

@@ -166,6 +166,7 @@ export function ListingsPage() {
   const [maxPrice, setMaxPrice] = useState();
   const [pageSize, setPageSize] = useState<number>(10);
   const [pageIndex, setPageIndex] = useState<number>(0);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const { data, error } = useSWR<QueryResponse>(
     [
@@ -174,6 +175,8 @@ export function ListingsPage() {
         params: {
           limit: pageSize,
           offset: pageIndex * pageSize,
+          order_by: sorting.length > 0 ? sorting[0].id : undefined,
+          asc: sorting.length > 0 ? !sorting[0].desc : undefined,
         },
       },
     ],
@@ -211,9 +214,6 @@ export function ListingsPage() {
     console.log(columnVisibility);
   };
 
-  // Render a single day's listing table
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-
   const columns = Object.keys(initialColumnState).map((fieldname) => ({
     accessorKey: fieldname,
     cell: initialColumnState[fieldname].accessor || basicAccessor,
@@ -237,6 +237,7 @@ export function ListingsPage() {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualSorting: true,
     manualPagination: true,
     pageCount: data ? Math.ceil(data.count / pageSize) : null,
   });
