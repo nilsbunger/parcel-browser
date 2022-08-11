@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   createColumnHelper,
   flexRender,
@@ -185,12 +185,12 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
 }
 
 export function ListingsPage() {
-  const [minPrice, setMinPrice] = useState();
-  const [maxPrice, setMaxPrice] = useState();
   const [pageSize, setPageSize] = useState<number>(50);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
+
+  const [listingState, setListingState] = useState<Listing[]>([]);
 
   const { data, error } = useSWR<QueryResponse>(
     [
@@ -208,19 +208,25 @@ export function ListingsPage() {
     fetcher
   );
 
-  // We gotta do this weird conversion as the data comes in weirdly shaped from the backend
-  // Fix the backend to get this to be the correct shape
-  const listings = data
-    ? (data.items.map((item) => ({
-        ...item,
-        // This weird type casting helps squash errors. Only temporary
-        ...item.analyzedlisting_set.details,
-        metadata: {
-          category: 'new',
-          prev_values: {},
-        },
-      })) as Listing[])
-    : [];
+  // Store our listingState essentially as a cache while we reload our data.
+  // This means that our data is showing the wrong key, which could potentially be bad,
+  // but this in essence adds a delay so that our table will never be empty.
+  // TODO: Find out a way to do this in React Table or SWR
+  useEffect(() => {
+    if (data) {
+      setListingState(
+        data.items.map((item) => ({
+          ...item,
+          // This weird type casting helps squash errors. Only temporary
+          ...item.analyzedlisting_set.details,
+          metadata: {
+            category: 'new',
+            prev_values: {},
+          },
+        })) as Listing[]
+      );
+    }
+  }, [data]);
 
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
@@ -249,7 +255,7 @@ export function ListingsPage() {
       initialColumnState[fieldname].enableColumnFilter || false,
   }));
   const table = useReactTable({
-    data: listings,
+    data: listingState,
     columns,
     state: {
       columnVisibility,
@@ -275,7 +281,7 @@ export function ListingsPage() {
   });
 
   if (error) return <div>failed to load</div>;
-  if (!data) return <div>loading...</div>;
+  // if (!data) return <div>loading...</div>;
 
   // Render each date as a separate table
   return (
@@ -287,6 +293,7 @@ export function ListingsPage() {
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
+        <p>{data ? 'Up to date' : 'Fetching...'}</p>
         <div className="pagination">
           <button
             onClick={() => setPageIndex(0)}
