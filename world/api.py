@@ -52,17 +52,17 @@ class ListingSchema(ModelSchema):
                         'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
 
     @staticmethod
-    def resolve_analyzedlisting_set(self):
-        return self.analyzedlisting_set.latest('datetime_ran')
+    def resolve_analyzedlisting_set(obj):
+        return obj.analyzedlisting_set.latest('datetime_ran')
         # return [i.id for i in obj.owner.all()]
 
     @staticmethod
-    def resolve_centroid_x(self):
-        return self.parcel.geom.centroid.coords[0]
+    def resolve_centroid_x(obj):
+        return obj.parcel.geom.centroid.coords[0]
 
     @staticmethod
-    def resolve_centroid_y(self):
-        return self.parcel.geom.centroid.coords[1]
+    def resolve_centroid_y(obj):
+        return obj.parcel.geom.centroid.coords[1]
 
 
 class ListingsFilters(Schema):
