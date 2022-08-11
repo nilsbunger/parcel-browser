@@ -1,4 +1,4 @@
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
-import { fetcher } from '../utils/fetcher';
+import { fetcher, swrLaggy } from '../utils/fetcher';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
 import { Updater, useImmer } from 'use-immer';
@@ -195,9 +195,7 @@ export function ListingsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
 
-  const [listingState, setListingState] = useState<Listing[]>([]);
-
-  const { data, error } = useSWR<QueryResponse>(
+  const { data, error, isValidating } = useSWR<QueryResponse>(
     [
       'api/listings',
       {
@@ -210,28 +208,21 @@ export function ListingsPage() {
         },
       },
     ],
-    fetcher
+    fetcher,
+    { use: [swrLaggy] }
   );
 
-  // Store our listingState essentially as a cache while we reload our data.
-  // This means that our data is showing the wrong key, which could potentially be bad,
-  // but this in essence adds a delay so that our table will never be empty.
-  // TODO: Find out a way to do this in React Table or SWR
-  useEffect(() => {
-    if (data) {
-      setListingState(
-        data.items.map((item) => ({
-          ...item,
-          // This weird type casting helps squash errors. Only temporary
-          ...item.analyzedlisting_set.details,
-          metadata: {
-            category: 'new',
-            prev_values: {},
-          },
-        })) as Listing[]
-      );
-    }
-  }, [data]);
+  const listings = data
+    ? (data.items.map((item) => ({
+        ...item,
+        // This weird type casting helps squash errors. Only temporary
+        ...item.analyzedlisting_set.details,
+        metadata: {
+          category: 'new',
+          prev_values: {},
+        },
+      })) as Listing[])
+    : [];
 
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
@@ -261,7 +252,7 @@ export function ListingsPage() {
     filterFn: initialColumnState[fieldname].filterFn,
   }));
   const table = useReactTable({
-    data: listingState,
+    data: listings,
     columns,
     state: {
       columnVisibility,
@@ -299,7 +290,7 @@ export function ListingsPage() {
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
-        <p>{data ? 'Up to date' : 'Fetching...'}</p>
+        <p>{isValidating ? 'Fetching...' : 'Up to date'}</p>
         <div className="pagination">
           <button
             onClick={() => setPageIndex(0)}
