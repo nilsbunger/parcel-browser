@@ -447,13 +447,13 @@ function ListingTable({
                   cell.column.columnDef.cell,
                   cell.getContext()
                 );
-                if (foo === null || foo.props.renderValue() === null) {
+                if (foo === null || (foo as any).props.renderValue() === null) {
                   return <td key={cell.id}>None </td>;
                 }
-                if (typeof foo.props.renderValue() === 'object') {
+                if (typeof (foo as any).props.renderValue() === 'object') {
                   console.log(
                     'WE have a problem in table cell rendering: ',
-                    foo.props.renderValue()
+                    (foo as any).props.renderValue()
                   );
                   return <td key={cell.id}>BAD</td>;
                 } else {
