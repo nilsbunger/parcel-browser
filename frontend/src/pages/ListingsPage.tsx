@@ -59,7 +59,7 @@ const addressAccessor = ({ row }) => (
     }
   >
     <Link
-      to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
+      to={{ pathname: `/analysis/${row.original.analyzedlisting_set.id}` }}
       className="underline text-darkblue"
     >
       {row.getValue('address').slice(0, 20)}
