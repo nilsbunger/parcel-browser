@@ -5,5 +5,6 @@ export type Listing = {
   centroid_y: number;
   avail_geom_area: number;
   potential_FAR: number;
-  [key: string]: string | number | boolean;
+  metadata: object;
+  [key: string]: string | number | boolean | object;
 };

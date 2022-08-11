@@ -9,14 +9,20 @@ import {
   getSortedRowModel,
   SortingState,
   getFilteredRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFacetedMinMaxValues,
+  getPaginationRowModel,
   Table,
   Column,
+  ColumnFiltersState,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fetcher } from '../utils/fetcher';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
+import { Updater, useImmer } from 'use-immer';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 const asFt = (m) => Math.round(m * 3.28);
@@ -46,7 +52,12 @@ const apnAccessor = ({ row }) => (
 );
 
 const addressAccessor = ({ row }) => (
-  <div className={'relative ' + (row.getValue("apn").slice(8,10)!=="00" ? "bg-gray-300" : "")}>
+  <div
+    className={
+      'relative ' +
+      (row.getValue('apn').slice(8, 10) !== '00' ? 'bg-gray-300' : '')
+    }
+  >
     <Link
       to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
       className="underline text-darkblue"
@@ -57,11 +68,12 @@ const addressAccessor = ({ row }) => (
       <div className="badge badge-accent text-2xs absolute top-[-6px] px-1 right-0">
         NEW
       </div>
+    )}{' '}
+    {row.original.is_tpa && (
+      <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
     )}
-    {' '}{row.original.is_tpa &&
-          <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
-    }
-  </div>)
+  </div>
+);
 
 const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue()).toLocaleString();
 
@@ -141,7 +153,7 @@ const initialColumnState = {
   front_setback: { visible: false },
   br: { visible: true },
   ba: { visible: true },
-  price: { visible: true, accessor: priceAccessor },
+  price: { visible: true, accessor: priceAccessor, enableColumnFilter: true },
   zipcode: { visible: false },
   founddate: { visible: false },
   seendate: { visible: false },
@@ -155,8 +167,60 @@ const initialColumnState = {
   metadata: { visible: false }, // Need to make this one ALWAYS invisible
 };
 
+type QueryResponse = {
+  items: (Listing & { analyzedlisting_set: { details: object } })[];
+  count: number;
+};
+
+function columnFiltersToQuery(filters: ColumnFiltersState) {
+  const query = {};
+  filters.forEach((item) => {
+    if (Array.isArray(item.value) && item.value.length == 2) {
+      // Then it's a min max filter
+      query[`${item.id}__gte`] = parseInt(item.value[0]) || undefined;
+      query[`${item.id}__lte`] = parseInt(item.value[1]) || undefined;
+    }
+  });
+  return query;
+}
+
 export function ListingsPage() {
-  const { data, error } = useSWR<Listing[]>('/dj/api/listings', fetcher);
+  const [minPrice, setMinPrice] = useState();
+  const [maxPrice, setMaxPrice] = useState();
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
+
+  const { data, error } = useSWR<QueryResponse>(
+    [
+      'api/listings',
+      {
+        params: {
+          limit: pageSize,
+          offset: pageIndex * pageSize,
+          order_by: sorting.length > 0 ? sorting[0].id : undefined,
+          asc: sorting.length > 0 ? !sorting[0].desc : undefined,
+          ...columnFiltersToQuery(columnFilters),
+        },
+      },
+    ],
+    fetcher
+  );
+
+  // We gotta do this weird conversion as the data comes in weirdly shaped from the backend
+  // Fix the backend to get this to be the correct shape
+  const listings = data
+    ? (data.items.map((item) => ({
+        ...item,
+        // This weird type casting helps squash errors. Only temporary
+        ...item.analyzedlisting_set.details,
+        metadata: {
+          category: 'new',
+          prev_values: {},
+        },
+      })) as Listing[])
+    : [];
 
   const initialVisibility = Object.fromEntries(
     Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
@@ -175,28 +239,39 @@ export function ListingsPage() {
     // console.log(columnVisibility);
   };
 
-  // Render a single day's listing table
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-
   const columns = Object.keys(initialColumnState).map((fieldname) => ({
     accessorKey: fieldname,
     cell: initialColumnState[fieldname].accessor || basicAccessor,
     header:
       initialColumnState[fieldname].headername ||
       snakeCaseToTitleCase(fieldname),
+    enableColumnFilter:
+      initialColumnState[fieldname].enableColumnFilter || false,
   }));
   const table = useReactTable({
-    data: data,
+    data: listings,
     columns,
     state: {
       columnVisibility,
       sorting,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
+      columnFilters,
     },
     // onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualSorting: true,
+    manualPagination: true,
+    pageCount: data ? Math.ceil(data.count / pageSize) : null,
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
   });
 
   if (error) return <div>failed to load</div>;
@@ -212,8 +287,69 @@ export function ListingsPage() {
         id="tablegrouper"
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
-        <p>Got {table.getRowModel().rows.length} listings</p>
-        <ListingTable table={table} />
+        <div className="pagination">
+          <button
+            onClick={() => setPageIndex(0)}
+            disabled={!table.getCanPreviousPage()}
+            className="btn btn-xs btn-outline btn-square"
+          >
+            {'<<'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex((prev) => prev - 1)}
+            disabled={!table.getCanPreviousPage()}
+            className="btn btn-xs btn-outline btn-square"
+          >
+            {'<'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex((prev) => prev + 1)}
+            disabled={!table.getCanNextPage()}
+            className="btn btn-xs btn-outline btn-square"
+          >
+            {'>'}
+          </button>{' '}
+          <button
+            onClick={() => setPageIndex(table.getPageCount() - 1)}
+            disabled={!table.getCanNextPage()}
+            className="btn btn-xs btn-outline btn-square"
+          >
+            {'>>'}
+          </button>{' '}
+          <span className="ml-4 mr-4">
+            Page{' '}
+            <strong>
+              {pageIndex + 1} of {table.getPageCount()}
+            </strong>{' '}
+          </span>
+          <span>
+            Go to page:{' '}
+            <input
+              type="number"
+              value={pageIndex + 1}
+              onChange={(e) => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                setPageIndex(page);
+              }}
+              style={{ width: '100px' }}
+              className="border rounded px-2 border-gray-400"
+            />
+          </span>{' '}
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+            }}
+            className="ml-4"
+          >
+            {[10, 25, 50, 100, 250, 500].map((pageSize) => (
+              <option key={pageSize} value={pageSize}>
+                Show {pageSize}
+              </option>
+            ))}
+          </select>
+        </div>
+        <ListingTable table={table} setColumnFilters={setColumnFilters} />
 
         {/*Render column visibility checkboxes*/}
         <label>
@@ -247,42 +383,55 @@ export function ListingsPage() {
   );
 }
 
-function ListingTable({ table }: { table: Table<Listing> }) {
+function ListingTable({
+  table,
+  setColumnFilters,
+}: {
+  table: Table<Listing>;
+  setColumnFilters: Updater<ColumnFiltersState>;
+}) {
   return (
     <>
-      <MinMaxFilter
-        column={table.getColumn('avail_area_by_FAR')}
-        filterName="Buildable sqft"
-        convertBy={1 / 10.7639}
-      />
-      <MinMaxFilter column={table.getColumn('price')} filterName="Price" />
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {header.isPlaceholder ? null : (
-                    <div
-                      {...{
-                        className: header.column.getCanSort()
-                          ? 'cursor-pointer select-none '
-                          : '',
-                        onClick: header.column.getToggleSortingHandler(),
-                      }}
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                      {{
-                        asc: ' 🔼',
-                        desc: ' 🔽',
-                      }[header.column.getIsSorted() as string] ?? null}
-                    </div>
-                  )}
-                </th>
-              ))}
+              {headerGroup.headers.map((header) => {
+                return (
+                  <th key={header.id} colSpan={header.colSpan}>
+                    {header.isPlaceholder ? null : (
+                      <>
+                        <div
+                          {...{
+                            className: header.column.getCanSort()
+                              ? 'cursor-pointer select-none'
+                              : '',
+                            onClick: header.column.getToggleSortingHandler(),
+                          }}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            asc: ' 🔼',
+                            desc: ' 🔽',
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                        {header.column.getCanFilter() ? (
+                          <div>
+                            <Filter
+                              column={header.column}
+                              table={table}
+                              setColumnFilters={setColumnFilters}
+                            />
+                          </div>
+                        ) : null}
+                      </>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           ))}
         </thead>
@@ -311,57 +460,125 @@ function ListingTable({ table }: { table: Table<Listing> }) {
           ))}
         </tbody>
       </table>
+      <div className="h-2" />
     </>
   );
 }
 
-function MinMaxFilter({
+function Filter({
   column,
-  filterName,
-  convertBy,
+  table,
+  setColumnFilters,
 }: {
   column: Column<any, unknown>;
-  filterName: string;
-  convertBy?: number;
+  table: Table<any>;
+  setColumnFilters: Updater<ColumnFiltersState>;
 }) {
-  return (
-    <div className="mt-3 mb-3">
-      <h3>{filterName}</h3>
-      <div className="flex flex-row gap-8">
-        <div>
-          <p>Min</p>
-          <DebouncedInput
-            type="number"
-            min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
-            max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
-            // Todo: Don't hardcode this value
-            value={0}
-            onChange={(value) =>
-              column.setFilterValue((old: [number, number]) => [
-                Number(value) * (convertBy ?? 1),
-                old?.[1], // keep old maximum
-              ])
-            }
-          />
-        </div>
-        <div>
-          <p>Max</p>
-          <DebouncedInput
-            type="number"
-            min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
-            max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
-            // Todo: Don't hardcode this value
-            value={1000000}
-            onChange={(value) =>
-              column.setFilterValue((old: [number, number]) => [
-                old?.[0], // keep old minimum
-                Number(value) * (convertBy ?? 1),
-              ])
-            }
-          />
-        </div>
+  const firstValue = table
+    .getPreFilteredRowModel()
+    .flatRows[0]?.getValue(column.id);
+
+  const columnFilterValue = column.getFilterValue();
+
+  // Converting to sqft if necessary
+  let modifier = (x) => x;
+  if (column.accessorFn === asSqFtAccessor) {
+    modifier = asSqFt;
+  }
+
+  const sortedUniqueValues = React.useMemo(
+    () =>
+      typeof firstValue === 'number'
+        ? []
+        : Array.from(column.getFacetedUniqueValues().keys()).sort(),
+    [column.getFacetedUniqueValues()]
+  );
+
+  return typeof firstValue === 'number' ? (
+    <div>
+      <div className="flex space-x-2">
+        <DebouncedInput
+          type="number"
+          min={modifier(Number(column.getFacetedMinMaxValues()?.[0] ?? ''))}
+          max={modifier(Number(column.getFacetedMinMaxValues()?.[1] ?? ''))}
+          value={(columnFilterValue as [number, number])?.[0] ?? ''}
+          onChange={(value) => {
+            setColumnFilters((draft) => {
+              const filterIndex = draft.findIndex(
+                (item) => item.id === column.id
+              );
+              if (filterIndex === -1) {
+                draft.push({
+                  id: column.id,
+                  value: [modifier(value), undefined],
+                });
+              } else {
+                draft[filterIndex].value[0] = modifier(value);
+              }
+            });
+            // column.setFilterValue((old: [number, number]) => [
+            //   modifier(value),
+            //   old?.[1],
+            // ]);
+          }}
+          placeholder={`Min ${
+            column.getFacetedMinMaxValues()?.[0]
+              ? `(${modifier(column.getFacetedMinMaxValues()?.[0])})`
+              : ''
+          }`}
+          className="w-24 border shadow rounded"
+        />
+        <DebouncedInput
+          type="number"
+          min={modifier(Number(column.getFacetedMinMaxValues()?.[0] ?? ''))}
+          max={modifier(Number(column.getFacetedMinMaxValues()?.[1] ?? ''))}
+          value={(columnFilterValue as [number, number])?.[1] ?? ''}
+          onChange={(value) => {
+            setColumnFilters((draft) => {
+              const filterIndex = draft.findIndex(
+                (item) => item.id === column.id
+              );
+              if (filterIndex === -1) {
+                draft.push({
+                  id: column.id,
+                  value: [undefined, modifier(value)],
+                });
+              } else {
+                draft[filterIndex].value[1] = modifier(value);
+              }
+            });
+            // column.setFilterValue((old: [number, number]) => [
+            //   old?.[0],
+            //   modifier(value),
+            // ]);
+          }}
+          placeholder={`Max ${
+            column.getFacetedMinMaxValues()?.[1]
+              ? `(${modifier(column.getFacetedMinMaxValues()?.[1])})`
+              : ''
+          }`}
+          className="w-24 border shadow rounded"
+        />
       </div>
+      <div className="h-1" />
     </div>
+  ) : (
+    <>
+      <datalist id={column.id + 'list'}>
+        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
+          <option value={value} key={value} />
+        ))}
+      </datalist>
+      <DebouncedInput
+        type="text"
+        value={(columnFilterValue ?? '') as string}
+        onChange={(value) => column.setFilterValue(value)}
+        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
+        className="w-36 border shadow rounded"
+        list={column.id + 'list'}
+      />
+      <div className="h-1" />
+    </>
   );
 }
 
@@ -396,7 +613,7 @@ function DebouncedInput({
       {...props}
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      className="input input-bordered w-[200px] max-w-xs"
+      className="input input-bordered w-[160px] max-w-xs"
     />
   );
 }
