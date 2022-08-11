@@ -165,8 +165,8 @@ class SanDiegoMlsSpider(scrapy.Spider):
         except Exception as e:
             print(e)
             print("Uh oh")
-        query_params = 'type=res&type=mul&list_price_min=50000&list_price_max=3000000&' \
-                       'beds_min=1&baths_min=1&area_min=all&lot_size_range=all' \
+        query_params = 'type=res&type=mul&type=lnd&list_price_min=50000&list_price_max=3000000&' \
+                       'beds_min=all&baths_min=all&area_min=all&lot_size_range=all' \
                        '&view=all&parking_spaces_total_min=all&year_built_min=all&pool=all&stories=all&hoa=all&' \
                        'age_restriction=all&short_sale=all&foreclosure=all&elementary_school=all&middle_school=all&''' \
                        'high_school=all&terms=all'
