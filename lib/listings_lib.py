@@ -52,7 +52,10 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
     street_prefix = None
     addr_normalized = re.sub(r'\.', '', addr.lower())
     addr_num, *rest = addr_normalized.split()
-    # If the first word needs to be normalized, do so:
+    # do more address normalization if the address broke up properly:
+    if len(rest) == 0:
+        print(f"Error, address is single-word: {addr_normalized}")
+        return None,"error_single_word_address"
     if rest[0] == 'mount':
         rest[0] = 'mt'
     if rest[0] == 'saint':
@@ -84,7 +87,7 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
         parcels_inexact = Parcel.objects.filter(
             situs_addr=addr_num, situs_stre__istartswith=street_name,)
     except Exception as e:
-        print(f"Error processing {addr_normalized}")
+        print(f"Error processing {addr_normalized} {str(e)}")
         return None, 'dberror'
     # repeat loop twice, looking at exact match first.
     for parcels in [parcels_exact, parcels_inexact]:
@@ -119,6 +122,7 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
     if hyphenated_addr_num:
         # Need to build out this case: we found a hyphenated address, but the first address didn't work.
         # Maybe another address in the hyphen range would?
-        raise NotImplementedError("hyphenated address and didn't find it")
+        print("Error processing {addr_normalized}: hyphenated address we didn't find")
+        return None, 'dberror'
     print(f"No match in Parcel table for {addr_normalized}, {neighborhood}")
     return None, 'unmatched'
