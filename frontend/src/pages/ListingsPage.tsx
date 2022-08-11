@@ -153,7 +153,12 @@ const initialColumnState = {
   front_setback: { visible: false },
   br: { visible: true },
   ba: { visible: true },
-  price: { visible: true, accessor: priceAccessor, enableColumnFilter: true },
+  price: {
+    visible: true,
+    accessor: priceAccessor,
+    enableColumnFilter: true,
+    filterFn: 'inNumberRange',
+  },
   zipcode: { visible: false },
   founddate: { visible: false },
   seendate: { visible: false },
@@ -253,6 +258,7 @@ export function ListingsPage() {
       snakeCaseToTitleCase(fieldname),
     enableColumnFilter:
       initialColumnState[fieldname].enableColumnFilter || false,
+    filterFn: initialColumnState[fieldname].filterFn,
   }));
   const table = useReactTable({
     data: listingState,
@@ -501,7 +507,7 @@ function Filter({
     [column.getFacetedUniqueValues()]
   );
 
-  return typeof firstValue === 'number' ? (
+  return column.columnDef.filterFn === 'inNumberRange' ? (
     <div>
       <div className="flex space-x-2">
         <DebouncedInput
@@ -523,10 +529,6 @@ function Filter({
                 draft[filterIndex].value[0] = modifier(value);
               }
             });
-            // column.setFilterValue((old: [number, number]) => [
-            //   modifier(value),
-            //   old?.[1],
-            // ]);
           }}
           placeholder={`Min ${
             column.getFacetedMinMaxValues()?.[0]
@@ -554,10 +556,6 @@ function Filter({
                 draft[filterIndex].value[1] = modifier(value);
               }
             });
-            // column.setFilterValue((old: [number, number]) => [
-            //   old?.[0],
-            //   modifier(value),
-            // ]);
           }}
           placeholder={`Max ${
             column.getFacetedMinMaxValues()?.[1]
