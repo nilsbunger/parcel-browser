@@ -59,10 +59,12 @@ class ListingSchema(ModelSchema):
         model_fields = ['id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
                         'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
 
+    # These resolve_xx methods resolve certain fields on the response automatically
+    # Functionality provided by Django-Ninja
     @staticmethod
     def resolve_analyzedlisting_set(obj):
+        # Only return the latest analysis
         return obj.analyzedlisting_set.latest('datetime_ran')
-        # return [i.id for i in obj.owner.all()]
 
     @staticmethod
     def resolve_centroid_x(obj):
@@ -74,6 +76,7 @@ class ListingSchema(ModelSchema):
 
     @staticmethod
     def resolve_metadata(obj):
+        # metadata is used to store the status or category of a listing, and things like previous price
         if obj.prev_listing:
             return {'category': 'updated', 'prev_values': {
                 # Add more fields here as needed
@@ -93,7 +96,8 @@ class ListingsFilters(Schema):
 def get_listings(request, order_by: str = 'founddate', asc: bool = False,
                  filters: ListingsFilters = Query(...)):
 
-    # Temporary way to build a new dict
+    # Strip away the filter params that are none
+    # Filters are already validated by the ListingsFilters Schema above
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
@@ -107,14 +111,31 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
     if not asc:
         order_by = '-' + order_by
 
-    return PropertyListing.objects \
-        .filter(pk__in=Subquery(
-            PropertyListing.objects.all().order_by(
-                'mlsid', '-founddate').distinct('mlsid').values('pk')
-        ), analyzedlisting__isnull=False, **filter_params) \
-        .prefetch_related('analyzedlisting_set') \
-        .prefetch_related('prev_listing') \
-        .prefetch_related('parcel') \
-        .annotate(centroid=Centroid(F('parcel__geom'))) \
-        .distinct() \
-        .order_by(order_by)
+    # A subquery that contains the primary keys of each latest listing per property
+    # This avoids having different listings of the same property but at different price points
+    latest_listings_pks = Subquery(
+        PropertyListing.objects
+        # Ensure that any property listings we find have an analysis attached to it
+        .filter(analyzedlisting__isnull=False, **filter_params)
+        .order_by('mlsid', '-founddate')
+        .distinct('mlsid')
+        .values('pk')
+    )
+
+    return (PropertyListing.objects
+            .filter(pk__in=latest_listings_pks)
+            # Prefetch because we need details on the analysis in the response.
+            # Later on, we should optimize so as to only pre-fetch the latest analysis, as there can
+            # be multiple for a property. We would also want to join all fields of the analysis
+            # directly into the response, but haven't found a good way to do this yet
+            .prefetch_related('analyzedlisting_set')
+            # Used to see if this listing is new or not, and for extracting previous price info
+            .prefetch_related('prev_listing')
+            # Prefetch parcel to attach information on the centroid of each parcel, used for map plotting
+            .prefetch_related('parcel')
+            .annotate(centroid=Centroid(F('parcel__geom')))
+            # After prefetching analyzedlisting_set, we may have duplicate of the same listings if there
+            # are multiple analyses per listing, so run a final distinct
+            .distinct()
+            .order_by(order_by)
+            )
