@@ -217,10 +217,6 @@ export function ListingsPage() {
         ...item,
         // This weird type casting helps squash errors. Only temporary
         ...item.analyzedlisting_set.details,
-        metadata: {
-          category: 'new',
-          prev_values: {},
-        },
       })) as Listing[])
     : [];
 

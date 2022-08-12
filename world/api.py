@@ -5,6 +5,8 @@ from ninja import NinjaAPI, ModelSchema, Schema, Query
 from ninja.orm import create_schema
 
 from world.models import AnalyzedListing, PropertyListing
+from django.contrib.gis.db.models.functions import Centroid
+from django.db.models import F
 
 api = NinjaAPI()
 
@@ -40,10 +42,16 @@ class AnalyzedListingSchema(ModelSchema):
         model_fields = ['id', 'details']
 
 
+class MetadataSchema(Schema):
+    category: str
+    prev_values: dict
+
+
 class ListingSchema(ModelSchema):
     analyzedlisting_set: AnalyzedListingSchema
     centroid_x: float
     centroid_y: float
+    metadata: MetadataSchema
 
     class Config:
         model = PropertyListing
@@ -58,11 +66,21 @@ class ListingSchema(ModelSchema):
 
     @staticmethod
     def resolve_centroid_x(obj):
-        return obj.parcel.geom.centroid.coords[0]
+        return obj.centroid[0]
 
     @staticmethod
     def resolve_centroid_y(obj):
-        return obj.parcel.geom.centroid.coords[1]
+        return obj.centroid[1]
+
+    @staticmethod
+    def resolve_metadata(obj):
+        if obj.prev_listing:
+            return {'category': 'updated', 'prev_values': {
+                # Add more fields here as needed
+                "price": obj.prev_listing.price,
+            }}
+        else:
+            return {'category': 'new', 'prev_values': {}}
 
 
 class ListingsFilters(Schema):
@@ -89,6 +107,10 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
     if not asc:
         order_by = '-' + order_by
 
-    return PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
-        'prev_listing').filter(
-        analyzedlisting__isnull=False, **filter_params).distinct().order_by(order_by)
+    return PropertyListing.objects \
+        .prefetch_related('analyzedlisting_set') \
+        .prefetch_related('prev_listing') \
+        .prefetch_related('parcel') \
+        .filter(analyzedlisting__isnull=False, **filter_params) \
+        .annotate(centroid=Centroid(F('parcel__geom'))) \
+        .distinct().order_by(order_by)
