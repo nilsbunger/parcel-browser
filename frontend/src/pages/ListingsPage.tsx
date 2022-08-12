@@ -23,6 +23,7 @@ import { fetcher, swrLaggy } from '../utils/fetcher';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
 import { Updater, useImmer } from 'use-immer';
+import TablePagination from '../components/TablePagination';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 const asFt = (m) => Math.round(m * 3.28);
@@ -291,68 +292,13 @@ export function ListingsPage() {
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
         <p>{isValidating ? 'Fetching...' : 'Up to date'}</p>
-        <div className="pagination">
-          <button
-            onClick={() => setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'<<'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex((prev) => prev - 1)}
-            disabled={!table.getCanPreviousPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'<'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex((prev) => prev + 1)}
-            disabled={!table.getCanNextPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'>'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'>>'}
-          </button>{' '}
-          <span className="ml-4 mr-4">
-            Page{' '}
-            <strong>
-              {pageIndex + 1} of {table.getPageCount()}
-            </strong>{' '}
-          </span>
-          <span>
-            Go to page:{' '}
-            <input
-              type="number"
-              value={pageIndex + 1}
-              onChange={(e) => {
-                const page = e.target.value ? Number(e.target.value) - 1 : 0;
-                setPageIndex(page);
-              }}
-              style={{ width: '100px' }}
-              className="border rounded px-2 border-gray-400"
-            />
-          </span>{' '}
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-            }}
-            className="ml-4"
-          >
-            {[10, 25, 50, 100, 250, 500].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                Show {pageSize}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TablePagination
+          table={table}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
         <ListingTable table={table} setColumnFilters={setColumnFilters} />
 
         {/*Render column visibility checkboxes*/}
