@@ -92,6 +92,7 @@ class ListingSchema(ModelSchema):
 class ListingsFilters(Schema):
     price__gte: int = None
     price__lte: int = None
+    neighborhood__contains: str = None
 
 
 @api.get("/listings", response=List[ListingSchema])

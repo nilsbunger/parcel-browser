@@ -16,6 +16,7 @@ import {
   Table,
   Column,
   ColumnFiltersState,
+  filterFns,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
@@ -104,6 +105,8 @@ const statusAccessor = ({ row }) => {
   );
 };
 
+// To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
+// a filterFn (https://tanstack.com/table/v8/docs/api/features/filters)
 const initialColumnState = {
   apn: { visible: false, accessor: apnAccessor },
   address: { visible: true, accessor: addressAccessor },
@@ -112,7 +115,11 @@ const initialColumnState = {
   is_flag_lot: { visible: false },
   carports: { visible: false },
   garages: { visible: false },
-  neighborhood: { visible: true },
+  neighborhood: {
+    visible: true,
+    enableColumnFilter: true,
+    filterFn: 'includesString',
+  },
   parcel_size: {
     visible: true,
     headername: 'Lot size',
@@ -185,6 +192,8 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
       // Then it's a min max filter
       query[`${item.id}__gte`] = parseInt(item.value[0]) || undefined;
       query[`${item.id}__lte`] = parseInt(item.value[1]) || undefined;
+    } else if (typeof item.value === 'string') {
+      query[`${item.id}__contains`] = item.value;
     }
   });
   return query;
@@ -514,7 +523,21 @@ function Filter({
       <DebouncedInput
         type="text"
         value={(columnFilterValue ?? '') as string}
-        onChange={(value) => column.setFilterValue(value)}
+        onChange={(value) => {
+          setColumnFilters((draft) => {
+            const filterIndex = draft.findIndex(
+              (item) => item.id === column.id
+            );
+            if (filterIndex === -1) {
+              draft.push({
+                id: column.id,
+                value,
+              });
+            } else {
+              draft[filterIndex].value = value;
+            }
+          });
+        }}
         placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
         className="w-36 border shadow rounded"
         list={column.id + 'list'}
