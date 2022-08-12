@@ -1,0 +1,13 @@
+.env*
+.git/**
+**/node_modules
+**/__pycache__
+**.DS_Store
+.idea/
+frontend/dist/**
+**/*.log
+venv/**
+world/data/
+.scrapy/**
+frontend/dist/temp_computed_imgs/**
+**/.parcel-cache
