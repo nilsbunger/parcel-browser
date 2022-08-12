@@ -31,7 +31,7 @@ RUN apt-get install -y \
 #     python3-wheel \
 
 
-RUN mkdir -p /app
+# RUN mkdir -p /app
 WORKDIR /app
 
 # Set up a virtual env for all subsequent commands
@@ -42,19 +42,21 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# COPY . .
+RUN npm install --location=global yarn
 
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
+COPY . .
 # RUN python manage.py collectstatic --noinput
 
 WORKDIR /app/frontend
-# RUN yarn install
-# RUN yarn build
+
+# install npm modules, then build
+RUN yarn install
+RUN yarn build
 
 WORKDIR /app
 EXPOSE 8080
 
-# CMD sh
-# CMD ["gunicorn", "--bind", ":8080", "--workers", "2", "mygeo.wsgi:application"]
-CMD ["sleep", "infinity"]
+CMD ["gunicorn", "--bind", ":8080", "--workers", "2", "mygeo.wsgi:application"]
+# CMD ["sleep", "999999"]

@@ -4,6 +4,11 @@
 **/__pycache__
 **.DS_Store
 .idea/
+.*
+dist/**
+dist-dev/**
+fly.toml
+Dockerfile
 frontend/dist/**
 **/*.log
 venv/**

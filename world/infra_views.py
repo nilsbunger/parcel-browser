@@ -17,10 +17,12 @@ from mygeo import settings
 # In dev, this requires running a frontend server at localhost:1234 in dev by executing `yarn dev` in
 # the frontend/ directory.
 
-# TODO: prod version hasn't been set up
+
+# PRODUCTION SERVING: We just serve index.html for views we handle, then the react-router handles the rest.
 frontend_proxy_prod_view = TemplateView.as_view(template_name='index.html')
 
 
+# DEVELOPMENT SERVING: Proxy requests to frontend server
 def frontend_proxy_dev_view(request, path, upstream='http://localhost:1234'):
     upstream_url = upstream + '/' + path
 

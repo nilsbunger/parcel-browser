@@ -12,19 +12,36 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import datetime
 import os
 from pathlib import Path
+import sys
+
 import environ
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import os
 from mygeo.util import eprint
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
 
-env = environ.Env(
-    LOCAL_DB=(bool, True)
-)
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# SECURITY WARNING: don't run with debug turned on in production!
+env = environ.Env(
+    LOCAL_DB=(bool, False),
+    BUILD_PHASE=(str, "False")
+)
+
+DJANGO_ENV = env('DJANGO_ENV')
+DEV_ENV = DJANGO_ENV == 'development'
+DEBUG = DJANGO_ENV == 'development'
+
+LOCAL_DB = True if DEBUG else env('LOCAL_DB')
+if DEBUG:
+    eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
+else:
+    eprint("**** DEBUG=FALSE ****")
+eprint(f"**** DJANGO_ENV is {'DEV' if DEV_ENV else 'PROD'} ****")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -32,13 +49,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--j&vhgll2bv2yqzfhva!l!+qu=1rn2%lre(sb==o9))5bojn1&'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DJANGO_ENV') == 'development'
-ALLOWED_HOSTS = ['localhost']
-if (DEBUG):
-    eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'parsnip.fly.dev']
 
 # Application definition
 
@@ -48,6 +59,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    "whitenoise.runserver_nostatic",
     'django.contrib.staticfiles',
     'django_extensions',
     'django.contrib.gis',
@@ -58,6 +70,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Keep Whitenoise above all middleware except SecurityMiddleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # ----------------------------------------------------------------------------
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     # UNSAFE: Uncomment this out later. Post requests don't work with this turned on
@@ -72,7 +87,7 @@ ROOT_URLCONF = 'mygeo.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'dist/django-templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -96,25 +111,30 @@ except:
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-if (env('LOCAL_DB')):
+dbHost = None
+if LOCAL_DB:
     eprint("****** LOCAL DATABASE ******")
     (dbHost, dbName, dbUserName, dbPassword) = (
         'localhost', 'geodjango', env('USER'), '')
+elif env('BUILD_PHASE') == 'True':
+    eprint("****** NO DB - BUILD PHASE ******")
 else:
-    eprint("****** USING CLOUD DATABASE ******")
+    eprint("****** CLOUD DATABASE ******")
     (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'),
                                                 env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'HOST': dbHost,
-        'NAME': dbName,
-        'USER': dbUserName,
-        'PASSWORD': dbPassword,
+if dbHost:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'HOST': dbHost,
+            'NAME': dbName,
+            'USER': dbUserName,
+            'PASSWORD': dbPassword,
+        }
     }
-}
+else:
+    DATABASES = {}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -149,7 +169,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'dist/static/'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# WHITENOISE_INDEX_FILE = "index.html"
+WHITENOISE_ROOT = BASE_DIR / 'dist/static'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

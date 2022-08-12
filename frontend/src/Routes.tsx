@@ -1,10 +1,10 @@
-import {BrowserRouter, Route, Routes} from 'react-router-dom';
-import {HomePage} from './pages/HomePage';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
 import HomeLayout from './layouts/HomeLayout';
 import * as React from 'react';
-import {ListingsPage} from './pages/ListingsPage';
-import {ListingDetailPage} from './pages/ListingDetailPage';
-import {NewListingPage} from './pages/NewListingPage';
+import { ListingsPage } from './pages/ListingsPage';
+import { ListingDetailPage } from './pages/ListingDetailPage';
+import { NewListingPage } from './pages/NewListingPage';
 import WideLayout from "./layouts/WideLayout";
 
 export function MyRoutes() {
@@ -17,15 +17,14 @@ export function MyRoutes() {
               <Route index element={<ListingsPage/>}/>
             </Route>
           </Route>
-          <Route element={<HomeLayout/>}>
-            <Route path="/">
-              <Route index element={<HomePage/>}/>
-              <Route path="analysis">
-                <Route path=":analysisId" element={<ListingDetailPage/>}/>
-              </Route>
-              <Route path="new-listing" element={<NewListingPage/>}/>
+          <Route path="/" element={<HomeLayout/>}>
+            <Route index element={<HomePage/>}/>
+            <Route path="analysis">
+              <Route path=":analysisId" element={<ListingDetailPage/>}/>
             </Route>
+            <Route path="new-listing" element={<NewListingPage/>}/>
           </Route>
+          {/* Catch-all element below */}
           <Route path="*" element={<PageNotFound/>}/>
         </Routes>
       </React.StrictMode>

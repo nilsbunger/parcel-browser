@@ -1,7 +1,8 @@
 """mygeo URL Configuration"""
-
+import django
 from django.contrib import admin
 from django.urls import path, include, re_path
+from django.views.defaults import page_not_found
 
 from world import views
 from world.infra_views import frontend_proxy_view
@@ -33,6 +34,8 @@ urlpatterns = [
     path('dj/parcel/<str:apn>/geodata/neighbor',
          IsolatedNeighborDetailData.as_view()),
 
+    # Add catch-all for routes that should NOT go to react
+    re_path(r'^(?:dj|api)/.*$', page_not_found,  {'exception': django.http.Http404()}),
     # All other routes - send to React for rendering
     re_path(r'^(.*)$', frontend_proxy_view),
 
