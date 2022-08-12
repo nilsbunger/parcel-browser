@@ -3,10 +3,19 @@ from typing import List
 
 from ninja import NinjaAPI, ModelSchema, Schema, Query
 from ninja.orm import create_schema
+from ninja.security import HttpBearer, django_auth
 
 from world.models import AnalyzedListing, PropertyListing
 
-api = NinjaAPI()
+
+# Django-ninja authentication guide: https://django-ninja.rest-framework.com/guides/authentication/
+class GlobalAuth(HttpBearer):
+    def authenticate(self, request, token):
+        if token == "supersecret":
+            return token
+
+
+api = NinjaAPI(auth=django_auth, csrf=True)
 
 
 def field_exists_on_model(model, field: str) -> bool:
@@ -20,7 +29,6 @@ def field_exists_on_model(model, field: str) -> bool:
 
 
 class ListingHistorySchema(ModelSchema):
-
     class Config:
         model = PropertyListing
         model_fields = ['id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
@@ -74,7 +82,6 @@ class ListingsFilters(Schema):
 @paginate
 def get_listings(request, order_by: str = 'founddate', asc: bool = False,
                  filters: ListingsFilters = Query(...)):
-
     # Temporary way to build a new dict
     filter_params = {}
     for key in filters.dict():

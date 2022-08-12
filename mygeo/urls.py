@@ -10,9 +10,9 @@ from world.views import MapView, ParcelDetailView, ParcelDetailData, IsolatedNei
 from world.api import api as world_api
 urlpatterns = [
     # Django-rendered routes
-    path('dj/admin', admin.site.urls),
-    path('dj/accounts', include('django.contrib.auth.urls')),
-    path('dj/map', MapView.as_view()),
+    path('dj/admin/', admin.site.urls),
+    path('dj/accounts/', include('django.contrib.auth.urls')),
+    path('dj/map/', MapView.as_view()),
     path('dj/map/search/<str:address>', AddressToLatLong.as_view()),
     path('dj/parcel/<str:apn>', ParcelDetailView.as_view()),
 

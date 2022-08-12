@@ -154,6 +154,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_URL = '/dj/accounts/login/'
+LOGIN_REDIRECT_URL = '/listings/'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

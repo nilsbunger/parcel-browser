@@ -194,7 +194,7 @@ export function ListingsPage() {
 
   const { data, error } = useSWR<QueryResponse>(
     [
-      'api/listings',
+      '/api/listings',
       {
         params: {
           limit: pageSize,
@@ -274,7 +274,12 @@ export function ListingsPage() {
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
   });
 
-  if (error) return <div>failed to load</div>;
+  if (error) return (
+    <div className="md:container px-8 lg:px-16 pt-2">
+      <h2>Failed to load</h2>
+      <p>Try <a href='/dj/accounts/login/'>logging in?</a></p>
+    </div>)
+
   if (!data) return <div>loading...</div>;
 
   // Render each date as a separate table

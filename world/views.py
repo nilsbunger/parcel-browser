@@ -4,6 +4,7 @@ from collections import OrderedDict, defaultdict
 from itertools import chain
 from zoneinfo import ZoneInfo
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 import matplotlib
 import pandas
 import json
@@ -112,7 +113,7 @@ def listing_prev_values(listing):
 
 
 # ajax call to get current MLS listings. Return them from most recently created / updated to least.
-class ListingsData(View):  # LoginRequiredMixin
+class ListingsData(View, LoginRequiredMixin):
     def get(self, request, *args, **kwargs):
         listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
             'prev_listing').filter(
