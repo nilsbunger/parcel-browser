@@ -6,7 +6,7 @@ from ninja.orm import create_schema
 
 from world.models import AnalyzedListing, PropertyListing
 from django.contrib.gis.db.models.functions import Centroid
-from django.db.models import F
+from django.db.models import F, Subquery
 
 api = NinjaAPI()
 
@@ -108,9 +108,12 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
         order_by = '-' + order_by
 
     return PropertyListing.objects \
+        .filter(pk__in=Subquery(
+            PropertyListing.objects.all().distinct('mlsid').values('pk')
+        ), analyzedlisting__isnull=False, **filter_params) \
         .prefetch_related('analyzedlisting_set') \
         .prefetch_related('prev_listing') \
         .prefetch_related('parcel') \
-        .filter(analyzedlisting__isnull=False, **filter_params) \
         .annotate(centroid=Centroid(F('parcel__geom'))) \
-        .distinct().order_by(order_by)
+        .distinct() \
+        .order_by(order_by)
