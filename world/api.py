@@ -48,7 +48,7 @@ class MetadataSchema(Schema):
 
 
 class ListingSchema(ModelSchema):
-    analyzedlisting_set: AnalyzedListingSchema
+    analysis: dict
     centroid_x: float
     centroid_y: float
     metadata: MetadataSchema
@@ -62,9 +62,12 @@ class ListingSchema(ModelSchema):
     # These resolve_xx methods resolve certain fields on the response automatically
     # Functionality provided by Django-Ninja
     @staticmethod
-    def resolve_analyzedlisting_set(obj):
+    def resolve_analysis(obj):
         # Only return the latest analysis
-        return obj.analyzedlisting_set.latest('datetime_ran')
+        analysis = obj.analyzedlisting_set.latest('datetime_ran')
+        analysis_dict = analysis.details
+        analysis_dict['analysis_id'] = analysis.id
+        return analysis_dict
 
     @staticmethod
     def resolve_centroid_x(obj):

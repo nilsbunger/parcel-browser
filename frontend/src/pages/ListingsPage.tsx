@@ -59,7 +59,7 @@ const addressAccessor = ({ row }) => (
     }
   >
     <Link
-      to={{ pathname: `/analysis/${row.original.analyzedlisting_set.id}` }}
+      to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
       className="underline text-darkblue"
     >
       {row.getValue('address').slice(0, 20)}
@@ -213,11 +213,15 @@ export function ListingsPage() {
   );
 
   const listings = data
-    ? (data.items.map((item) => ({
-        ...item,
-        // This weird type casting helps squash errors. Only temporary
-        ...item.analyzedlisting_set.details,
-      })) as Listing[])
+    ? (data.items.map((item) => {
+        const listing = {
+          ...item,
+          // This weird type casting helps squash errors. Only temporary
+          ...(item.analysis as object),
+        };
+        delete listing.analysis;
+        return listing;
+      }) as Listing[])
     : [];
 
   const initialVisibility = Object.fromEntries(
