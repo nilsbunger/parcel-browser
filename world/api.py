@@ -109,7 +109,8 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
 
     return PropertyListing.objects \
         .filter(pk__in=Subquery(
-            PropertyListing.objects.all().distinct('mlsid').values('pk')
+            PropertyListing.objects.all().order_by(
+                'mlsid', '-founddate').distinct('mlsid').values('pk')
         ), analyzedlisting__isnull=False, **filter_params) \
         .prefetch_related('analyzedlisting_set') \
         .prefetch_related('prev_listing') \
