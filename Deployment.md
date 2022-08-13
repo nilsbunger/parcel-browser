@@ -18,8 +18,7 @@ It's unlikely we will need to recreate the DB, but if we did, the steps are:
 5. `flyctl deploy` . This *may* fail if the pgdata volume isn't set up one time. See the Dockerfile for more details.
 ### Administering the DB
 * `flyctl proxy 15999:5432` -- create proxy from DB to local port 15999
-* `psql postgres://postgres:<secure_password>@localhost:15999` -- run psql admin tool
-
+* `psql postgres://postgres:<secure_password>@localhost:15999` -- run psql admin tool. You can also connect DBeaver or another GUI tool with these credentials, as long as the proxy is running.
 
 ## 2. Parsnip webapp
 Parsnip's app tier runs `gunicorn` as a web server. It serves Django endpoints, React files, and static files (using the `whitenoise` package).
@@ -33,8 +32,22 @@ Parsnip's app tier runs `gunicorn` as a web server. It serves Django endpoints, 
     * DB_USERNAME=postgres
     * DB_PASSWORD=<secure_password>
     * SECRET_KEY=...
-  
+4. run `flyctl deploy`. This should run a migration AND deploy your app if you're lucky :)
 
 ### Updates to web app
 ... to be continued
 
+## Uploading data
+
+We have a lot of parcel data that needs to be in the app to work. Follow these steps to get it in place
+### 1. Establish VPN connectivity
+Follow the steps [here](https://fly.io/docs/reference/private-networking/#private-network-vpn) :
+   1. Install the Wireguard app on your computer
+   2. `fly wireguard create home3 <region>` and have it save a .conf file. 
+   3. Load the .conf file into Wireguard and enable it.
+   4. Run `fly ssh issue --agent` 
+   5. Now `dig +noall +answer _apps.internal txt` should show you all apps you have a connection to.
+   6. You can now directly ssh or scp to them. eg: `ssh root@parsnip.internal` and `scp <filename> root@parsnip.internal:/app/`
+       Note: for this to work, the Docker container needs to have openssh-client installed via apt-get.
+
+### 2. 
