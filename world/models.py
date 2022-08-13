@@ -140,40 +140,6 @@ class ParcelSlope(models.Model):
         ]
 
 
-class Marker(models.Model):
-    """A marker with name and location."""
-
-    name = models.CharField(max_length=255)
-    location = models.PointField()
-
-    def __str__(self):
-        """Return string representation."""
-        return self.name
-
-
-class WorldBorder(models.Model):
-    # Regular Django fields corresponding to the attributes in the
-    # world borders shapefile.
-    name = models.CharField(max_length=50)
-    area = models.IntegerField()
-    pop2005 = models.IntegerField('Population 2005')
-    fips = models.CharField('FIPS Code', max_length=2, null=True)
-    iso2 = models.CharField('2 Digit ISO', max_length=2)
-    iso3 = models.CharField('3 Digit ISO', max_length=3)
-    un = models.IntegerField('United Nations Code')
-    region = models.IntegerField('Region Code')
-    subregion = models.IntegerField('Sub-Region Code')
-    lon = models.FloatField()
-    lat = models.FloatField()
-
-    # GeoDjango-specific: a geometry field (MultiPolygonField)
-    mpoly = models.MultiPolygonField()
-
-    # Returns the string representation of the model.
-    def __str__(self):
-        return self.name
-
-
 class TopographyLoads(models.Model):
     fname = models.CharField('filename', max_length=200)
     extents = models.PolygonField(srid=4326, unique=True)
@@ -188,55 +154,6 @@ class Topography(models.Model):
     index_field = models.IntegerField()
     shape_length = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
-
-
-class ParcelScenario(models.Model):
-    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE)
-
-    git_commit_hash = models.CharField(max_length=40)
-    date_time_ran = models.DateTimeField(auto_now_add=True)
-    input_parameters = models.JSONField()
-
-    # Added buildings (existing buildings stored as BuildingOnScenario)
-    placed_buildings = ArrayField(
-        base_field=models.MultiPolygonField(srid=4326))
-
-    # Other geometries
-    setback_front_geom = models.MultiPolygonField(
-        srid=4326, blank=True, null=True)
-    setback_side_geom = models.MultiPolygonField(
-        srid=4326, blank=True, null=True)
-    setback_rear_geom = models.MultiPolygonField(
-        srid=4326, blank=True, null=True)
-    buffered_buidings_geom = models.MultiPolygonField(
-        srid=4326, blank=True, null=True)
-    topography_nobuild_geom = models.MultiPolygonField(
-        srid=4326, blank=True, null=True)
-    avail_geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
-
-    parcel_area = models.FloatField()  # In square meters
-    area_added = models.FloatField()  # In square meters
-
-    # Financial modelling details
-    # Score info
-
-    logs = models.CharField(blank=True, max_length=10000)
-    comments = models.CharField(blank=True, max_length=10000)
-
-
-class BuildingOnScenario(models.Model):
-    # Model is used for storing a building on a scenario. These are existing buildings
-    # Note: Eventually, we should add support for ADUs that are converted from
-    # existing buildings, e.g. garages
-    class BuildingType(models.TextChoices):
-        MAIN = 'MAIN'
-        ACCESSSORY = 'ACCESSORY'
-        ENCROACHMENT = 'ENCROACHMENT'
-
-    building = models.ForeignKey(
-        BuildingOutlines, on_delete=models.CASCADE)
-    scenario = models.ForeignKey(ParcelScenario, on_delete=models.CASCADE)
-    type = models.CharField(max_length=15, choices=BuildingType.choices)
 
 
 class Roads(models.Model):
@@ -362,21 +279,6 @@ class AnalyzedListing(models.Model):
     input_parameters = models.JSONField()
     geometry_details = models.JSONField()
 
-
-world_mapping = {
-    'fips': 'FIPS',
-    'iso2': 'ISO2',
-    'iso3': 'ISO3',
-    'un': 'UN',
-    'name': 'NAME',
-    'area': 'AREA',
-    'pop2005': 'POP2005',
-    'region': 'REGION',
-    'subregion': 'SUBREGION',
-    'lon': 'LON',
-    'lat': 'LAT',
-    'mpoly': 'MULTIPOLYGON',
-}
 
 # Auto-generated `LayerMapping` dictionary for ZoningBase model
 zoningbase_mapping = {
