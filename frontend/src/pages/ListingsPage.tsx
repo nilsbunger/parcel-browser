@@ -16,6 +16,7 @@ import {
   Table,
   Column,
   ColumnFiltersState,
+  filterFns,
 } from '@tanstack/react-table';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
@@ -23,6 +24,8 @@ import { fetcher, swrLaggy } from '../utils/fetcher';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
 import { Updater, useImmer } from 'use-immer';
+import TablePagination from '../components/TablePagination';
+import ListingTable from '../components/ListingTable';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 const asFt = (m) => Math.round(m * 3.28);
@@ -103,6 +106,8 @@ const statusAccessor = ({ row }) => {
   );
 };
 
+// To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
+// a filterFn (https://tanstack.com/table/v8/docs/api/features/filters)
 const initialColumnState = {
   apn: { visible: false, accessor: apnAccessor },
   address: { visible: true, accessor: addressAccessor },
@@ -111,7 +116,11 @@ const initialColumnState = {
   is_flag_lot: { visible: false },
   carports: { visible: false },
   garages: { visible: false },
-  neighborhood: { visible: true },
+  neighborhood: {
+    visible: true,
+    enableColumnFilter: true,
+    filterFn: 'includesString',
+  },
   parcel_size: {
     visible: true,
     headername: 'Lot size',
@@ -184,6 +193,8 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
       // Then it's a min max filter
       query[`${item.id}__gte`] = parseInt(item.value[0]) || undefined;
       query[`${item.id}__lte`] = parseInt(item.value[1]) || undefined;
+    } else if (typeof item.value === 'string') {
+      query[`${item.id}__contains`] = item.value;
     }
   });
   return query;
@@ -291,68 +302,13 @@ export function ListingsPage() {
         className={'overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto'}
       >
         <p>{isValidating ? 'Fetching...' : 'Up to date'}</p>
-        <div className="pagination">
-          <button
-            onClick={() => setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'<<'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex((prev) => prev - 1)}
-            disabled={!table.getCanPreviousPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'<'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex((prev) => prev + 1)}
-            disabled={!table.getCanNextPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'>'}
-          </button>{' '}
-          <button
-            onClick={() => setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-            className="btn btn-xs btn-outline btn-square"
-          >
-            {'>>'}
-          </button>{' '}
-          <span className="ml-4 mr-4">
-            Page{' '}
-            <strong>
-              {pageIndex + 1} of {table.getPageCount()}
-            </strong>{' '}
-          </span>
-          <span>
-            Go to page:{' '}
-            <input
-              type="number"
-              value={pageIndex + 1}
-              onChange={(e) => {
-                const page = e.target.value ? Number(e.target.value) - 1 : 0;
-                setPageIndex(page);
-              }}
-              style={{ width: '100px' }}
-              className="border rounded px-2 border-gray-400"
-            />
-          </span>{' '}
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-            }}
-            className="ml-4"
-          >
-            {[10, 25, 50, 100, 250, 500].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                Show {pageSize}
-              </option>
-            ))}
-          </select>
-        </div>
+        <TablePagination
+          table={table}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
         <ListingTable table={table} setColumnFilters={setColumnFilters} />
 
         {/*Render column visibility checkboxes*/}
@@ -384,232 +340,5 @@ export function ListingsPage() {
         })}
       </div>
     </div>
-  );
-}
-
-function ListingTable({
-  table,
-  setColumnFilters,
-}: {
-  table: Table<Listing>;
-  setColumnFilters: Updater<ColumnFiltersState>;
-}) {
-  return (
-    <>
-      <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <th key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder ? null : (
-                      <>
-                        <div
-                          {...{
-                            className: header.column.getCanSort()
-                              ? 'cursor-pointer select-none'
-                              : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {{
-                            asc: ' 🔼',
-                            desc: ' 🔽',
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
-                        {header.column.getCanFilter() ? (
-                          <div>
-                            <Filter
-                              column={header.column}
-                              table={table}
-                              setColumnFilters={setColumnFilters}
-                            />
-                          </div>
-                        ) : null}
-                      </>
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => {
-                let foo = flexRender(
-                  cell.column.columnDef.cell,
-                  cell.getContext()
-                );
-                if (foo === null || (foo as any).props.renderValue() === null) {
-                  return <td key={cell.id}>None </td>;
-                }
-                if (typeof (foo as any).props.renderValue() === 'object') {
-                  console.log(
-                    'WE have a problem in table cell rendering: ',
-                    (foo as any).props.renderValue()
-                  );
-                  return <td key={cell.id}>BAD</td>;
-                } else {
-                  return <td key={cell.id}> {foo} </td>;
-                }
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="h-2" />
-    </>
-  );
-}
-
-function Filter({
-  column,
-  table,
-  setColumnFilters,
-}: {
-  column: Column<any, unknown>;
-  table: Table<any>;
-  setColumnFilters: Updater<ColumnFiltersState>;
-}) {
-  const firstValue = table
-    .getPreFilteredRowModel()
-    .flatRows[0]?.getValue(column.id);
-
-  const columnFilterValue = column.getFilterValue();
-
-  // Converting to sqft if necessary
-  let modifier = (x) => x;
-  if (column.accessorFn === asSqFtAccessor) {
-    modifier = asSqFt;
-  }
-
-  const sortedUniqueValues = React.useMemo(
-    () =>
-      typeof firstValue === 'number'
-        ? []
-        : Array.from(column.getFacetedUniqueValues().keys()).sort(),
-    [column.getFacetedUniqueValues()]
-  );
-
-  return column.columnDef.filterFn === 'inNumberRange' ? (
-    <div>
-      <div className="flex space-x-2">
-        <DebouncedInput
-          type="number"
-          min={modifier(Number(column.getFacetedMinMaxValues()?.[0] ?? ''))}
-          max={modifier(Number(column.getFacetedMinMaxValues()?.[1] ?? ''))}
-          value={(columnFilterValue as [number, number])?.[0] ?? ''}
-          onChange={(value) => {
-            setColumnFilters((draft) => {
-              const filterIndex = draft.findIndex(
-                (item) => item.id === column.id
-              );
-              if (filterIndex === -1) {
-                draft.push({
-                  id: column.id,
-                  value: [modifier(value), undefined],
-                });
-              } else {
-                draft[filterIndex].value[0] = modifier(value);
-              }
-            });
-          }}
-          placeholder={`Min ${
-            column.getFacetedMinMaxValues()?.[0]
-              ? `(${modifier(column.getFacetedMinMaxValues()?.[0])})`
-              : ''
-          }`}
-          className="w-24 border shadow rounded"
-        />
-        <DebouncedInput
-          type="number"
-          min={modifier(Number(column.getFacetedMinMaxValues()?.[0] ?? ''))}
-          max={modifier(Number(column.getFacetedMinMaxValues()?.[1] ?? ''))}
-          value={(columnFilterValue as [number, number])?.[1] ?? ''}
-          onChange={(value) => {
-            setColumnFilters((draft) => {
-              const filterIndex = draft.findIndex(
-                (item) => item.id === column.id
-              );
-              if (filterIndex === -1) {
-                draft.push({
-                  id: column.id,
-                  value: [undefined, modifier(value)],
-                });
-              } else {
-                draft[filterIndex].value[1] = modifier(value);
-              }
-            });
-          }}
-          placeholder={`Max ${
-            column.getFacetedMinMaxValues()?.[1]
-              ? `(${modifier(column.getFacetedMinMaxValues()?.[1])})`
-              : ''
-          }`}
-          className="w-24 border shadow rounded"
-        />
-      </div>
-      <div className="h-1" />
-    </div>
-  ) : (
-    <>
-      <datalist id={column.id + 'list'}>
-        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
-          <option value={value} key={value} />
-        ))}
-      </datalist>
-      <DebouncedInput
-        type="text"
-        value={(columnFilterValue ?? '') as string}
-        onChange={(value) => column.setFilterValue(value)}
-        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
-        className="w-36 border shadow rounded"
-        list={column.id + 'list'}
-      />
-      <div className="h-1" />
-    </>
-  );
-}
-
-// A debounced input react component
-// from https://tanstack.com/table/v8/docs/examples/react/filters
-function DebouncedInput({
-  value: initialValue,
-  onChange,
-  debounce = 500,
-  ...props
-}: {
-  value: string | number;
-  onChange: (value: string | number) => void;
-  debounce?: number;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
-  const [value, setValue] = React.useState(initialValue);
-
-  React.useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  React.useEffect(() => {
-    const timeout = setTimeout(() => {
-      onChange(value);
-    }, debounce);
-
-    return () => clearTimeout(timeout);
-  }, [value]);
-
-  return (
-    <input
-      {...props}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      className="input input-bordered w-[160px] max-w-xs"
-    />
   );
 }
