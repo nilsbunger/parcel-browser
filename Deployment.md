@@ -50,4 +50,13 @@ Follow the steps [here](https://fly.io/docs/reference/private-networking/#privat
    6. You can now directly ssh or scp to them. eg: `ssh root@parsnip.internal` and `scp <filename> root@parsnip.internal:/app/`
        Note: for this to work, the Docker container needs to have openssh-client installed via apt-get.
 
-### 2. 
+### 2. Upload data
+A lot of our data are things like parcel info etc, which we only have to refresh rarely if ever. Upload those first as follows:
+   1. `pg_dump -a -t world_parcel -t world_buildingoutlines -t world_zoningbase -t world_transitpriorityarea -t world_roads | gzip > world_slowmoving.sql.gz`
+   2. `scp world_slowmoving.sql.gz root@parsnip.internal:/app`
+   3. In the Docker container, `gunzip -c world_slowmoving.sql.gz | psql postgresql://postgres:<passwd>@parsnip-postgis-db.internal:5432`
+Now, upload the nightly data needed for property listings.
+   1. `pg_dump -a -t world_propertylisting | zip > world_proplistings.sql.gz`
+   2. `scp world_proplistings.sql.gz root@parsnip.internal:/app`
+   3. In the Docker container, `gunzip -c world_proplistings.sql.gz | psql postgresql://postgres:<passwd>@parsnip-postgis-db.internal:5432`
+   
