@@ -12,7 +12,7 @@ We run Postgres using the Postgres Docker image with PostGIS extensions. You can
 ### Creating the DB
 It's unlikely we will need to recreate the DB, but if we did, the steps are:
 1. `cd deploy/postgres`
-2. OPTIONAL - `flyctl launch` -- if you don't already have a fly.toml and Dockerfile.
+2. IF NEEDED - `flyctl launch` -- if you don't already have a fly.toml and Dockerfile.
 3. `flyctl volumes create pgdata 10` -- create a 10GB persistent volume
 4. `flyctl secrets set POSTGRES_PASSWORD <secure_password>`
 5. `flyctl deploy` . This *may* fail if the pgdata volume isn't set up one time. See the Dockerfile for more details.
@@ -24,8 +24,8 @@ It's unlikely we will need to recreate the DB, but if we did, the steps are:
 Parsnip's app tier runs `gunicorn` as a web server. It serves Django endpoints, React files, and static files (using the `whitenoise` package).
 
 ### Creating the web app
-1. `cd deploy/webapp`
-2. OPTIONAL - `flyctl launch` -- creates dockerfile and fly.toml if they don't already exist.
+1. Start from app root directory.
+2. IF NEEDED - `flyctl launch` -- creates dockerfile and fly.toml if they don't already exist.
 3. Set `flyctl secrets` for DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD. eg ``flyctl secrets set DB_HOST=<value>
     * DB_HOST=<hostname>.internal, eg parsnip-postgis-db.internal
     * DB_NAME=postgres
