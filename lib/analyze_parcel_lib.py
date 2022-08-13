@@ -169,8 +169,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Compute the spaces that we can't build on
     # First, the buffered areas around buildings
-    buffered_buildings_geom = get_buffered_building_geom(
-        buildings, BUFFER_SIZES)
+    buffered_buildings_geom = get_buffered_building_geom(buildings, BUFFER_SIZES)
 
     # Then, the setbacks around the parcel edges
     parcel_edges = get_street_side_boundaries(parcel, utm_crs)
@@ -180,11 +179,8 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     too_steep = calculate_slopes_for_parcel(
         parcel, utm_crs, 10, use_cache=True)
 
-    too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(
-        parcel, buildings, topos_df, utm_crs)
-
-    cant_build = unary_union(
-        [buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
+    too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(parcel, buildings, topos_df, utm_crs)
+    cant_build = unary_union([buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
 
     flag_poly = identify_flag(parcel, parcel_edges['front'])
     if flag_poly:
@@ -202,7 +198,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         'geometry': poly,
         'area': poly.area,
     }, new_building_polys))
-    address = f'{parcel.model.situs_pre_field or ""} {parcel.model.situs_addr} {parcel.model.situs_stre} {parcel.model.situs_suff or ""} {parcel.model.situs_post or ""}'.strip()
     # Get the open space available (for yard and stuff)'
     # Question: Should setbacks be considered in open space?
     not_open_space = unary_union(
@@ -217,12 +212,9 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         parcel, buildings)
 
     # Compute garage conversion fields
-    num_garages = int(
-        parcel.model.garage_sta) if parcel.model.garage_sta else 0
-    num_carports = int(
-        parcel.model.carport_st) if parcel.model.carport_st else 0
-    garage_con_units = int(
-        num_garages > 0) if try_garage_conversion else 0
+    num_garages = parcel_model.garages
+    num_carports = parcel_model.carports
+    garage_con_units = int(num_garages > 0) if try_garage_conversion else 0
     # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
     garage_con_area = num_garages * 23.2
 
@@ -251,37 +243,29 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # Logic for lot splits
     if try_split_lot:
-        second_lot, second_lot_area_ratio = split_lot(
-            parcel.geometry, buildings)
+        second_lot, second_lot_area_ratio = split_lot(parcel.geometry, buildings)
     else:
         second_lot, second_lot_area_ratio = None, None
 
-    # 3. *** Plot and save results
+    # 3. *** Plot and/or save results
     if show_plot or save_file:
         plt.close()
-
         # Generate the figures
-        new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, address, topos_df, too_high_df, too_low_df,
+        new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, topos_df, too_high_df, too_low_df,
                                                new_building_polys, open_space_poly, parcel_edges['front'], flag_poly)
         cant_build_fig = plot_cant_build(
-            parcel, address, buildings, utm_crs, buffered_buildings_geom,
+            parcel, buildings, utm_crs, buffered_buildings_geom,
             list(setbacks), too_steep, flag_poly, parcel_edges['front']
         )
-
         if second_lot:
-            split_lot_fig = plot_split_lot(
-                parcel, address, buildings, utm_crs, second_lot)
+            split_lot_fig = plot_split_lot(parcel, buildings, utm_crs, second_lot)
 
         # Save figures
         if save_file:
-            new_buildings_fig.savefig(os.path.join(
-                save_dir, "new-buildings", apn + ".jpg"))
-            cant_build_fig.savefig(os.path.join(
-                save_dir, "cant-build", apn + ".jpg"))
-
+            new_buildings_fig.savefig(os.path.join(save_dir, "new-buildings", apn + ".jpg"))
+            cant_build_fig.savefig(os.path.join(save_dir, "cant-build", apn + ".jpg"))
             if second_lot:
-                split_lot_fig.savefig(os.path.join(
-                    save_dir, "lot-splits", apn + ".jpg"))
+                split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
 
         # Show figures
         if show_plot:
@@ -292,7 +276,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     details = OrderedDict({
         "apn": apn,
-        "address": address,
+        "address": parcel.model.address,
         "zone": zone,
         "is_tpa": is_tpa,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),

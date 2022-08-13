@@ -109,6 +109,20 @@ class Parcel(models.Model):
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326, blank=True, null=True)
 
+    @property
+    def garages(self) -> int:
+        return int(self.garage_sta) if self.garage_sta else 0
+
+    @property
+    def carports(self) -> int:
+        return int(self.carport_st) if self.carport_st else 0
+
+    @property
+    def address(self) -> str:
+        addr = f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre}' \
+               '{self.situs_suff or ""} {self.situs_post or ""}'
+        return addr.strip()
+
     def __str__(self):
         if self.acreage > 0:
             lot_str = "%s acres" % self.acreage
@@ -220,6 +234,7 @@ class Roads(models.Model):
     rd30full = models.CharField(max_length=41)
     shape_stle = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
+
 
 class TransitPriorityArea(models.Model):
     name = models.CharField(max_length=30)
@@ -444,7 +459,6 @@ roads_mapping = {
     'shape_stle': 'SHAPE_STLe',
     'geom': 'MULTILINESTRING',
 }
-
 
 # Auto-generated `LayerMapping` dictionary for TransitPriorityArea model
 transitpriorityarea_mapping = {
