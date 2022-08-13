@@ -30,6 +30,8 @@ RUN apt-get install -y \
 #     python3-setuptools \
 #     python3-wheel \
 
+RUN apt-get update && apt-get install -y \
+    openssh-client  # for ssh and scp to work
 
 # RUN mkdir -p /app
 WORKDIR /app
@@ -47,7 +49,8 @@ RUN npm install --location=global yarn
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
 COPY . .
-# RUN python manage.py collectstatic --noinput
+RUN mkdir -p dist/static
+RUN python manage.py collectstatic --noinput
 
 WORKDIR /app/frontend
 

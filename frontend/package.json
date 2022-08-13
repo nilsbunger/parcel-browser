@@ -4,7 +4,7 @@
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "dev": "parcel serve --dist-dir dist-dev --no-hmr src/index.html src/map.ts src/parcel-detail.ts",
-    "build": "rm -rf ../dist/ && parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
+    "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
     "____build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
   },
   "devDependencies": {

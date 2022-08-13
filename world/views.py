@@ -113,7 +113,7 @@ def listing_prev_values(listing):
 
 
 # ajax call to get current MLS listings. Return them from most recently created / updated to least.
-class ListingsData(View, LoginRequiredMixin):
+class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
             'prev_listing').filter(

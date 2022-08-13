@@ -29,8 +29,16 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # SECURITY WARNING: don't run with debug turned on in production!
 env = environ.Env(
     LOCAL_DB=(bool, False),
-    BUILD_PHASE=(str, "False")
+    BUILD_PHASE=(str, "False"),
+    DESPERATE=(bool, False),
 )
+
+# if totally desperate we can print out all the environment variables for debugging Docker stuff.
+if env('DESPERATE'):
+    eprint ("*** START ENVIRONMENT VARIABLES ***")
+    for name, value in os.environ.items():
+        eprint("{0}: {1}".format(name, value))
+    eprint ("*** END ENVIRONMENT VARIABLES ***")
 
 DJANGO_ENV = env('DJANGO_ENV')
 DEV_ENV = DJANGO_ENV == 'development'
@@ -47,9 +55,11 @@ eprint(f"**** DJANGO_ENV is {'DEV' if DEV_ENV else 'PROD'} ****")
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--j&vhgll2bv2yqzfhva!l!+qu=1rn2%lre(sb==o9))5bojn1&'
+SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ['localhost', 'parsnip.fly.dev']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'parsnip.fly.dev']
 
 # Application definition
 
@@ -76,7 +86,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     # UNSAFE: Uncomment this out later. Post requests don't work with this turned on
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -108,6 +118,11 @@ try:
 except:
     pass
 
+# We get X-Forwarded-Proto from the web hosting proxy (eg fly.io); tell Django
+# should trust that to determine the protocol used.
+# See also https://docs.djangoproject.com/en/4.0/ref/settings/#secure-proxy-ssl-header
+# and https://fly.io/docs/reference/runtime-environment/
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases

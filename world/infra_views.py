@@ -4,6 +4,7 @@ from urllib.error import HTTPError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
 from django.template import engines
 from django.views.generic import TemplateView
 
@@ -21,7 +22,7 @@ from mygeo import settings
 # the frontend/ directory.
 
 # PRODUCTION SERVING: We just serve index.html for views we handle, then the react-router handles the rest.
-class FrontEndProxyView(TemplateView, LoginRequiredMixin):
+class FrontEndProxyView(LoginRequiredMixin, TemplateView):
     pass
 
 
