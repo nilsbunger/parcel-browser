@@ -9,6 +9,8 @@ import django
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
+from mygeo.settings import DEV_ENV
+
 django.setup()
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
@@ -19,7 +21,6 @@ from datetime import date
 import os
 import datetime
 import matplotlib.colors as mcolors
-import git
 import matplotlib.pyplot as plt
 import geopandas
 from shapely.ops import unary_union
@@ -119,6 +120,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
     """
+
+    git_commit_hash="Can't get in prod environment"
+    if DEV_ENV:
+        import git
+        git_commit_hash = git.Repo(search_parent_directories=True).head.object.hexsha
+
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     apn = parcel.model.apn
     messages = {'info': [], 'warning': [], 'error': []}
@@ -329,7 +336,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "new_lot_area_ratio": second_lot_area_ratio,
         "new_lot_area": second_lot.area if second_lot else None,
 
-        "git_commit_hash": git.Repo(search_parent_directories=True).head.object.hexsha,
+        "git_commit_hash": git_commit_hash,
         "front_setback": setback_widths['front'],
         'messages': messages,
     })

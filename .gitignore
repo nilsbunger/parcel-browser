@@ -1,11 +1,15 @@
 *.pyc
 .idea/
-.env
+.env*
+*.swp
 world/data
+public-app/
 venv/
 */.DS_Store
 .DS_Store
 logfile
+dist-dev/
+dist/
 
 
 # Byte-compiled / optimized / DLL files
@@ -20,7 +24,6 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/

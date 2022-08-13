@@ -324,13 +324,13 @@ class PropertyListing(models.Model):
     addr = models.CharField(max_length=80)  # street number and name
     neighborhood = models.CharField(max_length=80, null=True, blank=True)  # city or neighborhood
     zipcode = models.IntegerField(blank=True, null=True)
-    br = models.IntegerField()
-    ba = models.IntegerField()
+    br = models.IntegerField(blank=True, null=True)
+    ba = models.IntegerField(blank=True, null=True)
     founddate = models.DateTimeField(auto_now_add=True)
     # when last seen (date of sale when sold)
     seendate = models.DateTimeField(auto_now=True)
     mlsid = models.CharField(max_length=20, blank=True, null=True)
-    size = models.IntegerField()  # living area size in sq ft.
+    size = models.IntegerField(blank=True, null=True)  # living area size in sq ft.
     thumbnail = models.CharField(max_length=200, blank=True, null=True)
     listing_url = models.CharField(max_length=100, blank=True, null=True)
     soldprice = models.IntegerField(blank=True, null=True)

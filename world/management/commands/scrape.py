@@ -75,8 +75,11 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logging.getLogger().setLevel('DEBUG' if options['verbose'] else 'INFO')
-        logging.debug("log level set")
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options['verbose'] else logging.INFO)
+
+        logging.getLogger().setLevel(logging.DEBUG if options['verbose'] else logging.INFO)
+        logging.debug("DEBUG log level")
+        logging.info("INFO log level")
 
         # -----
         # 1. Scrape latest listings if directed to.

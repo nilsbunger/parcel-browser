@@ -3,12 +3,21 @@ from typing import List
 
 from ninja import NinjaAPI, ModelSchema, Schema, Query
 from ninja.orm import create_schema
+from ninja.security import HttpBearer, django_auth
 
 from world.models import AnalyzedListing, PropertyListing
 from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F, Subquery
 
-api = NinjaAPI()
+
+# Django-ninja authentication guide: https://django-ninja.rest-framework.com/guides/authentication/
+class GlobalAuth(HttpBearer):
+    def authenticate(self, request, token):
+        if token == "supersecret":
+            return token
+
+
+api = NinjaAPI(auth=django_auth, csrf=True)
 
 
 def field_exists_on_model(model, field: str) -> bool:
@@ -22,7 +31,6 @@ def field_exists_on_model(model, field: str) -> bool:
 
 
 class ListingHistorySchema(ModelSchema):
-
     class Config:
         model = PropertyListing
         model_fields = ['id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',

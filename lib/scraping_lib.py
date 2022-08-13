@@ -1,17 +1,19 @@
+from collections import defaultdict
 import logging
 import random
 import re
-from collections import defaultdict
 from urllib.parse import urljoin
 
-import scrapy
 from django.core.exceptions import MultipleObjectsReturned
 from scraper_api import ScraperAPIClient
+import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.exceptions import CloseSpider
 
 from mygeo.settings import env
 from world.models import PropertyListing
+
+log = logging.getLogger(__name__)
 
 client = ScraperAPIClient(env('SCRAPER_API_KEY'))
 
@@ -29,7 +31,7 @@ class MyItemPipeline:
     def process_item(self, item, spider):
         """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
         default_fields = {k: item[k] for k in ['price', 'addr', 'br', 'ba', 'mlsid', 'size'] if k in item}
-        logging.debug(f"Found listing: {item}")
+        log.debug(f"Found listing: {item}")
         try:
             try:
                 # Create a new entry when the price, addr or status changes on an entry
@@ -45,7 +47,7 @@ class MyItemPipeline:
                 print(f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}")
                 self.stats.inc_value('error:listing/multiple_entries_in_db')
                 if len(listings) != 2:
-                    print ("NEED TO DEBUG THIS CASE")
+                    print("NEED TO DEBUG THIS CASE")
 
                 # take listings[1] as the listing going forward, patching up its found-date.
                 listings[1].founddate = listings[0].founddate
@@ -61,7 +63,7 @@ class MyItemPipeline:
             if created:
                 # object with same parameters (price / etc) not found, so record this instance and include a link to
                 # the most recent previous entry if it exists.
-                prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id)\
+                prev_listing = PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id) \
                     .order_by('-seendate')
                 if len(prev_listing) > 0:
                     property.prev_listing = prev_listing[0]
@@ -87,6 +89,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
         # Need to adjust logging, scrapy is very verbose!
         log_levels = (
             ('scrapy.core.scraper', logging.INFO),
+            ('scrapy.core.engine', logging.INFO),
             ('scrapy.middleware', logging.ERROR),
             ('scrapy.crawler', logging.WARNING),
             ('scrapy.extensions.telnet', logging.WARNING),
@@ -107,11 +110,11 @@ class SanDiegoMlsSpider(scrapy.Spider):
         for zips in self.zip_groups:
             url = self.san_diego_listings_url(zips)
             orig_url = url
-            logging.debug(f"URL to crawl: {url}")
+            log.info(f"URL to crawl: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
                 url = client.scrapyGet(url)
-            logging.debug(f"*** Spider requesting zips={zips}")
+            log.debug(f"*** Spider requesting zips={zips}")
             yield scrapy.Request(url, headers=headers, cb_kwargs={'orig_url': orig_url})
 
     name_subs = {
@@ -149,7 +152,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
         if next_url:
             url = urljoin(orig_url, next_url)
             orig_url = url
-            logging.debug(f"URL to crawl next: {url}")
+            log.debug(f"URL to crawl next: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
                 url = client.scrapyGet(url)
@@ -165,8 +168,8 @@ class SanDiegoMlsSpider(scrapy.Spider):
         except Exception as e:
             print(e)
             print("Uh oh")
-        query_params = 'type=res&type=mul&list_price_min=50000&list_price_max=3000000&' \
-                       'beds_min=1&baths_min=1&area_min=all&lot_size_range=all' \
+        query_params = 'type=res&type=mul&type=lnd&list_price_min=50000&list_price_max=3000000&' \
+                       'beds_min=all&baths_min=all&area_min=all&lot_size_range=all' \
                        '&view=all&parking_spaces_total_min=all&year_built_min=all&pool=all&stories=all&hoa=all&' \
                        'age_restriction=all&short_sale=all&foreclosure=all&elementary_school=all&middle_school=all&''' \
                        'high_school=all&terms=all'
@@ -195,11 +198,12 @@ def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode, cache=Tr
         'CONCURRENT_REQUESTS': 1,
         'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
         'DOWNLOAD_TIMEOUT': 60,
-        'LOG_ENABLED': False,
+        'LOG_ENABLED': True,
+        'LOG_LEVEL': logging.getLogger().getEffectiveLevel()
     }
     logging.getLogger('scrapy.crawler').setLevel('WARNING')
 
-    process = CrawlerProcess(settings=crawl_settings)
+    process = CrawlerProcess(settings=crawl_settings, install_root_handler=False)
     crawler = process.create_crawler(SanDiegoMlsSpider)
     process.crawl(crawler, zip_groups=zip_groups, localhost_mode=localhost_mode)
     process.start(stop_after_crawl=True)

@@ -3,8 +3,9 @@
   "source": "src/index.html",
   "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
-    "dev": "parcel serve --no-hmr src/index.html src/map.ts src/parcel-detail.ts",
-    "build": "parcel build"
+    "dev": "parcel serve --dist-dir dist-dev --no-hmr src/index.html src/map.ts src/parcel-detail.ts",
+    "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
+    "____build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
   },
   "devDependencies": {
     "@parcel/transformer-svg-react": "^2.6.2",
