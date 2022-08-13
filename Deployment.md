@@ -2,7 +2,7 @@
 # Fly.io deployment
 
 1. Get fly.io account credentials.
-You need to download `flyctl` and create an account as pdescribed [here](https://fly.io/docs/getting-started/installing-flyctl/).
+You need to download `flyctl` and create an account as described [here](https://fly.io/docs/getting-started/installing-flyctl/).
 
 Get added to the Home3 org on fly.io by asking Nils or Marcio.
 
@@ -27,8 +27,13 @@ Parsnip's app tier runs `gunicorn` as a web server. It serves Django endpoints, 
 ### Creating the web app
 1. `cd deploy/webapp`
 2. OPTIONAL - `flyctl launch` -- creates dockerfile and fly.toml if they don't already exist.
-3. Set `flyctl secrets` for DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD. eg ``flyctl secrets set DB_HOST=<value>`
-4. 
+3. Set `flyctl secrets` for DB_HOST, DB_NAME, DB_USERNAME, DB_PASSWORD. eg ``flyctl secrets set DB_HOST=<value>
+    * DB_HOST=<hostname>.internal, eg parsnip-postgis-db.internal
+    * DB_NAME=postgres
+    * DB_USERNAME=postgres
+    * DB_PASSWORD=<secure_password>
+    * SECRET_KEY=...
+  
 
 ### Updates to web app
 ... to be continued
