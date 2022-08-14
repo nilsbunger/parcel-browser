@@ -119,8 +119,8 @@ class Parcel(models.Model):
 
     @property
     def address(self) -> str:
-        addr = f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre}' \
-               '{self.situs_suff or ""} {self.situs_post or ""}'
+        addr = f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre} ' \
+               f'{self.situs_suff or ""} {self.situs_post or ""}'
         return addr.strip()
 
     def __str__(self):
