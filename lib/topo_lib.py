@@ -332,7 +332,7 @@ def get_topo_lines(parcel: Parcel) -> list[Topography]:
         'Select id,elev,ltype,index_field,shape_length,ST_Intersection("geom", ST_GeomFromEWKB(%s))::bytea AS "geom" '
         'from world_topography WHERE ST_Intersects("geom", ST_GeomFromEWKB(%s))',
         [parcel.geom.buffer(0.00005).ewkb, parcel.geom.buffer(0.00005).ewkb]
-    )
+    ).using('local_db')
     # topos = Topography.objects.filter(    # this is the query we want, but Django won't let us do.
     #     geom__intersects=parcel.geom).annotate(geom=Intersection('geom', parcel.geom)).defer('geom')
     return topos

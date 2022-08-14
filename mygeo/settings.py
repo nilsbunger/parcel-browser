@@ -44,7 +44,7 @@ DJANGO_ENV = env('DJANGO_ENV')
 DEV_ENV = DJANGO_ENV == 'development'
 DEBUG = DJANGO_ENV == 'development'
 
-LOCAL_DB = True if DEBUG else env('LOCAL_DB')
+LOCAL_DB = env('LOCAL_DB')
 if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
@@ -139,6 +139,10 @@ else:
                                                 env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
 
 if dbHost:
+    # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
+    # Additionally define the 'topo' DB where the topo model lives, since it is very large.
+    # The 'topo' DB is set up as a local DB, which is useful if we're running our scraping locally on a computer,
+    # but with the cloud DB.
     DATABASES = {
         'default': {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',
@@ -146,6 +150,13 @@ if dbHost:
             'NAME': dbName,
             'USER': dbUserName,
             'PASSWORD': dbPassword,
+        },
+        'local_db': {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'HOST': 'localhost',
+            'NAME': 'geodjango',
+            'USER': env('USER'),
+            'PASSWORD': '',
         }
     }
 else:

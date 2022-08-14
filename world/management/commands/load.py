@@ -68,7 +68,9 @@ class Command(BaseCommand):
 
         # Do the actual load
         lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
-        lm.save(strict=True, verbose=False, progress=True)
+        using_db = 'local_db' if db_model == Topography else 'default'
+
+        lm.save(strict=True, verbose=False, progress=True, using=using_db)
 
         # Execute post-load tasks
         if model == "Topography":
