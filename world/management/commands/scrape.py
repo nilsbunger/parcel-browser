@@ -104,16 +104,18 @@ class Command(BaseCommand):
         # -----
         # 2. Associate listings with parcels
         # -----
-        # Associate parcel IDs where possible
-        listings = PropertyListing.objects.filter(
-            status__in=['ACTIVE', 'OFFMARKET'])
+        # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
+        listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
+            .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting_set')
 
         # A set of tuples (parcel, listing)
         parcels_to_analyze = set()
         stats = defaultdict(int)
         logging.info(f'Found {len(listings)} properties to associate')
         for l in listings:
-            # print(f"Working on {l.addr}")
+            # if l.parcel and l.analyzedlisting_set.count() > 0:
+            #     stats[f'info_previously_matched'] += 1
+            #     continue
             matched_parcel, error = listing_to_parcel(l)
             if error:
                 stats[error] += 1
@@ -151,6 +153,7 @@ class Command(BaseCommand):
         if options['skip_analysis']:
             logging.info("SKIPPING parcel analysis")
         else:
+            logging.info(f"Running parcel analysis on {len(parcels_to_analyze)} listings")
             parcels, parcel_listings = zip(*parcels_to_analyze)
             sd_utm_crs = get_utm_crs()
             results, errors = analyze_batch(
