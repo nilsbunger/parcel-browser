@@ -6,5 +6,13 @@ export type Listing = {
   avail_geom_area: number;
   potential_FAR: number;
   metadata: object;
+  mlsid: string;
+  addr: string;
+  ba: string;
+  br: string;
+  founddate: string,
+  seendate: string,
+  neighborhood: string,
+
   [key: string]: string | number | boolean | object;
 };

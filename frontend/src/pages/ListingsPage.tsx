@@ -206,7 +206,7 @@ export function ListingsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
 
-  const { data, error, isValidating } = useSWR<QueryResponse>(
+  const { data, error, isValidating } = useSWR(
     [
       '/api/listings',
       {

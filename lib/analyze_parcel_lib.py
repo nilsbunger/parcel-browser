@@ -4,32 +4,41 @@ generation of new buildings/repurpose of old one, computing scores for scenarios
 scenarios in general.
 """
 from collections import OrderedDict
+import secrets
 
+import boto3
+from botocore.exceptions import ClientError
 import django
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
-from mygeo.settings import DEV_ENV
+from mygeo.settings import DEV_ENV, env
+from mygeo.util import eprint
 
 django.setup()
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
 from world.models import AnalyzedListing
-from lib.types import ParcelDC
 from datetime import date
 import os
 import datetime
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import geopandas
-from shapely.ops import unary_union
 from lib.parcel_lib import *
 from pandas import DataFrame
 import random
 from joblib import Parallel, delayed
-from typing import Tuple
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
+
+s3 = boto3.resource('s3',
+                    endpoint_url=env('R2_ENDPOINT_URL'),
+                    aws_access_key_id=env('R2_EDIT_ACCESS_KEY'),
+                    aws_secret_access_key=env('R2_EDIT_SECRET_KEY')
+                    )
+
+R2_BUCKET_NAME = 'parsnip-images'
+
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
@@ -247,8 +256,11 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     else:
         second_lot, second_lot_area_ratio = None, None
 
+    # Salt for hashing filenames in R2 (or S3) buckets.
+    salt = secrets.token_urlsafe(10)
+
     # 3. *** Plot and/or save results
-    if show_plot or save_file:
+    if show_plot or save_file or save_as_model:
         plt.close()
         # Generate the figures
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, topos_df, too_high_df, too_low_df,
@@ -261,15 +273,31 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             split_lot_fig = plot_split_lot(parcel, buildings, utm_crs, second_lot)
 
         # Save figures
-        if save_file:
-            new_buildings_fig.savefig(os.path.join(save_dir, "new-buildings", apn + ".jpg"))
-            cant_build_fig.savefig(os.path.join(save_dir, "cant-build", apn + ".jpg"))
+        if save_file or save_as_model:
+            new_buildings_fname = os.path.join(save_dir, "new-buildings", apn + ".jpg")
+            new_buildings_fig.savefig(new_buildings_fname)
+            cant_build_fname = os.path.join(save_dir, "cant-build", apn + ".jpg")
+            cant_build_fig.savefig(cant_build_fname)
+
             if second_lot:
                 split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
+            if save_as_model:
+                print (f"**** SAVING images for address {parcel.model.address} to Cloudflare R2 ****")
+                try:
+                    response = s3.meta.client.upload_file(
+                        new_buildings_fname, R2_BUCKET_NAME,f"buildings-{apn}-{salt}"
+                    )
+                    response = s3.meta.client.upload_file(
+                        cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
+                    )
+                except ClientError as e:
+                    eprint(f"ERROR uploading images for {parcel.model.address} to R2. Error = {e}")
+                    messages['warning'].append(f"ERROR uploading images for {parcel.model.address} to R2")
 
         # Show figures
         if show_plot:
             plt.show()
+
 
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
@@ -322,6 +350,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
         "git_commit_hash": git_commit_hash,
         "front_setback": setback_widths['front'],
+        "salt": salt,
         'messages': messages,
     })
 

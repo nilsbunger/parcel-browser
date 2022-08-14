@@ -92,11 +92,11 @@ export function ListingDetailPage({}) {
       <div className="flex flex-row mt-6">
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Plot analysis</h2>
-          <img src={`/temp_computed_imgs/new-buildings/${data.apn}.jpg`} />
+          <img src={`https://r2-image-worker.upzone.workers.dev/buildings-${data.apn}-${data.salt}`} />
         </div>
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Usable land analysis</h2>
-          <img src={`/temp_computed_imgs/cant-build/${data.apn}.jpg`} />
+          <img src={`https://r2-image-worker.upzone.workers.dev/cant_build-${data.apn}-${data.salt}`} />
           <div
             tabIndex={0}
             className="collapse collapse-arrow w-60 border border-base-300 bg-base-100 min-h-0 object-right float-right"
