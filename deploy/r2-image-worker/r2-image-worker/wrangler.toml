@@ -1,0 +1,8 @@
+name = "r2-image-worker"
+main = "src/index.ts"
+compatibility_date = "2022-08-13"
+account_id = "d3864d0b6549e2506b3fad84f7ba3c79"
+
+[[r2_buckets]]
+binding = 'parsnip_images' # <~ valid JavaScript variable name
+bucket_name = 'parsnip-images'

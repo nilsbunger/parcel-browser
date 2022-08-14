@@ -10,6 +10,7 @@ venv/
 logfile
 dist-dev/
 dist/
+node_modules/
 
 
 # Byte-compiled / optimized / DLL files
