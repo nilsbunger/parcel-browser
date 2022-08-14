@@ -15,8 +15,6 @@ from world.models import PropertyListing
 
 log = logging.getLogger(__name__)
 
-client = ScraperAPIClient(env('SCRAPER_API_KEY'))
-
 
 # See also example in https://docs.scrapy.org/en/latest/topics/item-pipeline.html for more customization
 class MyItemPipeline:
@@ -86,6 +84,8 @@ class SanDiegoMlsSpider(scrapy.Spider):
     def __init__(self, zip_groups, localhost_mode, **kwargs):
         self.zip_groups = zip_groups
         self.localhost_mode = localhost_mode
+        self.client = ScraperAPIClient(env('SCRAPER_API_KEY'))
+
         # Need to adjust logging, scrapy is very verbose!
         log_levels = (
             ('scrapy.core.scraper', logging.INFO),
@@ -113,7 +113,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
             log.info(f"URL to crawl: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
-                url = client.scrapyGet(url)
+                url = self.client.scrapyGet(url)
             log.debug(f"*** Spider requesting zips={zips}")
             yield scrapy.Request(url, headers=headers, cb_kwargs={'orig_url': orig_url})
 
@@ -155,7 +155,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
             log.debug(f"URL to crawl next: {url}")
             if not self.localhost_mode:
                 # wrap URL in cloud proxy from scraperapi.com
-                url = client.scrapyGet(url)
+                url = self.client.scrapyGet(url)
 
             yield scrapy.Request(url, self.parse, cb_kwargs={'orig_url': orig_url})
 
