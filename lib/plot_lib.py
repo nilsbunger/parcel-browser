@@ -29,8 +29,7 @@ def plot_parcel_boundary_lengths(parcel: ParcelDC, axes):
                               ha='center')
 
 
-def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
-                       address: str, topos: GeoDataFrame,
+def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS, topos: GeoDataFrame,
                        too_high_topos: GeoDataFrame, too_low_topos: GeoDataFrame,
                        new_buildings: list[Polygon],
                        open_space_poly: Polygonal, street_edges: MultiLineString,
@@ -38,7 +37,7 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
 
     fig = plt.figure(f"new_buildings-{parcel.model.apn}")
     ax = fig.add_subplot()
-    plt.title(parcel.model.apn + ':' + address)
+    plt.title(parcel.model.apn + ':' + parcel.model.address)
 
     # Create the lot dataframe, which contains the parcel outline and existing buildings
     lot_df = geopandas.GeoDataFrame(
@@ -75,21 +74,21 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
     return fig
 
 
-def plot_split_lot(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_crs: pyproj.CRS, second_lot: Polygonal):
+def plot_split_lot(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS, second_lot: Polygonal):
     fig = plt.figure(f"lot_split-{parcel.model.apn}")
     ax = fig.add_subplot()
     lot_df = geopandas.GeoDataFrame(
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
     lot_df.plot(ax=ax)
     plot_parcel_boundary_lengths(parcel, ax)
-    plt.title("Lot split: " + parcel.model.apn + ';' + address)
+    plt.title("Lot split: " + parcel.model.apn + ';' + parcel.model.address)
     geopandas.GeoSeries(second_lot).plot(
         ax=ax, color='cyan', alpha=0.7)
 
     return fig
 
 
-def plot_cant_build(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
+def plot_cant_build(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS,
                     buffered_buildings: Polygonal, setbacks: list[Polygonal], too_steep: list[Polygonal],
                     flag_poly: Union[Polygon, None], street_edges: MultiLineString):
     fig = plt.figure(f"cant_build-{parcel.model.apn}")
@@ -97,7 +96,7 @@ def plot_cant_build(parcel: ParcelDC, address: str, buildings: GeoDataFrame, utm
     lot_df = geopandas.GeoDataFrame(
         geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
     lot_df.plot(ax=ax)
-    plt.title("Cant build: " + parcel.model.apn + ';' + address)
+    plt.title("Cant build: " + parcel.model.apn + ';' + parcel.model.address)
 
     geopandas.GeoSeries(street_edges.buffer(0.4)).plot(
         ax=ax, color='brown')
