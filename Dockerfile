@@ -15,7 +15,6 @@ RUN apt-get install -y curl
 # https://github.com/nodesource/distributions/blob/master/README.md
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 
-
 RUN apt-get update && apt-get install -y \
     nodejs \
     gdal-bin \
@@ -30,13 +29,17 @@ RUN apt-get install -y \
 #     python3-setuptools \
 #     python3-wheel \
 
+# openssh-client -- for ssh and scp to work
+# postgresql-client -- for psql
 RUN apt-get update && apt-get install -y \
-    openssh-client  # for ssh and scp to work
+    openssh-client \
+    postgresql-client
 
-# RUN mkdir -p /app
+RUN chsh -s /usr/bin/bash
+
 WORKDIR /app
 
-# Set up a virtual env for all subsequent commands
+# Set up a python virtual env for all subsequent commands
 ENV VIRTUAL_ENV=/app/venv
 RUN python3.9 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
