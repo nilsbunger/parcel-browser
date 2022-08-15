@@ -235,6 +235,9 @@ export function ListingsPage() {
     fetcher,
     { use: [swrLaggy] }
   );
+  useEffect(() => {
+    document.title = 'Listings'
+  }, []);
 
   const listings = data
     ? (data.items.map((item) => {

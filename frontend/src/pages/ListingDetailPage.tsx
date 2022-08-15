@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import {ListingHistory} from "../components/ListingHistory";
+import { useEffect } from "react";
 
 async function getAnalysis(e, apn) {
   const fetchResponse = await fetch(`/dj/api/listings`, {
@@ -29,6 +30,9 @@ export function ListingDetailPage({}) {
     `/dj/api/analysis/${params.analysisId}`,
     fetcher
   );
+  useEffect(() => {
+    if (data) {document.title = data.address}
+  }, [data]);
   if (error) return <div>ListingDetailPage failed its AJAX call. {error}</div>;
   if (!data) return <div>loading...</div>;
 
