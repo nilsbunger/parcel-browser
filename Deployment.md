@@ -17,7 +17,7 @@ It's unlikely we will need to recreate the DB, but if we did, the steps are:
 4. `flyctl secrets set POSTGRES_PASSWORD <secure_password>`
 5. `flyctl deploy` . This *may* fail if the pgdata volume isn't set up one time. See the Dockerfile for more details.
 ### Administering the DB
-* `flyctl proxy 15999:5432` -- create proxy from DB to local port 15999
+* `cd deploy/postgres && flyctl proxy 15999:5432` -- create proxy from DB to local port 15999
 * `psql postgres://postgres:<secure_password>@localhost:15999` -- run psql admin tool. You can also connect DBeaver or another GUI tool with these credentials, as long as the proxy is running.
 
 ## 2. Parsnip webapp
