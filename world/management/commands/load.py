@@ -7,10 +7,11 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 
 from mygeo.util import eprint
-from world.models import parcel_mapping, Parcel, ZoningBase, zoningbase_mapping, \
-    BuildingOutlines, buildingoutlines_mapping, Topography, topography_mapping, TopographyLoads, Roads, \
-    roads_mapping, TransitPriorityArea, transitpriorityarea_mapping
+from world.models import Parcel, ZoningBase, BuildingOutlines, Topography, TopographyLoads, Roads, TransitPriorityArea
 from django.core.management.base import BaseCommand
+
+from world.models.base_models_mapping import buildingoutlines_mapping, parcel_mapping, roads_mapping, \
+    topography_mapping, transitpriorityarea_mapping, zoningbase_mapping
 
 
 class LoadModel(Enum):

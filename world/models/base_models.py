@@ -1,22 +1,4 @@
-from django.contrib.postgres.fields import ArrayField
-
-# Create your models here.
-
-# This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
-
-
-class AnalyzedParcel(models.Model):
-    apn = models.CharField(max_length=10, blank=True, null=True, unique=True)
-    lot_size = models.IntegerField(blank=True, null=True)
-    building_size = models.IntegerField(blank=True, null=True)
-    skip = models.BooleanField(blank=True, null=True)
-    skip_reason = models.CharField(max_length=254, blank=True, null=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['apn'])
-        ]
 
 
 class BuildingOutlines(models.Model):
@@ -40,8 +22,6 @@ class ZoningBase(models.Model):
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326)
 
-
-# This is an auto-generated Django model module created by ogrinspect.
 
 class Parcel(models.Model):
     apn = models.CharField(max_length=10, blank=True, null=True, unique=True)
@@ -139,21 +119,6 @@ class Parcel(models.Model):
         ]
 
 
-class ParcelSlope(models.Model):
-    parcel = models.ForeignKey(
-        Parcel, on_delete=models.CASCADE, to_field='apn')
-    grade = models.IntegerField()
-    polys = models.MultiPolygonField(blank=True, null=True)
-    # note: only updated on model.save
-    run_date = models.DateField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['parcel', 'grade'], name='unique_parcel_grade_bucket'),
-        ]
-
-
 class TopographyLoads(models.Model):
     fname = models.CharField('filename', max_length=200)
     extents = models.PolygonField(srid=4326, unique=True)
@@ -161,7 +126,6 @@ class TopographyLoads(models.Model):
     run_date = models.DateField(auto_now=True)
 
 
-# model based on Topo_2014_2Ft_PowayLaMesa data set.
 class Topography(models.Model):
     elev = models.FloatField()
     ltype = models.IntegerField()
@@ -241,229 +205,3 @@ class TransitPriorityArea(models.Model):
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326)
-
-
-class PropertyListing(models.Model):
-    class ListingStatus(models.TextChoices):
-        ACTIVE = 'ACTIVE'
-        PENDING = 'PENDING'
-        SOLD = 'SOLD'
-        MISSING = 'MISSING'
-        WITHDRAWN = 'WITHDRAWN'
-        OFFMARKET = 'OFFMARKET'
-
-    price = models.IntegerField(blank=True, null=True)
-    addr = models.CharField(max_length=80)  # street number and name
-    neighborhood = models.CharField(max_length=80, null=True, blank=True)  # city or neighborhood
-    zipcode = models.IntegerField(blank=True, null=True)
-    br = models.IntegerField(blank=True, null=True)
-    ba = models.IntegerField(blank=True, null=True)
-    founddate = models.DateTimeField(auto_now_add=True)
-    # when last seen (date of sale when sold)
-    seendate = models.DateTimeField(auto_now=True)
-    mlsid = models.CharField(max_length=20, blank=True, null=True)
-    size = models.IntegerField(blank=True, null=True)  # living area size in sq ft.
-    thumbnail = models.CharField(max_length=200, blank=True, null=True)
-    listing_url = models.CharField(max_length=100, blank=True, null=True)
-    soldprice = models.IntegerField(blank=True, null=True)
-    status = models.CharField(max_length=15, choices=ListingStatus.choices)
-    parcel = models.ForeignKey(
-        Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
-    prev_listing = models.ForeignKey(
-        "self", on_delete=models.CASCADE, blank=True, null=True,
-        # note: related_name provides the name used in a *reverse* lookup, from an old listing to the newer one,
-        #  hence the name is semantically opposite of previous.
-        related_name='next_listing'
-    )
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['zipcode']),
-            models.Index(fields=['mlsid'])
-        ]
-
-
-class AnalyzedListing(models.Model):
-    # Sometimes, we want to analyze a parcel without saving a listing, so this field
-    # should be kept blank. Maybe later we can keep a reference back to the parcel?
-    listing = models.ForeignKey(
-        PropertyListing, on_delete=models.CASCADE, null=True, blank=True)
-
-    datetime_ran = models.DateTimeField(auto_now_add=True)
-    details = models.JSONField()
-    input_parameters = models.JSONField()
-    geometry_details = models.JSONField()
-
-
-# Auto-generated `LayerMapping` dictionary for ZoningBase model
-zoningbase_mapping = {
-    'zone_name': 'ZONE_NAME',
-    'imp_date': 'IMP_DATE',
-    'ordnum': 'ORDNUM',
-    'shape_star': 'Shape_STAr',
-    'shape_stle': 'Shape_STLe',
-    'geom': 'MULTIPOLYGON',
-}
-
-# Auto-generated `LayerMapping` dictionary for Parcel model
-parcel_mapping = {
-    'apn': 'APN',
-    'apn_8': 'APN_8',
-    'parcelid': 'PARCELID',
-    'own_name1': 'OWN_NAME1',
-    'own_name2': 'OWN_NAME2',
-    'own_name3': 'OWN_NAME3',
-    'fractint': 'FRACTINT',
-    'own_addr1': 'OWN_ADDR1',
-    'own_addr2': 'OWN_ADDR2',
-    'own_addr3': 'OWN_ADDR3',
-    'own_addr4': 'OWN_ADDR4',
-    'own_zip': 'OWN_ZIP',
-    'situs_juri': 'SITUS_JURI',
-    'situs_stre': 'SITUS_STRE',
-    'situs_suff': 'SITUS_SUFF',
-    'situs_post': 'SITUS_POST',
-    'situs_pre_field': 'SITUS_PRE_',
-    'situs_addr': 'SITUS_ADDR',
-    'situs_frac': 'SITUS_FRAC',
-    'situs_buil': 'SITUS_BUIL',
-    'situs_suit': 'SITUS_SUIT',
-    'legldesc': 'LEGLDESC',
-    'asr_land': 'ASR_LAND',
-    'asr_impr': 'ASR_IMPR',
-    'asr_total': 'ASR_TOTAL',
-    'doctype': 'DOCTYPE',
-    'docnmbr': 'DOCNMBR',
-    'docdate': 'DOCDATE',
-    'acreage': 'ACREAGE',
-    'taxstat': 'TAXSTAT',
-    'ownerocc': 'OWNEROCC',
-    'tranum': 'TRANUM',
-    'asr_zone': 'ASR_ZONE',
-    'asr_landus': 'ASR_LANDUS',
-    'unitqty': 'UNITQTY',
-    'submap': 'SUBMAP',
-    'subname': 'SUBNAME',
-    'nucleus_zo': 'NUCLEUS_ZO',
-    'nucleus_us': 'NUCLEUS_US',
-    'situs_comm': 'SITUS_COMM',
-    'year_effec': 'YEAR_EFFEC',
-    'total_lvg_field': 'TOTAL_LVG_',
-    'bedrooms': 'BEDROOMS',
-    'baths': 'BATHS',
-    'addition_a': 'ADDITION_A',
-    'garage_con': 'GARAGE_CON',
-    'garage_sta': 'GARAGE_STA',
-    'carport_st': 'CARPORT_ST',
-    'pool': 'POOL',
-    'par_view': 'PAR_VIEW',
-    'usable_sq_field': 'USABLE_SQ_',
-    'qual_class': 'QUAL_CLASS',
-    'nucleus_si': 'NUCLEUS_SI',
-    'nucleus_1': 'NUCLEUS__1',
-    'nucleus_2': 'NUCLEUS__2',
-    'situs_zip': 'SITUS_ZIP',
-    'x_coord': 'x_coord',
-    'y_coord': 'y_coord',
-    'overlay_ju': 'overlay_ju',
-    'sub_type': 'sub_type',
-    'multi': 'multi',
-    'shape_star': 'SHAPE_STAr',
-    'shape_stle': 'SHAPE_STLe',
-    'geom': 'MULTIPOLYGON',
-}
-
-buildingoutlines_mapping = {
-    'outline_id': 'outline_id',
-    'bldgid': 'bldgID',
-    'centroid_x': 'CENTROID_X',
-    'centroid_y': 'CENTROID_Y',
-    'area': 'AREA',
-    'comment': 'COMMENT',
-    'shape_leng': 'Shape_Leng',
-    'shape_star': 'Shape_STAr',
-    'shape_stle': 'Shape_STLe',
-    'geom': 'MULTIPOLYGON',
-}
-
-topography_mapping = {
-    'elev': 'ELEV',
-    'ltype': 'LTYPE',
-    'index_field': 'INDEX_',
-    'shape_length': 'Shape_Length',
-    'geom': 'MULTILINESTRING',
-}
-
-roads_mapping = {
-    'fnode': 'FNODE',
-    'tnode': 'TNODE',
-    'length': 'LENGTH',
-    'roadsegid': 'ROADSEGID',
-    'postid': 'POSTID',
-    'postdate': 'POSTDATE',
-    'roadid': 'ROADID',
-    'rightway': 'RIGHTWAY',
-    'addsegdt': 'ADDSEGDT',
-    'segstat': 'SEGSTAT',
-    'dedstat': 'DEDSTAT',
-    'funclass': 'FUNCLASS',
-    'oneway': 'ONEWAY',
-    'subdivid': 'SUBDIVID',
-    'segclass': 'SEGCLASS',
-    'ljurisdic': 'LJURISDIC',
-    'llowaddr': 'LLOWADDR',
-    'lhighaddr': 'LHIGHADDR',
-    'rjurisdic': 'RJURISDIC',
-    'rlowaddr': 'RLOWADDR',
-    'rhighaddr': 'RHIGHADDR',
-    'lmixaddr': 'LMIXADDR',
-    'rmixaddr': 'RMIXADDR',
-    'pending': 'PENDING',
-    'abloaddr': 'ABLOADDR',
-    'abhiaddr': 'ABHIADDR',
-    'nad83n': 'NAD83N',
-    'nad83e': 'NAD83E',
-    'speed': 'SPEED',
-    'l_zip': 'L_ZIP',
-    'r_zip': 'R_ZIP',
-    'lpsjur': 'LPSJUR',
-    'rpsjur': 'RPSJUR',
-    'carto': 'CARTO',
-    'obmh': 'OBMH',
-    'firedriv': 'FIREDRIV',
-    'l_block': 'L_BLOCK',
-    'r_block': 'R_BLOCK',
-    'l_tract': 'L_TRACT',
-    'r_tract': 'R_TRACT',
-    'l_beat': 'L_BEAT',
-    'r_beat': 'R_BEAT',
-    'frxcoord': 'FRXCOORD',
-    'frycoord': 'FRYCOORD',
-    'midxcoord': 'MIDXCOORD',
-    'midycoord': 'MIDYCOORD',
-    'toxcoord': 'TOXCOORD',
-    'toycoord': 'TOYCOORD',
-    'f_level': 'F_LEVEL',
-    't_level': 'T_LEVEL',
-    'l_psblock': 'L_PSBLOCK',
-    'r_psblock': 'R_PSBLOCK',
-    'rd20pred': 'RD20PRED',
-    'rd20name': 'RD20NAME',
-    'rd20sfx': 'RD20SFX',
-    'rd20full': 'RD20FULL',
-    'rd30pred': 'RD30PRED',
-    'rd30name': 'RD30NAME',
-    'rd30sfx': 'RD30SFX',
-    'rd30postd': 'RD30POSTD',
-    'rd30full': 'RD30FULL',
-    'shape_stle': 'SHAPE_STLe',
-    'geom': 'MULTILINESTRING',
-}
-
-# Auto-generated `LayerMapping` dictionary for TransitPriorityArea model
-transitpriorityarea_mapping = {
-    'name': 'NAME',
-    'shape_star': 'Shape_STAr',
-    'shape_stle': 'Shape_STLe',
-    'geom': 'MULTIPOLYGON',
-}
