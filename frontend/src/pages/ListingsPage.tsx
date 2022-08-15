@@ -29,6 +29,7 @@ import ListingTable from '../components/ListingTable';
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 const asFt = (m) => Math.round(m * 3.28);
+const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
 
 function snakeCaseToTitleCase(word: string) {
   const tokenized = word.toLowerCase().split('_');
@@ -106,9 +107,22 @@ const statusAccessor = ({ row }) => {
   );
 };
 
+// calculate days since found
+const founddateAccessor = ({ cell }) => {
+  const foundDate =  cell.getValue();
+  let foundtime = (new Date(foundDate)).getTime()
+  let nowtime = Date.now()
+  return Math.round((nowtime - foundtime) / oneDay);
+};
+
 // To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
 // a filterFn (https://tanstack.com/table/v8/docs/api/features/filters)
 const initialColumnState = {
+  founddate: {
+    visible: true,
+    headername: "DSU",
+    accessor: founddateAccessor,
+  },
   apn: { visible: false, accessor: apnAccessor },
   address: { visible: true, accessor: addressAccessor },
   zone: { visible: true },
@@ -169,7 +183,6 @@ const initialColumnState = {
     filterFn: 'inNumberRange',
   },
   zipcode: { visible: false },
-  founddate: { visible: false },
   seendate: { visible: false },
   mlsid: { visible: false },
   mls_floor_area: { visible: false },
