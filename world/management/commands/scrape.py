@@ -106,16 +106,16 @@ class Command(BaseCommand):
         # -----
         # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
         listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
-            .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting_set')
+            .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting')
 
         # A set of tuples (parcel, listing)
         parcels_to_analyze = set()
         stats = defaultdict(int)
         logging.info(f'Found {len(listings)} properties to associate')
         for l in listings:
-            # if l.parcel and l.analyzedlisting_set.count() > 0:
-            #     stats[f'info_previously_matched'] += 1
-            #     continue
+            if l.parcel and l.analyzedlisting:
+                stats[f'info_previously_matched'] += 1
+                continue
             matched_parcel, error = listing_to_parcel(l)
             if error:
                 stats[error] += 1

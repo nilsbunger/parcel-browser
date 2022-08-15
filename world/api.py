@@ -64,7 +64,8 @@ class ListingSchema(ModelSchema):
     class Config:
         model = PropertyListing
         arbitrary_types_allowed = True
-        model_fields = ['id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
+        model_fields = [
+            'id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
                         'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
 
     # These resolve_xx methods resolve certain fields on the response automatically
@@ -72,9 +73,12 @@ class ListingSchema(ModelSchema):
     @staticmethod
     def resolve_analysis(obj):
         # Only return the latest analysis
-        analysis = obj.analyzedlisting_set.latest('datetime_ran')
+        analysis : AnalyzedListing = obj.analyzedlisting
         analysis_dict = analysis.details
         analysis_dict['analysis_id'] = analysis.id
+        analysis_dict['is_tpa'] = analysis.is_tpa
+        analysis_dict['apn'] = analysis.parcel.apn
+        analysis_dict['zone'] = analysis.zone
         return analysis_dict
 
     @staticmethod
@@ -140,14 +144,11 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
             # Later on, we should optimize so as to only pre-fetch the latest analysis, as there can
             # be multiple for a property. We would also want to join all fields of the analysis
             # directly into the response, but haven't found a good way to do this yet
-            .prefetch_related('analyzedlisting_set')
+            .prefetch_related('analyzedlisting')
             # Used to see if this listing is new or not, and for extracting previous price info
             .prefetch_related('prev_listing')
             # Prefetch parcel to attach information on the centroid of each parcel, used for map plotting
             .prefetch_related('parcel')
             .annotate(centroid=Centroid(F('parcel__geom')))
-            # After prefetching analyzedlisting_set, we may have duplicate of the same listings if there
-            # are multiple analyses per listing, so run a final distinct
-            .distinct()
             .order_by(order_by)
             )

@@ -115,7 +115,7 @@ def listing_prev_values(listing):
 # ajax call to get current MLS listings. Return them from most recently created / updated to least.
 class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        listings = PropertyListing.objects.prefetch_related('analyzedlisting_set').prefetch_related(
+        listings = PropertyListing.objects.prefetch_related('analyzedlisting').prefetch_related(
             'prev_listing').filter(
             analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
         serialized_listings = serialize('json', listings)
@@ -125,8 +125,7 @@ class ListingsData(LoginRequiredMixin, View):
         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
             # founddate = str(listing.founddate.astimezone(
             #     tz=ZoneInfo("America/Los_Angeles")).date())
-            latest_analysis = listing.analyzedlisting_set.latest(
-                'datetime_ran')
+            latest_analysis = listing.analyzedlisting
             l = latest_analysis.details
             l.update(listing_dict['fields'])
             l['datetime_ran'] = latest_analysis.datetime_ran
@@ -170,8 +169,7 @@ class ListingsData(LoginRequiredMixin, View):
         if existing_listing and not redo_analysis:
             # The property listing exists in the database, show its analysis
             latest_listing = existing_listing.latest('founddate')
-            latest_analysis = latest_listing.analyzedlisting_set.latest(
-                'datetime_ran')
+            latest_analysis = latest_listing.analyzedlisting
             return JsonResponse({"status": "LISTING_EXISTS", "analysis_id": latest_analysis.id})
 
         # Run an analysis, passing in listing if we want to create a listing for it
@@ -225,15 +223,18 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         # An ad-hoc way of doing formatting for now
         d = analysis.details
         d['datetime_ran'] = analysis.datetime_ran
+        d['apn'] = analysis.parcel.apn
+        d['is_tpa'] = analysis.is_tpa
+        d['zone'] = analysis.zone
+        assert analysis.listing
 
-        if analysis.listing:
-            listing_dict = json.loads(serialize('json', [analysis.listing]))[0]
-            d.update(listing_dict['fields'])
-            d['centroid_x'] = analysis.listing.parcel.geom.centroid.coords[0]
-            d['centroid_y'] = analysis.listing.parcel.geom.centroid.coords[1]
-            del d['parcel']
-            del d['addr']
-            del d['prev_listing']
+        listing_dict = json.loads(serialize('json', [analysis.listing]))[0]
+        d.update(listing_dict['fields'])
+        d['centroid_x'] = analysis.parcel.geom.centroid.coords[0]
+        d['centroid_y'] = analysis.parcel.geom.centroid.coords[1]
+        del d['parcel']
+        del d['addr']
+        del d['prev_listing']
 
         return JsonResponse(d, content_type='application/json', safe=False)
 
