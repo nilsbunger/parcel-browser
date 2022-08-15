@@ -49,7 +49,7 @@ if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
     eprint("**** DEBUG=FALSE ****")
-eprint(f"**** DJANGO_ENV is {'DEV' if DEV_ENV else 'PROD'} ****")
+eprint(f"**** DJANGO_ENV is {'DEV (meaning on a local machine)' if DEV_ENV else 'PROD'} ****")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -150,15 +150,17 @@ if dbHost:
             'NAME': dbName,
             'USER': dbUserName,
             'PASSWORD': dbPassword,
-        },
-        'local_db': {
+        }
+    }
+    if DEV_ENV:
+        # Topo DB is only available when running in a dev environment, since it requires a local computer.
+        DATABASES['local_db'] = {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'HOST': 'localhost',
             'NAME': 'geodjango',
             'USER': env('USER'),
             'PASSWORD': '',
         }
-    }
 else:
     DATABASES = {}
 
