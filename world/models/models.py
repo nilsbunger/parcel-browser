@@ -75,8 +75,12 @@ class PropertyListing(models.Model):
 class AnalyzedListing(models.Model):
     # Sometimes, we want to analyze a parcel without saving a listing, so this field
     # should be kept blank. Maybe later we can keep a reference back to the parcel?
-    listing = models.ForeignKey(
-        PropertyListing, on_delete=models.CASCADE, null=True, blank=True)
+    listing = models.OneToOneField(
+        PropertyListing, on_delete=models.CASCADE)
+    parcel = models.ForeignKey(
+        Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
+    zone = models.CharField(max_length=20, null=True, blank=True)
+    is_tpa=models.BooleanField(null=True, blank=True)
 
     datetime_ran = models.DateTimeField(auto_now_add=True)
     details = models.JSONField()
