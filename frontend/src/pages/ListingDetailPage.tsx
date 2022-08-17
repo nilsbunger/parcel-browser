@@ -23,6 +23,13 @@ async function getAnalysis(e, apn) {
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
 const asFt = (m) => Math.round(m * 3.28).toLocaleString();
+const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
+
+function daysAtPrice(date) {
+  let foundtime = (new Date(date)).getTime()
+  let nowtime = Date.now()
+  return Math.round((nowtime - foundtime) / oneDay);
+}
 
 export function ListingDetailPage({}) {
   const params = useParams();
@@ -69,7 +76,8 @@ export function ListingDetailPage({}) {
       {/*Show building and land plots */}
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
-          <h1>{data.address}</h1>
+          <h1 className={'hidden print:block'}><a className='link text-darkblue' href={window.location.href}>{data.address}</a></h1>
+          <h1 className={'print:hidden'}>{data.address}</h1>
           {data.is_tpa && <div className="badge badge-primary">TPA</div>}
           <p>{data.neighborhood}</p>
           <p>APN: {data.apn}</p>
@@ -79,6 +87,7 @@ export function ListingDetailPage({}) {
         </div>
         <div>
           <h1>${data.price.toLocaleString()}</h1>
+          <h2>{daysAtPrice(data.founddate)} days at this price</h2>
           <p>{asSqFt(data.existing_living_area.toLocaleString())} sq ft</p>
           <p>{data.br} BR</p>
           <p>{data.ba} BA</p>
