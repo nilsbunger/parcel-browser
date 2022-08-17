@@ -226,6 +226,7 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         d['apn'] = analysis.parcel.apn
         d['is_tpa'] = analysis.is_tpa
         d['zone'] = analysis.zone
+        d['dev_scenarios'] = analysis.dev_scenarios
         assert analysis.listing
 
         listing_dict = json.loads(serialize('json', [analysis.listing]))[0]

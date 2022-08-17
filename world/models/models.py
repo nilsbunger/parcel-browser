@@ -84,5 +84,6 @@ class AnalyzedListing(models.Model):
 
     datetime_ran = models.DateTimeField(auto_now_add=True)
     details = models.JSONField()
+    dev_scenarios = models.JSONField(null=True, blank=True)
     input_parameters = models.JSONField()
     geometry_details = models.JSONField()

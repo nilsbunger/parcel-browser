@@ -4,7 +4,9 @@ generation of new buildings/repurpose of old one, computing scores for scenarios
 scenarios in general.
 """
 from collections import OrderedDict
+import pprint
 import secrets
+from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -12,14 +14,18 @@ import django
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
+django.setup()
+
+from pydantic import BaseModel, root_validator
+
+from lib.rent_lib import RentService
 from mygeo.settings import DEV_ENV, env
 from mygeo.util import eprint
-
-django.setup()
+from world.models.base_models import RentalUnit
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
-from world.models import AnalyzedListing
+from world.models import AnalyzedListing, PropertyListing
 from datetime import date
 import os
 import datetime
@@ -40,7 +46,6 @@ if DEV_ENV:
                         aws_secret_access_key=env('R2_EDIT_SECRET_KEY')
                         )
 R2_BUCKET_NAME = 'parsnip-images'
-
 
 MIN_BUILDING_AREA = 11  # ~150sqft
 MAX_BUILDING_AREA = 111  # ~1200sqft
@@ -117,6 +122,176 @@ def get_folder_name(neighborhood: str):
     return f"{date.today()}-{neighborhood.lower()}"
 
 
+build_cost_single_story = 320  # $/sq ft
+build_cost_two_story = 340  # $/sq ft
+
+
+class BuildableUnit(RentalUnit):
+    # commented out fields inherited
+    # sqft: int
+    # br: int
+    # ba: int
+    stories: int
+    lotspace_required: int
+
+    @property
+    def hard_build_cost(self):
+        return self.sqft * self.hard_cost_per_sqft
+
+    @property
+    def hard_cost_per_sqft(self):
+        assert self.stories in [1, 2]
+        return build_cost_two_story if self.stories == 2 else build_cost_single_story
+
+
+class FinanceCategory(BaseModel):
+    cat_name: str
+    costs: list[list[str, int]]
+
+
+existing_unit_rent_percentile = 50
+new_unit_rent_percentile = 90
+vacancy_rate = 0.05  # fraction of rent
+insurance_cost_rate = 0.002  # fraction of house + construction cost
+repair_cost_rate = 0.08  # fraction of rent
+mgmt_cost_rate = 0.08  # fraction of rent
+prop_tax_rate = 0.0125  # fraction of house + construction cost
+# soft costs: $/sqft of new construction. Ref: https://snapadu.com/blog/all-about-adu-fees-waivers/
+soft_cost_rate = 9
+
+sm_adu_build = BuildableUnit(sqft=750, br=2, ba=1, stories=1, lotspace_required=800)
+lg_adu_build = BuildableUnit(sqft=1200, br=3, ba=2, stories=1, lotspace_required=1300)
+sm_adu_2story_build = BuildableUnit(sqft=750, br=2, ba=1, stories=2, lotspace_required=400)
+lg_adu_2story_build = BuildableUnit(sqft=1200, br=3, ba=2, stories=2, lotspace_required=700)
+
+rent_data = RentService()
+
+
+class Financials(BaseModel):
+    capital_flow: OrderedDict[str, list[tuple[str, int, str]]] = OrderedDict()
+    operating_flow: list[tuple[str, int, str]] = []
+
+    def dict(self, *, include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+             exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None, by_alias: bool = False,
+             skip_defaults: bool = None, exclude_unset: bool = False, exclude_defaults: bool = False,
+             exclude_none: bool = False) -> 'DictStrAny':
+        x = super().dict(include=include, exclude=exclude, by_alias=by_alias, skip_defaults=skip_defaults,
+                            exclude_unset=exclude_unset, exclude_defaults=exclude_defaults, exclude_none=exclude_none)
+        x['capital_sum'] = self.capital_sum_calc
+        x['net_income'] = self.net_income_calc
+        x['cap_rate'] = self.cap_rate_calc
+        return x
+
+    @property
+    def net_income_calc(self):
+        return round(sum([x[1] for x in self.operating_flow]))
+
+    @property
+    def capital_sum_calc(self):
+        # Flatten ordered dictionary to just get dollar amounts.
+        return round(sum([el[1] for item in self.capital_flow.items() for el in item[1]]))
+
+    @property
+    def cap_rate_calc(self):
+        if self.capital_sum_calc == 0:
+            return 0
+        else:
+            return round((self.net_income_calc * 12) / (0 - self.capital_sum_calc) * 100, 2)
+
+
+class DevScenario(BaseModel):
+    adu_qty: int
+    unit_type: BuildableUnit
+    finances: Financials
+
+
+def _dev_potential_by_far(
+    listing: PropertyListing, is_mf: bool, far_area: int, geom_area: int
+) -> List[DevScenario]:
+    valid_scenarios = []
+    if is_mf:
+        # can typically do as many ADUs as there are current units
+        existing_unit_qty = listing.parcel.unitqty
+        max_units_to_build = 3 if listing.parcel.unitqty == 1 else existing_unit_qty
+        avail_far_sq_ft = far_area * 3.28 * 3.28
+        avail_area_sq_ft = geom_area * 3.28 * 3.28
+        # try scenarios:
+        #   * existing_unit_qty large ADUs (1-story)
+        #   * existing_unit_qty large ADUs (2-story)
+        #   * existing_unit_qty small ADUs (1-story)
+        #   * existing_unit_qty small ADUs (2-story)
+        #   If those fail, reduce quantity and try again
+
+        existing_units_rent = rent_data.rent_for_location(listing, percentile=existing_unit_rent_percentile)
+        if existing_units_rent < 1 and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
+            print("HUH")
+        # TODO: Check if existing units need to be multiplied by unit quyantity
+        # TODO: Check if existing units need to be multiplied by unit quyantity
+        for adu_qty in range(max_units_to_build, 0, -1):
+            assert adu_qty >= 1
+            if valid_scenarios:
+                # no need to calculate fewer # of units if we have a working strategy with more units.
+                break
+            for adu_scenario in [lg_adu_build, sm_adu_build, lg_adu_2story_build, sm_adu_2story_build]:
+                adu_sq_ft = adu_scenario.sqft * adu_qty
+                adu_lot_space = adu_scenario.lotspace_required * adu_qty
+
+                if adu_sq_ft <= avail_far_sq_ft and adu_lot_space <= avail_area_sq_ft:
+                    # have a valid scenario. let's cost it out
+                    finances = Financials()
+                    constr_soft_cost = adu_sq_ft * soft_cost_rate
+                    constr_hard_cost = adu_scenario.hard_build_cost * adu_qty
+                    constr_adu_fees = 14000 + 3000 * adu_qty
+                    try:
+                        finances.capital_flow['acquisition'] = [
+                            ('purchase', 0 - listing.price, f''),
+                            ('renovation', -50000, f'')
+                        ]
+                    except Exception as e:
+                        print("HI")
+                        print(e)
+                        raise
+                    finances.capital_flow['construction'] = [
+                        ('hard costs', 0 - constr_hard_cost,
+                         f'${adu_scenario.hard_cost_per_sqft} / sqft for {adu_scenario.stories} stories'),
+                        ('soft costs', 0 - constr_soft_cost, f'${soft_cost_rate} / sqft'),
+                        ('adu fees', 0 - constr_adu_fees, f'$14K base with $3K per unit (total guess)')
+                    ]
+                    new_units_rent = adu_qty * rent_data.rent_for_location(
+                        listing, new_unit_rent_percentile, adu_scenario, cache_only=False
+                    )
+                    if new_units_rent < 1:
+                        print("HUH")
+                    assert (new_units_rent > 1)
+                    total_constr_cost = constr_hard_cost + constr_soft_cost + constr_adu_fees
+                    vacancy_cost = 0 - round(vacancy_rate * (new_units_rent + existing_units_rent))
+                    insurance_cost = round((0 - listing.price + total_constr_cost) * insurance_cost_rate / 12)
+                    repair_cost = 0 - round(repair_cost_rate * (new_units_rent + existing_units_rent))
+                    prop_taxes = round(0 - (listing.price + total_constr_cost) * prop_tax_rate / 12)
+                    mgmt_cost = 0 - round(mgmt_cost_rate * (new_units_rent + existing_units_rent))
+                    finances.operating_flow = [
+                        ['rent: existing units', existing_units_rent,
+                         f'{existing_unit_rent_percentile}th percentile'],
+                        ['rent: new units', new_units_rent, f'{new_unit_rent_percentile}th percentile'],
+                        ['vacancy', vacancy_cost, f'{vacancy_rate * 100}% vacancy'],
+                        ['insurance', insurance_cost, f'{insurance_cost_rate * 100}% of prop value'],
+                        ['repairs/maint', repair_cost, f'{repair_cost_rate * 100}% of rent'],
+                        ['prop mgmt', mgmt_cost, f'{mgmt_cost_rate * 100}% of rent'],
+                        ['prop taxes', prop_taxes, f'{prop_tax_rate * 100}% of prop value'],
+                    ]
+
+                    valid_scenarios.append(DevScenario(adu_qty=adu_qty, unit_type=adu_scenario, finances=finances))
+                # else:
+                #     print (f"Skipping putting {adu_qty} x {adu_scenario} units on lot, not enough room."
+                #            f"FAR avail={avail_far_sq_ft}, geom avail={avail_area_sq_ft}"
+                #            )
+        print(
+            f"For {listing.parcel.address} - FAR area,geom area "
+            f"avail={round(avail_far_sq_ft), round(avail_area_sq_ft)}, we found these scenarios:\n")
+        pprint.pprint(valid_scenarios)
+    return valid_scenarios
+
+
 def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
                         try_garage_conversion=True, try_split_lot=True, save_as_model=False, listing=None):
@@ -132,7 +307,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
     """
 
-    git_commit_hash="Can't get in prod environment"
+    git_commit_hash = "Can't get in prod environment"
     if DEV_ENV:
         import git
         git_commit_hash = git.Repo(search_parent_directories=True).head.object.hexsha
@@ -144,13 +319,17 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     # *** 1. Get information about the parcel
 
     # Get parameters based on zoning
-    zone, is_tpa = get_parcel_zone(parcel, utm_crs)
+    zone, is_tpa, is_mf = get_parcel_zone(parcel, utm_crs)
+
     # Technically don't need side or rear setbacks, but buffer by a small amount
     # to account for errors
-
     zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
-    if not zone_has_data:
-        messages['warning'].append("Missing front zoning information")
+    if zone_has_data:
+        max_far = get_far(zone, parcel.geometry.area)
+    else:
+        max_far = 0.6
+        messages['warning'].append("Missing zone data for FAR and setbacks")
+
     setback_widths = {
         'front': ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28 if zone_has_data else 5,
         'side': None,
@@ -159,23 +338,13 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     }
 
     buildings = get_buildings(parcel_model)
-
-    if (len(buildings)) == 0:
+    if not len(buildings):
         raise Exception(f"No buildings found for parcel: {apn}")
 
     topos = get_topo_lines(parcel_model)
     topos_df = models_to_utm_gdf(topos, utm_crs)
-
-    if zone_has_data:
-        max_far = get_far(zone, parcel.geometry.area)
-    else:
-        # Placeholder. Change this to be correct later
-        max_far = 0.6
-
     buildings = models_to_utm_gdf(list(buildings), utm_crs)
-
     identify_building_types(parcel.geometry, buildings)
-
     avail_area_by_far = get_avail_floor_area(parcel, buildings, max_far)
 
     # Compute the spaces that we can't build on
@@ -199,8 +368,17 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     avail_geom = get_avail_geoms(parcel.geometry, cant_build)
 
-    # *** 2. See what we can build on the lot
+    # Get floor area info
+    (parcel_size, existing_living_area, existing_floor_area,
+     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
+        parcel, buildings)
 
+    # *** 2a. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
+    assert listing
+    dev_scenarios: List[DevScenario] = _dev_potential_by_far(
+        listing, is_mf, int(avail_area_by_far), int(avail_geom.area)
+    )
+    # *** 2b. See what we can build on the lot -- geometry-focused
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
@@ -216,11 +394,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     if flag_poly:
         not_open_space = unary_union([not_open_space, flag_poly])
-
-    # Get floor area info
-    (parcel_size, existing_living_area, existing_floor_area,
-     existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
-        parcel, buildings)
 
     # Compute garage conversion fields
     num_garages = parcel_model.garages
@@ -258,10 +431,10 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     else:
         second_lot, second_lot_area_ratio = None, None
 
+    # 3. *** Plot and/or save results
+
     # Salt for hashing filenames in R2 (or S3) buckets.
     salt = secrets.token_urlsafe(10)
-
-    # 3. *** Plot and/or save results
     if show_plot or save_file or save_as_model:
         plt.close()
         # Generate the figures
@@ -284,10 +457,10 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             if second_lot:
                 split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
             if save_as_model:
-                print (f"**** SAVING images for address {parcel.model.address} to Cloudflare R2 ****")
+                print(f"**** SAVING images for address {parcel.model.address} to Cloudflare R2 ****")
                 try:
                     response = s3.meta.client.upload_file(
-                        new_buildings_fname, R2_BUCKET_NAME,f"buildings-{apn}-{salt}"
+                        new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
                     )
                     response = s3.meta.client.upload_file(
                         cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
@@ -299,7 +472,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         # Show figures
         if show_plot:
             plt.show()
-
 
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
@@ -375,12 +547,19 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "avail_geom": avail_geom,
     }
 
-    datetime_ran = datetime.datetime.now()
+    datetime_ran = datetime.datetime.utcnow()
     if save_as_model:
         # Save it as a database model, and return it
-        a = AnalyzedListing(listing=listing, datetime_ran=datetime_ran, details=details,
-                            input_parameters=input_parameters, geometry_details={})
-        a.save()
+        dev_scenarios_dict = [x.dict() for x in dev_scenarios]
+        a, created = AnalyzedListing.objects.update_or_create(
+            listing=listing, defaults={
+                'datetime_ran': datetime_ran,
+                'details': details,
+                'input_parameters': input_parameters,
+                'geometry_details': {},
+                'dev_scenarios': dev_scenarios_dict,
+            }
+        )
         return a
     else:
         # LEGACY. Return analyzed as a dictionary with everything in it
@@ -413,6 +592,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
     except Exception as e:
         print(f"Exception on parcel {parcel.apn}")
         print(e)
+        raise e
         return None, {
             "apn": parcel.apn,
             "error": e,
@@ -462,7 +642,7 @@ def analyze_batch(parcels: list[Parcel], zip_codes: list[str], utm_crs: pyproj.C
 
     # Feature flag: this uses multiprocessing. Turn it off to go back to the original sequential method
     if True:
-        parallel_results = Parallel(n_jobs=8)(
+        parallel_results = Parallel(n_jobs=1)(
             delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
                                                 save_dir=save_dir, try_split_lot=try_split_lot, i=i,
                                                 save_as_model=save_as_model, listing=listing)

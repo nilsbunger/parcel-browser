@@ -1,3 +1,4 @@
+import re
 from typing import List, Union, Dict, Tuple
 from lib.shapely_lib import multi_line_string_split
 
@@ -96,31 +97,37 @@ def get_buildings(parcel: Parcel) -> QuerySet:
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool]:
+def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, bool]:
     """Gets the zone of a parcel.
 
     Args:
         parcel(ParcelDC)
 
     Returns:
-        str: The zone of the parcel
+        Tuple:
+            str: The zone of the parcel
+            is_tpa: is it in transit priority area
+            is_mf: is it a multifamily parcel (either due to unit qty or zoning)
     """
     zones = ZoningBase.objects.filter(geom__intersects=parcel.model.geom)
     tpa = TransitPriorityArea.objects.filter(geom__intersects=parcel.model.geom)
-    tpa_bool = len(tpa) > 0
-    if (len(zones)) == 1:
-        return zones[0].zone_name, tpa_bool
-    elif (len(zones)) > 1:
-        # We're ont he boundary of two zones. Find the one with the most overlap with parcel.
+    is_tpa = len(tpa) > 0
+    is_mf = parcel.model.unitqty > 1
+    if len(zones) == 1:
+        zone = zones[0].zone_name
+    elif len(zones) > 1:
+        # We're on the boundary of two zones. Find the one with the most overlap with parcel.
         zones_df = models_to_utm_gdf(zones, utm_crs)
         max_intersect_index = argmax(
             [geom.intersection(parcel.geometry).area for geom in zones_df.geometry])
-        return zones[int(max_intersect_index)].zone_name, tpa_bool
-    elif (len(zones)) == 0:
+        zone = zones[int(max_intersect_index)].zone_name
+    elif len(zones) == 0:
         raise Exception("Parcel has no zoning info.")
     else:
         raise Exception(
             f"Parcel has more than two zones. {[z.zone_name for z in zones]}")
+    is_mf = parcel.model.unitqty > 1 or re.match(r'^RM', zone)
+    return zone, is_tpa, is_mf
 
 
 def models_to_utm_gdf(

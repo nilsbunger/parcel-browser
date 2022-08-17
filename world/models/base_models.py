@@ -1,4 +1,8 @@
+import math
+from typing import List
+
 from django.contrib.gis.db import models
+from pydantic import BaseModel
 
 
 class BuildingOutlines(models.Model):
@@ -21,6 +25,19 @@ class ZoningBase(models.Model):
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326)
+
+
+class RentalUnit(BaseModel):
+    br: int
+    ba: int
+    sqft: int
+
+    # make class hashable by implementing __eq__ and __hash__
+    def __eq__(self, other):
+        return other.br == self.br and other.ba == self.ba and other.sqft == self.sqft
+
+    def __hash__(self):
+        return hash((self.br, self.ba, self.sqft))
 
 
 class Parcel(models.Model):
@@ -102,6 +119,37 @@ class Parcel(models.Model):
         addr = f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre} ' \
                f'{self.situs_suff or ""} {self.situs_post or ""}'
         return addr.strip()
+
+    @property
+    def ba(self) -> float:
+        return float(self.baths) / 10.0
+
+    @property
+    def br(self) -> int:
+        return int(self.bedrooms)
+
+    @property
+    def sqft(self) -> int:
+        return self.total_lvg_field
+
+    @property
+    def rental_units(self) -> List[RentalUnit]:
+        # Use parcel data to construct likely combination of units.
+        # TODO: support overrides of this data
+        if self.unitqty == 1:
+            return [RentalUnit(br=self.br, ba=self.ba, sqft=self.sqft)]
+
+        retval = [
+            RentalUnit(br=self.br / self.unitqty,
+                       ba=self.ba / self.unitqty,
+                       sqft=self.sqft / self.unitqty) for i in range(self.unitqty)
+        ]
+        # Remainder could be large in a multi-unit property, so distribute the remainder evenly
+        for i in range(0, int(self.br % self.unitqty)):
+            retval[i].br += 1
+        for i in range(0, int(self.ba % self.unitqty)):
+            retval[i].ba += 1
+        return retval
 
     def __str__(self):
         if self.acreage > 0:

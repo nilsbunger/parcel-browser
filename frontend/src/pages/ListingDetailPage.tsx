@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import {ListingHistory} from "../components/ListingHistory";
 import { useEffect } from "react";
+import { DevScenarios } from "../components/DevScenarios";
 
 async function getAnalysis(e, apn) {
   const fetchResponse = await fetch(`/dj/api/listings`, {
@@ -137,6 +138,9 @@ export function ListingDetailPage({}) {
           </div>
         )}
       </div>
+
+      {/* Show development scenarios*/}
+      <DevScenarios scenarios={data.dev_scenarios}></DevScenarios>
 
       {/* Show cards for FAR and geometry calculation */}
       <div className="flex flex-row w-full justify-left space-x-4 items-top">

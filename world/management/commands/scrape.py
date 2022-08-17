@@ -13,6 +13,7 @@ from lib.analyze_parcel_lib import analyze_batch
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import listing_to_parcel
 from lib.neighborhoods import AllSdCityZips, Neighborhood
+from lib.rent_lib import RentService
 from lib.scraping_lib import scrape_san_diego_listings_by_zip_groups
 from mygeo.util import eprint
 from world.models import PropertyListing
@@ -68,7 +69,12 @@ class Command(BaseCommand):
             '--verbose', action='store_true', help="Do verbose logging (DEBUG-level logging)"
         )
         parser.add_argument(
-            '--no-cache', action='store_true', help="Don't use existing cached query data even if it's available"
+            '--no-cache', action='store_true', help="Don't use existing cached data even if it's available (both for scraping and for analysis)"
+        )
+        parser.add_argument(
+            '--skip-matching',
+            action='store_true',
+            help="Don't run listing-to-address matching (also skips parcel analysis)"
         )
         parser.add_argument(
             '--skip-analysis', action='store_true', help="Don't run parcel analysis"
@@ -104,53 +110,69 @@ class Command(BaseCommand):
         # -----
         # 2. Associate listings with parcels
         # -----
-        # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
-        listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
-            .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting')
-
-        # A set of tuples (parcel, listing)
         parcels_to_analyze = set()
-        stats = defaultdict(int)
-        logging.info(f'Found {len(listings)} properties to associate')
-        for l in listings:
-            if l.parcel and l.analyzedlisting:
-                stats[f'info_previously_matched'] += 1
-                continue
-            matched_parcel, error = listing_to_parcel(l)
-            if error:
-                stats[error] += 1
-            else:
-                # Got matched parcel, record the foreign key link in the listing.
-                stats['success'] += 1
-                l.parcel = matched_parcel
-                l.save(update_fields={'parcel'})
-                zipcode = matched_parcel.situs_zip
-                if matched_parcel.situs_juri == 'SD':
-                    parcels_to_analyze.add((matched_parcel, l))
-                    zipcode = matched_parcel.situs_zip
-                    if zipcode:
-                        stats[f'info_sd_{zipcode[0:5]}'] += 1
-                        if int(zipcode[0:5]) not in AllSdCityZips:
-                            stats[f'error_city_zip_{zipcode[0:5]}_missing'] += 1
-                    else:
-                        stats[f'info_sd_unknown_zip'] += 1
+        if options['skip_matching']:
+            logging.info("SKIPPING matching of listings to parcels")
+        else:
+            logging.info(f"Running matching")
+            # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
+
+            listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
+                .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting')
+            if False:
+                # separate query for testing...
+                include_neighborhoods = [
+                    'Normal Heights', 'Mira Mesa', 'Golden Hill', 'Clairemont/Bay Park', 'Carmel Valley',
+                    'Pacific Beach/Mission Beach']
+                listings = PropertyListing.objects.filter(
+                    status__in=['ACTIVE', 'OFFMARKET'],
+                    parcel__isnull=False,
+                    analyzedlisting__zone__contains='RM',
+                    neighborhood__in=include_neighborhoods
+                ).order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('parcel')[0:20]
+
+            # A set of tuples (parcel, listing)
+            stats = defaultdict(int)
+            logging.info(f'Found {len(listings)} properties to associate')
+            for l in listings:
+                if l.parcel and l.analyzedlisting and not options['no_cache']:
+                    stats[f'info_previously_matched'] += 1
+                    continue
+                matched_parcel, error = listing_to_parcel(l)
+                if error:
+                    stats[error] += 1
                 else:
-                    if zipcode:
-                        if int(zipcode[0:5]) in AllSdCityZips:
-                            # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
-                            #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
-                            stats[
-                                f'error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
+                    # Got matched parcel, record the foreign key link in the listing.
+                    stats['success'] += 1
+                    l.parcel = matched_parcel
+                    l.save(update_fields={'parcel'})
+                    zipcode = matched_parcel.situs_zip
+                    if matched_parcel.situs_juri == 'SD':
+                        parcels_to_analyze.add((matched_parcel, l))
+                        zipcode = matched_parcel.situs_zip
+                        if zipcode:
+                            stats[f'info_sd_{zipcode[0:5]}'] += 1
+                            if int(zipcode[0:5]) not in AllSdCityZips:
+                                stats[f'error_city_zip_{zipcode[0:5]}_missing'] += 1
                         else:
-                            stats[f'info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
-            # print("SAVED")
-        logging.info("DONE. Final stats associating parcels with listings:")
-        pprint.pprint(dict(stats))
+                            stats[f'info_sd_unknown_zip'] += 1
+                    else:
+                        if zipcode:
+                            if int(zipcode[0:5]) in AllSdCityZips:
+                                # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
+                                #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
+                                stats[
+                                    f'error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
+                            else:
+                                stats[f'info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
+                # print("SAVED")
+            logging.info("DONE. Final stats associating parcels with listings:")
+            pprint.pprint(dict(stats))
 
         # -----
         # 3. Generate parcel analysis for all the parcels if directed to
         # -----
-        if options['skip_analysis']:
+        if options['skip_analysis'] or options['skip_matching']:
             logging.info("SKIPPING parcel analysis")
         else:
             logging.info(f"Running parcel analysis on {len(parcels_to_analyze)} listings")
