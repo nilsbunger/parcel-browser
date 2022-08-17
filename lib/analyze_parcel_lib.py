@@ -386,7 +386,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             plt.show()
 
     existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
-    max_cap_rate = max([scenario.finances.cap_rate_calc for scenario in dev_scenarios])
+    max_cap_rate = max([scenario.finances.cap_rate_calc for scenario in dev_scenarios]) if dev_scenarios else 0
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
     details = OrderedDict({

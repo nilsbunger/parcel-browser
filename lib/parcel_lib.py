@@ -126,7 +126,7 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, b
     else:
         raise Exception(
             f"Parcel has more than two zones. {[z.zone_name for z in zones]}")
-    is_mf = parcel.model.unitqty > 1 or re.match(r'^RM', zone)
+    is_mf = parcel.model.unitqty > 1 or bool(re.match(r'^RM', zone))
     return zone, is_tpa, is_mf
 
 

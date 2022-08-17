@@ -42,7 +42,7 @@ class RentService:
         rd_list_for_parcel = list(RentalData.objects.filter(parcel=listing.parcel))
         if not is_adu and (listing.parcel.br < 1 or listing.parcel.ba < 1):
             print(f"Skipping {listing.addr} because there's no info on # of BR or BA")
-            return -1
+            return []
         for unit in units:
             # check if we already have this unit result in our array...
             if unit in rent_cache:
