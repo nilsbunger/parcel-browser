@@ -21,8 +21,8 @@ async function getAnalysis(e, apn) {
   return fetchResponse.json();
 }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
-const asFt = (m) => Math.round(m * 3.28);
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
+const asFt = (m) => Math.round(m * 3.28).toLocaleString();
 
 export function ListingDetailPage({}) {
   const params = useParams();
@@ -78,8 +78,8 @@ export function ListingDetailPage({}) {
           <p>Zone: {data.zone}</p>
         </div>
         <div>
-          <h1>${data.price}</h1>
-          <p>{asSqFt(data.existing_living_area)} sq ft</p>
+          <h1>${data.price.toLocaleString()}</h1>
+          <p>{asSqFt(data.existing_living_area.toLocaleString())} sq ft</p>
           <p>{data.br} BR</p>
           <p>{data.ba} BA</p>
           <p>{data.garages + data.carports} garage</p>
@@ -141,6 +141,7 @@ export function ListingDetailPage({}) {
 
       {/* Show development scenarios*/}
       <DevScenarios scenarios={data.dev_scenarios}></DevScenarios>
+      <div className="divider"></div>
 
       {/* Show cards for FAR and geometry calculation */}
       <div className="flex flex-row w-full justify-left space-x-4 items-top">
