@@ -77,6 +77,7 @@ class ListingSchema(ModelSchema):
         analysis_dict = analysis.details
         analysis_dict['analysis_id'] = analysis.id
         analysis_dict['is_tpa'] = analysis.is_tpa
+        analysis_dict['is_mf'] = analysis.is_mf
         analysis_dict['apn'] = analysis.parcel.apn
         analysis_dict['zone'] = analysis.zone
         return analysis_dict
@@ -120,9 +121,13 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
             filter_params[key] = filters.dict()[key]
 
     # If the field doesn't exist on the PropertyListing model, it probably exists
-    # in the details JSON on the AnalyzedListing model, so let's prefix it
+    # either on AnalyzedListing model or AnalyzedListing's detail field, so let's prefix it
     if not field_exists_on_model(PropertyListing, order_by):
-        order_by = 'analyzedlisting__details__' + order_by
+        if field_exists_on_model(AnalyzedListing, order_by):
+            # field is on AnalyzedListing.
+            order_by = 'analyzedlisting__' + order_by
+        else:
+            order_by = 'analyzedlisting__details__' + order_by
 
     if not asc:
         order_by = '-' + order_by

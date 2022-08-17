@@ -1,29 +1,24 @@
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ColumnFiltersState,
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
-  useReactTable,
-  getSortedRowModel,
-  SortingState,
-  getFilteredRowModel,
+  getFacetedMinMaxValues,
   getFacetedRowModel,
   getFacetedUniqueValues,
-  getFacetedMinMaxValues,
+  getFilteredRowModel,
   getPaginationRowModel,
-  Table,
-  Column,
-  ColumnFiltersState,
-  filterFns,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
 } from '@tanstack/react-table';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { fetcher, swrLaggy } from '../utils/fetcher';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
-import { Updater, useImmer } from 'use-immer';
+import { useImmer } from 'use-immer';
 import TablePagination from '../components/TablePagination';
 import ListingTable from '../components/ListingTable';
 
@@ -68,13 +63,14 @@ const addressAccessor = ({ row }) => (
     >
       {row.getValue('address').slice(0, 20)}
     </Link>
-    {row.getValue('metadata')['category'] == 'new' && (
-      <div className="badge badge-accent text-2xs absolute top-[-6px] px-1 right-0">
-        NEW
-      </div>
-    )}{' '}
+
     {row.original.is_tpa && (
       <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>
+    )}{' '}
+    {row.original.is_mf && (
+      <div className="badge badge-accent text-med">
+        MF
+      </div>
     )}
   </div>
 );
@@ -109,7 +105,7 @@ const statusAccessor = ({ row }) => {
 
 // calculate days since found
 const founddateAccessor = ({ cell }) => {
-  const foundDate =  cell.getValue();
+  const foundDate = cell.getValue();
   let foundtime = (new Date(foundDate)).getTime()
   let nowtime = Date.now()
   return Math.round((nowtime - foundtime) / oneDay);
@@ -126,6 +122,7 @@ const initialColumnState = {
   apn: { visible: false, accessor: apnAccessor },
   address: { visible: true, accessor: addressAccessor },
   zone: { visible: true },
+  is_mf: { visible: true },
   num_existing_buildings: { visible: false },
   is_flag_lot: { visible: false },
   carports: { visible: false },
@@ -241,14 +238,14 @@ export function ListingsPage() {
 
   const listings = data
     ? (data.items.map((item) => {
-        const listing = {
-          ...item,
-          // This weird type casting helps squash errors. Only temporary
-          ...(item.analysis as object),
-        };
-        delete listing.analysis;
-        return listing;
-      }) as Listing[])
+      const listing = {
+        ...item,
+        // This weird type casting helps squash errors. Only temporary
+        ...(item.analysis as object),
+      };
+      delete listing.analysis;
+      return listing;
+    }) as Listing[])
     : [];
 
   const initialVisibility = Object.fromEntries(
@@ -328,7 +325,7 @@ export function ListingsPage() {
           setPageIndex={setPageIndex}
           setPageSize={setPageSize}
         />
-        <ListingTable table={table} setColumnFilters={setColumnFilters} />
+        <ListingTable table={table} setColumnFilters={setColumnFilters}/>
 
         {/*Render column visibility checkboxes*/}
         <label>

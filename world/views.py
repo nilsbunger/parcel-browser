@@ -227,6 +227,7 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         d['is_tpa'] = analysis.is_tpa
         d['is_mf'] = analysis.is_mf
         d['zone'] = analysis.zone
+        d['salt'] = analysis.salt
         d['dev_scenarios'] = analysis.dev_scenarios
         assert analysis.listing
 
