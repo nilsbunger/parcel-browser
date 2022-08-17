@@ -15,7 +15,7 @@ import django
 # all the workers to a separate file so we don't pollute this file.
 from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
-from lib.re_params import ReParams
+from lib.re_params import ReParams, get_build_specs
 
 django.setup()
 
@@ -92,6 +92,30 @@ def get_project_size_score(total_added_area):
     return total_added_area / 4
 
 
+def save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
+                 addr, messages, save_as_model):
+    # Save figures
+    new_buildings_fname = os.path.join(save_dir, "new-buildings", apn + ".jpg")
+    new_buildings_fig.savefig(new_buildings_fname)
+    cant_build_fname = os.path.join(save_dir, "cant-build", apn + ".jpg")
+    cant_build_fig.savefig(cant_build_fname)
+
+    if split_lot_fig:
+        split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
+    if save_as_model:
+        print(f"**** SAVING images for address {addr} to Cloudflare R2 ****")
+        try:
+            response = s3.meta.client.upload_file(
+                new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
+            )
+            response = s3.meta.client.upload_file(
+                cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
+            )
+        except ClientError as e:
+            eprint(f"ERROR uploading images for {addr} to R2. Error = {e}")
+            messages['warning'].append(f"ERROR uploading images for {addr} to R2")
+
+
 def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
     # Helper function to get existing stats
     # There's some overlap with parcel_lib, but keeping it here
@@ -126,9 +150,11 @@ rent_data = RentService()
 
 
 def _dev_potential_by_far(
-    listing: PropertyListing, is_mf: bool, far_area: int, geom_area: int, re_params: ReParams
+    listing: PropertyListing, existing_units_rents: [int], is_mf: bool, far_area: int, geom_area: int,
+    re_params: ReParams
 ) -> List[DevScenario]:
     valid_scenarios = []
+    existing_units_rent = sum(existing_units_rents)
     if is_mf:
         # can typically do as many ADUs as there are current units
         existing_unit_qty = listing.parcel.unitqty
@@ -142,25 +168,30 @@ def _dev_potential_by_far(
         #   * existing_unit_qty small ADUs (2-story)
         #   If those fail, reduce quantity and try again
 
-        existing_units_rent = rent_data.rent_for_location(listing, percentile=re_params.existing_unit_rent_percentile)
-        if existing_units_rent < 1 and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
-            print("HUH")
-        # TODO: Check if existing units need to be multiplied by unit quyantity
-        # TODO: Check if existing units need to be multiplied by unit quyantity
         for adu_qty in range(max_units_to_build, 0, -1):
             assert adu_qty >= 1
             if valid_scenarios:
                 # no need to calculate fewer # of units if we have a working strategy with more units.
                 break
-            for adu_scenario in re_params.builds:
-                adu_sq_ft = adu_scenario.sqft * adu_qty
-                adu_lot_space = adu_scenario.lotspace_required * adu_qty
+            for adu_unit_spec in get_build_specs(re_params.constr_costs):
+                adu_sq_ft = adu_unit_spec.sqft * adu_qty
+                adu_lot_space = adu_unit_spec.lotspace_required * adu_qty
 
                 if adu_sq_ft <= avail_far_sq_ft and adu_lot_space <= avail_area_sq_ft:
                     # have a valid scenario. let's cost it out
+                    # rent we can get:
+                    new_units_rents = adu_qty * rent_data.rent_for_location(
+                        listing, [adu_unit_spec], percentile=re_params.new_unit_rent_percentile,
+                        is_adu=True, cache_only=False
+                    )
+                    # if new_units_rent < 1:
+                    #     print("HUH")
+                    assert (len(new_units_rents))
+                    new_units_rent = sum(new_units_rents)
+                    # acquisition and construction costs:
                     finances = Financials()
                     constr_soft_cost = adu_sq_ft * re_params.constr_costs.soft_cost_rate
-                    constr_hard_cost = adu_scenario.hard_build_cost * adu_qty
+                    constr_hard_cost = adu_unit_spec.hard_build_cost * adu_qty
                     constr_adu_fees = 14000 + 3000 * adu_qty
                     try:
                         finances.capital_flow['acquisition'] = [
@@ -173,16 +204,10 @@ def _dev_potential_by_far(
                         raise
                     finances.capital_flow['construction'] = [
                         ('hard costs', 0 - constr_hard_cost,
-                         f'${adu_scenario.hard_cost_per_sqft} / sqft for {adu_scenario.stories} stories'),
+                         f'${adu_unit_spec.hard_cost_per_sqft} / sqft for {adu_unit_spec.stories} stories'),
                         ('soft costs', 0 - constr_soft_cost, f'${re_params.constr_costs.soft_cost_rate} / sqft'),
                         ('adu fees', 0 - constr_adu_fees, f'$14K base with $3K per unit (total guess)')
                     ]
-                    new_units_rent = adu_qty * rent_data.rent_for_location(
-                        listing, re_params.new_unit_rent_percentile, adu_scenario, cache_only=False
-                    )
-                    if new_units_rent < 1:
-                        print("HUH")
-                    assert (new_units_rent > 1)
                     total_constr_cost = constr_hard_cost + constr_soft_cost + constr_adu_fees
                     vacancy_cost = 0 - round(re_params.vacancy_rate * (new_units_rent + existing_units_rent))
                     insurance_cost = round((0 - listing.price + total_constr_cost) * re_params.insurance_cost_rate / 12)
@@ -200,7 +225,7 @@ def _dev_potential_by_far(
                         ['prop taxes', prop_taxes, f'{re_params.prop_tax_rate * 100}% of prop value'],
                     ]
 
-                    valid_scenarios.append(DevScenario(adu_qty=adu_qty, unit_type=adu_scenario, finances=finances))
+                    valid_scenarios.append(DevScenario(adu_qty=adu_qty, unit_type=adu_unit_spec, finances=finances))
                 # else:
                 #     print (f"Skipping putting {adu_qty} x {adu_scenario} units on lot, not enough room."
                 #            f"FAR avail={avail_far_sq_ft}, geom avail={avail_area_sq_ft}"
@@ -277,8 +302,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     setbacks = get_setback_geoms(parcel.geometry, setback_widths, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
-    too_steep = calculate_slopes_for_parcel(
-        parcel, utm_crs, 10, use_cache=True)
+    too_steep = calculate_slopes_for_parcel(parcel, utm_crs, 10, use_cache=True)
 
     too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(parcel, buildings, topos_df, utm_crs)
     cant_build = unary_union([buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
@@ -294,12 +318,19 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
      existing_FAR, main_building_area, accessory_buildings_area) = _get_existing_floor_area_stats(
         parcel, buildings)
 
-    # *** 2a. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
+    # *** 2a. Compute rent for existing unit. Currently only run it for multifamily lots
+    existing_units = listing.parcel.rental_units
+    existing_units_rents = rent_data.rent_for_location(listing, existing_units,
+                                                       percentile=re_params.existing_unit_rent_percentile, )
+    if not len(existing_units_rents) and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
+        print("HUH")
+
+    # *** 2b. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
     assert listing
     dev_scenarios: List[DevScenario] = _dev_potential_by_far(
-        listing, is_mf, int(avail_area_by_far), int(avail_geom.area), re_params
+        listing, existing_units_rents, is_mf, int(avail_area_by_far), int(avail_geom.area), re_params
     )
-    # *** 2b. See what we can build on the lot -- geometry-focused
+    # *** 2c. See what we can build on the lot -- geometry-focused
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
@@ -332,20 +363,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     project_size_score = get_project_size_score(total_added_building_area)
     total_score = cap_ratio_score + open_space_score + project_size_score
 
-    # Get development potential limiting factor. Multiply by a factor
-    # to scale it down to account for innacuracies
-    limiting_factor = ""
-    theoretical_avail_space = MAX_BUILDING_AREA * MAX_NEW_BUILDINGS * 0.98
-    tolerance_FAR = 0.01
-
-    if total_added_building_area < theoretical_avail_space:
-        # Development potential not reached
-        if new_FAR > max_far - tolerance_FAR:
-            limiting_factor = 'FAR'
-        else:
-            limiting_factor = "Available Space"
-        # Todo: Insert something about topography.
-
     # Logic for lot splits
     if try_split_lot:
         second_lot, second_lot_area_ratio = split_lot(parcel.geometry, buildings)
@@ -353,9 +370,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         second_lot, second_lot_area_ratio = None, None
 
     # 3. *** Plot and/or save results
-
-    # Salt for hashing filenames in R2 (or S3) buckets.
-    salt = secrets.token_urlsafe(10)
+    new_buildings_fig = cant_build_fig = split_lot_fig = None
     if show_plot or save_file or save_as_model:
         plt.close()
         # Generate the figures
@@ -365,46 +380,25 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
             parcel, buildings, utm_crs, buffered_buildings_geom,
             list(setbacks), too_steep, flag_poly, parcel_edges['front']
         )
-        if second_lot:
-            split_lot_fig = plot_split_lot(parcel, buildings, utm_crs, second_lot)
-
-        # Save figures
-        if save_file or save_as_model:
-            new_buildings_fname = os.path.join(save_dir, "new-buildings", apn + ".jpg")
-            new_buildings_fig.savefig(new_buildings_fname)
-            cant_build_fname = os.path.join(save_dir, "cant-build", apn + ".jpg")
-            cant_build_fig.savefig(cant_build_fname)
-
-            if second_lot:
-                split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
-            if save_as_model:
-                print(f"**** SAVING images for address {parcel.model.address} to Cloudflare R2 ****")
-                try:
-                    response = s3.meta.client.upload_file(
-                        new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
-                    )
-                    response = s3.meta.client.upload_file(
-                        cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
-                    )
-                except ClientError as e:
-                    eprint(f"ERROR uploading images for {parcel.model.address} to R2. Error = {e}")
-                    messages['warning'].append(f"ERROR uploading images for {parcel.model.address} to R2")
-
+        split_lot_fig = plot_split_lot(parcel, buildings, utm_crs, second_lot) if second_lot else None
         # Show figures
         if show_plot:
             plt.show()
 
+    existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
+    max_cap_rate = max([scenario.finances.cap_rate_calc for scenario in dev_scenarios])
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
-
     details = OrderedDict({
         "apn": apn,
         "address": parcel.model.address,
         "zone": zone,
-        "is_tpa": is_tpa,
+        "existing_units_with_rent": existing_units_with_rent,
         "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
         "carports": num_carports,
         "garages": num_garages,
+        "re_params": re_params.dict(),
+        "max_cap_rate": max_cap_rate,
 
         "parcel_size": parcel_size,
         "existing_living_area": existing_living_area,
@@ -445,7 +439,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
         "git_commit_hash": git_commit_hash,
         "front_setback": setback_widths['front'],
-        "salt": salt,
         'messages': messages,
     })
 
@@ -457,34 +450,39 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "FAR_ratio": max_far,
     }
 
-    geometry_details = {
-        "buildings": "to be implemented",
-        "new_buildings": new_building_info,
-        "no_build_zones": {
-            "setbacks": setbacks,
-            "buffered_buildings": buffered_buildings_geom,
-            "topography": "insert",
-        },
-        "avail_geom": avail_geom,
-    }
-
     datetime_ran = datetime.datetime.utcnow()
     if save_as_model:
         # Save it as a database model, and return it
-        dev_scenarios_dict = [x.dict() for x in dev_scenarios]
+        dev_scenarios_dict = [x.dict(exclude={'constr_costs'}) for x in dev_scenarios]
         a, created = AnalyzedListing.objects.update_or_create(
             listing=listing, defaults={
                 'datetime_ran': datetime_ran,
+                'is_tpa': is_tpa,
+                'is_mf': is_mf,
                 'details': details,
                 'input_parameters': input_parameters,
                 'geometry_details': {},
                 'dev_scenarios': dev_scenarios_dict,
             }
         )
+        # Salt for hashing filenames in R2 (or S3) buckets.
+        # Only upload images if there's a new salt since they don't typically change.
+        if not created:
+            salt = a.salt
+        if not salt:
+            # either it's newly created, or didn't have a salt entry.
+            a.salt = secrets.token_urlsafe(10)
+            a.save(update_fields=["salt"])
+            save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
+                         parcel.model.address, messages, save_as_model=True)
+        else:
+            print(f"Reusing salt and images for {parcel.model.address}")
         return a
     else:
         # LEGACY. Return analyzed as a dictionary with everything in it
         details['datetime_ran'] = datetime_ran
+        save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
+                     parcel.model.address, messages, save_as_model=False)
         return details
 
 
@@ -555,7 +553,7 @@ def analyze_batch(parcels: list[Parcel], utm_crs: pyproj.CRS,
     print(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
 
     # There probably is a cleaner way of doing this
-    assert (listings is not None)   # test that the following branch is no longer needed.
+    assert (listings is not None)  # test that the following branch is no longer needed.
     if listings is None:
         listings = [None] * len(parcels)
 

@@ -225,6 +225,7 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         d['datetime_ran'] = analysis.datetime_ran
         d['apn'] = analysis.parcel.apn
         d['is_tpa'] = analysis.is_tpa
+        d['is_mf'] = analysis.is_mf
         d['zone'] = analysis.zone
         d['dev_scenarios'] = analysis.dev_scenarios
         assert analysis.listing

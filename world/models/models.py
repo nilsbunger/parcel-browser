@@ -81,6 +81,8 @@ class AnalyzedListing(models.Model):
         Parcel, on_delete=models.CASCADE, to_field='apn', blank=True, null=True)
     zone = models.CharField(max_length=20, null=True, blank=True)
     is_tpa=models.BooleanField(null=True, blank=True)
+    is_mf=models.BooleanField(null=True, blank=True)
+    salt=models.CharField(max_length=20, null=True, blank=True)
 
     datetime_ran = models.DateTimeField(auto_now_add=True)
     details = models.JSONField()

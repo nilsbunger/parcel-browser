@@ -131,6 +131,8 @@ class Command(BaseCommand):
                     analyzedlisting__zone__contains='RM',
                     neighborhood__in=include_neighborhoods
                 ).order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('parcel')[0:20]
+                # listings = PropertyListing.objects.filter(parcel__apn='5471440600')
+                # assert (len(listings) == 1)
 
             # A set of tuples (parcel, listing)
             stats = defaultdict(int)

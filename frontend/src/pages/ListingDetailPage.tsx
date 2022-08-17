@@ -1,9 +1,9 @@
 import * as React from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
-import {ListingHistory} from "../components/ListingHistory";
-import { useEffect } from "react";
+import { ListingHistory } from "../components/ListingHistory";
 import { DevScenarios } from "../components/DevScenarios";
 
 async function getAnalysis(e, apn) {
@@ -39,7 +39,9 @@ export function ListingDetailPage({}) {
     fetcher
   );
   useEffect(() => {
-    if (data) {document.title = data.address}
+    if (data) {
+      document.title = data.address
+    }
   }, [data]);
   if (error) return <div>ListingDetailPage failed its AJAX call. {error}</div>;
   if (!data) return <div>loading...</div>;
@@ -76,14 +78,30 @@ export function ListingDetailPage({}) {
       {/*Show building and land plots */}
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
-          <h1 className={'hidden print:block'}><a className='link text-darkblue' href={window.location.href}>{data.address}</a></h1>
+          <h1 className={'hidden print:block'}><a className='link text-darkblue'
+                                                  href={window.location.href}>{data.address}</a></h1>
           <h1 className={'print:hidden'}>{data.address}</h1>
           {data.is_tpa && <div className="badge badge-primary">TPA</div>}
+          {data.is_mf && <div className="badge badge-accent ml-2">Multifam</div>}
           <p>{data.neighborhood}</p>
           <p>APN: {data.apn}</p>
-          <p>Build Sq Ft by FAR: {asSqFt(data.avail_area_by_FAR)}</p>
-          <p>Sq Ft open area: {asSqFt(data.avail_geom_area)}</p>
+          {/*<p>Build Sq Ft by FAR: {asSqFt(data.avail_area_by_FAR)}</p>*/}
+          {/*<p>Sq Ft open area: {asSqFt(data.avail_geom_area)}</p>*/}
           <p>Zone: {data.zone}</p>
+          <p>Walk score: XX</p>
+          <div className='divider'></div>
+          <h2>Units and Rents</h2>
+          <p>Existing unit count: {data.existing_units_with_rent.length}</p>
+          <p>Assumed units and rents:</p>
+          <ul>
+            {data.existing_units_with_rent.map( (unit) => (
+              <li>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
+              )
+            )}
+            <li></li>
+          </ul>
+          <p>({data.re_params.existing_unit_rent_percentile}th percentile rents)</p>
+
         </div>
         <div>
           <h1>${data.price.toLocaleString()}</h1>
@@ -94,7 +112,7 @@ export function ListingDetailPage({}) {
           <p>{data.garages + data.carports} garage</p>
         </div>
         <div className={'justify-end'}>
-          <img src={data.thumbnail} className="min-w-[25%] min-h-[25%]" />
+          <img src={data.thumbnail} className="w-72"/>
           <button
             className="btn btn-secondary btn-xs mt-3"
             onClick={onRedoAnalysis}
@@ -106,16 +124,16 @@ export function ListingDetailPage({}) {
       <div className="flex flex-row mt-6">
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Plot analysis</h2>
-          <img src={`https://r2-image-worker.upzone.workers.dev/buildings-${data.apn}-${data.salt}`} />
+          <img src={`https://r2-image-worker.upzone.workers.dev/buildings-${data.apn}-${data.salt}`}/>
         </div>
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Usable land analysis</h2>
-          <img src={`https://r2-image-worker.upzone.workers.dev/cant_build-${data.apn}-${data.salt}`} />
+          <img src={`https://r2-image-worker.upzone.workers.dev/cant_build-${data.apn}-${data.salt}`}/>
           <div
             tabIndex={0}
             className="collapse collapse-arrow w-60 border border-base-300 bg-base-100 min-h-0 object-right float-right"
           >
-            <input type="checkbox" style={{ minHeight: 0 }} />
+            <input type="checkbox" style={{ minHeight: 0 }}/>
             <div className={'collapse-title min-h-0 p-2 after:!top-3 '}>
               <p>Legend</p>
             </div>
@@ -143,7 +161,7 @@ export function ListingDetailPage({}) {
         {false && data.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
-            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`} />
+            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`}/>
           </div>
         )}
       </div>
@@ -177,9 +195,15 @@ export function ListingDetailPage({}) {
             {/*</div>*/}
           </div>
         </div>
+        <div className="card bg-base-100 shadow-md">
+          <div className="card-body">
+            <h2 className="card-title">Listing history</h2>
+              <ListingHistory mlsid={data.mlsid}/>
+          </div>
+        </div>
       </div>
-      <h1 className={'mt-5'}>Listing history</h1>
-      <ListingHistory mlsid={data.mlsid}/>
+      <h1>Assumptions</h1>
+      <p></p>
       <h1>Details</h1>
       {Object.keys(data).map((key) => {
         return (
