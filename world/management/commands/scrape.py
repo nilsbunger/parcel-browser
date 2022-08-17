@@ -119,7 +119,8 @@ class Command(BaseCommand):
 
             listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
                 .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting')
-            if False:
+            # TODO TODO: THIS IS A TEMP QUERY
+            if True:
                 # separate query for testing...
                 include_neighborhoods = [
                     'Normal Heights', 'Mira Mesa', 'Golden Hill', 'Clairemont/Bay Park', 'Carmel Valley',
@@ -179,7 +180,7 @@ class Command(BaseCommand):
             parcels, parcel_listings = zip(*parcels_to_analyze)
             sd_utm_crs = get_utm_crs()
             results, errors = analyze_batch(
-                parcels, zip_codes=[], utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
+                parcels, utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
                 save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listings=parcel_listings)
 
             # Save the errors to a csv

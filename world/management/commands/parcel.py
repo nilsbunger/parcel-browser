@@ -6,6 +6,7 @@ from lib.crs_lib import get_utm_crs
 
 from django.core.management.base import BaseCommand
 from lib.neighborhoods import Neighborhood
+from lib.parcel_lib import get_parcels_by_zip_codes
 
 
 class Command(BaseCommand):
@@ -44,8 +45,8 @@ class Command(BaseCommand):
 
             pprint.pprint(results)
         elif options['neighborhood']:
-            analyze_batch(parcels=[],
-                          zip_codes=Neighborhood[options['neighborhood']].value,
+            parcels = list(get_parcels_by_zip_codes(Neighborhood[options['neighborhood']].value))
+            analyze_batch(parcels=parcels,
                           utm_crs=sd_utm_crs,
                           hood_name=options['neighborhood'],
                           save_file=options['save_file'],
