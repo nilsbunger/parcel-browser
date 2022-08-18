@@ -131,6 +131,10 @@ const initialColumnState = {
     enableColumnFilter: true,
     filterFn: mfFilterFn,
   },
+  max_cap_rate: {
+    visible: true,
+    headername: "CapRate",
+  },
   num_existing_buildings: { visible: false },
   is_flag_lot: { visible: false },
   carports: { visible: false },
