@@ -111,6 +111,10 @@ const founddateAccessor = ({ cell }) => {
   return Math.round((nowtime - foundtime) / oneDay);
 };
 
+const mfFilterFn = (row, columnId, filterValue) => {
+  return (row.original.is_mf || !filterValue)
+}
+
 // To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
 // a filterFn (https://tanstack.com/table/v8/docs/api/features/filters)
 const initialColumnState = {
@@ -122,7 +126,11 @@ const initialColumnState = {
   apn: { visible: false, accessor: apnAccessor },
   address: { visible: true, accessor: addressAccessor },
   zone: { visible: true },
-  is_mf: { visible: true },
+  is_mf: {
+    visible: false,
+    enableColumnFilter: true,
+    filterFn: mfFilterFn,
+  },
   num_existing_buildings: { visible: false },
   is_flag_lot: { visible: false },
   carports: { visible: false },
@@ -196,6 +204,7 @@ type QueryResponse = {
   count: number;
 };
 
+// Create query parameters for filtering, depending on type of filter
 function columnFiltersToQuery(filters: ColumnFiltersState) {
   const query = {};
   filters.forEach((item) => {
@@ -205,6 +214,8 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
       query[`${item.id}__lte`] = parseInt(item.value[1]) || undefined;
     } else if (typeof item.value === 'string') {
       query[`${item.id}__contains`] = item.value;
+    } else if (typeof item.value == 'boolean') {
+      query[`${item.id}`] = item.value;
     }
   });
   return query;
@@ -215,6 +226,7 @@ export function ListingsPage() {
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
+  const [isMfChecked, setIsMfChecked] = React.useState<boolean>(false);
 
   const { data, error, isValidating } = useSWR(
     [
@@ -232,6 +244,7 @@ export function ListingsPage() {
     fetcher,
     { use: [swrLaggy] }
   );
+  console.log (data)
   useEffect(() => {
     document.title = 'Listings'
   }, []);
@@ -307,7 +320,20 @@ export function ListingsPage() {
       <p>Try <a href='/dj/accounts/login/'>logging in?</a></p>
     </div>)
 
-  // Render each date as a separate table
+  const onMfFilterCheck = (e) => {
+    setIsMfChecked(!isMfChecked)
+    setColumnFilters((draft) => {
+      // convoluted solution from react-table for updating column filters.
+      const isMfFilter = draft.find((columnFilter) => columnFilter.id==='is_mf')
+      if (!isMfFilter) {
+        draft.push({id: 'is_mf', value:!isMfChecked})
+      } else {
+        isMfFilter.value = !isMfChecked
+      }
+    });
+  }
+
+// Render each date as a separate table
   return (
     <div className={'flex flex-row'}>
       <ListingsMap
@@ -325,6 +351,14 @@ export function ListingsPage() {
           setPageIndex={setPageIndex}
           setPageSize={setPageSize}
         />
+        <div className="form-control w-36">
+          <label className="cursor-pointer label">
+            <input type="checkbox" value="{isMfChecked}" className="checkbox checkbox-accent"
+                   onChange={onMfFilterCheck}/>
+            <span className="label-text">Multifamily-only</span>
+          </label>
+        </div>
+
         <ListingTable table={table} setColumnFilters={setColumnFilters}/>
 
         {/*Render column visibility checkboxes*/}

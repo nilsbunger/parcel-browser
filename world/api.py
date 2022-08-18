@@ -66,14 +66,14 @@ class ListingSchema(ModelSchema):
         arbitrary_types_allowed = True
         model_fields = [
             'id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
-                        'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
+            'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
 
     # These resolve_xx methods resolve certain fields on the response automatically
     # Functionality provided by Django-Ninja
     @staticmethod
     def resolve_analysis(obj):
         # Only return the latest analysis
-        analysis : AnalyzedListing = obj.analyzedlisting
+        analysis: AnalyzedListing = obj.analyzedlisting
         analysis_dict = analysis.details
         analysis_dict['analysis_id'] = analysis.id
         analysis_dict['is_tpa'] = analysis.is_tpa
@@ -105,6 +105,7 @@ class ListingSchema(ModelSchema):
 class ListingsFilters(Schema):
     price__gte: int = None
     price__lte: int = None
+    is_mf: bool = False
     neighborhood__contains: str = None
 
 
@@ -112,15 +113,18 @@ class ListingsFilters(Schema):
 @paginate
 def get_listings(request, order_by: str = 'founddate', asc: bool = False,
                  filters: ListingsFilters = Query(...)):
-
     # Strip away the filter params that are none
     # Filters are already validated by the ListingsFilters Schema above
+    filters_xlat = {'is_mf': 'analyzedlisting__is_mf'}
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
-            filter_params[key] = filters.dict()[key]
+            if key == 'is_mf' and filters.dict()[key] == False:
+                # is_mf really means "only multifamily". so if it's false, don't add a filter criteria
+                continue
+            filter_params[filters_xlat.get(key, key)] = filters.dict()[key]
 
-    # If the field doesn't exist on the PropertyListing model, it probably exists
+    # Construct ordering query: if the field doesn't exist on the PropertyListing model, it probably exists
     # either on AnalyzedListing model or AnalyzedListing's detail field, so let's prefix it
     if not field_exists_on_model(PropertyListing, order_by):
         if field_exists_on_model(AnalyzedListing, order_by):

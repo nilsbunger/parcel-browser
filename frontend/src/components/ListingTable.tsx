@@ -7,6 +7,8 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Updater } from 'use-immer';
 import { Listing } from '../types';
 import Filter from './ListingFilters';
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 
 type Props = {
   table: Table<Listing>;
@@ -17,6 +19,7 @@ function ListingTable({ table, setColumnFilters }: Props) {
   return (
     <ErrorBoundary fallback={<div>Error in ListingTable</div>}>
 
+      {table.getRowModel().rows.length == 0 && <Skeleton count={50} />}
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
         {table.getHeaderGroups().map((headerGroup) => (
@@ -82,7 +85,7 @@ function ListingTable({ table, setColumnFilters }: Props) {
               }
             })}
           </tr>
-        ))}
+        )) }
         </tbody>
       </table>
       <div className="h-2"/>
