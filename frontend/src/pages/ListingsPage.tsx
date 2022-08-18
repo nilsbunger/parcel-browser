@@ -248,10 +248,27 @@ export function ListingsPage() {
     fetcher,
     { use: [swrLaggy] }
   );
-  console.log (data)
   useEffect(() => {
     document.title = 'Listings'
+    // load initial values of state from local storage
+    const settings = JSON.parse(window.localStorage.getItem('listings_page_settings'))
+    if (settings) {
+      console.log ("Setting local state to", settings)
+      setPageSize(settings.pageSize)
+      // setPageIndex(settings.pageIndex)
+      setSorting(settings.sorting)
+      setColumnFilters(settings.columnFilters)
+      setIsMfChecked(settings.isMfChecked)
+    }
   }, []);
+
+  useEffect(() => {
+    // update local storage when something changes
+    const settings = {
+      pageSize:pageSize, sorting:sorting, columnFilters:columnFilters, isMfChecked:isMfChecked
+    }
+    window.localStorage.setItem('listings_page_settings', JSON.stringify(settings));
+  }, [pageSize, pageIndex, sorting, columnFilters, isMfChecked]);
 
   const listings = data
     ? (data.items.map((item) => {
@@ -325,7 +342,7 @@ export function ListingsPage() {
     </div>)
 
   const onMfFilterCheck = (e) => {
-    setIsMfChecked(!isMfChecked)
+    setIsMfChecked(e.target.checked)
     setColumnFilters((draft) => {
       // convoluted solution from react-table for updating column filters.
       const isMfFilter = draft.find((columnFilter) => columnFilter.id==='is_mf')
@@ -357,7 +374,7 @@ export function ListingsPage() {
         />
         <div className="form-control w-36">
           <label className="cursor-pointer label">
-            <input type="checkbox" value="{isMfChecked}" className="checkbox checkbox-accent"
+            <input type="checkbox" checked={isMfChecked} className="checkbox checkbox-accent"
                    onChange={onMfFilterCheck}/>
             <span className="label-text">Multifamily-only</span>
           </label>
