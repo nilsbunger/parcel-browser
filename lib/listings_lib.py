@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import traceback
 
 from world.models import PropertyListing, Parcel
 
@@ -86,8 +87,13 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
             situs_addr=addr_num, situs_stre__iexact=street_name,)
         parcels_inexact = Parcel.objects.filter(
             situs_addr=addr_num, situs_stre__istartswith=street_name,)
+    except ValueError as e:
+        # This can happen when address has a non-number in it. allow it to pass for now
+        print(f"Error processing {addr_normalized} {str(e)}")
+        return None, 'dberror-valueerror'
     except Exception as e:
         print(f"Error processing {addr_normalized} {str(e)}")
+        traceback.print_exc()
         return None, 'dberror'
     # repeat loop twice, looking at exact match first.
     for parcels in [parcels_exact, parcels_inexact]:
@@ -122,7 +128,7 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
     if hyphenated_addr_num:
         # Need to build out this case: we found a hyphenated address, but the first address didn't work.
         # Maybe another address in the hyphen range would?
-        print("Error processing {addr_normalized}: hyphenated address we didn't find")
+        print(f"Error processing {addr_normalized}: hyphenated address we didn't find")
         return None, 'dberror'
     print(f"No match in Parcel table for {addr_normalized}, {neighborhood}")
     return None, 'unmatched'
