@@ -2,6 +2,7 @@ from collections import defaultdict
 import logging
 import random
 import re
+import traceback
 from urllib.parse import urljoin
 
 from django.core.exceptions import MultipleObjectsReturned
@@ -28,18 +29,18 @@ class MyItemPipeline:
 
     def process_item(self, item, spider):
         """ Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table. """
-        default_fields = {k: item[k] for k in ['price', 'addr', 'br', 'ba', 'mlsid', 'size'] if k in item}
+        listing_fields = {k: item[k] for k in ['price', 'addr', 'br', 'ba', 'mlsid', 'size'] if k in item}
         log.debug(f"Found listing: {item}")
         try:
             try:
                 # Create a new entry when the price, addr or status changes on an entry
                 property, created = PropertyListing.objects.get_or_create(
-                    **default_fields, status=PropertyListing.ListingStatus.ACTIVE
+                    **listing_fields, status=PropertyListing.ListingStatus.ACTIVE
                 )
             except MultipleObjectsReturned as e:
                 # uniqueness constraint violated - price,addr,br,ba,mlsid,size,status should be a unique entry. fix it up
                 listings = PropertyListing.objects.filter(
-                    **default_fields, status=PropertyListing.ListingStatus.ACTIVE).order_by('founddate')
+                    **listing_fields, status=PropertyListing.ListingStatus.ACTIVE).order_by('founddate')
                 # most likely case is the first listing has the found date we want but still has a zip code,
                 # which we deprecated in the listing.
                 print(f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}")
@@ -75,6 +76,7 @@ class MyItemPipeline:
                 self.stats.inc_value('info:listing/no_change')
         except Exception as e:
             print(e)
+            traceback.print_exc()
             raise CloseSpider()
 
 
@@ -168,6 +170,8 @@ class SanDiegoMlsSpider(scrapy.Spider):
         except Exception as e:
             print(e)
             print("Uh oh")
+            traceback.print_exc()
+
         query_params = 'type=res&type=mul&type=lnd&list_price_min=50000&list_price_max=3000000&' \
                        'beds_min=all&baths_min=all&area_min=all&lot_size_range=all' \
                        '&view=all&parking_spaces_total_min=all&year_built_min=all&pool=all&stories=all&hoa=all&' \
