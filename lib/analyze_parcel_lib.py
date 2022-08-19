@@ -1,6 +1,6 @@
 """
 This file contains implementation for functions relating to analyzing a parcel, such as the
-generation of new buildings/repurpose of old one, computing scores for scenarios, and running
+generation of new buildings/repurpose of old one, computing financial models, and running
 scenarios in general.
 """
 from collections import OrderedDict
@@ -61,36 +61,6 @@ MAX_ASPECT_RATIO = 2.5
 DEFAULT_SAVE_DIR = './world/data/scenario-images/'
 
 colorkeys = list(mcolors.XKCD_COLORS.keys())
-
-
-def get_cap_ratio_score():
-    return 0
-
-
-def get_open_space_score(not_open_space: Polygonal, parcel_geom: MultiPolygon) -> tuple[Polygon, float]:
-    """
-    From Notion: Open space score: size and squareness of open space remaining after placing buildings that's
-    at <10% grade. Use formula like this: Score = squarish_size / lot_size * 100,
-    where squarish_size = area of rectangle with max 2:1 aspect ratio that fits
-    into the open space. Value should typically be in range of 20-40.
-    """
-    remaining = parcel_geom.difference(not_open_space)
-    open_space_poly = find_largest_rectangles_on_avail_geom(
-        remaining, parcel_geom.boundary, num_rects=1, max_aspect_ratio=2)[0]
-    area = open_space_poly.area
-
-    # NOTE: For now, let's scale the factor by 3 to make the score relevant (arbitrary number).
-    # We might want to continue tweaking this to get something that works better
-    SCALING_FACTOR = 3
-
-    return open_space_poly, area / parcel_geom.area * 100 * SCALING_FACTOR
-
-
-def get_project_size_score(total_added_area):
-    # For now, we use the total size of the added buildings, scaled down by 4
-    # (Each ADU has max size of approx. 111sqm), so a project with one ADU will give us around 27
-    # Later, this should take construction costs into account
-    return total_added_area / 4
 
 
 def save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
@@ -302,7 +272,6 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
         messages['warning'].append(f"No buildings found for parcel: {apn}")
         buildings = None
         cant_build = unary_union([*setbacks])
-        # cant_build = unary_union([*setbacks, *too_steep, cant_build_elev])
     else:
         buildings = models_to_utm_gdf(list(buildings), utm_crs)
         identify_building_types(parcel.geometry, buildings)
@@ -316,7 +285,8 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
     if flag_poly:
         cant_build = unary_union([cant_build, flag_poly])
 
-    avail_geom = get_avail_geoms(parcel.geometry, cant_build)
+    # open space on the parcel
+    avail_geom = parcel.geometry.difference(cant_build)
 
     # Get floor area info
     (parcel_size, existing_living_area, existing_floor_area,
@@ -342,20 +312,6 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
-    # Get the open space available (for yard and stuff)'
-    # TODO: Include setbacks in not_open_space... but it needs to be done carefully
-    if buildings is not None:
-        # not_open_space = unary_union(
-        #     [*buildings.geometry, *new_building_polys, *too_steep, cant_build_elev])
-        # FIX FOR parcel 4633210400
-        not_open_space = unary_union([*buildings.geometry, *too_steep, cant_build_elev])
-    else:
-        not_open_space = unary_union(
-            [*new_building_polys, *too_steep])
-
-
-    if flag_poly:
-        not_open_space = unary_union([not_open_space, flag_poly])
 
     # Compute garage conversion fields
     num_garages = parcel_model.garages
@@ -366,12 +322,6 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
 
     total_added_building_area = sum([poly.area for poly in new_building_polys])
     new_FAR = (total_added_building_area + existing_floor_area) / parcel_size
-    # Score stuff
-    cap_ratio_score = get_cap_ratio_score()
-    open_space_poly, open_space_score = get_open_space_score(
-        not_open_space, parcel.geometry)
-    project_size_score = get_project_size_score(total_added_building_area)
-    total_score = cap_ratio_score + open_space_score + project_size_score
 
     # Logic for lot splits
     second_lot, second_lot_area_ratio = None, None
@@ -388,7 +338,7 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
         plt.close()
         # Generate the figures
         new_buildings_fig = plot_new_buildings(parcel, buildings, utm_crs, topos_df, too_high_df, too_low_df,
-                                               new_building_polys, open_space_poly, parcel_edges['front'], flag_poly)
+                                               new_building_polys, parcel_edges['front'], flag_poly)
         cant_build_fig = plot_cant_build(
             parcel, buildings, utm_crs, buffered_buildings_geom,
             list(setbacks), too_steep, flag_poly, parcel_edges['front']
@@ -440,11 +390,6 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
 
         "parcel_sloped_area": unary_union(too_steep).area,
         "parcel_sloped_ratio": unary_union(too_steep).area / parcel.geometry.area,
-
-        "total_score": total_score,
-        "cap_ratio_score": cap_ratio_score,
-        "open_space_score": open_space_score,
-        "project_size_score": project_size_score,
 
         "can_lot_split": second_lot is not None,
         "new_lot_area_ratio": second_lot_area_ratio,
@@ -498,18 +443,10 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
     else:
         # LEGACY. Return analyzed as a dictionary with everything in it
         details['datetime_ran'] = datetime_ran
+        salt = 0
         save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
                      parcel.model.address, messages, save_as_model=False)
         return details
-
-
-def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
-                   save_dir=DEFAULT_SAVE_DIR, save_as_model=False, listing=None):
-    assert False, "Replaced by calling analyze_one_parcel directly"
-    # parcel = get_parcel_by_apn(apn)
-    # return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir,
-    #                            save_as_model=save_as_model, listing=listing)
-
 
 def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                                save_file=False, save_dir=DEFAULT_SAVE_DIR,

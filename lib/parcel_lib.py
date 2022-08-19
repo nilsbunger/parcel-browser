@@ -126,7 +126,7 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, b
     else:
         raise Exception(
             f"Parcel has more than two zones. {[z.zone_name for z in zones]}")
-    is_mf = parcel.model.unitqty > 1 or bool(re.match(r'^RM', zone))
+    is_mf = parcel.model.unitqty > 1 or bool(re.match(r'^(RM|CN|CC)', zone))
     return zone, is_tpa, is_mf
 
 
@@ -239,24 +239,8 @@ def collapse_multipolygon_list(multipolygons):
     return MultiPolygon(res)
 
 
-def get_avail_geoms(parcel_geom: MultiPolygon, cant_build_geom: Polygonal) -> Polygonal:
-    """Returns a MultiPolygon representing the available space for a given parcel
-
-    Args:
-        parcel_geom (Geometry): The geometry of a given parcel
-        cant_build_geom (Geometry): The geometry of the area we can't build. This should
-        be the union of buildings, setbacks, steep sections, etc.
-
-    Returns:
-        Multipolygon: A Multipolygon of the available space for placing ADUs/extra buildings
-    """
-    return parcel_geom.difference(cant_build_geom)
-
-
 # Find rectangles based on an answer at
 # https://stackoverflow.com/questions/7245/puzzle-find-largest-rectangle-maximal-rectangle-problem
-
-
 def find_largest_rectangles_on_avail_geom(avail_geom: Polygonal, parcel_geom: Polygonal, num_rects,
                                           max_aspect_ratio: float, min_area: float = 0,
                                           max_total_area=float("inf"), max_area_per_building=float("inf")) \

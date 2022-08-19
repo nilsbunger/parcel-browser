@@ -209,7 +209,7 @@ class Command(BaseCommand):
                 save_dir="./frontend/static/temp_computed_imgs",
                 save_as_model=True,
                 listings=parcel_listings,
-                single_process=bool(options['parcel'] or True)
+                single_process=bool(options['parcel'])
             )
 
             # Save the errors to a csv

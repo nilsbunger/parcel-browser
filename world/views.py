@@ -1,31 +1,22 @@
+from collections import defaultdict
+from itertools import chain
 import json
 import pprint
-from collections import OrderedDict, defaultdict
-from itertools import chain
 import traceback
-from zoneinfo import ZoneInfo
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-import matplotlib
-import pandas
-import json
-import geopandas as geopandas
 from django.core.serializers import serialize
-from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
-from django.views.generic import TemplateView, ListView
-# from django.contrib.auth.mixins import LoginRequiredMixin
-
+from django.views.generic import ListView, TemplateView
+import geopandas as geopandas
 # Create your views here.
 from vectortiles.postgis.views import MVTView
-from lib.analyze_parcel_lib import analyze_by_apn
 
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
-from world.models import AnalyzedListing, Parcel, BuildingOutlines, Topography, PropertyListing, TransitPriorityArea
-from lib.crs_lib import get_utm_crs
+from world.models import AnalyzedListing, BuildingOutlines, Parcel, PropertyListing, Topography, TransitPriorityArea
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -156,75 +147,7 @@ class ListingsData(LoginRequiredMixin, View):
             #     listings_formatted[founddate].append(l)
             # else:
             #     listings_formatted[founddate] = [l]
-
         return JsonResponse(listings_formatted, content_type='application/json', safe=False)
-
-    def post(self, request, *args, **kwargs):
-        """ajax post to manually add a 'listing' entry for a property not listed, or redo the analysis
-        for an existing entry."""
-
-        assert False    # TODO: THIS SHOULD ALL BE REMOVED
-        # Use Matplotlib in non-interactive mode, preventing errors and python crash
-        matplotlib.use('Agg')
-
-        body_unicode = request.body.decode('utf-8')
-        body = json.loads(body_unicode)
-        apn = body['apn']
-        add_as_listing = body['add_as_listing']
-        redo_analysis = body['redo_analysis']
-        assert (not add_as_listing or not redo_analysis)
-
-        existing_listing = PropertyListing.objects.filter(parcel__apn=apn)
-        if existing_listing and not redo_analysis:
-            # The property listing exists in the database, show its analysis
-            latest_listing = existing_listing.latest('founddate')
-            latest_analysis = latest_listing.analyzedlisting
-            return JsonResponse({"status": "LISTING_EXISTS", "analysis_id": latest_analysis.id})
-
-        # Run an analysis, passing in listing if we want to create a listing for it
-        try:
-            parcel = Parcel.objects.get(apn=apn)
-            sd_utm_crs = get_utm_crs()
-
-            if add_as_listing:
-                new_listing = PropertyListing(
-                    br=parcel.bedrooms, ba=parcel.baths, status="OFFMARKET", parcel=parcel,
-                    addr="", size=0)
-                new_listing.save()
-                analysis = analyze_by_apn(
-                    apn,
-                    sd_utm_crs,
-                    show_plot=False,
-                    save_file=True,
-                    save_dir="./frontend/static/temp_computed_imgs",
-                    save_as_model=True,
-                    listing=new_listing
-                )
-
-                new_listing.addr = analysis.details['address']
-                new_listing.size = analysis.details['existing_living_area']
-                new_listing.save()
-                status = "LISTING_CREATED"
-            else:
-                # there *could* be an existing listing if this is redoing an analysis
-                listing = existing_listing.latest(
-                    'founddate') if existing_listing else None
-                analysis = analyze_by_apn(
-                    apn,
-                    sd_utm_crs,
-                    show_plot=False,
-                    save_file=True,
-                    save_dir="./frontend/static/temp_computed_imgs",
-                    save_as_model=True,
-                    listing=listing
-                )
-                status = "NO_LISTING" if not listing else "LISTING_EXISTS"
-
-            return JsonResponse({"status": status, "analysis_id": analysis.id})
-        except Exception as e:
-            traceback.print_exc()
-            return JsonResponse({'error': str(e)})
-
 
 class AnalysisDetailData(View):  # LoginRequiredMixin
     def get(self, request, id, *args, **kwargs):

@@ -31,8 +31,7 @@ def plot_parcel_boundary_lengths(parcel: ParcelDC, axes):
 
 def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS, topos: GeoDataFrame,
                        too_high_topos: GeoDataFrame, too_low_topos: GeoDataFrame,
-                       new_buildings: list[Polygon],
-                       open_space_poly: Polygonal, street_edges: MultiLineString,
+                       new_buildings: list[Polygon], street_edges: MultiLineString,
                        flag_poly: Union[Polygon, None]):
 
     fig = plt.figure(f"new_buildings-{parcel.model.apn}")
@@ -58,9 +57,6 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
 
     if too_low_topos is not None and not too_low_topos.empty:
         too_low_topos.plot(ax=ax, color='purple')
-
-    geopandas.GeoSeries(open_space_poly).plot(ax=ax, alpha=0.4,
-                                              color="lightgrey", edgecolor="green", hatch="..")
 
     geopandas.GeoSeries(street_edges.buffer(0.4)).plot(ax=ax, color='brown')
 
