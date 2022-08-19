@@ -76,7 +76,7 @@ def calculate_parcel_slope_worker(parcel: Parcel, utm_crs: pyproj.CRS, topo_area
 
 
 def calculate_parcel_slopes_mp(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
-    topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
+    topo_list = list(TopographyLoads.objects.using('local_db').values_list('extents', flat=True))
     topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
     parcels = get_parcels_by_neighborhood(bounding_box)
     print(f'Analyzing {len(parcels)} parcels...')
@@ -102,7 +102,7 @@ def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, 
     # https://github.com/matplotlib/matplotlib/issues/20300
     mpl.use('agg')
 
-    topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
+    topo_list = list(TopographyLoads.objects.using('local_db').values_list('extents', flat=True))
     topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
     parcels = get_parcels_by_neighborhood(bounding_box)
 
@@ -165,7 +165,7 @@ def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope
         cached_slopes.delete()
         # Rebuild parcel slopes
         topo_list = list(
-            TopographyLoads.objects.values_list('extents', flat=True))
+            TopographyLoads.objects.using('local_db').values_list('extents', flat=True))
         topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
 
         # Will we need this line?
@@ -194,8 +194,8 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
     """ Check if parcels to be analyzed within bounding box have topography data for them, and create plot to
     visualize """
     parcels = get_parcels_by_neighborhood(bounding_box)
-    topo_list = list(TopographyLoads.objects.values_list('extents', flat=True))
-    topos = TopographyLoads.objects.all()
+    topo_list = list(TopographyLoads.objects.using('local_db').values_list('extents', flat=True))
+    topos = TopographyLoads.objects.using('local_db').all()
     for topo in topos:
         topo_shapely = polygon_to_utm(topo.extents, pyproj.CRS(4326))
         x, y = topo_shapely.exterior.xy
@@ -328,11 +328,11 @@ def get_topo_lines(parcel: Parcel) -> list[Topography]:
     # calculate the intersection. It's a raw query because Django won't let us overwrite a model field
     # (topography.geom) with a calculated field (the geometry intersection). The query is equivalent to the
     # commented-out normal Django query below.
-    topos = Topography.objects.raw(
+    topos = Topography.objects.using('local_db').raw(
         'Select id,elev,ltype,index_field,shape_length,ST_Intersection("geom", ST_GeomFromEWKB(%s))::bytea AS "geom" '
         'from world_topography WHERE ST_Intersects("geom", ST_GeomFromEWKB(%s))',
         [parcel.geom.buffer(0.00005).ewkb, parcel.geom.buffer(0.00005).ewkb]
-    ).using('local_db')
+    )
     # topos = Topography.objects.filter(    # this is the query we want, but Django won't let us do.
     #     geom__intersects=parcel.geom).annotate(geom=Intersection('geom', parcel.geom)).defer('geom')
     return topos
