@@ -41,13 +41,7 @@ normalize_prefix = {
     'west': 'w'
 }
 
-
-def listing_to_parcel(l: PropertyListing) -> (Parcel | None, str | None):
-    """ Take a current property listing object, and find its associated Parcel"""
-    return address_to_parcel(l.addr, l.neighborhood)
-
-
-def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, str | None):
+def address_to_parcel(addr: str, jurisdiction: str, neighborhood: str = None, ) -> (Parcel | None, str | None):
     """ Take a street address and look for a matching Parcel. Return the Parcel or an error string"""
     street_suffix = None
     street_prefix = None
@@ -99,8 +93,12 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
     for parcels in [parcels_exact, parcels_inexact]:
         matched_parcel = None
         if len(parcels) == 1:
-            # happy path - exact match. get out of here.
-            return parcels[0], None
+            # exact match but check jurisdiction
+            if parcels[0].situs_juri == jurisdiction:
+                # happy path - exact match. get out of here.
+                return parcels[0], None
+            else:
+                return None, 'match_out_of_jurisdiction'
         elif len(parcels) == 0:
             # no match, but continue to second loop if needed
             continue
@@ -113,16 +111,16 @@ def address_to_parcel(addr: str, neighborhood: str = None) -> (Parcel | None, st
             if p.situs_suff and (p.situs_suff.lower() == street_suffix):
                 matched_parcel_candidates.append(p)
             jurisdictions.add(p.situs_juri)
-            if p.situs_juri == 'SD':
+            if p.situs_juri == jurisdiction:
                 matched_jurisdiction_candidates.append(p)
         if len(matched_jurisdiction_candidates) == 1:
             return matched_jurisdiction_candidates[0], None
         elif len(matched_jurisdiction_candidates) == 0:
             return None, 'match_out_of_jurisdiction'
-        elif len(matched_parcel_candidates) == 1 and matched_parcel_candidates[0].situs_juri == 'SD':
+        elif len(matched_parcel_candidates) == 1 and matched_parcel_candidates[0].situs_juri == jurisdiction:
             return matched_parcel_candidates[0], None
         else:
-            print(f"Multiple matches ({len(parcels)}) for {addr_normalized} in jurisdiction SD")
+            print(f"Multiple matches ({len(parcels)}) for {addr_normalized} in jurisdiction {jurisdiction}")
             return None, f'multimatch_{jurisdictions}'
     # After exact and inexact attempts, we're still here, and nothing matched.
     if hyphenated_addr_num:

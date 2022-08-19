@@ -256,7 +256,7 @@ class GetParcelByAddressSearch(View):  # LoginRequiredMixin
         # Takes in an address. Returns a list of possible parcels/APNs
         # Temporary. Let's clean this up later
         try:
-            parcel, error = address_to_parcel(address)
+            parcel, error = address_to_parcel(address, jurisdiction='SD')
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({"error": str(e)})

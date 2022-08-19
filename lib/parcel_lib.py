@@ -447,7 +447,7 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
     # Get the total floor area of the existing buildings
     # for i, bldg in buildings.iterrows():
     #     print(bldg.building_type)
-
+    existing_floor_area = 0
     if parcel.model.total_lvg_field:
         # Sqm. Assume each garage/carport is 23.2sqm, or approx. 250sqft
         num_garages = int(
@@ -457,7 +457,7 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
         garage_area = (num_garages + num_carports) * 23.2
         total_lvg_by_model = parcel.model.total_lvg_field / 10.764
         existing_floor_area = total_lvg_by_model + garage_area
-    else:
+    elif buildings is not None:
         existing_floor_area = sum([
             bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"])
 

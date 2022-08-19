@@ -40,8 +40,12 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
     plt.title(parcel.model.apn + ':' + parcel.model.address)
 
     # Create the lot dataframe, which contains the parcel outline and existing buildings
-    lot_df = geopandas.GeoDataFrame(
-        geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
+
+    if buildings is not None:
+        lot_df = geopandas.GeoDataFrame(geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
+    else:
+        lot_df = geopandas.GeoDataFrame(geometry=[parcel.geometry.boundary], crs=utm_crs)
+
     lot_df.plot(ax=ax)
 
     plot_parcel_boundary_lengths(parcel, ax)
@@ -49,10 +53,10 @@ def plot_new_buildings(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pypro
     if not topos.empty:
         topos.plot(ax=ax, color='gray')
 
-    if not too_high_topos.empty:
+    if too_high_topos is not None and not too_high_topos.empty:
         too_high_topos.plot(ax=ax, color='red')
 
-    if not too_low_topos.empty:
+    if too_low_topos is not None and not too_low_topos.empty:
         too_low_topos.plot(ax=ax, color='purple')
 
     geopandas.GeoSeries(open_space_poly).plot(ax=ax, alpha=0.4,
@@ -93,23 +97,20 @@ def plot_cant_build(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.C
                     flag_poly: Union[Polygon, None], street_edges: MultiLineString):
     fig = plt.figure(f"cant_build-{parcel.model.apn}")
     ax = fig.add_subplot()
-    lot_df = geopandas.GeoDataFrame(
-        geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
+
+    lot_geom = [*buildings.geometry, parcel.geometry.boundary] if buildings is not None else [parcel.geometry.boundary]
+    lot_df = geopandas.GeoDataFrame(geometry=lot_geom, crs=utm_crs)
     lot_df.plot(ax=ax)
     plt.title("Cant build: " + parcel.model.apn + ';' + parcel.model.address)
 
-    geopandas.GeoSeries(street_edges.buffer(0.4)).plot(
-        ax=ax, color='brown')
+    geopandas.GeoSeries(street_edges.buffer(0.4)).plot(ax=ax, color='brown')
 
-    geopandas.GeoSeries(buffered_buildings).plot(
-        ax=ax, color='cyan', alpha=0.7)
+    geopandas.GeoSeries(buffered_buildings).plot(ax=ax, color='cyan', alpha=0.7)
 
     if too_steep:
         # We only want to plot the parts of too_steep that are intersecting with parcel
-        too_steep_intersecting = unary_union(
-            too_steep).intersection(parcel.geometry)
-        geopandas.GeoSeries(too_steep_intersecting).plot(
-            ax=ax, color='red', alpha=0.7)
+        too_steep_intersecting = unary_union(too_steep).intersection(parcel.geometry)
+        geopandas.GeoSeries(too_steep_intersecting).plot(ax=ax, color='red', alpha=0.7)
 
     for poly in setbacks:
         if not poly.is_empty:

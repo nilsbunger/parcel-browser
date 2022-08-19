@@ -13,7 +13,7 @@ from pandas import DataFrame
 
 from lib.analyze_parcel_lib import analyze_batch
 from lib.crs_lib import get_utm_crs
-from lib.listings_lib import listing_to_parcel
+from lib.listings_lib import address_to_parcel
 from lib.neighborhoods import AllSdCityZips, Neighborhood
 from lib.scraping_lib import scrape_san_diego_listings_by_zip_groups
 from mygeo import settings
@@ -131,27 +131,14 @@ class Command(BaseCommand):
         # -----
         # 2. Associate listings with parcels
         # -----
+        stats = defaultdict(int)
         parcels_to_analyze = set()
         if options['skip_matching'] or options['parcel']:
             logging.info("SKIPPING matching of listings to parcels")
         else:
             logging.info(f"Running matching")
-            # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
 
             listings = PropertyListing.active_listings_queryset().prefetch_related('analyzedlisting', 'parcel')
-            if False:
-                # separate query for testing...
-                include_neighborhoods = [
-                    'Normal Heights', 'Mira Mesa', 'Golden Hill', 'Clairemont/Bay Park', 'Carmel Valley',
-                    'Pacific Beach/Mission Beach']
-                listings = PropertyListing.objects.filter(
-                    status__in=['ACTIVE', 'OFFMARKET'],
-                    parcel__isnull=False,
-                    analyzedlisting__zone__contains='RM',
-                    neighborhood__in=include_neighborhoods
-                ).order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('parcel')[0:20]
-
-            stats = defaultdict(int)
             logging.info(f'Found {len(listings)} properties to associate')
             for l in listings:
                 try:
@@ -165,7 +152,7 @@ class Command(BaseCommand):
                 except ObjectDoesNotExist as e:
                     # we're missing a relationship, so we need to analyze this parcel.
                     pass
-                matched_parcel, error = listing_to_parcel(l)
+                matched_parcel, error = address_to_parcel(l.addr, jurisdiction='SD')
                 if error:
                     stats[error] += 1
                 else:
@@ -194,7 +181,7 @@ class Command(BaseCommand):
                                 stats[f'info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
                 # print("SAVED")
             logging.info("DONE. Final stats associating parcels with listings:")
-            pprint.pprint(dict(stats))
+            logging.info(pprint.pformat(dict(stats)))
 
         # -----
         # 3. Generate parcel analysis for all the parcels if directed to
@@ -222,7 +209,7 @@ class Command(BaseCommand):
                 save_dir="./frontend/static/temp_computed_imgs",
                 save_as_model=True,
                 listings=parcel_listings,
-                single_process=bool(options['parcel'])
+                single_process=bool(options['parcel'] or True)
             )
 
             # Save the errors to a csv

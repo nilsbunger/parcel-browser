@@ -47,6 +47,8 @@ class RentService:
                 continue
             # ... or in the DB
             x = [r for r in rd_list_for_parcel if r.br == unit.br and r.ba == unit.ba]
+            if (len(x) >= 2):
+                raise ("Multiple entries in RentalData for the same unit")
             assert (len(x) < 2)
             # assert (len(x) or not len(rd_list_for_parcel))
             if not len(x) and cache_only:
@@ -77,6 +79,9 @@ class RentService:
                 print(f"Skipping {unit.br}BR, {unit.ba}BA at {listing.addr}, mlsid={listing.mlsid},"
                       f"cached error from last time: code={rd.details['status_code']}, {rd.details['errors']}")
                 return []
+            # Ridiculous patch-up required -- 75th percentile is sometimes higher than max from rentometer??
+            if rd.details['percentile_75'] > rd.details['max']:
+                rd.details['percentile_75'] = rd.details['max'] - 100
             if rd.details['samples'] >= 10:
                 dist = NormalDist(mu=rd.details['mean'], sigma=rd.details['std_dev'])
                 maybe_rent = dist.inv_cdf(percentile / 100.0)
@@ -91,6 +96,8 @@ class RentService:
                 else:
                     rent_cache[unit] = rd.details['mean'] + (
                                 (percentile - 50) * (rd.details['percentile_75'] - rd.details['mean'])) / 25
+            if (rent_cache[unit] >= rd.details['max']):
+                print ("HUH")
             assert (rent_cache[unit] < rd.details['max'])
             rents.append(round(rent_cache[unit]))
         return rents

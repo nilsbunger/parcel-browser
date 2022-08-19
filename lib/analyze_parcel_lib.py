@@ -133,12 +133,13 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
     existing_floor_area = existing_living_area + garage_area
 
     existing_FAR = existing_floor_area / parcel_size
-
-    main_building_area = buildings[buildings.building_type ==
+    if buildings is not None:
+        main_building_area = buildings[buildings.building_type ==
                                    'MAIN'].geometry.area.sum()
-    accessory_buildings_area = buildings[buildings.building_type ==
+        accessory_buildings_area = buildings[buildings.building_type ==
                                          'ACCESSORY'].geometry.area.sum()
-
+    else:
+        main_building_area = accessory_buildings_area = 0
     return (parcel_size, existing_living_area, existing_floor_area,
             existing_FAR, main_building_area, accessory_buildings_area)
 
@@ -185,10 +186,11 @@ def _dev_potential_by_far(
                         listing, [adu_unit_spec], percentile=re_params.new_unit_rent_percentile,
                         is_adu=True, cache_only=False
                     )
-                    # if new_units_rent < 1:
-                    #     print("HUH")
-                    assert (len(new_units_rents))
-                    new_units_rent = sum(new_units_rents)
+                    if len(new_units_rents) >= 1:
+                        new_units_rent = sum(new_units_rents)
+                    else:
+                        print(f"Couldn't find rents at {listing.addr}")
+                        new_units_rent = 0
                     # acquisition and construction costs:
                     finances = Financials()
                     constr_soft_cost = adu_sq_ft * re_params.constr_costs.soft_cost_rate
@@ -200,7 +202,6 @@ def _dev_potential_by_far(
                             ('renovation', -50000, f'')
                         ]
                     except Exception as e:
-                        print("HI")
                         print(e)
                         raise
                     finances.capital_flow['construction'] = [
@@ -254,6 +255,7 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
     """
 
     re_params = ReParams()
+    too_high_df = too_low_df = cant_build_elev = buffered_buildings_geom = None
     git_commit_hash = "Can't get in prod environment"
     if DEV_ENV:
         import git
@@ -284,29 +286,31 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
         'alley': None,
     }
 
-    buildings = get_buildings(parcel_model)
-    if not len(buildings):
-        raise Exception(f"No buildings found for parcel: {apn}")
-
-    topos = get_topo_lines(parcel_model)
-    topos_df = models_to_utm_gdf(topos, utm_crs)
-    buildings = models_to_utm_gdf(list(buildings), utm_crs)
-    identify_building_types(parcel.geometry, buildings)
-    avail_area_by_far = get_avail_floor_area(parcel, buildings, max_far)
-
     # Compute the spaces that we can't build on
-    # First, the buffered areas around buildings
-    buffered_buildings_geom = get_buffered_building_geom(buildings, BUFFER_SIZES)
-
     # Then, the setbacks around the parcel edges
     parcel_edges = get_street_side_boundaries(parcel, utm_crs)
     setbacks = get_setback_geoms(parcel.geometry, setback_widths, parcel_edges)
 
     # Insert Topography no-build zones - hardcoded to max 10% grade for the moment
     too_steep = calculate_slopes_for_parcel(parcel, utm_crs, 10, use_cache=True)
+    topos = get_topo_lines(parcel_model)
+    topos_df = models_to_utm_gdf(topos, utm_crs)
 
-    too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(parcel, buildings, topos_df, utm_crs)
-    cant_build = unary_union([buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
+    buildings = get_buildings(parcel_model)
+    if not len(buildings):
+        logging.info(f"No buildings found for parcel: {apn}")
+        messages['warning'].append(f"No buildings found for parcel: {apn}")
+        buildings = None
+        cant_build = unary_union([*setbacks])
+        # cant_build = unary_union([*setbacks, *too_steep, cant_build_elev])
+    else:
+        buildings = models_to_utm_gdf(list(buildings), utm_crs)
+        identify_building_types(parcel.geometry, buildings)
+        buffered_buildings_geom = get_buffered_building_geom(buildings, BUFFER_SIZES)
+        too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(parcel, buildings, topos_df, utm_crs)
+        cant_build = unary_union([buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
+
+    avail_area_by_far = get_avail_floor_area(parcel, buildings, max_far)
 
     flag_poly = identify_flag(parcel, parcel_edges['front'])
     if flag_poly:
@@ -339,9 +343,16 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
     # Get the open space available (for yard and stuff)'
-    # Question: Should setbacks be considered in open space?
-    not_open_space = unary_union(
-        [*buildings.geometry, *new_building_polys, *too_steep, cant_build_elev])
+    # TODO: Include setbacks in not_open_space... but it needs to be done carefully
+    if buildings is not None:
+        # not_open_space = unary_union(
+        #     [*buildings.geometry, *new_building_polys, *too_steep, cant_build_elev])
+        # FIX FOR parcel 4633210400
+        not_open_space = unary_union([*buildings.geometry, *too_steep, cant_build_elev])
+    else:
+        not_open_space = unary_union(
+            [*new_building_polys, *too_steep])
+
 
     if flag_poly:
         not_open_space = unary_union([not_open_space, flag_poly])

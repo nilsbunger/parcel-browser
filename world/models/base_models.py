@@ -122,27 +122,38 @@ class Parcel(models.Model):
 
     @property
     def ba(self) -> float:
-        return float(self.baths) / 10.0
+        if self.baths:
+            return float(self.baths) / 10.0
+        else:
+            return 0.0
 
     @property
     def br(self) -> int:
-        return int(self.bedrooms)
+        if self.bedrooms:
+            return int(self.bedrooms)
+        else:
+            return 0
 
     @property
     def sqft(self) -> int:
-        return self.total_lvg_field
+        if self.total_lvg_field:
+            return int(self.total_lvg_field)
+        else:
+            return -1
 
     @property
     def rental_units(self) -> List[RentalUnit]:
         # Use parcel data to construct likely combination of units.
         # TODO: support overrides of this data
+        if self.unitqty == 0:
+            return []
         if self.unitqty == 1:
             return [RentalUnit(br=self.br, ba=self.ba, sqft=self.sqft)]
-
+        per_unit_sqft = self.sqft / self.unitqty if self.sqft > -1 else -1
         retval = [
             RentalUnit(br=self.br / self.unitqty,
                        ba=self.ba / self.unitqty,
-                       sqft=self.sqft / self.unitqty) for i in range(self.unitqty)
+                       sqft=per_unit_sqft) for i in range(self.unitqty)
         ]
         # Remainder could be large in a multi-unit property, so distribute the remainder evenly
         for i in range(0, int(self.br % self.unitqty)):
