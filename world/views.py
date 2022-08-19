@@ -2,6 +2,7 @@ import json
 import pprint
 from collections import OrderedDict, defaultdict
 from itertools import chain
+import traceback
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -115,9 +116,11 @@ def listing_prev_values(listing):
 # ajax call to get current MLS listings. Return them from most recently created / updated to least.
 class ListingsData(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        listings = PropertyListing.objects.prefetch_related('analyzedlisting').prefetch_related(
-            'prev_listing').filter(
-            analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
+        assert (False, "THis route should no longer be used")
+        listings = PropertyListing.active_listings_queryset().prefetch_related('analyzedlisting', 'prev_listing')
+        # listings = PropertyListing.acti.prefetch_related('analyzedlisting').prefetch_related(
+        #     'prev_listing').filter(
+        #     analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
         serialized_listings = serialize('json', listings)
 
         # An ad-hoc way of doing formatting for now
@@ -126,13 +129,18 @@ class ListingsData(LoginRequiredMixin, View):
             # founddate = str(listing.founddate.astimezone(
             #     tz=ZoneInfo("America/Los_Angeles")).date())
             latest_analysis = listing.analyzedlisting
-            l = latest_analysis.details
-            l.update(listing_dict['fields'])
-            l['datetime_ran'] = latest_analysis.datetime_ran
-            l['analysis_id'] = latest_analysis.id
+            if latest_analysis:
+                l = latest_analysis.details
+                l.update(listing_dict['fields'])
+                l['datetime_ran'] = latest_analysis.datetime_ran
+                l['analysis_id'] = latest_analysis.id
+            else:
+                l = listing_dict['fields']
             l['metadata'] = defaultdict()
-            l['centroid_x'] = listing.parcel.geom.centroid.coords[0]
-            l['centroid_y'] = listing.parcel.geom.centroid.coords[1]
+            if listing.parcel:
+                l['centroid_x'] = listing.parcel.geom.centroid.coords[0]
+                l['centroid_y'] = listing.parcel.geom.centroid.coords[1]
+
             del l['parcel']
             del l['addr']
             del l['prev_listing']
@@ -155,6 +163,7 @@ class ListingsData(LoginRequiredMixin, View):
         """ajax post to manually add a 'listing' entry for a property not listed, or redo the analysis
         for an existing entry."""
 
+        assert False    # TODO: THIS SHOULD ALL BE REMOVED
         # Use Matplotlib in non-interactive mode, preventing errors and python crash
         matplotlib.use('Agg')
 
@@ -213,6 +222,7 @@ class ListingsData(LoginRequiredMixin, View):
 
             return JsonResponse({"status": status, "analysis_id": analysis.id})
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)})
 
 
@@ -248,6 +258,7 @@ class GetParcelByAddressSearch(View):  # LoginRequiredMixin
         try:
             parcel, error = address_to_parcel(address)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({"error": str(e)})
 
         if error:

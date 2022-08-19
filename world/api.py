@@ -5,6 +5,8 @@ from ninja import NinjaAPI, ModelSchema, Schema, Query
 from ninja.orm import create_schema
 from ninja.security import HttpBearer, django_auth
 
+from lib.analyze_parcel_lib import analyze_one_parcel
+from lib.crs_lib import get_utm_crs
 from world.models import AnalyzedListing, PropertyListing
 from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F, Subquery
@@ -138,26 +140,48 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
 
     # A subquery that contains the primary keys of each latest listing per property
     # This avoids having different listings of the same property but at different price points
-    latest_listings_pks = Subquery(
-        PropertyListing.objects
-        # Ensure that any property listings we find have an analysis attached to it
-        .filter(analyzedlisting__isnull=False, **filter_params)
-        .order_by('mlsid', '-founddate')
-        .distinct('mlsid')
-        .values('pk')
-    )
+    # latest_listings_pks = Subquery(
+    #     PropertyListing.objects
+    #     # Ensure that any property listings we find have an analysis attached to it
+    #     .filter(analyzedlisting__isnull=False, **filter_params)
+    #     .order_by('mlsid', '-founddate')
+    #     .distinct('mlsid')
+    #     .values('pk')
+    # )
+    listings = (PropertyListing
+                .active_listings_queryset()
+                .filter(analyzedlisting__isnull=False, **filter_params)
+                .prefetch_related('analyzedlisting', 'prev_listing', 'parcel')
+                .annotate(centroid=Centroid(F('parcel__geom')))
+                .order_by(order_by)
+                )
 
-    return (PropertyListing.objects
-            .filter(pk__in=latest_listings_pks)
-            # Prefetch because we need details on the analysis in the response.
-            # Later on, we should optimize so as to only pre-fetch the latest analysis, as there can
-            # be multiple for a property. We would also want to join all fields of the analysis
-            # directly into the response, but haven't found a good way to do this yet
-            .prefetch_related('analyzedlisting')
-            # Used to see if this listing is new or not, and for extracting previous price info
-            .prefetch_related('prev_listing')
-            # Prefetch parcel to attach information on the centroid of each parcel, used for map plotting
-            .prefetch_related('parcel')
-            .annotate(centroid=Centroid(F('parcel__geom')))
-            .order_by(order_by)
-            )
+    return listings
+    # return (PropertyListing.objects
+    #         .filter(pk__in=latest_listings_pks)
+    #         # Prefetch because we need details on the analysis in the response.
+    #         # Later on, we should optimize so as to only pre-fetch the latest analysis, as there can
+    #         # be multiple for a property. We would also want to join all fields of the analysis
+    #         # directly into the response, but haven't found a good way to do this yet
+    #         .prefetch_related('analyzedlisting')
+    #         # Used to see if this listing is new or not, and for extracting previous price info
+    #         .prefetch_related('prev_listing')
+    #         # Prefetch parcel to attach information on the centroid of each parcel, used for map plotting
+    #         .prefetch_related('parcel')
+    #         .annotate(centroid=Centroid(F('parcel__geom')))
+    #         .order_by(order_by)
+    #         )
+
+
+@api.post("/analysis/{analysis_id}")
+def redo_analysis(request, analysis_id: int):
+    analyzed_listing = AnalyzedListing.objects.prefetch_related('listing').get(id=analysis_id)
+    property_listing = analyzed_listing.listing
+    sd_utm_crs = get_utm_crs()  # San Diego specific
+
+    # Generally should match this call to analyze_batch() call in scrape.py
+    result = analyze_one_parcel(
+        property_listing.parcel, sd_utm_crs, show_plot=False, save_file=True,
+        save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listing=property_listing)
+
+    return {"analysisId": analysis_id}
