@@ -1,24 +1,14 @@
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import useSWR from 'swr';
-import { fetcher } from '../utils/fetcher';
+import useSWR, { useSWRConfig } from 'swr';
+import { fetcher, post_csrf } from '../utils/fetcher';
 import { ListingHistory } from "../components/ListingHistory";
 import { DevScenarios } from "../components/DevScenarios";
 
-async function getAnalysis(e, apn) {
-  const fetchResponse = await fetch(`/dj/api/listings`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      apn: apn,
-      add_as_listing: false,
-      redo_analysis: true,
-    }),
-  });
-  return fetchResponse.json();
+async function redoAnalysis(e, analysisId) {
+  const fetchResponse = post_csrf(`/api/analysis/${analysisId}`)
+  return fetchResponse
 }
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
@@ -31,13 +21,28 @@ function daysAtPrice(date) {
   return Math.round((nowtime - foundtime) / oneDay);
 }
 
+function showAssumptions(assumptions) {
+  console.log(assumptions)
+  return (<ul className="pl-5">{Object.keys(assumptions).map((assumption) => {
+    if (typeof (assumptions[assumption]) == 'object') {
+      return <li>{assumption}: {showAssumptions(assumptions[assumption])}</li>
+    } else {
+      return <li>{assumption}:{assumptions[assumption]}</li>
+    }
+  })
+  }</ul>)
+}
+
+
 export function ListingDetailPage({}) {
   const params = useParams();
   let navigate = useNavigate();
+  const [loading, setLoading] = useState<boolean>(false)
   const { data, error } = useSWR(
     `/dj/api/analysis/${params.analysisId}`,
     fetcher
   );
+  const { mutate } = useSWRConfig()
   useEffect(() => {
     if (data) {
       document.title = data.address
@@ -47,8 +52,12 @@ export function ListingDetailPage({}) {
   if (!data) return <div>loading...</div>;
 
   async function onRedoAnalysis(e) {
-    const res = await getAnalysis(e, data.apn);
-    navigate('/analysis/' + res.analysis_id, { replace: true });
+    setLoading(true)
+    const res = await redoAnalysis(e, params.analysisId);
+    setLoading(false)
+    return mutate(`/dj/api/analysis/${res.analysisId}`)
+
+    // navigate('/analysis/' + res.analysisId, { replace: true });
   }
 
   console.log(data);
@@ -79,8 +88,12 @@ export function ListingDetailPage({}) {
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
           <h1 className={'hidden print:block'}><a className='link text-darkblue'
-                                                  href={window.location.href}>{data.address}</a></h1>
-          <h1 className={'print:hidden'}>{data.address}</h1>
+                                                  href={window.location.href}>
+            {data.address}</a></h1>
+          <h1 className={'print:hidden'}>
+            {loading && <progress className="progress w-36"/>}
+            {!loading && data.address}
+          </h1>
           {data.is_tpa && <div className="badge badge-primary">TPA</div>}
           {data.is_mf && <div className="badge badge-accent ml-2">Multifam</div>}
           <p>{data.neighborhood}</p>
@@ -91,16 +104,16 @@ export function ListingDetailPage({}) {
           <p>Walk score: XX</p>
           <div className='divider'></div>
           <h2>Units and Rents</h2>
-          <p>Existing unit count: {data.existing_units_with_rent.length}</p>
+          <p>Existing unit count: {data.existing_units_with_rent?.length}</p>
           <p>Assumed units and rents:</p>
           <ul>
-            {data.existing_units_with_rent.map( (unit) => (
-              <li>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
+            {data.existing_units_with_rent?.map((unit) => (
+                <li>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
               )
             )}
             <li></li>
           </ul>
-          <p>({data.re_params.existing_unit_rent_percentile}th percentile rents)</p>
+          <p>({data.re_params?.existing_unit_rent_percentile}th percentile rents)</p>
 
         </div>
         <div>
@@ -198,13 +211,14 @@ export function ListingDetailPage({}) {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">Listing history</h2>
-              <ListingHistory mlsid={data.mlsid}/>
+            <ListingHistory mlsid={data.mlsid}/>
           </div>
         </div>
       </div>
       <h1>Assumptions</h1>
-      <p></p>
-      <h1>Details</h1>
+      {data.re_params && showAssumptions(data.re_params)}
+      <h1 className='mt-5'>Details</h1>
+      <p> These are present primarily for debugging. Anything useful should be sent up above this section.</p>
       {Object.keys(data).map((key) => {
         return (
           <p key={key}>

@@ -8,10 +8,6 @@ export function ListingHistory({mlsid}) {
     `/api/listinghistory?mlsid=${mlsid}`,
     fetcher
   );
-  console.log ("ERROR")
-  console.log(error)
-  console.log ("Listing history data")
-  console.log(data)
   if (error) return <div>ListingHistory failed its AJAX call. {JSON.stringify(error)}</div>;
   if (!data) return <div>loading...</div>;
   return <div className={'overflow-x-auto'}>

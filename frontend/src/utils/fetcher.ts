@@ -1,6 +1,20 @@
 import axios from 'axios';
 import { useRef, useEffect, useCallback } from 'react';
 
+export const axiosPostInstance = axios.create({
+  // baseURL: 'https://some-domain.com/api/',
+  timeout: 5000,
+  method: 'post',
+  xsrfHeaderName: 'X-CSRFTOKEN',   // django csrf header and cookie
+  xsrfCookieName: 'csrftoken'
+});
+
+export async function post_csrf (url, params = {}, body = "") {
+  return axiosPostInstance
+    .request({ url: url, params: params, data: body })
+    .then((res) => res.data)
+}
+
 export const fetcher = (url, config) =>
   axios.get(url, config).then((res) => res.data);
 
