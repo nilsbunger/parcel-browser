@@ -4,8 +4,10 @@ generation of new buildings/repurpose of old one, computing scores for scenarios
 scenarios in general.
 """
 from collections import OrderedDict
+import logging
 import pprint
 import secrets
+import traceback
 
 import boto3
 from botocore.exceptions import ClientError
@@ -13,12 +15,11 @@ import django
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
+django.setup()
+
 from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
 from lib.re_params import ReParams, get_build_specs
-
-django.setup()
-
 from lib.rent_lib import RentService
 from mygeo.settings import DEV_ENV, env
 from mygeo.util import eprint
@@ -237,7 +238,7 @@ def _dev_potential_by_far(
     return valid_scenarios
 
 
-def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
+def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=False,
                         save_file=False, save_dir=DEFAULT_SAVE_DIR,
                         try_garage_conversion=True, try_split_lot=True, save_as_model=False, listing=None):
     """Runs analysis on a single parcel of land
@@ -260,7 +261,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     apn = parcel.model.apn
-    messages = {'info': [], 'warning': [], 'error': []}
+    messages = {'info': [], 'warning': [], 'error': [], 'note': []}
 
     # *** 1. Get information about the parcel
 
@@ -320,9 +321,12 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     # *** 2a. Compute rent for existing unit. Currently only run it for multifamily lots
     existing_units = listing.parcel.rental_units
-    existing_units_rents = rent_data.rent_for_location(listing, existing_units,
-                                                       percentile=re_params.existing_unit_rent_percentile, )
-    if not len(existing_units_rents) and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
+    existing_units_rents = [0]
+    if is_mf:
+        existing_units_rents = rent_data.rent_for_location(
+            listing, existing_units,percentile=re_params.existing_unit_rent_percentile, cache_only=False)
+
+    if not len(existing_units_rents) and is_mf and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
         print("HUH")
 
     # *** 2b. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
@@ -334,11 +338,6 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     new_building_polys = find_largest_rectangles_on_avail_geom(
         avail_geom, parcel.geometry, num_rects=MAX_NEW_BUILDINGS, max_aspect_ratio=MAX_ASPECT_RATIO,
         min_area=MIN_BUILDING_AREA, max_total_area=avail_area_by_far, max_area_per_building=MAX_BUILDING_AREA)
-    # Add more fields as necessary
-    new_building_info = list(map(lambda poly: {
-        'geometry': poly,
-        'area': poly.area,
-    }, new_building_polys))
     # Get the open space available (for yard and stuff)'
     # Question: Should setbacks be considered in open space?
     not_open_space = unary_union(
@@ -364,10 +363,13 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
     total_score = cap_ratio_score + open_space_score + project_size_score
 
     # Logic for lot splits
+    second_lot, second_lot_area_ratio = None, None
     if try_split_lot:
-        second_lot, second_lot_area_ratio = split_lot(parcel.geometry, buildings)
-    else:
-        second_lot, second_lot_area_ratio = None, None
+        # noinspection PyBroadException
+        try:
+            second_lot, second_lot_area_ratio = split_lot(parcel.geometry, buildings)
+        except Exception as e:
+            messages['note'].append("Lot split attempt failed with exception")
 
     # 3. *** Plot and/or save results
     new_buildings_fig = cant_build_fig = split_lot_fig = None
@@ -387,14 +389,14 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
     existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
     max_cap_rate = max([scenario.finances.cap_rate_calc for scenario in dev_scenarios]) if dev_scenarios else 0
+    num_existing_buildings = len(buildings[buildings.building_type != "ENCROACHMENT"]) if buildings is not None else 0
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
     details = OrderedDict({
         "apn": apn,
         "address": parcel.model.address,
-        "zone": zone,
         "existing_units_with_rent": existing_units_with_rent,
-        "num_existing_buildings": len(buildings[buildings.building_type != "ENCROACHMENT"]),
+        "num_existing_buildings": num_existing_buildings,
         "carports": num_carports,
         "garages": num_garages,
         "re_params": re_params.dict(),
@@ -450,7 +452,7 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
         "FAR_ratio": max_far,
     }
 
-    datetime_ran = datetime.datetime.utcnow()
+    datetime_ran = datetime.datetime.now(datetime.timezone.utc)
     if save_as_model:
         # Save it as a database model, and return it
         dev_scenarios_dict = [x.dict(exclude={'constr_costs'}) for x in dev_scenarios]
@@ -459,19 +461,23 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
                 'datetime_ran': datetime_ran,
                 'is_tpa': is_tpa,
                 'is_mf': is_mf,
+                'zone': zone,
                 'details': details,
                 'input_parameters': input_parameters,
                 'geometry_details': {},
                 'dev_scenarios': dev_scenarios_dict,
+                'parcel': parcel.model
             }
         )
         # Salt for hashing filenames in R2 (or S3) buckets.
         # Only upload images if there's a new salt since they don't typically change.
+        salt = 0
         if not created:
             salt = a.salt
         if not salt:
             # either it's newly created, or didn't have a salt entry.
             a.salt = secrets.token_urlsafe(10)
+            salt = a.salt
             a.save(update_fields=["salt"])
             save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
                          parcel.model.address, messages, save_as_model=True)
@@ -488,9 +494,10 @@ def _analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fal
 
 def analyze_by_apn(apn: str, utm_crs: pyproj.CRS, show_plot=False, save_file=False,
                    save_dir=DEFAULT_SAVE_DIR, save_as_model=False, listing=None):
-    parcel = get_parcel_by_apn(apn)
-    return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir,
-                               save_as_model=save_as_model, listing=listing)
+    assert False, "Replaced by calling analyze_one_parcel directly"
+    # parcel = get_parcel_by_apn(apn)
+    # return _analyze_one_parcel(parcel, utm_crs, show_plot, save_file, save_dir,
+    #                            save_as_model=save_as_model, listing=listing)
 
 
 def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=False,
@@ -499,19 +506,19 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
                                i: int = 0, save_as_model=False, listing=None):
     print(i, parcel.apn)
     try:
-        result = _analyze_one_parcel(
+        result = analyze_one_parcel(
             parcel, utm_crs, show_plot=False, save_file=save_file,
             save_dir=save_dir, try_garage_conversion=try_garage_conversion,
             try_split_lot=try_split_lot, save_as_model=save_as_model, listing=listing)
 
-        # Shouldn't need this as result should never be null,
-        # but we keep it as a sanity check
+        # Shouldn't need this as result should never be null, but we keep it as a sanity check
         assert (result is not None)
         return result, None
     except Exception as e:
         print(f"Exception on parcel {parcel.apn}")
         print(e)
-        raise e
+        traceback.print_exc()
+        # raise e
         return None, {
             "apn": parcel.apn,
             "error": e,
@@ -520,7 +527,8 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
 
 def analyze_batch(parcels: list[Parcel], utm_crs: pyproj.CRS,
                   hood_name: str = "", save_file=False, save_dir=None,
-                  limit: int = None, shuffle=False, try_split_lot=True, save_as_model=False, listings=None):
+                  limit: int = None, shuffle=False, try_split_lot=True, save_as_model=False, listings=None,
+                  single_process=False):
     """
     Notable arguments:
         listings: Optional parameter - a list of listings of same length as parcels. Maps each
@@ -557,7 +565,7 @@ def analyze_batch(parcels: list[Parcel], utm_crs: pyproj.CRS,
     if listings is None:
         listings = [None] * len(parcels)
 
-    parallel_results = Parallel(n_jobs=1)(
+    parallel_results = Parallel(n_jobs=1 if single_process else 8)(
         delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
                                             save_dir=save_dir, try_split_lot=try_split_lot, i=i,
                                             save_as_model=save_as_model, listing=listing)

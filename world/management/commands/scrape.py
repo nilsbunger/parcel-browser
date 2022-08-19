@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date
+import datetime
+import logging
 import pprint
 import random
 import sys
-import logging
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
 from pandas import DataFrame
 
@@ -13,10 +15,10 @@ from lib.analyze_parcel_lib import analyze_batch
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import listing_to_parcel
 from lib.neighborhoods import AllSdCityZips, Neighborhood
-from lib.rent_lib import RentService
 from lib.scraping_lib import scrape_san_diego_listings_by_zip_groups
+from mygeo import settings
 from mygeo.util import eprint
-from world.models import PropertyListing
+from world.models import Parcel, PropertyListing
 
 
 # NOTE: We should rename this command to 'listings', since it generally does ingest operations on MLS listings
@@ -38,7 +40,7 @@ def zip_groups_from_zips(zips):
     # Take a list of zip codes, and turn them into a random groups of variable # of zips for querying against.
     zips = zips.copy()
     # Make zipcode list stable for all runs in one day for debugging, by using a random seed based on date.
-    ordinal_date = date.today().toordinal()
+    ordinal_date = datetime.date.today().toordinal()
     rand = random.Random(ordinal_date)
     rand.shuffle(zips)
     zip_groups = []
@@ -69,7 +71,8 @@ class Command(BaseCommand):
             '--verbose', action='store_true', help="Do verbose logging (DEBUG-level logging)"
         )
         parser.add_argument(
-            '--no-cache', action='store_true', help="Don't use existing cached data even if it's available (both for scraping and for analysis)"
+            '--no-cache', action='store_true',
+            help="Don't use existing cached data even if it's available (both for scraping and for analysis)"
         )
         parser.add_argument(
             '--skip-matching',
@@ -79,6 +82,9 @@ class Command(BaseCommand):
         parser.add_argument(
             '--skip-analysis', action='store_true', help="Don't run parcel analysis"
         )
+        parser.add_argument(
+            '--parcel', action='store', help="Run analysis only (no scrape) on a single parcel"
+        )
 
     def handle(self, *args, **options):
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options['verbose'] else logging.INFO)
@@ -86,12 +92,19 @@ class Command(BaseCommand):
         logging.getLogger().setLevel(logging.DEBUG if options['verbose'] else logging.INFO)
         logging.debug("DEBUG log level")
         logging.info("INFO log level")
-
+        logging.info(f"Running with options:\n{pprint.pformat(options)}")
         # -----
         # 1. Scrape latest listings if directed to.
         # -----
 
         if options['fetch'] or options['fetch_local'] or options['fetch_zip']:
+            if settings.LOCAL_DB:
+                logging.warning("Fetching with local DB???? Type 'yes' to confirm this craziness")
+                value = input("Go ahead:")
+                if value != "yes":
+                    logging.info("Exiting")
+                    sys.exit(1)
+
             zip_groups = [[options['fetch_zip']]] if options['fetch_zip'] else zip_groups_from_zips(AllSdCityZips)
             logging.info(
                 f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, Cache={options["no_cache"] is False}')
@@ -107,20 +120,26 @@ class Command(BaseCommand):
             if error_pages:
                 eprint(f'!! {error_pages} error responses')
 
+        # ----
+        # 1.5 Look for old listings that aren't active anymore
+        if not options['parcel']:
+            stale_stats = PropertyListing.mark_all_stale(days_for_stale=5)
+            logging.info(
+                f"\n\nSTALE LISTINGS REPORT: {stale_stats}"
+            )
+
         # -----
         # 2. Associate listings with parcels
         # -----
         parcels_to_analyze = set()
-        if options['skip_matching']:
+        if options['skip_matching'] or options['parcel']:
             logging.info("SKIPPING matching of listings to parcels")
         else:
             logging.info(f"Running matching")
             # Pick only the 'latest' listings by sorting by founddate and running a distinct query.
 
-            listings = PropertyListing.objects.filter(status__in=['ACTIVE', 'OFFMARKET']) \
-                .order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('analyzedlisting')
-            # TODO TODO: THIS IS A TEMP QUERY
-            if True:
+            listings = PropertyListing.active_listings_queryset().prefetch_related('analyzedlisting', 'parcel')
+            if False:
                 # separate query for testing...
                 include_neighborhoods = [
                     'Normal Heights', 'Mira Mesa', 'Golden Hill', 'Clairemont/Bay Park', 'Carmel Valley',
@@ -131,16 +150,21 @@ class Command(BaseCommand):
                     analyzedlisting__zone__contains='RM',
                     neighborhood__in=include_neighborhoods
                 ).order_by('mlsid', '-founddate').distinct('mlsid').prefetch_related('parcel')[0:20]
-                # listings = PropertyListing.objects.filter(parcel__apn='5471440600')
-                # assert (len(listings) == 1)
 
-            # A set of tuples (parcel, listing)
             stats = defaultdict(int)
             logging.info(f'Found {len(listings)} properties to associate')
             for l in listings:
-                if l.parcel and l.analyzedlisting and not options['no_cache']:
-                    stats[f'info_previously_matched'] += 1
-                    continue
+                try:
+                    p_temp = l.parcel
+                    al_temp = l.analyzedlisting
+                    # parcel, and analyzed listing exists. if we're caching, we can skip analysis and
+                    # go to the next listing.
+                    if not options['no_cache']:
+                        stats[f'info_previously_matched'] += 1
+                        continue
+                except ObjectDoesNotExist as e:
+                    # we're missing a relationship, so we need to analyze this parcel.
+                    pass
                 matched_parcel, error = listing_to_parcel(l)
                 if error:
                     stats[error] += 1
@@ -178,12 +202,28 @@ class Command(BaseCommand):
         if options['skip_analysis'] or options['skip_matching']:
             logging.info("SKIPPING parcel analysis")
         else:
-            logging.info(f"Running parcel analysis on {len(parcels_to_analyze)} listings")
-            parcels, parcel_listings = zip(*parcels_to_analyze)
+            if options['parcel']:
+                # Run on single parcel
+                parcels = [Parcel.objects.get(apn=options['parcel'])]
+                parcel_listings = [PropertyListing.active_listings_queryset()
+                                   .filter(parcel=parcels[0])
+                                   .latest('seendate')
+                                   ]
+            else:
+                # Run on batch
+                parcels, parcel_listings = zip(*parcels_to_analyze)
+            logging.info(f"Running parcel analysis on {len(parcel_listings)} listings")
             sd_utm_crs = get_utm_crs()
+            # NOTE: Make sure changes to the call here are also made in api.redo_analysis
             results, errors = analyze_batch(
-                parcels, utm_crs=sd_utm_crs, hood_name="listings", save_file=True,
-                save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listings=parcel_listings)
+                parcels,
+                utm_crs=sd_utm_crs,
+                save_file=True,
+                save_dir="./frontend/static/temp_computed_imgs",
+                save_as_model=True,
+                listings=parcel_listings,
+                single_process=bool(options['parcel'])
+            )
 
             # Save the errors to a csv
             error_df = DataFrame.from_records(errors)
