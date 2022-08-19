@@ -47,8 +47,8 @@ def get_build_specs(constr_costs: ConstructionCosts) -> List[BuildableUnit]:
 
 class ReParams(BaseModel):
     # Rent related
-    existing_unit_rent_percentile: int = 50
-    new_unit_rent_percentile: int = 90
+    existing_unit_rent_percentile: int = 80
+    new_unit_rent_percentile: int = 85
     vacancy_rate: float = 0.05  # fraction of rent
 
     # Operations related
