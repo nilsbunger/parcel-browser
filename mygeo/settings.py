@@ -161,6 +161,15 @@ if dbHost:
             'USER': env('USER'),
             'PASSWORD': '',
         }
+        # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
+        DATABASES['cloud_db'] = {
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
+            'HOST': dbHost,
+            'NAME': dbName,
+            'USER': dbUserName,
+            'PASSWORD': dbPassword,
+        }
+
 else:
     DATABASES = {}
 

@@ -80,8 +80,8 @@ class Command(BaseCommand):
             new_geom = GEOSGeometry(ds[0].extent.wkt, srid=2230)  # 2230 is NAD83, California Zone 6 code
             new_geom = new_geom.transform('EPSG:4326', clone=True)
             print("Recording topo extents in DB:", new_geom)
-            loaded, was_created = TopographyLoads.objects.get_or_create(extents=new_geom)
+            loaded, was_created = TopographyLoads.objects.using('local_db').get_or_create(extents=new_geom)
             loaded.fname = fname
-            loaded.save()
+            loaded.save(using='local_db')
 
         self.stdout.write(self.style.SUCCESS('Finished writing data for model %s' % model))
