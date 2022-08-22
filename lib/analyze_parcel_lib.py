@@ -7,7 +7,6 @@ from collections import OrderedDict
 import logging
 import pprint
 import secrets
-import traceback
 
 import boto3
 from botocore.exceptions import ClientError
@@ -37,6 +36,8 @@ from pandas import DataFrame
 import random
 from joblib import Parallel, delayed
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
+
+log = logging.getLogger(__name__)
 
 # Connector to Cloudflare R2 for storing images. Right now we only support storing images from a local dev machine
 # because of the large topo database
@@ -172,7 +173,7 @@ def _dev_potential_by_far(
                             ('renovation', -50000, f'')
                         ]
                     except Exception as e:
-                        print(e)
+                        log.error(e, exc_info=True)
                         raise
                     finances.capital_flow['construction'] = [
                         ('hard costs', 0 - constr_hard_cost,
@@ -268,7 +269,7 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
 
     buildings = get_buildings(parcel_model)
     if not len(buildings):
-        logging.info(f"No buildings found for parcel: {apn}")
+        log.info(f"No buildings found for parcel: {apn}")
         messages['warning'].append(f"No buildings found for parcel: {apn}")
         buildings = None
         cant_build = unary_union([*setbacks])
@@ -299,9 +300,10 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
     if is_mf:
         existing_units_rents = rent_data.rent_for_location(
             listing, existing_units,percentile=re_params.existing_unit_rent_percentile, cache_only=False)
+    existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
 
     if not len(existing_units_rents) and is_mf and listing.br and listing.br > 0 and listing.ba and listing.ba > 0:
-        print("HUH")
+        log.debug("HUH")
 
     # *** 2b. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
     assert listing
@@ -348,7 +350,6 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
         if show_plot:
             plt.show()
 
-    existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
     max_cap_rate = max([scenario.finances.cap_rate_calc for scenario in dev_scenarios]) if dev_scenarios else 0
     num_existing_buildings = len(buildings[buildings.building_type != "ENCROACHMENT"]) if buildings is not None else 0
     # Create the data struct that represents the test that was run
@@ -438,7 +439,7 @@ def analyze_one_parcel(parcel_model: Parcel, utm_crs: pyproj.CRS, show_plot=Fals
             save_figures(new_buildings_fig, cant_build_fig, split_lot_fig, salt, save_dir, apn,
                          parcel.model.address, messages, save_as_model=True)
         else:
-            print(f"Reusing salt and images for {parcel.model.address}")
+            log.debug(f"Reusing salt and images for {parcel.model.address}")
         return a
     else:
         # LEGACY. Return analyzed as a dictionary with everything in it
@@ -452,7 +453,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
                                save_file=False, save_dir=DEFAULT_SAVE_DIR,
                                try_garage_conversion=True, try_split_lot=True,
                                i: int = 0, save_as_model=False, listing=None):
-    print(i, parcel.apn)
+    log.info(f"Parcel analysis: index={i}, APN={parcel.apn}, addr={listing.addr if listing else 'No listing'}")
     try:
         result = analyze_one_parcel(
             parcel, utm_crs, show_plot=False, save_file=save_file,
@@ -463,9 +464,8 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
         assert (result is not None)
         return result, None
     except Exception as e:
-        print(f"Exception on parcel {parcel.apn}")
-        print(e)
-        traceback.print_exc()
+        # log.error()
+        log.error(f"Exception on parcel {parcel.apn}", exc_info=True)
         # raise e
         return None, {
             "apn": parcel.apn,
@@ -506,14 +506,15 @@ def analyze_batch(parcels: list[Parcel], utm_crs: pyproj.CRS,
 
     num_analyze = min(len(parcels), int(limit)) if limit else len(parcels)
 
-    print(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
+    log.info(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
 
     # There probably is a cleaner way of doing this
     assert (listings is not None)  # test that the following branch is no longer needed.
     if listings is None:
         listings = [None] * len(parcels)
-
-    parallel_results = Parallel(n_jobs=1 if single_process else 8)(
+    n_jobs = 1 if single_process else 8
+    log.info(f"Launching {n_jobs} process for analysis...")
+    parallel_results = Parallel(n_jobs=n_jobs)(
         delayed(_analyze_one_parcel_worker)(parcel, utm_crs, show_plot=False, save_file=save_file,
                                             save_dir=save_dir, try_split_lot=try_split_lot, i=i,
                                             save_as_model=save_as_model, listing=listing)
@@ -529,12 +530,11 @@ def analyze_batch(parcels: list[Parcel], utm_crs: pyproj.CRS,
         # Export to csv
         # First, create a Pandas dataframe
         df = DataFrame.from_records(analyzed)
-        print(df)
         df.to_csv(
             os.path.join(save_dir, f"{folder_name}-results.csv"), index=False)
         error_df = DataFrame.from_records(errors)
         error_df.to_csv(os.path.join(
             save_dir, f"{folder_name}-errors.csv"), index=False)
 
-    print(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
+    log.info(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
     return analyzed, errors

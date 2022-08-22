@@ -86,10 +86,13 @@ class Command(BaseCommand):
             '--parcel', action='store', help="Run analysis only (no scrape) on a single parcel"
         )
 
+    loggers_to_quiet = ['rasterio.env', 'rasterio._env', 'git.cmd', 'shapely.geos', 'matplotlib.pyplot', 'matplotlib.font_manager']
     def handle(self, *args, **options):
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options['verbose'] else logging.INFO)
 
         logging.getLogger().setLevel(logging.DEBUG if options['verbose'] else logging.INFO)
+        for l in self.loggers_to_quiet:
+            logging.getLogger(l).setLevel(logging.INFO)
         logging.debug("DEBUG log level")
         logging.info("INFO log level")
         logging.info(f"Running with options:\n{pprint.pformat(options)}")
