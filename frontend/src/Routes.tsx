@@ -6,6 +6,7 @@ import { ListingsPage } from './pages/ListingsPage';
 import { ListingDetailPage } from './pages/ListingDetailPage';
 import { NewListingPage } from './pages/NewListingPage';
 import WideLayout from "./layouts/WideLayout";
+import { RentalRatesPage } from "./pages/RentalRatesPage";
 
 export function MyRoutes() {
   return (
@@ -23,6 +24,7 @@ export function MyRoutes() {
               <Route path=":analysisId" element={<ListingDetailPage/>}/>
             </Route>
             <Route path="new-listing" element={<NewListingPage/>}/>
+            <Route path="rental-rates" element={<RentalRatesPage/>}/>
           </Route>
           {/* Catch-all element below */}
           <Route path="*" element={<PageNotFound/>}/>

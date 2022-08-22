@@ -1,15 +1,16 @@
-from ninja.pagination import paginate
-from typing import List
+import pprint
+from typing import List, Optional
 
-from ninja import NinjaAPI, ModelSchema, Schema, Query
-from ninja.orm import create_schema
+import django
+from django.contrib.gis.db.models.functions import Centroid
+from django.db.models import F
+from ninja import ModelSchema, NinjaAPI, Query, Schema
+from ninja.pagination import paginate
 from ninja.security import HttpBearer, django_auth
 
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.crs_lib import get_utm_crs
-from world.models import AnalyzedListing, PropertyListing
-from django.contrib.gis.db.models.functions import Centroid
-from django.db.models import F, Subquery
+from world.models import AnalyzedListing, PropertyListing, RentalData
 
 
 # Django-ninja authentication guide: https://django-ninja.rest-framework.com/guides/authentication/
@@ -109,6 +110,48 @@ class ListingsFilters(Schema):
     price__lte: int = None
     is_mf: bool = False
     neighborhood__contains: str = None
+
+
+class RentalRatesSchema(ModelSchema):
+    lat: float
+    long: float
+    sqft: Optional[int]
+    rent_mean: int
+    rent_75_percentile: int
+
+    class Config:
+        model = RentalData
+        arbitrary_types_allowed = True
+        model_fields = [
+            'rundate',
+        ]
+
+
+@api.get("/rentalrates") # response=List[RentalRatesSchema])
+def get_rental_rates(request: django.core.handlers.wsgi.WSGIRequest) -> List[RentalRatesSchema]:
+    rental_data = (RentalData.objects
+                   .exclude(details__has_key='status_code')
+                   .order_by('parcel', '-details__mean'))
+    pid:str = ""
+    retlist = []
+    for rd in rental_data:
+        if rd.parcel_id != pid:
+            retlist.append({
+                'pid': rd.parcel_id,
+                'lat': round(rd.location.y, 7),
+                'long': round(rd.location.x, 7),
+                'rents': {}}
+            )
+        assert (retlist[-1]['pid'] == rd.parcel_id)
+        retlist[-1]['rents'][f"{rd.br}BR,{rd.ba}BA"] = {
+            'rent_mean': rd.details['mean'],
+            'rent_75_percentile': rd.details['percentile_75'],
+        }
+        pid = rd.parcel_id
+
+    # print(f"Returning {len(retlist)} items")
+    # pprint.pprint(retlist)
+    return retlist
 
 
 @api.get("/listings", response=List[ListingSchema])
