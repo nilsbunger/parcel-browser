@@ -1,5 +1,5 @@
 import urllib
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -40,8 +40,15 @@ def frontend_proxy_dev_view(request, path, upstream='http://localhost:1234'):
     except HTTPError as e:
         if e.code == 404:
             raise Http404
+        elif e.code == 500:
+            print ("HI")
         else:
             raise e
+    except URLError as e:
+        if type(e.reason) == ConnectionRefusedError:
+            # Frontend is probably not running
+            return HttpResponse("Can't connect to frontend... Do you need to start yarn dev?")
+        print ("HI")
 
     content_type = response.headers.get('Content-Type')
     if content_type == 'text/html; charset=UTF-8':
