@@ -146,6 +146,7 @@ def get_rental_rates(request: django.core.handlers.wsgi.WSGIRequest) -> List[Ren
         retlist[-1]['rents'][f"{rd.br}BR,{rd.ba}BA"] = {
             'rent_mean': rd.details['mean'],
             'rent_75_percentile': rd.details['percentile_75'],
+            'num_samples': rd.details['samples']
         }
         pid = rd.parcel_id
 

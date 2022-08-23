@@ -57,11 +57,13 @@ function RentalRatesMap({ rentalRates }: Props) {
                 </Marker>
                 <Marker key={rentalRate.pid+"asdfjkl"} position={[rentalRate.lat, rentalRate.long]}>
                     <Tooltip permanent={false}>
-                      Parcel: {rentalRate.pid}
+                        <p>Parcel: {rentalRate.pid}</p>
                       {Object.entries(rentalRate.rents).map((kv, idx) =>
                         <p key={"rentalRate.pid" + kv[0]}>
                           {kv[0]} : Mean: ${kv[1].rent_mean.toLocaleString()}.
-                          75th percentile: ${kv[1].rent_75_percentile.toLocaleString()}</p>
+                          75th percentile: ${kv[1].rent_75_percentile.toLocaleString()}.
+                          {' '}{kv[1].num_samples} samples
+                        </p>
                       )}
 
                     </Tooltip>
