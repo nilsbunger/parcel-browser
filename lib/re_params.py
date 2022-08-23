@@ -31,6 +31,9 @@ class BuildableUnit(RentalUnit):
         return self.constr_costs.build_cost_two_story if self.stories == 2 else \
             self.constr_costs.build_cost_single_story
 
+    def __repr__(self):
+        return f"{self.br}BR,{self.ba}BA {self.stories}stories, hard cost: ${self.hard_build_cost}"
+
 
 def get_build_specs(constr_costs: ConstructionCosts) -> List[BuildableUnit]:
     # Types of units that can be built

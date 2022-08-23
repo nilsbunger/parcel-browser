@@ -203,10 +203,13 @@ def _dev_potential_by_far(
                 #     print (f"Skipping putting {adu_qty} x {adu_scenario} units on lot, not enough room."
                 #            f"FAR avail={avail_far_sq_ft}, geom avail={avail_area_sq_ft}"
                 #            )
-        print(
-            f"For {listing.parcel.address} - FAR area,geom area "
-            f"avail={round(avail_far_sq_ft), round(avail_area_sq_ft)}, we found these scenarios:\n")
-        pprint.pprint(valid_scenarios)
+        log.info(
+            f"For {listing.parcel.address} - APN {listing.parcel.apn} - FAR area,geom area "
+            f"avail={round(avail_far_sq_ft), round(avail_area_sq_ft)} - we found these scenarios:"
+        )
+        log.info(f"{pprint.pformat(valid_scenarios)}")
+
+
     return valid_scenarios
 
 
@@ -453,6 +456,7 @@ def _analyze_one_parcel_worker(parcel: Parcel, utm_crs: pyproj.CRS, show_plot=Fa
                                save_file=False, save_dir=DEFAULT_SAVE_DIR,
                                try_garage_conversion=True, try_split_lot=True,
                                i: int = 0, save_as_model=False, listing=None):
+
     log.info(f"Parcel analysis: index={i}, APN={parcel.apn}, addr={listing.addr if listing else 'No listing'}")
     try:
         result = analyze_one_parcel(

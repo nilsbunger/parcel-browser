@@ -23,3 +23,12 @@ class RentalData(models.Model):
     sqft = models.IntegerField(null=True, blank=True)
     data_type = models.CharField(max_length=5, choices=RentalDataType.choices)
     rundate = models.DateTimeField(auto_now_add=True)
+
+    def __repr__(self):
+        if self.details.get('status_code', 200) != 200:
+            return (f"Rent:Parcel {self.parcel_id} ({self.parcel.address}) "
+                    f"- Error {self.details['status_code']}: {self.details['errors']}")
+        else:
+            return (f"Rent:Parcel {self.parcel_id} ({self.parcel.address})"
+                    f" {self.br}BR,{self.ba}BA: Mean={self.details['mean']}, "
+                    f"75th percentile={self.details['percentile_75']}")
