@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet';
-import { RentLocationRate } from '../../types';
+import { RentLocationRate, UnitRentData, UnitRentRate } from '../../types';
 import { ErrorBoundary } from 'react-error-boundary'
 
 type Props = { rentalRates: RentLocationRate[] };
@@ -17,7 +17,8 @@ const topCheck = (text, state, onChangeFn) => (
   </div>
 )
 
-const RentalRateMarker = ({pid, pos, rents, unitSelect}) => (
+type RentalRateMarkerProps = {pid: string, pos: [number, number], rents: UnitRentRate, unitSelect: string}
+const RentalRateMarker = ({pid, pos, rents, unitSelect}: RentalRateMarkerProps) => (
   <div>
     <Marker position={pos}>
       <Tooltip permanent>${rents[unitSelect]?.rent_mean.toLocaleString()}</Tooltip>
@@ -25,7 +26,7 @@ const RentalRateMarker = ({pid, pos, rents, unitSelect}) => (
     <Marker position={pos}>
       <Tooltip permanent={false}>
         <p>Parcel: {pid}</p>
-        {Object.entries(rents).map((kv, idx) =>
+        {Object.entries(rents).map((kv:[string, UnitRentData], idx) =>
           <p key={"rentalRate.pid" + kv[0]}>
             {kv[0]} : Mean: ${kv[1].rent_mean.toLocaleString()}.
             75th percentile: ${kv[1].rent_75_percentile.toLocaleString()}.

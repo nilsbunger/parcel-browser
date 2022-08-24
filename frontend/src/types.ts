@@ -17,13 +17,15 @@ export type Listing = {
   [key: string]: string | number | boolean | object;
 };
 
-// Record of single unit type (eg 3BR,2BA) to RentRate (mean, percentiles, etc)
-// export type UnitRentRate = Record<string, Record<"rent_mean" | "rent_75_percentile", number>>
-export type UnitRentRate = Record<string, any>
+export type UnitRentData = { rent_mean: number, rent_75_percentile: number, num_samples: number }
+
+// Record of single unit type (eg 3BR,2BA) to UnitRentData (mean, percentiles, etc)
+export type UnitRentRate = Record<string, UnitRentData>
+
 
 export type RentLocationRate = {
   lat: number;
   long: number;
   pid: string;  // parcel ID
-  rents : UnitRentRate;
+  rents: UnitRentRate;
 }

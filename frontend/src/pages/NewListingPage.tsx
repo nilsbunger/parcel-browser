@@ -1,8 +1,9 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
+import { ErrorBoundary } from "react-error-boundary";
 
 export function NewListingPage() {
   const navigate = useNavigate();
@@ -59,33 +60,35 @@ export function NewListingPage() {
   return (
     <>
       <h1>Analyze an Address</h1>
-      <form onSubmit={handleSearchSubmit}>
-        <input
-          className="border border-gray-700"
-          type="text"
-          value={addressSearch}
-          onChange={handleAddressSearch}
-        />
-        <label>
+      <ErrorBoundary fallback={<div>Error handling address search</div>}>
+        <form onSubmit={handleSearchSubmit}>
           <input
-            type="checkbox"
-            checked={addAsListing}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setAddAsListing(e.target.checked)
-            }
+            className="border border-gray-700"
+            type="text"
+            value={addressSearch}
+            onChange={handleAddressSearch}
           />
-          Add as a listing
-        </label>
-      </form>
-      {data?.apn ? (
-        <>
-          <p>FOUND: {data.apn} {data.address}. Analysis={data.analyzed_listing}</p>
-          <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
-          {/*<button onClick={handleAddListing}>Add listing</button>*/}
-        </>
-      ) : (
-        <p>{JSON.stringify(data)}</p>
-      )}
+          <label>
+            <input
+              type="checkbox"
+              checked={addAsListing}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAddAsListing(e.target.checked)
+              }
+            />
+            Add as a listing
+          </label>
+        </form>
+        {data?.apn ? (
+          <>
+            <p>FOUND: {data.apn} {data.address}. Analysis={data.analyzed_listing}</p>
+            <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
+            {/*<button onClick={handleAddListing}>Add listing</button>*/}
+          </>
+        ) : (
+          <p>{JSON.stringify(data)}</p>
+        )}
+      </ErrorBoundary>
       <p>{err}</p>
     </>
   );
