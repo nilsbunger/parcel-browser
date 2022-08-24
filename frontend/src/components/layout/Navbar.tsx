@@ -21,7 +21,8 @@ export default function Navbar(_props) {
   const isAuthenticated = false;
   const navigation = [
     { name: 'Listings', href: '/listings' },
-    { name: 'Analyze Address', href: '/new-listing' },
+    { name: 'Search', href: '/search' },
+    { name: 'Rental Rates', href: '/rental-rates'}
     // { name: 'Debug', href: routes.debug(), current: false },
     // { name: 'Team', href: '#', current: false },
     // { name: 'Projects', href: '#', current: false },

@@ -2,7 +2,6 @@ from collections import defaultdict
 from itertools import chain
 import json
 import pprint
-import traceback
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.serializers import serialize
@@ -15,7 +14,6 @@ import geopandas as geopandas
 from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
-from lib.listings_lib import address_to_parcel
 from world.models import AnalyzedListing, BuildingOutlines, Parcel, PropertyListing, Topography, TransitPriorityArea
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -173,21 +171,6 @@ class AnalysisDetailData(View):  # LoginRequiredMixin
         del d['prev_listing']
 
         return JsonResponse(d, content_type='application/json', safe=False)
-
-class GetParcelByAddressSearch(View):  # LoginRequiredMixin
-    def get(self, request, address, *args, **kwargs):
-        # Takes in an address. Returns a list of possible parcels/APNs
-        # Temporary. Let's clean this up later
-        try:
-            parcel, error = address_to_parcel(address, jurisdiction='SD')
-        except Exception as e:
-            traceback.print_exc()
-            return JsonResponse({"error": str(e)})
-
-        if error:
-            return JsonResponse({"error": f"An error occured: {error}"}, content_type='application/json')
-
-        return JsonResponse({"apn": parcel.apn}, content_type='application/json')
 
 
 class ParcelDetailData(View):  # LoginRequiredMixin

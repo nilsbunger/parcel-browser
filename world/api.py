@@ -1,4 +1,5 @@
 import pprint
+import traceback
 from typing import List, Optional
 
 import django
@@ -10,6 +11,7 @@ from ninja.security import HttpBearer, django_auth
 
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.crs_lib import get_utm_crs
+from lib.listings_lib import address_to_parcel
 from world.models import AnalyzedListing, PropertyListing, RentalData
 
 
@@ -127,12 +129,12 @@ class RentalRatesSchema(ModelSchema):
         ]
 
 
-@api.get("/rentalrates") # response=List[RentalRatesSchema])
-def get_rental_rates(request: django.core.handlers.wsgi.WSGIRequest) -> List[RentalRatesSchema]:
+@api.get("/rentalrates")  # response=List[RentalRatesSchema])
+def get_rental_rates(request) -> List[RentalRatesSchema]:
     rental_data = (RentalData.objects
                    .exclude(details__has_key='status_code')
                    .order_by('parcel', '-details__mean'))
-    pid:str = ""
+    pid: str = ""
     retlist = []
     for rd in rental_data:
         if rd.parcel_id != pid:
@@ -219,6 +221,7 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
 
 @api.post("/analysis/{analysis_id}")
 def redo_analysis(request, analysis_id: int):
+    """ Trigger a re-run of parcel analysis, used by /new-listing frontend """
     analyzed_listing = AnalyzedListing.objects.prefetch_related('listing').get(id=analysis_id)
     property_listing = analyzed_listing.listing
     sd_utm_crs = get_utm_crs()  # San Diego specific
@@ -229,3 +232,24 @@ def redo_analysis(request, analysis_id: int):
         save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listing=property_listing)
 
     return {"analysisId": analysis_id}
+
+
+@api.get("/address-search/{addr}")
+def address_search(request, addr: str):
+    """ Look up an address and return a parcel if there's a single match. """
+    # Takes in an address. Returns a list of possible parcels/APNs
+    # Temporary. Let's clean this up later
+    try:
+        parcel, error = address_to_parcel(addr, jurisdiction='SD')
+    except Exception as e:
+        traceback.print_exc()
+        return {"error": str(e)}
+    if error:
+        return {"error": f"An error occurred: {error}"}
+    try:
+        analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by('-datetime_ran')[0]
+    except Exception as e:
+        traceback.print_exc()
+        return {"error": "AnalyzedListing lookup failed:" + str(e)}
+
+    return {"apn": parcel.apn, "address": parcel.address, "analyzed_listing": analyzed_listing.id}

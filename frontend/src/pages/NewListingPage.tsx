@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetcher } from '../utils/fetcher';
 
@@ -14,10 +14,9 @@ export function NewListingPage() {
   // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
   const { data, error } = useSWR(
-    `/dj/api/address-search/${addressSearch}`,
+    `/api/address-search/${addressSearch}`,
     fetcher
   );
-
   const handleAddressSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAddressSearch(e.target.value);
   };
@@ -46,10 +45,9 @@ export function NewListingPage() {
       }),
     });
     const res = await fetchResponse.json();
-    console.log(res);
 
     if (res.error) {
-      console.log('An error has occured');
+      console.log('An error has occurred');
       setErr(res.error);
     }
     if (res.analysis_id) {
@@ -61,10 +59,6 @@ export function NewListingPage() {
   return (
     <>
       <h1>Analyze an Address</h1>
-      <p>
-        Important note: After you get redirected to the new listing, please
-        restart the server for images to load properly.
-      </p>
       <form onSubmit={handleSearchSubmit}>
         <input
           className="border border-gray-700"
@@ -85,8 +79,9 @@ export function NewListingPage() {
       </form>
       {data?.apn ? (
         <>
-          <p>APN FOUND! {data.apn}</p>
-          <button onClick={handleAddListing}>Add listing</button>
+          <p>FOUND: {data.apn} {data.address}. Analysis={data.analyzed_listing}</p>
+          <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
+          {/*<button onClick={handleAddListing}>Add listing</button>*/}
         </>
       ) : (
         <p>{JSON.stringify(data)}</p>

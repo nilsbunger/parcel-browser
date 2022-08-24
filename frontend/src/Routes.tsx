@@ -23,7 +23,7 @@ export function MyRoutes() {
             <Route path="analysis">
               <Route path=":analysisId" element={<ListingDetailPage/>}/>
             </Route>
-            <Route path="new-listing" element={<NewListingPage/>}/>
+            <Route path="search" element={<NewListingPage/>}/>
             <Route path="rental-rates" element={<RentalRatesPage/>}/>
           </Route>
           {/* Catch-all element below */}
