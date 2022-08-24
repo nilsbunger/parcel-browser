@@ -5,12 +5,12 @@ from world.models import Parcel
 
 class RentalData(models.Model):
     class RentalDataType(models.TextChoices):
-        UNIT_RENTOMETER_ESTIMATE = 'URE'
-        ADU_RENTOMETER_ESTIMATE = 'ARE'
-        OVERRIDE = 'OVR'
+        UNIT_RENTOMETER_ESTIMATE = "URE"
+        ADU_RENTOMETER_ESTIMATE = "ARE"
+        OVERRIDE = "OVR"
 
     location = models.PointField()
-    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field='apn')
+    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field="apn")
 
     # Details contains parsed results from API (eg Rentometer right now).
     # Example:
@@ -25,10 +25,14 @@ class RentalData(models.Model):
     rundate = models.DateTimeField(auto_now_add=True)
 
     def __repr__(self):
-        if self.details.get('status_code', 200) != 200:
-            return (f"Rent:Parcel {self.parcel_id} ({self.parcel.address}) "
-                    f"- Error {self.details['status_code']}: {self.details['errors']}")
+        if self.details.get("status_code", 200) != 200:
+            return (
+                f"Rent:Parcel {self.parcel_id} ({self.parcel.address}) "
+                f"- Error {self.details['status_code']}: {self.details['errors']}"
+            )
         else:
-            return (f"Rent:Parcel {self.parcel_id} ({self.parcel.address})"
-                    f" {self.br}BR,{self.ba}BA: Mean={self.details['mean']}, "
-                    f"75th percentile={self.details['percentile_75']}")
+            return (
+                f"Rent:Parcel {self.parcel_id} ({self.parcel.address})"
+                f" {self.br}BR,{self.ba}BA: Mean={self.details['mean']}, "
+                f"75th percentile={self.details['percentile_75']}"
+            )

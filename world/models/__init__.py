@@ -1,4 +1,12 @@
-from .base_models import BuildingOutlines, Parcel, TopographyLoads, TransitPriorityArea, Roads, Topography, ZoningBase
+from .base_models import (
+    BuildingOutlines,
+    Parcel,
+    TopographyLoads,
+    TransitPriorityArea,
+    Roads,
+    Topography,
+    ZoningBase,
+)
 
 from .models import AnalyzedListing, AnalyzedParcel, ParcelSlope, PropertyListing
 

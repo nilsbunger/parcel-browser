@@ -1,0 +1,4 @@
+# Git SHAs to ignore in 'blame' and similar tools
+
+# Migrate code style to black
+95c661118e678da99cfb7535f4c44999d53005ec

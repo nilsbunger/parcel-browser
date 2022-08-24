@@ -28,8 +28,11 @@ class BuildableUnit(RentalUnit):
     @property
     def hard_cost_per_sqft(self):
         assert self.stories in [1, 2]
-        return self.constr_costs.build_cost_two_story if self.stories == 2 else \
-            self.constr_costs.build_cost_single_story
+        return (
+            self.constr_costs.build_cost_two_story
+            if self.stories == 2
+            else self.constr_costs.build_cost_single_story
+        )
 
     def __repr__(self):
         return f"{self.br}BR,{self.ba}BA {self.stories}stories, hard cost: ${self.hard_build_cost}"
@@ -37,13 +40,18 @@ class BuildableUnit(RentalUnit):
 
 def get_build_specs(constr_costs: ConstructionCosts) -> List[BuildableUnit]:
     # Types of units that can be built
-    sm_adu_build = BuildableUnit(sqft=750, br=2, ba=1, stories=1, lotspace_required=800, constr_costs=constr_costs)
-    lg_adu_build = BuildableUnit(sqft=1200, br=3, ba=2, stories=1, lotspace_required=1300,
-                                 constr_costs=constr_costs)
-    sm_adu_2story_build = BuildableUnit(sqft=750, br=2, ba=1, stories=2, lotspace_required=400,
-                                        constr_costs=constr_costs)
-    lg_adu_2story_build = BuildableUnit(sqft=1200, br=3, ba=2, stories=2, lotspace_required=700,
-                                        constr_costs=constr_costs)
+    sm_adu_build = BuildableUnit(
+        sqft=750, br=2, ba=1, stories=1, lotspace_required=800, constr_costs=constr_costs
+    )
+    lg_adu_build = BuildableUnit(
+        sqft=1200, br=3, ba=2, stories=1, lotspace_required=1300, constr_costs=constr_costs
+    )
+    sm_adu_2story_build = BuildableUnit(
+        sqft=750, br=2, ba=1, stories=2, lotspace_required=400, constr_costs=constr_costs
+    )
+    lg_adu_2story_build = BuildableUnit(
+        sqft=1200, br=3, ba=2, stories=2, lotspace_required=700, constr_costs=constr_costs
+    )
     builds = [sm_adu_build, lg_adu_build, sm_adu_2story_build, lg_adu_2story_build]
     return builds
 

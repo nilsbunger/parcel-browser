@@ -15,7 +15,7 @@ ZONING_FRONT_SETBACKS_IN_FEET = {
     "RS-1-12": 15,
     "RS-1-13": 15,
     "RS-1-14": 15,
-    "RM-1-1": 15,   # RM zone setbacks are a minimum for 50% of frontage, and minimum+5' for other 50%.
+    "RM-1-1": 15,  # RM zone setbacks are a minimum for 50% of frontage, and minimum+5' for other 50%.
     "RM-1-2": 15,
     "RM-1-3": 15,
     "RM-2-4": 15,
@@ -52,11 +52,7 @@ ZONING_FAR = {
     "RM-5-12": 1.8,
 }
 
-ZONING_HEIGHT = {
-    "RS-1": 24,
-    "RM-1": 30,
-    "RM-2": 40
-}
+ZONING_HEIGHT = {"RS-1": 24, "RM-1": 30, "RM-2": 40}
 
 
 def get_far(zone, lot_size):

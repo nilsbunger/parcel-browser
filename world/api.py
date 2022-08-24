@@ -38,21 +38,36 @@ def field_exists_on_model(model, field: str) -> bool:
 class ListingHistorySchema(ModelSchema):
     class Config:
         model = PropertyListing
-        model_fields = ['id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
-                        'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
+        model_fields = [
+            "id",
+            "price",
+            "addr",
+            "neighborhood",
+            "zipcode",
+            "br",
+            "ba",
+            "founddate",
+            "seendate",
+            "mlsid",
+            "size",
+            "thumbnail",
+            "listing_url",
+            "soldprice",
+            "status",
+            "prev_listing",
+        ]
 
 
 @api.get("/listinghistory", response=List[ListingHistorySchema])
 def get_listing_history(request, mlsid: str):
-    listings = PropertyListing.objects.filter(
-        mlsid=mlsid).order_by('-founddate')
+    listings = PropertyListing.objects.filter(mlsid=mlsid).order_by("-founddate")
     return listings
 
 
 class AnalyzedListingSchema(ModelSchema):
     class Config:
         model = AnalyzedListing
-        model_fields = ['id', 'details']
+        model_fields = ["id", "details"]
 
 
 class MetadataSchema(Schema):
@@ -70,8 +85,23 @@ class ListingSchema(ModelSchema):
         model = PropertyListing
         arbitrary_types_allowed = True
         model_fields = [
-            'id', 'price', 'addr', 'neighborhood', 'zipcode', 'br', 'ba', 'founddate', 'seendate', 'mlsid',
-            'size', 'thumbnail', 'listing_url', 'soldprice', 'status', 'prev_listing']
+            "id",
+            "price",
+            "addr",
+            "neighborhood",
+            "zipcode",
+            "br",
+            "ba",
+            "founddate",
+            "seendate",
+            "mlsid",
+            "size",
+            "thumbnail",
+            "listing_url",
+            "soldprice",
+            "status",
+            "prev_listing",
+        ]
 
     # These resolve_xx methods resolve certain fields on the response automatically
     # Functionality provided by Django-Ninja
@@ -80,11 +110,11 @@ class ListingSchema(ModelSchema):
         # Only return the latest analysis
         analysis: AnalyzedListing = obj.analyzedlisting
         analysis_dict = analysis.details
-        analysis_dict['analysis_id'] = analysis.id
-        analysis_dict['is_tpa'] = analysis.is_tpa
-        analysis_dict['is_mf'] = analysis.is_mf
-        analysis_dict['apn'] = analysis.parcel.apn
-        analysis_dict['zone'] = analysis.zone
+        analysis_dict["analysis_id"] = analysis.id
+        analysis_dict["is_tpa"] = analysis.is_tpa
+        analysis_dict["is_mf"] = analysis.is_mf
+        analysis_dict["apn"] = analysis.parcel.apn
+        analysis_dict["zone"] = analysis.zone
         return analysis_dict
 
     @staticmethod
@@ -99,12 +129,15 @@ class ListingSchema(ModelSchema):
     def resolve_metadata(obj):
         # metadata is used to store the status or category of a listing, and things like previous price
         if obj.prev_listing:
-            return {'category': 'updated', 'prev_values': {
-                # Add more fields here as needed
-                "price": obj.prev_listing.price,
-            }}
+            return {
+                "category": "updated",
+                "prev_values": {
+                    # Add more fields here as needed
+                    "price": obj.prev_listing.price,
+                },
+            }
         else:
-            return {'category': 'new', 'prev_values': {}}
+            return {"category": "new", "prev_values": {}}
 
 
 class ListingsFilters(Schema):
@@ -125,30 +158,32 @@ class RentalRatesSchema(ModelSchema):
         model = RentalData
         arbitrary_types_allowed = True
         model_fields = [
-            'rundate',
+            "rundate",
         ]
 
 
 @api.get("/rentalrates")  # response=List[RentalRatesSchema])
 def get_rental_rates(request) -> List[RentalRatesSchema]:
-    rental_data = (RentalData.objects
-                   .exclude(details__has_key='status_code')
-                   .order_by('parcel', '-details__mean'))
+    rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by(
+        "parcel", "-details__mean"
+    )
     pid: str = ""
     retlist = []
     for rd in rental_data:
         if rd.parcel_id != pid:
-            retlist.append({
-                'pid': rd.parcel_id,
-                'lat': round(rd.location.y, 7),
-                'long': round(rd.location.x, 7),
-                'rents': {}}
+            retlist.append(
+                {
+                    "pid": rd.parcel_id,
+                    "lat": round(rd.location.y, 7),
+                    "long": round(rd.location.x, 7),
+                    "rents": {},
+                }
             )
-        assert (retlist[-1]['pid'] == rd.parcel_id)
-        retlist[-1]['rents'][f"{rd.br}BR,{rd.ba}BA"] = {
-            'rent_mean': rd.details['mean'],
-            'rent_75_percentile': rd.details['percentile_75'],
-            'num_samples': rd.details['samples']
+        assert retlist[-1]["pid"] == rd.parcel_id
+        retlist[-1]["rents"][f"{rd.br}BR,{rd.ba}BA"] = {
+            "rent_mean": rd.details["mean"],
+            "rent_75_percentile": rd.details["percentile_75"],
+            "num_samples": rd.details["samples"],
         }
         pid = rd.parcel_id
 
@@ -159,15 +194,16 @@ def get_rental_rates(request) -> List[RentalRatesSchema]:
 
 @api.get("/listings", response=List[ListingSchema])
 @paginate
-def get_listings(request, order_by: str = 'founddate', asc: bool = False,
-                 filters: ListingsFilters = Query(...)):
+def get_listings(
+    request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)
+):
     # Strip away the filter params that are none
     # Filters are already validated by the ListingsFilters Schema above
-    filters_xlat = {'is_mf': 'analyzedlisting__is_mf'}
+    filters_xlat = {"is_mf": "analyzedlisting__is_mf"}
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
-            if key == 'is_mf' and filters.dict()[key] == False:
+            if key == "is_mf" and filters.dict()[key] == False:
                 # is_mf really means "only multifamily". so if it's false, don't add a filter criteria
                 continue
             filter_params[filters_xlat.get(key, key)] = filters.dict()[key]
@@ -177,12 +213,12 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
     if not field_exists_on_model(PropertyListing, order_by):
         if field_exists_on_model(AnalyzedListing, order_by):
             # field is on AnalyzedListing.
-            order_by = 'analyzedlisting__' + order_by
+            order_by = "analyzedlisting__" + order_by
         else:
-            order_by = 'analyzedlisting__details__' + order_by
+            order_by = "analyzedlisting__details__" + order_by
 
     if not asc:
-        order_by = '-' + order_by
+        order_by = "-" + order_by
 
     # A subquery that contains the primary keys of each latest listing per property
     # This avoids having different listings of the same property but at different price points
@@ -194,13 +230,13 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
     #     .distinct('mlsid')
     #     .values('pk')
     # )
-    listings = (PropertyListing
-                .active_listings_queryset()
-                .filter(analyzedlisting__isnull=False, **filter_params)
-                .prefetch_related('analyzedlisting', 'prev_listing', 'parcel')
-                .annotate(centroid=Centroid(F('parcel__geom')))
-                .order_by(order_by)
-                )
+    listings = (
+        PropertyListing.active_listings_queryset()
+        .filter(analyzedlisting__isnull=False, **filter_params)
+        .prefetch_related("analyzedlisting", "prev_listing", "parcel")
+        .annotate(centroid=Centroid(F("parcel__geom")))
+        .order_by(order_by)
+    )
 
     return listings
     # return (PropertyListing.objects
@@ -221,33 +257,41 @@ def get_listings(request, order_by: str = 'founddate', asc: bool = False,
 
 @api.post("/analysis/{analysis_id}")
 def redo_analysis(request, analysis_id: int):
-    """ Trigger a re-run of parcel analysis, used by /new-listing frontend """
-    analyzed_listing = AnalyzedListing.objects.prefetch_related('listing').get(id=analysis_id)
+    """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
+    analyzed_listing = AnalyzedListing.objects.prefetch_related("listing").get(id=analysis_id)
     property_listing = analyzed_listing.listing
     sd_utm_crs = get_utm_crs()  # San Diego specific
 
     # Generally should match this call to analyze_batch() call in scrape.py
     result = analyze_one_parcel(
-        property_listing.parcel, sd_utm_crs, show_plot=False, save_file=True,
-        save_dir="./frontend/static/temp_computed_imgs", save_as_model=True, listing=property_listing)
+        property_listing.parcel,
+        sd_utm_crs,
+        show_plot=False,
+        save_file=True,
+        save_dir="./frontend/static/temp_computed_imgs",
+        save_as_model=True,
+        listing=property_listing,
+    )
 
     return {"analysisId": analysis_id}
 
 
 @api.get("/address-search/{addr}")
 def address_search(request, addr: str):
-    """ Look up an address and return a parcel if there's a single match. """
+    """Look up an address and return a parcel if there's a single match."""
     # Takes in an address. Returns a list of possible parcels/APNs
     # Temporary. Let's clean this up later
     try:
-        parcel, error = address_to_parcel(addr, jurisdiction='SD')
+        parcel, error = address_to_parcel(addr, jurisdiction="SD")
     except Exception as e:
         traceback.print_exc()
         return {"error": str(e)}
     if error:
         return {"error": f"An error occurred: {error}"}
     try:
-        analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by('-datetime_ran')[0]
+        analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by("-datetime_ran")[
+            0
+        ]
     except Exception as e:
         traceback.print_exc()
         return {"error": "AnalyzedListing lookup failed:" + str(e)}

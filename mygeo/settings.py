@@ -22,9 +22,9 @@ from mygeo.util import eprint
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-FRONTEND_DIR = BASE_DIR.parent / 'frontend'
+FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 env = environ.Env(
@@ -34,17 +34,17 @@ env = environ.Env(
 )
 
 # if totally desperate we can print out all the environment variables for debugging Docker stuff.
-if env('DESPERATE'):
-    eprint ("*** START ENVIRONMENT VARIABLES ***")
+if env("DESPERATE"):
+    eprint("*** START ENVIRONMENT VARIABLES ***")
     for name, value in os.environ.items():
         eprint("{0}: {1}".format(name, value))
-    eprint ("*** END ENVIRONMENT VARIABLES ***")
+    eprint("*** END ENVIRONMENT VARIABLES ***")
 
-DJANGO_ENV = env('DJANGO_ENV')
-DEV_ENV = DJANGO_ENV == 'development'
-DEBUG = DJANGO_ENV == 'development'
+DJANGO_ENV = env("DJANGO_ENV")
+DEV_ENV = DJANGO_ENV == "development"
+DEBUG = DJANGO_ENV == "development"
 
-LOCAL_DB = env('LOCAL_DB')
+LOCAL_DB = env("LOCAL_DB")
 if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
@@ -59,62 +59,62 @@ SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'parsnip.fly.dev']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
     "whitenoise.runserver_nostatic",
-    'django.contrib.staticfiles',
-    'django_extensions',
-    'django.contrib.gis',
+    "django.contrib.staticfiles",
+    "django_extensions",
+    "django.contrib.gis",
     "rest_framework",
     # "rest_framework_gis",
-    'world',
+    "world",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
+    "django.middleware.security.SecurityMiddleware",
     # Keep Whitenoise above all middleware except SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # ----------------------------------------------------------------------------
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
     # UNSAFE: Uncomment this out later. Post requests don't work with this turned on
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'mygeo.urls'
+ROOT_URLCONF = "mygeo.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'dist/django-templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "dist/django-templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'mygeo.wsgi.application'
+WSGI_APPLICATION = "mygeo.wsgi.application"
 
 try:
-    GDAL_LIBRARY_PATH = env('GDAL_LIBRARY_PATH')
-    GEOS_LIBRARY_PATH = env('GEOS_LIBRARY_PATH')
+    GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH")
+    GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH")
 except:
     pass
 
@@ -122,21 +122,24 @@ except:
 # should trust that to determine the protocol used.
 # See also https://docs.djangoproject.com/en/4.0/ref/settings/#secure-proxy-ssl-header
 # and https://fly.io/docs/reference/runtime-environment/
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 dbHost = None
 if LOCAL_DB:
     eprint("****** LOCAL DATABASE ******")
-    (dbHost, dbName, dbUserName, dbPassword) = (
-        'localhost', 'geodjango', env('USER'), '')
-elif env('BUILD_PHASE') == 'True':
+    (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "geodjango", env("USER"), "")
+elif env("BUILD_PHASE") == "True":
     eprint("****** NO DB - BUILD PHASE ******")
 else:
     eprint("****** CLOUD DATABASE ******")
-    (dbHost, dbName, dbUserName, dbPassword) = (env('DB_HOST'),
-                                                env('DB_NAME'), env('DB_USERNAME'), env('DB_PASSWORD'))
+    (dbHost, dbName, dbUserName, dbPassword) = (
+        env("DB_HOST"),
+        env("DB_NAME"),
+        env("DB_USERNAME"),
+        env("DB_PASSWORD"),
+    )
 
 if dbHost:
     # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
@@ -144,30 +147,30 @@ if dbHost:
     # The 'topo' DB is set up as a local DB, which is useful if we're running our scraping locally on a computer,
     # but with the cloud DB.
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'HOST': dbHost,
-            'NAME': dbName,
-            'USER': dbUserName,
-            'PASSWORD': dbPassword,
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "HOST": dbHost,
+            "NAME": dbName,
+            "USER": dbUserName,
+            "PASSWORD": dbPassword,
         }
     }
     if DEV_ENV:
         # Topo DB is only available when running in a dev environment, since it requires a local computer.
-        DATABASES['local_db'] = {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'HOST': 'localhost',
-            'NAME': 'geodjango',
-            'USER': env('USER'),
-            'PASSWORD': '',
+        DATABASES["local_db"] = {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "HOST": "localhost",
+            "NAME": "geodjango",
+            "USER": env("USER"),
+            "PASSWORD": "",
         }
         # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
-        DATABASES['cloud_db'] = {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'HOST': dbHost,
-            'NAME': dbName,
-            'USER': dbUserName,
-            'PASSWORD': dbPassword,
+        DATABASES["cloud_db"] = {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "HOST": dbHost,
+            "NAME": dbName,
+            "USER": dbUserName,
+            "PASSWORD": dbPassword,
         }
 
 else:
@@ -178,28 +181,28 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
-LOGIN_URL = '/dj/accounts/login/'
-LOGIN_REDIRECT_URL = '/listings/'
+LOGIN_URL = "/dj/accounts/login/"
+LOGIN_REDIRECT_URL = "/listings/"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -208,58 +211,57 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'dist/static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "dist/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # WHITENOISE_INDEX_FILE = "index.html"
-WHITENOISE_ROOT = BASE_DIR / 'dist/static'
+WHITENOISE_ROOT = BASE_DIR / "dist/static"
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGGING_CONFIG = 'logging.config.dictConfig'
+LOGGING_CONFIG = "logging.config.dictConfig"
 
-LOG_DIR = f'./log/{datetime.datetime.now():%y-%m-%d}'
+LOG_DIR = f"./log/{datetime.datetime.now():%y-%m-%d}"
 os.makedirs(LOG_DIR, exist_ok=True)
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{asctime:.19} [{name}] {levelname}: {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime:.19} [{name}] {levelname}: {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': f'{LOG_DIR}/{datetime.datetime.now():%y-%m-%d-%H%M}-debug.log',
-            'formatter': 'verbose',
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": f"{LOG_DIR}/{datetime.datetime.now():%y-%m-%d-%H%M}-debug.log",
+            "formatter": "verbose",
         },
     },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
-            'propagate': False,
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "propagate": False,
         },
-        'parsnip.commands': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-
-        }
+        "parsnip.commands": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
     },
 }

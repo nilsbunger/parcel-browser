@@ -26,14 +26,15 @@ class FrontEndProxyView(LoginRequiredMixin, TemplateView):
     pass
 
 
-frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name='index.html')
+frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name="index.html")
 
 
 # DEVELOPMENT SERVING: Proxy requests to frontend server
 
+
 @login_required
-def frontend_proxy_dev_view(request, path, upstream='http://localhost:1234'):
-    upstream_url = upstream + '/' + path
+def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
+    upstream_url = upstream + "/" + path
 
     try:
         response = urllib.request.urlopen(upstream_url)
@@ -41,20 +42,20 @@ def frontend_proxy_dev_view(request, path, upstream='http://localhost:1234'):
         if e.code == 404:
             raise Http404
         elif e.code == 500:
-            print ("HI")
+            print("HI")
         else:
             raise e
     except URLError as e:
         if type(e.reason) == ConnectionRefusedError:
             # Frontend is probably not running
             return HttpResponse("Can't connect to frontend... Do you need to start yarn dev?")
-        print ("HI")
+        print("HI")
 
-    content_type = response.headers.get('Content-Type')
-    if content_type == 'text/html; charset=UTF-8':
+    content_type = response.headers.get("Content-Type")
+    if content_type == "text/html; charset=UTF-8":
         # run HTML through the template engine
         response_text = response.read().decode()
-        content = engines['django'].from_string(response_text).render()
+        content = engines["django"].from_string(response_text).render()
     else:
         content = response.read()
     return HttpResponse(

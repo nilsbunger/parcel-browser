@@ -8,7 +8,7 @@ class ParcelAdmin(admin.OSMGeoAdmin):
     """Parcel admin."""
 
     list_display = ("apn", "situs_addr", "situs_stre", "situs_suff")
-    search_fields = ('apn', 'situs_stre', 'situs_addr')
+    search_fields = ("apn", "situs_stre", "situs_addr")
 
 
 @admin.register(ZoningBase)

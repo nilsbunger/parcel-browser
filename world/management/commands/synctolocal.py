@@ -9,19 +9,21 @@ from world.models import AnalyzedListing, PropertyListing, RentalData
 
 
 class Command(BaseCommand):
-    help = 'Sync tables from cloud to local to simplify local development: PropertyListing, AnalyzedListing, RentalData'
+    help = "Sync tables from cloud to local to simplify local development: PropertyListing, AnalyzedListing, RentalData"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--verbose', action='store_true', help="Do verbose logging (DEBUG-level logging)"
+            "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
         )
 
     def handle(self, *args, **options):
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options['verbose'] else logging.INFO)
-        logging.getLogger().setLevel(logging.DEBUG if options['verbose'] else logging.INFO)
+        logging.basicConfig(
+            stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO
+        )
+        logging.getLogger().setLevel(logging.DEBUG if options["verbose"] else logging.INFO)
         logging.debug("DEBUG log level")
         logging.info("INFO log level")
-        assert (LOCAL_DB == 0)
+        assert LOCAL_DB == 0
 
         # Remove auto_now and auto_now_add so that dates move over correctly.
         logging.info(f"Eliminating pre-save hooks on dates")
@@ -29,20 +31,20 @@ class Command(BaseCommand):
         def pre_save_datefield(self, model_instance, add):
             return super(DateField, self).pre_save(model_instance, add)
 
-        setattr(DateField, 'pre_save', pre_save_datefield)
+        setattr(DateField, "pre_save", pre_save_datefield)
 
         def pre_save_datetimefield(self, model_instance, add):
             return super(DateTimeField, self).pre_save(model_instance, add)
 
-        setattr(DateTimeField, 'pre_save', pre_save_datetimefield)
+        setattr(DateTimeField, "pre_save", pre_save_datetimefield)
 
         for model in [PropertyListing, RentalData, AnalyzedListing]:
             logging.info(f"{model}: Deleting all entries from LOCAL DB")
-            model.objects.using('local_db').all().delete()
+            model.objects.using("local_db").all().delete()
 
             logging.info(f"{model}: Getting all entries from CLOUD DB and writing to Local DB")
-            items = model.objects.using('cloud_db').all()
-            model.objects.using('local_db').bulk_create(items)
+            items = model.objects.using("cloud_db").all()
+            model.objects.using("local_db").bulk_create(items)
 
             # # NOTE: many-to-many fields are NOT handled by bulk create; check for
             # # them and use the existing implicit through models to copy them

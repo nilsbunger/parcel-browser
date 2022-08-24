@@ -14,10 +14,10 @@ class SubCommand(Enum):
 
 
 class Command(BaseCommand):
-    help = 'Analyze all the residential parcels, creating or working with the analyze_parcels table'
+    help = "Analyze all the residential parcels, creating or working with the analyze_parcels table"
 
     def add_arguments(self, parser):
-        parser.add_argument('cmd', choices=SubCommand.__members__)
+        parser.add_argument("cmd", choices=SubCommand.__members__)
         pass
 
     def handle(self, cmd, *args, **options):
@@ -28,7 +28,7 @@ class Command(BaseCommand):
         elif cmd == "histo":
             self.histo()
         else:
-            self.stderr.write(self.style.FAIL('Unknown command %s' % cmd))
+            self.stderr.write(self.style.FAIL("Unknown command %s" % cmd))
 
     def histo(self):
 
@@ -36,8 +36,10 @@ class Command(BaseCommand):
         values = list()
         for bucket in histo_buckets:
             with connection.cursor() as cursor:
-                cursor.execute(f'select count(lot_size) from world_analyzedparcel where'
-                               f'lot_size >= {bucket} and skip is false')
+                cursor.execute(
+                    f"select count(lot_size) from world_analyzedparcel where"
+                    f"lot_size >= {bucket} and skip is false"
+                )
                 row = cursor.fetchone()
             print(row[0])
             values.append([bucket, int(row[0])])
@@ -58,15 +60,21 @@ class Command(BaseCommand):
                 max = i[1]
         for k in values:
             scale = int(40 * k[1] / max)
-            print('{0:6d} {1:8d} : {2}'.format(k[0], k[1], '+' * scale))
+            print("{0:6d} {1:8d} : {2}".format(k[0], k[1], "+" * scale))
 
     # Rebuild analyzed_parcel table, which keeps track of which parcels we've ruled out for various reasons
     def rebuild(self):
         # Query that finds all APNs with R1-like zoning
-        selfields = 'apn, world_parcel.id, usable_sq_field, total_lvg_field, acreage,' \
-                    'zone_name, ordnum, nucleus_us, situs_juri, OVERLAY_JU'
-        query = "select distinct on(apn)" + selfields + " from world_parcel, world_zoningbase \
+        selfields = (
+            "apn, world_parcel.id, usable_sq_field, total_lvg_field, acreage,"
+            "zone_name, ordnum, nucleus_us, situs_juri, OVERLAY_JU"
+        )
+        query = (
+            "select distinct on(apn)"
+            + selfields
+            + " from world_parcel, world_zoningbase \
                 WHERE zone_name LIKE 'RS-1-%%' and ST_Intersects(world_parcel.geom, world_zoningbase.geom);"
+        )
         # count_query = "select count(apn) from (" + query + ") AS foo;"
 
         parcels = Parcel.objects.raw(query)
@@ -84,7 +92,7 @@ class Command(BaseCommand):
             nucleus_us = int(parcel.nucleus_us or 0)
             if nucleus_us < 100 or nucleus_us > 118:
                 skip_reason = "NUCLEUS_" + str(nucleus_us)
-            elif parcel.overlay_ju != 'SD':
+            elif parcel.overlay_ju != "SD":
                 skip_reason = "JURISDICTION_" + str(parcel.overlay_ju)
             # Evaluate lot sizes after other reasons, since lot size 0 may mean it's a townhouse or something
             elif lot_size == 0:
@@ -102,13 +110,18 @@ class Command(BaseCommand):
 
             else:
                 include_count += 1
-            AnalyzedParcel.objects.update_or_create(apn=parcel.apn,
-                                                    defaults={'lot_size': lot_size,
-                                                              'building_size': parcel.total_lvg_field,
-                                                              'skip': skip_reason != "", 'skip_reason': skip_reason})
+            AnalyzedParcel.objects.update_or_create(
+                apn=parcel.apn,
+                defaults={
+                    "lot_size": lot_size,
+                    "building_size": parcel.total_lvg_field,
+                    "skip": skip_reason != "",
+                    "skip_reason": skip_reason,
+                },
+            )
         print("Included %d parcels" % include_count)
         sorted_skips = sorted(skip_count.items(), key=operator.itemgetter(1), reverse=True)
 
         print("Skipped:")
         print(self.pp.pprint(sorted_skips))
-        self.stdout.write(self.style.SUCCESS('Finished running analyze_parcels'))
+        self.stdout.write(self.style.SUCCESS("Finished running analyze_parcels"))

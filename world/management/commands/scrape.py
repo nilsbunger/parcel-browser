@@ -23,15 +23,15 @@ from world.models import Parcel, PropertyListing
 
 # NOTE: We should rename this command to 'listings', since it generally does ingest operations on MLS listings
 def zip_groups_by_neighborhood():
-    neighborhood_groups = [[Neighborhood.SDSU, Neighborhood.Miramesa],
-                           [Neighborhood.Clairemont, Neighborhood.OceanBeach],
-                           [Neighborhood.Encanto, Neighborhood.AlliedGardens],
-                           [Neighborhood.PacificBeach]
-                           ]
+    neighborhood_groups = [
+        [Neighborhood.SDSU, Neighborhood.Miramesa],
+        [Neighborhood.Clairemont, Neighborhood.OceanBeach],
+        [Neighborhood.Encanto, Neighborhood.AlliedGardens],
+        [Neighborhood.PacificBeach],
+    ]
     zip_groups = []
     for hood_group in neighborhood_groups:
-        hood_zips = [
-            h for sublist in hood_group for h in sublist.value]
+        hood_zips = [h for sublist in hood_group for h in sublist.value]
         zip_groups.append(hood_zips)
     return zip_groups
 
@@ -53,44 +53,57 @@ def zip_groups_from_zips(zips):
 
 
 class Command(BaseCommand):
-    help = 'Parse MLS Listings for San Diego, analyze, and put into database. Optionally re-scrape'
+    help = "Parse MLS Listings for San Diego, analyze, and put into database. Optionally re-scrape"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--fetch', action='store_true', help="Fetch listings data from MLS service"
+            "--fetch", action="store_true", help="Fetch listings data from MLS service"
         )
         parser.add_argument(
-            '--fetch-zip',
-            action='store', help="Fetch listings for ONE specified zip from cache (if available) or MLS service"
+            "--fetch-zip",
+            action="store",
+            help="Fetch listings for ONE specified zip from cache (if available) or MLS service",
         )
         parser.add_argument(
-            '--fetch-local', action='store_true',
-            help="Fetch listings from localhost. Useful to see request stream, but it won't generate useful responses"
+            "--fetch-local",
+            action="store_true",
+            help="Fetch listings from localhost. Useful to see request stream, but it won't generate useful responses",
         )
         parser.add_argument(
-            '--verbose', action='store_true', help="Do verbose logging (DEBUG-level logging)"
+            "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
         )
         parser.add_argument(
-            '--no-cache', action='store_true',
-            help="Don't use existing cached data even if it's available (both for scraping and for analysis)"
+            "--no-cache",
+            action="store_true",
+            help="Don't use existing cached data even if it's available (both for scraping and for analysis)",
         )
         parser.add_argument(
-            '--skip-matching',
-            action='store_true',
-            help="Don't run listing-to-address matching (also skips parcel analysis)"
+            "--skip-matching",
+            action="store_true",
+            help="Don't run listing-to-address matching (also skips parcel analysis)",
         )
         parser.add_argument(
-            '--skip-analysis', action='store_true', help="Don't run parcel analysis"
+            "--skip-analysis", action="store_true", help="Don't run parcel analysis"
         )
         parser.add_argument(
-            '--parcel', action='store', help="Run analysis only (no scrape) on a single parcel"
+            "--parcel", action="store", help="Run analysis only (no scrape) on a single parcel"
         )
 
-    loggers_to_quiet = ['rasterio.env', 'rasterio._env', 'git.cmd', 'shapely.geos', 'matplotlib.pyplot', 'matplotlib.font_manager']
+    loggers_to_quiet = [
+        "rasterio.env",
+        "rasterio._env",
+        "git.cmd",
+        "shapely.geos",
+        "matplotlib.pyplot",
+        "matplotlib.font_manager",
+    ]
+
     def handle(self, *args, **options):
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options['verbose'] else logging.INFO)
+        logging.basicConfig(
+            stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO
+        )
 
-        logging.getLogger().setLevel(logging.DEBUG if options['verbose'] else logging.INFO)
+        logging.getLogger().setLevel(logging.DEBUG if options["verbose"] else logging.INFO)
         for l in self.loggers_to_quiet:
             logging.getLogger(l).setLevel(logging.INFO)
         logging.debug("DEBUG log level")
@@ -100,7 +113,7 @@ class Command(BaseCommand):
         # 1. Scrape latest listings if directed to.
         # -----
 
-        if options['fetch'] or options['fetch_local'] or options['fetch_zip']:
+        if options["fetch"] or options["fetch_local"] or options["fetch_zip"]:
             if settings.LOCAL_DB:
                 logging.warning("Fetching with local DB???? Type 'yes' to confirm this craziness")
                 value = input("Go ahead:")
@@ -108,80 +121,93 @@ class Command(BaseCommand):
                     logging.info("Exiting")
                     sys.exit(1)
 
-            zip_groups = [[options['fetch_zip']]] if options['fetch_zip'] else zip_groups_from_zips(AllSdCityZips)
+            zip_groups = (
+                [[options["fetch_zip"]]]
+                if options["fetch_zip"]
+                else zip_groups_from_zips(AllSdCityZips)
+            )
             logging.info(
-                f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, Cache={options["no_cache"] is False}')
+                f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, Cache={options["no_cache"] is False}'
+            )
             stats = scrape_san_diego_listings_by_zip_groups(
-                zip_groups, localhost_mode=options['fetch_local'], cache=not options['no_cache'])
+                zip_groups, localhost_mode=options["fetch_local"], cache=not options["no_cache"]
+            )
 
-            logging.info(f'\nCRAWLER DONE.\nFound {stats.get_value("listing/no_change")} entries with no change, '
-                         f' {stats.get_value("listing/new_or_update")} new or updated')
-            logging.info(f'{stats.get_value("response_received_count")} responses received'
-                         f' (of which, {stats.get_value("httpcache/hit")} were from CACHE)')
-            error_pages = stats.get_value('httperror/response_ignored_count')
+            logging.info(
+                f'\nCRAWLER DONE.\nFound {stats.get_value("listing/no_change")} entries with no change, '
+                f' {stats.get_value("listing/new_or_update")} new or updated'
+            )
+            logging.info(
+                f'{stats.get_value("response_received_count")} responses received'
+                f' (of which, {stats.get_value("httpcache/hit")} were from CACHE)'
+            )
+            error_pages = stats.get_value("httperror/response_ignored_count")
             sys.stdout.flush()
             if error_pages:
-                eprint(f'!! {error_pages} error responses')
+                eprint(f"!! {error_pages} error responses")
 
         # ----
         # 1.5 Look for old listings that aren't active anymore
-        if not options['parcel']:
+        if not options["parcel"]:
             stale_stats = PropertyListing.mark_all_stale(days_for_stale=5)
-            logging.info(
-                f"\n\nSTALE LISTINGS REPORT: {stale_stats}"
-            )
+            logging.info(f"\n\nSTALE LISTINGS REPORT: {stale_stats}")
 
         # -----
         # 2. Associate listings with parcels
         # -----
         stats = defaultdict(int)
         parcels_to_analyze = set()
-        if options['skip_matching'] or options['parcel']:
+        if options["skip_matching"] or options["parcel"]:
             logging.info("SKIPPING matching of listings to parcels")
         else:
             logging.info(f"Running matching")
 
-            listings = PropertyListing.active_listings_queryset().prefetch_related('analyzedlisting', 'parcel')
-            logging.info(f'Found {len(listings)} properties to associate')
+            listings = PropertyListing.active_listings_queryset().prefetch_related(
+                "analyzedlisting", "parcel"
+            )
+            logging.info(f"Found {len(listings)} properties to associate")
             for l in listings:
                 try:
                     p_temp = l.parcel
                     al_temp = l.analyzedlisting
                     # parcel, and analyzed listing exists. if we're caching, we can skip analysis and
                     # go to the next listing.
-                    if not options['no_cache']:
-                        stats[f'info_previously_matched'] += 1
+                    if not options["no_cache"]:
+                        stats[f"info_previously_matched"] += 1
                         continue
                 except ObjectDoesNotExist as e:
                     # we're missing a relationship, so we need to analyze this parcel.
                     pass
-                matched_parcel, error = address_to_parcel(l.addr, jurisdiction='SD')
+                matched_parcel, error = address_to_parcel(l.addr, jurisdiction="SD")
                 if error:
                     stats[error] += 1
                 else:
                     # Got matched parcel, record the foreign key link in the listing.
-                    stats['success'] += 1
+                    stats["success"] += 1
                     l.parcel = matched_parcel
-                    l.save(update_fields={'parcel'})
+                    l.save(update_fields={"parcel"})
                     zipcode = matched_parcel.situs_zip
-                    if matched_parcel.situs_juri == 'SD':
+                    if matched_parcel.situs_juri == "SD":
                         parcels_to_analyze.add((matched_parcel, l))
                         zipcode = matched_parcel.situs_zip
                         if zipcode:
-                            stats[f'info_sd_{zipcode[0:5]}'] += 1
+                            stats[f"info_sd_{zipcode[0:5]}"] += 1
                             if int(zipcode[0:5]) not in AllSdCityZips:
-                                stats[f'error_city_zip_{zipcode[0:5]}_missing'] += 1
+                                stats[f"error_city_zip_{zipcode[0:5]}_missing"] += 1
                         else:
-                            stats[f'info_sd_unknown_zip'] += 1
+                            stats[f"info_sd_unknown_zip"] += 1
                     else:
                         if zipcode:
                             if int(zipcode[0:5]) in AllSdCityZips:
                                 # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
                                 #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
                                 stats[
-                                    f'error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
+                                    f"error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}"
+                                ] += 1
                             else:
-                                stats[f'info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}'] += 1
+                                stats[
+                                    f"info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}"
+                                ] += 1
                 # print("SAVED")
             logging.info("DONE. Final stats associating parcels with listings:")
             logging.info(pprint.pformat(dict(stats)))
@@ -189,16 +215,17 @@ class Command(BaseCommand):
         # -----
         # 3. Generate parcel analysis for all the parcels if directed to
         # -----
-        if options['skip_analysis'] or options['skip_matching']:
+        if options["skip_analysis"] or options["skip_matching"]:
             logging.info("SKIPPING parcel analysis")
         else:
-            if options['parcel']:
+            if options["parcel"]:
                 # Run on single parcel
-                parcels = [Parcel.objects.get(apn=options['parcel'])]
-                parcel_listings = [PropertyListing.active_listings_queryset()
-                                   .filter(parcel=parcels[0])
-                                   .latest('seendate')
-                                   ]
+                parcels = [Parcel.objects.get(apn=options["parcel"])]
+                parcel_listings = [
+                    PropertyListing.active_listings_queryset()
+                    .filter(parcel=parcels[0])
+                    .latest("seendate")
+                ]
             else:
                 # Run on batch
                 parcels, parcel_listings = zip(*parcels_to_analyze)
@@ -212,13 +239,13 @@ class Command(BaseCommand):
                 save_dir="./frontend/static/temp_computed_imgs",
                 save_as_model=True,
                 listings=parcel_listings,
-                single_process=bool(options['parcel'])
+                single_process=bool(options["parcel"]),
             )
 
             # Save the errors to a csv
             error_df = DataFrame.from_records(errors)
-            error_df.to_csv(
-                "./frontend/static/temp_computed_imgs/errors.csv", index=False)
+            error_df.to_csv("./frontend/static/temp_computed_imgs/errors.csv", index=False)
 
             logging.info(
-                f"Analysis done! There are {len(results)} successes and {len(errors)} errors.")
+                f"Analysis done! There are {len(results)} successes and {len(errors)} errors."
+            )

@@ -116,8 +116,10 @@ class Parcel(models.Model):
 
     @property
     def address(self) -> str:
-        addr = f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre} ' \
-               f'{self.situs_suff or ""} {self.situs_post or ""}'
+        addr = (
+            f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre} '
+            f'{self.situs_suff or ""} {self.situs_post or ""}'
+        )
         return addr.strip()
 
     @property
@@ -151,9 +153,8 @@ class Parcel(models.Model):
             return [RentalUnit(br=self.br, ba=self.ba, sqft=self.sqft)]
         per_unit_sqft = self.sqft / self.unitqty if self.sqft > -1 else -1
         retval = [
-            RentalUnit(br=self.br / self.unitqty,
-                       ba=self.ba / self.unitqty,
-                       sqft=per_unit_sqft) for i in range(self.unitqty)
+            RentalUnit(br=self.br / self.unitqty, ba=self.ba / self.unitqty, sqft=per_unit_sqft)
+            for i in range(self.unitqty)
         ]
         # Remainder could be large in a multi-unit property, so distribute the remainder evenly
         for i in range(0, int(self.br % self.unitqty)):
@@ -167,19 +168,21 @@ class Parcel(models.Model):
             lot_str = "%s acres" % self.acreage
         else:
             lot_str = "%s lot" % self.usable_sq_field
-        base_str = '%s %s %s %s: %s living, ' % (
-            self.apn, self.situs_addr, self.situs_stre, self.situs_zip, self.total_lvg_field)
+        base_str = "%s %s %s %s: %s living, " % (
+            self.apn,
+            self.situs_addr,
+            self.situs_stre,
+            self.situs_zip,
+            self.total_lvg_field,
+        )
         return base_str + lot_str
 
     class Meta:
-        indexes = [
-            models.Index(fields=['apn']),
-            models.Index(fields=['situs_addr'])
-        ]
+        indexes = [models.Index(fields=["apn"]), models.Index(fields=["situs_addr"])]
 
 
 class TopographyLoads(models.Model):
-    fname = models.CharField('filename', max_length=200)
+    fname = models.CharField("filename", max_length=200)
     extents = models.PolygonField(srid=4326, unique=True)
     # note: only updated on model.save
     run_date = models.DateField(auto_now=True)

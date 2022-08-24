@@ -5,13 +5,13 @@ def get_utm_crs() -> pyproj.CRS:
     print("Using San Diego UTM CRS")
     # These two versions should be equivalent:
     # sd_utm_crs = pyproj.CRS.from_wkt(SAN_DIEGO_UTM_CRS_WKT)
-    sd_utm_crs = pyproj.CRS(proj='utm', zone=11, ellps='WGS84')
+    sd_utm_crs = pyproj.CRS(proj="utm", zone=11, ellps="WGS84")
     return sd_utm_crs
 
 
 # Well-known text of San Diego region UTM projection (UTM Zone 11 North). This is the coordinate system
 # we use for our shapely-based geometry calculations.
-SAN_DIEGO_UTM_CRS_WKT = '''
+SAN_DIEGO_UTM_CRS_WKT = """
 PROJCRS["WGS 84 / UTM zone 11N",
         BASEGEOGCRS["WGS 84",
                     ENSEMBLE["World Geodetic System 1984 ensemble",
@@ -58,4 +58,4 @@ PROJCRS["WGS 84 / UTM zone 11N",
             AREA["Between 120°W and 114°W, northern hemisphere between equator and 84°N, onshore and offshore. Canada - Alberta; British Columbia (BC); Northwest Territories (NWT); Nunavut. Mexico. United States (USA)."],
             BBOX[0,-120,84,-114]],
         ID["EPSG",32611]]
-'''
+"""

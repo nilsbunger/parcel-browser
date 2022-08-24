@@ -1,4 +1,3 @@
-
 import sys
 
 # Print to stderr

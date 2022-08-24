@@ -14,9 +14,9 @@ class Financials(BaseModel):
 
     def dict(self, *args, **kwargs):
         x = super().dict(*args, **kwargs)
-        x['capital_sum'] = self.capital_sum_calc
-        x['net_income'] = self.net_income_calc
-        x['cap_rate'] = self.cap_rate_calc
+        x["capital_sum"] = self.capital_sum_calc
+        x["net_income"] = self.net_income_calc
+        x["cap_rate"] = self.cap_rate_calc
         return x
 
     @property
