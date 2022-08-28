@@ -207,7 +207,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
 
 
 def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode, cache=True):
-    download_delay = 2.0 if localhost_mode else 25
+    download_delay = 2.0 if localhost_mode else 12
     crawl_settings = {
         "ITEM_PIPELINES": {
             "lib.scraping_lib.MyItemPipeline": 100,
@@ -225,7 +225,7 @@ def scrape_san_diego_listings_by_zip_groups(zip_groups, localhost_mode, cache=Tr
         "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
         "DOWNLOAD_TIMEOUT": 60,
         "LOG_ENABLED": True,
-        "LOG_LEVEL": logging.getLogger().getEffectiveLevel(),
+        "LOG_LEVEL": log.getEffectiveLevel(),
     }
     logging.getLogger("scrapy.crawler").setLevel("WARNING")
 
