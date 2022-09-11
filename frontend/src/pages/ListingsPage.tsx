@@ -3,7 +3,6 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import {
   ColumnFiltersState,
-  createColumnHelper,
   getCoreRowModel,
   getFacetedMinMaxValues,
   getFacetedRowModel,
@@ -16,26 +15,12 @@ import {
 } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
 import { fetcher, swrLaggy } from '../utils/fetcher';
+import { asSqFt, ONEDAY, snakeCaseToTitleCase } from '../utils/utils';
 import { Listing } from '../types';
 import ListingsMap from '../components/layout/ListingsMap';
 import { useImmer } from 'use-immer';
 import TablePagination from '../components/TablePagination';
 import ListingTable from '../components/ListingTable';
-
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
-const asFt = (m) => Math.round(m * 3.28);
-const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
-
-function snakeCaseToTitleCase(word: string) {
-  const tokenized = word.toLowerCase().split('_');
-  for (let i = 0; i < tokenized.length; i++) {
-    tokenized[i] = tokenized[i][0].toUpperCase() + tokenized[i].slice(1);
-  }
-
-  return tokenized.join(' ');
-}
-
-const columnHelper = createColumnHelper();
 
 const basicAccessor = (cell) => {
   return String(cell.getValue()).slice(0, 20);
@@ -108,11 +93,21 @@ const founddateAccessor = ({ cell }) => {
   const foundDate = cell.getValue();
   let foundtime = (new Date(foundDate)).getTime()
   let nowtime = Date.now()
-  return Math.round((nowtime - foundtime) / oneDay);
+  return Math.round((nowtime - foundtime) / ONEDAY);
 };
 
 const mfFilterFn = (row, columnId, filterValue) => {
   return (row.original.is_mf || !filterValue)
+}
+
+function column()
+
+type ColumnStateEntry = {
+  visible: boolean,
+  headername?: string,
+  enableColumnFilter?: boolean,
+  filterFn?: any,
+  accessor?: any,
 }
 
 // To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
@@ -203,10 +198,13 @@ const initialColumnState = {
   metadata: { visible: false }, // Need to make this one ALWAYS invisible
 };
 
-type QueryResponse = {
-  items: (Listing & { analyzedlisting_set: { details: object } })[];
-  count: number;
-};
+const columns = Object.keys(initialColumnState).map((fieldname) => ({
+  accessorKey: fieldname,
+  cell: initialColumnState[fieldname].accessor || basicAccessor,
+  header: initialColumnState[fieldname].headername || snakeCaseToTitleCase(fieldname),
+  enableColumnFilter: initialColumnState[fieldname].enableColumnFilter || false,
+  filterFn: initialColumnState[fieldname].filterFn,
+}));
 
 // Create query parameters for filtering, depending on type of filter
 function columnFiltersToQuery(filters: ColumnFiltersState) {
@@ -229,8 +227,30 @@ export function ListingsPage() {
   const [pageSize, setPageSize] = useState<number>(50);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([]);
-  const [isMfChecked, setIsMfChecked] = React.useState<boolean>(false);
+  // column filters
+  const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([
+    { id: 'is_mf', value: false }
+  ]);
+  const isMfChecked = columnFilters.find((columnFilter) => columnFilter.id === 'is_mf').value as boolean
+  const onMfFilterCheck = (e) => {
+    // update is_mf column filter which holds the master state of whether the mf-filter is active
+    setColumnFilters((draft) => {
+      const isMfFilter = draft.find((columnFilter) => columnFilter.id === 'is_mf')
+      isMfFilter.value = !isMfFilter.value
+    });
+  }
+  // column visibility
+  const initialVisibility = Object.fromEntries(
+    Object.entries(initialColumnState).map(
+      ([k, v]) => [k, v['visible']]
+    )
+  );
+  const [columnVisibility, setColumnVisibility] = useImmer<Record<string, boolean>>(initialVisibility);
+  const toggleVisibility = (event) => {
+    setColumnVisibility((draft) => {
+      draft[event.target.id] = !draft[event.target.id];
+    });
+  };
 
   const { data, error, isValidating } = useSWR(
     [
@@ -253,23 +273,24 @@ export function ListingsPage() {
     // load initial values of state from local storage
     const settings = JSON.parse(window.localStorage.getItem('listings_page_settings'))
     if (settings) {
-      console.log ("Setting local state to", settings)
+      console.log("Setting local state to", settings)
       setPageSize(settings.pageSize)
       // setPageIndex(settings.pageIndex)
       setSorting(settings.sorting)
       setColumnFilters(settings.columnFilters)
-      setIsMfChecked(settings.isMfChecked)
     }
   }, []);
 
   useEffect(() => {
     // update local storage when something changes
     const settings = {
-      pageSize:pageSize, sorting:sorting, columnFilters:columnFilters, isMfChecked:isMfChecked
+      pageSize: pageSize, sorting: sorting, columnFilters: columnFilters,
     }
     window.localStorage.setItem('listings_page_settings', JSON.stringify(settings));
-  }, [pageSize, pageIndex, sorting, columnFilters, isMfChecked]);
+  }, [pageSize, pageIndex, sorting, columnFilters]);
 
+  // flatten data model, removing 'analysis' subsection. Should really refactor this,
+  // eg squash on server, or squash in fetcher?
   const listings = data
     ? (data.items.map((item) => {
       const listing = {
@@ -282,33 +303,6 @@ export function ListingsPage() {
     }) as Listing[])
     : [];
 
-  const initialVisibility = Object.fromEntries(
-    Object.entries(initialColumnState).map(([k, v]) => [k, v['visible']])
-  );
-  const [columnVisibility, setColumnVisibility] =
-    useState<Record<string, boolean>>(initialVisibility);
-
-  const toggleVisibility = (event) => {
-    // console.log('Vis = ', columnVisibility);
-    // console.log('Should toggle', event.target.id);
-    setColumnVisibility((prev) => {
-      const new_vis = Object.assign({}, prev);
-      new_vis[event.target.id] = !new_vis[event.target.id];
-      return new_vis;
-    });
-    // console.log(columnVisibility);
-  };
-
-  const columns = Object.keys(initialColumnState).map((fieldname) => ({
-    accessorKey: fieldname,
-    cell: initialColumnState[fieldname].accessor || basicAccessor,
-    header:
-      initialColumnState[fieldname].headername ||
-      snakeCaseToTitleCase(fieldname),
-    enableColumnFilter:
-      initialColumnState[fieldname].enableColumnFilter || false,
-    filterFn: initialColumnState[fieldname].filterFn,
-  }));
   const table = useReactTable({
     data: listings,
     columns,
@@ -341,20 +335,6 @@ export function ListingsPage() {
       <p>Try <a href='/dj/accounts/login/'>logging in?</a></p>
     </div>)
 
-  const onMfFilterCheck = (e) => {
-    setIsMfChecked(e.target.checked)
-    setColumnFilters((draft) => {
-      // convoluted solution from react-table for updating column filters.
-      const isMfFilter = draft.find((columnFilter) => columnFilter.id==='is_mf')
-      if (!isMfFilter) {
-        draft.push({id: 'is_mf', value:!isMfChecked})
-      } else {
-        isMfFilter.value = !isMfChecked
-      }
-    });
-  }
-
-// Render each date as a separate table
   return (
     <div className={'flex flex-row'}>
       <ListingsMap
