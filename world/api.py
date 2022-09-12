@@ -11,7 +11,7 @@ from ninja.security import HttpBearer, django_auth
 
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.crs_lib import get_utm_crs
-from lib.listings_lib import address_to_parcel
+from lib.listings_lib import address_to_parcel, address_to_parcels_loose
 from world.models import AnalyzedListing, PropertyListing, RentalData
 
 
@@ -283,6 +283,8 @@ def address_search(request, addr: str):
     # Temporary. Let's clean this up later
     try:
         parcel, error = address_to_parcel(addr, jurisdiction="SD")
+        # TODO: Finish this better address matcher
+        # parcel, error = address_to_parcels_loose(addr)
     except Exception as e:
         traceback.print_exc()
         return {"error": str(e)}

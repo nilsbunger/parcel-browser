@@ -45,7 +45,7 @@ def zip_groups_from_zips(zips):
     rand.shuffle(zips)
     zip_groups = []
     while zips:
-        num = min(rand.randint(2, 4), len(zips))
+        num = min(rand.randint(3, 5), len(zips))
         zip_group = [zips.pop() for i in range(num)]
         zip_groups.append(zip_group)
     print(zip_groups)

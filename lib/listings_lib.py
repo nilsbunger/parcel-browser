@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import re
 import traceback
+from typing import List
+
+from django.db.models.expressions import RawSQL
 
 from world.models import PropertyListing, Parcel
 
@@ -73,6 +76,31 @@ normalize_suffix = {
 }
 
 normalize_prefix = {"north": "n", "south": "s", "east": "e", "west": "w"}
+
+
+# TODO: THIS IS NOT COMPLETE - MEANT TO BE AN ADDRESS MATCHER
+def address_to_parcels_loose(addr: str) -> List[Parcel]:
+    """Take a street address, and return any that loosely match, best match on top. For typeahead matching"""
+    addr_normalized = re.sub(r"\.", "", addr.lower())
+    addr_parts = addr_normalized.split()
+    pquery = Parcel.objects.annotate(
+        str_situs_addr=RawSQL("select cast(situs_addr as VARCHAR)", ())
+    )
+    if addr_parts[0].isnumeric():
+        pquery = pquery.filter(str_situs_addr__regex=r"%s" % addr_parts[0])
+        x = addr_parts.pop()
+    # pquery = pquery.filter(str_situs_str)
+    # Concatenating address in postgres:
+    # select apn, concat_ws(
+    #    ' ', situs_pre_field, situs_addr, situs_stre, situs_suff, situs_post
+    #    ) as addr from world_parcel
+
+    # Using pg_tgrm extension (Trigram word similarity)
+    # CREATE EXTENSION btree_gin;
+    # CREATE EXTENSION pg_trgm;
+    # CREATE OR REPLACE FUNCTION immutable_concat_ws(text, VARIADIC text[])
+    # create index str_search_try_index on world_parcel using GIN (immutable_concat_ws(' ', situs_pre_field, situs_addr::text, situs_stre, situs_suff, situs_post));
+    # https://leandronsp.com/a-powerful-full-text-search-in-postgresql-in-less-than-20-lines
 
 
 def address_to_parcel(

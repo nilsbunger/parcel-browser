@@ -7,7 +7,7 @@ class Neighborhood(Enum):
     Miramesa = [92126, 92121]
     SDSU = [92115, 92120, 92116, 92105]
     Clairemont = [92117, 92111, 92110]
-    OceanBeach = [92107, 92106, 92133, 92140]
+    OceanBeach = [92107, 92106, 92140]
     Encanto = [92114, 92139]
     AlliedGardens = [92119, 92120, 92124]
     PacificBeach = [92109]
