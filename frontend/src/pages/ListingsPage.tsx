@@ -1,7 +1,10 @@
 import useSWR from 'swr';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
+import { z } from "zod";
 import {
+  Cell,
+  Column,
   ColumnFiltersState,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -9,8 +12,8 @@ import {
   getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
+  getSortedRowModel, Row,
+  SortingState, Table,
   useReactTable,
 } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
@@ -21,12 +24,14 @@ import ListingsMap from '../components/layout/ListingsMap';
 import { useImmer } from 'use-immer';
 import TablePagination from '../components/TablePagination';
 import ListingTable from '../components/ListingTable';
+import { CoreColumnDefAccessorKey } from "@tanstack/table-core";
 
-const basicAccessor = (cell) => {
+const basicAccessor = (cell: Cell<Listing, unknown>) => {
   return String(cell.getValue()).slice(0, 20);
 };
 
-const apnAccessor = ({ row }) => (
+
+const apnAccessor = ({ row }: { row: Row<Listing> }) : ReactElement => (
   <Link
     to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
     className="underline text-darkblue"
@@ -35,18 +40,18 @@ const apnAccessor = ({ row }) => (
   </Link>
 );
 
-const addressAccessor = ({ row }) => (
+const addressAccessor = ({ row }: { row: Row<Listing> }) => (
   <div
     className={
       'relative ' +
-      (row.getValue('apn').slice(8, 10) !== '00' ? 'bg-gray-300' : '')
+      ((row.getValue('apn') as string).slice(8, 10) !== '00' ? 'bg-gray-300' : '')
     }
   >
     <Link
       to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
       className="underline text-darkblue"
     >
-      {row.getValue('address').slice(0, 20)}
+      {(row.getValue('address') as string).slice(0, 20)}
     </Link>
 
     {row.original.is_tpa && (
@@ -60,27 +65,26 @@ const addressAccessor = ({ row }) => (
   </div>
 );
 
-const asSqFtAccessor = ({ cell }) => asSqFt(cell.getValue()).toLocaleString();
+const asSqFtAccessor = ({ cell }: { cell: Cell<Listing, unknown>}) => asSqFt(cell.getValue()).toLocaleString();
 
-const roundingAccessor = ({ cell }) => {
-  return cell.getValue().toPrecision(2);
+const roundingAccessor = ({ cell } : { cell: Cell<Listing, unknown>}) => {
+  return (cell.getValue() as number).toPrecision(2);
 };
 
-const priceAccessor = ({ cell }) => {
-  const prev_value =
-    cell.row.getValue('metadata')['prev_values'][cell.column.id];
-  if (prev_value) {
+const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown>}): ReactElement|string => {
+  const prev_price = cell.row.getValue('metadata')['prev_values'][cell.column.id] as number
+  if (prev_price) {
     return (
       <span>
-        ${cell.getValue().toLocaleString()} <s> {prev_value} </s>
+        ${cell.getValue().toLocaleString()} <s> {prev_price} </s>
       </span>
     );
   } else {
-    return '$' + cell.getValue().toLocaleString();
+    return '$' + (cell.getValue() as number).toLocaleString();
   }
 };
 
-const statusAccessor = ({ row }) => {
+const statusAccessor = ({ row } : { row: Row<Listing> }) => {
   return row.getValue('metadata')['category'] == 'new' ? (
     <div className="badge badge-accent">NEW</div>
   ) : (
@@ -89,122 +93,103 @@ const statusAccessor = ({ row }) => {
 };
 
 // calculate days since found
-const founddateAccessor = ({ cell }) => {
-  const foundDate = cell.getValue();
-  let foundtime = (new Date(foundDate)).getTime()
-  let nowtime = Date.now()
+const founddateAccessor = ({ cell } : { cell: Cell<Listing, unknown> }) => {
+  const foundDate = cell.getValue() as string;
+  const foundtime = (new Date(foundDate)).getTime()
+  const nowtime = Date.now()
   return Math.round((nowtime - foundtime) / ONEDAY);
 };
 
-const mfFilterFn = (row, columnId, filterValue) => {
+const mfFilterFn = (row: Row<Listing>, columnId: number, filterValue: boolean): boolean => {
   return (row.original.is_mf || !filterValue)
 }
 
-function column()
-
-type ColumnStateEntry = {
-  visible: boolean,
-  headername?: string,
-  enableColumnFilter?: boolean,
-  filterFn?: any,
-  accessor?: any,
+const tpaFilterFn = (row: Row<Listing>, columnId: number, filterValue: boolean): boolean => {
+  return (row.original.is_tpa || !filterValue)
 }
 
-// To set a column to be filterable, set enableColumnFilter to true, and make sure to provide
-// a filterFn (https://tanstack.com/table/v8/docs/api/features/filters)
-const initialColumnState = {
-  founddate: {
-    visible: true,
-    headername: "DSU",
-    accessor: founddateAccessor,
-  },
-  apn: { visible: false, accessor: apnAccessor },
-  address: { visible: true, accessor: addressAccessor },
-  zone: { visible: true },
-  is_mf: {
-    visible: false,
-    enableColumnFilter: true,
-    filterFn: mfFilterFn,
-  },
-  max_cap_rate: {
-    visible: true,
-    headername: "CapRate",
-  },
-  num_existing_buildings: { visible: false },
-  is_flag_lot: { visible: false },
-  carports: { visible: false },
-  garages: { visible: false },
-  neighborhood: {
-    visible: true,
-    enableColumnFilter: true,
-    filterFn: 'includesString',
-  },
-  parcel_size: {
-    visible: true,
-    headername: 'Lot size',
-    accessor: asSqFtAccessor,
-  },
-  existing_living_area: { visible: false, accessor: asSqFtAccessor },
-  existing_floor_area: { visible: false, accessor: asSqFtAccessor },
-  existing_FAR: { visible: false, accessor: roundingAccessor },
-  num_new_buildings: { visible: false },
-  new_building_areas: { visible: false },
-  total_added_building_area: { visible: false },
-  garage_con_units: { visible: false },
-  garage_con_area: { visible: false },
-  total_new_units: { visible: false },
-  total_added_area: { visible: false },
-  new_FAR: { visible: false },
-  max_FAR: { visible: false, accessor: roundingAccessor },
-  potential_FAR: { visible: false, accessor: roundingAccessor },
-  limiting_factor: { visible: false },
-  main_building_poly_area: { visible: false },
-  accessory_buildings_polys_area: { visible: false },
-  avail_geom_area: { visible: false, accessor: asSqFtAccessor },
-  avail_area_by_FAR: {
-    visible: true,
-    headername: 'Build sqft',
-    accessor: asSqFtAccessor,
-  },
-  parcel_sloped_area: { visible: false },
-  parcel_sloped_ratio: { visible: false },
-  total_score: { visible: false },
-  cap_ratio_score: { visible: false },
-  open_space_score: { visible: false },
-  project_size_score: { visible: false },
-  can_lot_split: { visible: false },
-  new_lot_area_ratio: { visible: false },
-  new_lot_area: { visible: false },
-  git_commit_hash: { visible: false },
-  datetime_ran: { visible: false },
-  front_setback: { visible: false },
-  br: { visible: true },
-  ba: { visible: true },
-  price: {
-    visible: true,
-    accessor: priceAccessor,
-    enableColumnFilter: true,
-    filterFn: 'inNumberRange',
-  },
-  zipcode: { visible: false },
-  seendate: { visible: false },
-  mlsid: { visible: false },
-  mls_floor_area: { visible: false },
-  thumbnail: { visible: false },
-  listing_url: { visible: false },
-  soldprice: { visible: false },
-  status: { visible: false, accessor: statusAccessor },
-  analysis_id: { visible: false },
-  metadata: { visible: false }, // Need to make this one ALWAYS invisible
-};
+const MyColumnDef = z.object({
+  accessorKey: z.string(),
+  cell: z.function().default(() => basicAccessor),
+  header: z.string(),
+  enableColumnFilter: z.boolean().default(false),
+  filterFn: z.any().optional(),
+  visible: z.boolean().default(false),
+}).strict()
+type MyColumnDef = z.infer<typeof MyColumnDef>
 
-const columns = Object.keys(initialColumnState).map((fieldname) => ({
-  accessorKey: fieldname,
-  cell: initialColumnState[fieldname].accessor || basicAccessor,
-  header: initialColumnState[fieldname].headername || snakeCaseToTitleCase(fieldname),
-  enableColumnFilter: initialColumnState[fieldname].enableColumnFilter || false,
-  filterFn: initialColumnState[fieldname].filterFn,
-}));
+const MyColumn = z.tuple([z.string(), MyColumnDef.partial()]).or(z.tuple([z.string()]))
+type MyColumn = z.infer<typeof MyColumn>
+const colState = z.array(MyColumn).parse([
+  ['founddate', {visible:true, header: "DSU", cell: founddateAccessor}],
+  ['apn', {cell: apnAccessor}],
+  ['address', {visible: true, cell: addressAccessor }],
+  ['zone', { visible: true }],
+  ['is_mf', { filterFn: mfFilterFn}],
+  ['max_cap_rate', { visible: true, header: "CapRate"}],
+  ['num_existing_buildings', {}],
+  ['is_flag_lot', {}],
+  ['analysis_id', { visible: false }],
+  ['carports'],
+  ['garages'],
+  ['neighborhood', {visible: true, filterFn: 'includesString'}],
+  ['parcel_size', {visible: true, header: 'Lot size', cell: asSqFtAccessor}],
+  ['existing_living_area', {cell: asSqFtAccessor}],
+  ['existing_floor_area', {cell: asSqFtAccessor}],
+  ['existing_FAR', {cell: roundingAccessor}],
+  ['num_new_buildings'],
+  ['new_building_areas'],
+  ['existing_FAR', { cell: roundingAccessor }],
+  ['num_new_buildings'],
+  ['new_building_areas'],
+  ['total_added_building_area'],
+  ['garage_con_units'],
+  ['garage_con_area'],
+  ['total_new_units'],
+  ['total_added_area'],
+  ['limiting_factor'],
+  ['new_FAR'],
+  ['max_FAR', { cell: roundingAccessor }],
+  ['potential_FAR', { cell: roundingAccessor }],
+  ['main_building_poly_area'],
+  ['accessory_buildings_polys_area:'],
+  ['avail_geom_area', { cell: asSqFtAccessor }],
+  ['avail_area_by_FAR', { visible: true, header: 'Build sqft', cell: asSqFtAccessor}],
+  ['parcel_sloped_area'],
+  ['parcel_sloped_ratio'],
+  ['total_score'],
+  ['cap_ratio_score'],
+  ['open_space_score'],
+  ['project_size_score'],
+  ['can_lot_split'],
+  ['new_lot_area_ratio'],
+  ['new_lot_area'],
+  ['git_commit_hash'],
+  ['datetime_ran'],
+  ['front_setback'],
+  ['br', { visible: true }],
+  ['ba', { visible: true }],
+  ['price', { visible: true, cell: priceAccessor, filterFn: 'inNumberRange'}],
+  ['zipcode'],
+  ['seendate'],
+  ['mlsid'],
+  ['mls_floor_area'],
+  ['thumbnail'],
+  ['listing_url'],
+  ['soldprice'],
+  ['status', { cell: statusAccessor }],
+  ['metadata'], // Need to make this one ALWAYS invisible
+])
+
+const columns = colState.map( (i : MyColumn) => (
+  MyColumnDef.parse(
+    {...i[1] as object,
+      accessorKey:i[0],
+      header: (i[1] && i[1]['header']) as string || snakeCaseToTitleCase(i[0]),
+      enableColumnFilter:i[1] && "filterFn" in (i[1] as object)
+    }
+  )
+)) as MyColumnDef[]
 
 // Create query parameters for filtering, depending on type of filter
 function columnFiltersToQuery(filters: ColumnFiltersState) {
@@ -212,8 +197,8 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
   filters.forEach((item) => {
     if (Array.isArray(item.value) && item.value.length == 2) {
       // Then it's a min max filter
-      query[`${item.id}__gte`] = parseInt(item.value[0]) || undefined;
-      query[`${item.id}__lte`] = parseInt(item.value[1]) || undefined;
+      query[`${item.id}__gte`] = parseInt(item.value[0] as string) || undefined;
+      query[`${item.id}__lte`] = parseInt(item.value[1] as string) || undefined;
     } else if (typeof item.value === 'string') {
       query[`${item.id}__contains`] = item.value;
     } else if (typeof item.value == 'boolean') {
@@ -240,11 +225,7 @@ export function ListingsPage() {
     });
   }
   // column visibility
-  const initialVisibility = Object.fromEntries(
-    Object.entries(initialColumnState).map(
-      ([k, v]) => [k, v['visible']]
-    )
-  );
+  const initialVisibility = Object.fromEntries(columns.map(x => [x.accessorKey, x.visible, x.notathing]));
   const [columnVisibility, setColumnVisibility] = useImmer<Record<string, boolean>>(initialVisibility);
   const toggleVisibility = (event) => {
     setColumnVisibility((draft) => {
@@ -303,7 +284,8 @@ export function ListingsPage() {
     }) as Listing[])
     : [];
 
-  const table = useReactTable({
+  console.log("columns:", columns)
+  const table:Table<Listing> = useReactTable<Listing>({
     data: listings,
     columns,
     state: {
