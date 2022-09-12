@@ -20,9 +20,9 @@ export default function Navbar(_props) {
   // const { logIn, logOut, isAuthenticated, currentUser } = useAuth()
   const isAuthenticated = false;
   const navigation = [
-    { name: 'Listings', href: '/listings' },
-    { name: 'Search', href: '/search' },
-    { name: 'Rental Rates', href: '/rental-rates'}
+    { name: 'Listings', href: '/listings', current: false },
+    { name: 'Search', href: '/search', current: false },
+    { name: 'Rental Rates', href: '/rental-rates', current: false }
     // { name: 'Debug', href: routes.debug(), current: false },
     // { name: 'Team', href: '#', current: false },
     // { name: 'Projects', href: '#', current: false },
@@ -103,7 +103,7 @@ export default function Navbar(_props) {
                                 <Menu.Item key={item.name}>
                                   {({ active }) => (
                                     <Link
-                                      href={item.href}
+                                      to={item.href}
                                       className={classNames(
                                         active ? 'bg-gray-100' : '',
                                         'block px-4 py-2 text-sm text-gray-700'

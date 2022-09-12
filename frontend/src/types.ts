@@ -13,7 +13,8 @@ export type Listing = {
   founddate: string;
   seendate: string;
   neighborhood: string;
-
+  is_mf: boolean;
+  is_tpa: boolean;
   [key: string]: string | number | boolean | object;
 };
 

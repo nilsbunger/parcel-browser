@@ -15,7 +15,7 @@ type Props = {
   setColumnFilters: Updater<ColumnFiltersState>;
 };
 
-function ListingTable({ table, setColumnFilters }: Props) {
+export default function ListingTable({ table, setColumnFilters }: Props) {
   return (
     <ErrorBoundary fallback={<div>Error in ListingTable</div>}>
 
@@ -92,5 +92,3 @@ function ListingTable({ table, setColumnFilters }: Props) {
     </ErrorBoundary>
   );
 }
-
-export default ListingTable;
