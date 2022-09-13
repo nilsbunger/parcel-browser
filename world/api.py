@@ -8,6 +8,7 @@ from django.db.models import F
 from ninja import ModelSchema, NinjaAPI, Query, Schema
 from ninja.pagination import paginate
 from ninja.security import HttpBearer, django_auth
+from pydantic import Field
 
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.crs_lib import get_utm_crs
@@ -144,7 +145,9 @@ class ListingsFilters(Schema):
     price__gte: int = None
     price__lte: int = None
     is_mf: bool = False
-    neighborhood__contains: str = None
+    is_tpa: bool = False
+    # neighborhood__contains: str = None
+    neighborhood: List[str] = Field(None)
 
 
 class RentalRatesSchema(ModelSchema):
@@ -199,12 +202,12 @@ def get_listings(
 ):
     # Strip away the filter params that are none
     # Filters are already validated by the ListingsFilters Schema above
-    filters_xlat = {"is_mf": "analyzedlisting__is_mf"}
+    filters_xlat = {"is_mf": "analyzedlisting__is_mf", "is_tpa": "analyzedlisting__is_tpa"}
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
-            if key == "is_mf" and filters.dict()[key] == False:
-                # is_mf really means "only multifamily". so if it's false, don't add a filter criteria
+            if key in ["is_mf", "is_tpa"] and filters.dict()[key] == False:
+                # is_mf, or is_mf mean "only mf / only tpa". so if it's false, don't add a filter criteria
                 continue
             filter_params[filters_xlat.get(key, key)] = filters.dict()[key]
 

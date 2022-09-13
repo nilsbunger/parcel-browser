@@ -4,7 +4,6 @@ import { ReactElement, useEffect, useState } from 'react';
 import { z } from "zod";
 import {
   Cell,
-  Column,
   ColumnFiltersState,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -12,8 +11,10 @@ import {
   getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel, Row,
-  SortingState, Table,
+  getSortedRowModel,
+  Row,
+  SortingState,
+  Table,
   useReactTable,
 } from '@tanstack/react-table';
 import { Link } from 'react-router-dom';
@@ -24,14 +25,13 @@ import ListingsMap from '../components/layout/ListingsMap';
 import { useImmer } from 'use-immer';
 import TablePagination from '../components/TablePagination';
 import ListingTable from '../components/ListingTable';
-import { CoreColumnDefAccessorKey } from "@tanstack/table-core";
 
 const basicAccessor = (cell: Cell<Listing, unknown>) => {
   return String(cell.getValue()).slice(0, 20);
 };
 
 
-const apnAccessor = ({ row }: { row: Row<Listing> }) : ReactElement => (
+const apnAccessor = ({ row }: { row: Row<Listing> }): ReactElement => (
   <Link
     to={{ pathname: `/analysis/${row.getValue('analysis_id')}` }}
     className="underline text-darkblue"
@@ -65,13 +65,13 @@ const addressAccessor = ({ row }: { row: Row<Listing> }) => (
   </div>
 );
 
-const asSqFtAccessor = ({ cell }: { cell: Cell<Listing, unknown>}) => asSqFt(cell.getValue()).toLocaleString();
+const asSqFtAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => asSqFt(cell.getValue()).toLocaleString();
 
-const roundingAccessor = ({ cell } : { cell: Cell<Listing, unknown>}) => {
+const roundingAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => {
   return (cell.getValue() as number).toPrecision(2);
 };
 
-const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown>}): ReactElement|string => {
+const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown> }): ReactElement | string => {
   const prev_price = cell.row.getValue('metadata')['prev_values'][cell.column.id] as number
   if (prev_price) {
     return (
@@ -84,7 +84,7 @@ const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown>}): ReactElement|
   }
 };
 
-const statusAccessor = ({ row } : { row: Row<Listing> }) => {
+const statusAccessor = ({ row }: { row: Row<Listing> }) => {
   return row.getValue('metadata')['category'] == 'new' ? (
     <div className="badge badge-accent">NEW</div>
   ) : (
@@ -93,7 +93,7 @@ const statusAccessor = ({ row } : { row: Row<Listing> }) => {
 };
 
 // calculate days since found
-const founddateAccessor = ({ cell } : { cell: Cell<Listing, unknown> }) => {
+const founddateAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => {
   const foundDate = cell.getValue() as string;
   const foundtime = (new Date(foundDate)).getTime()
   const nowtime = Date.now()
@@ -108,6 +108,26 @@ const tpaFilterFn = (row: Row<Listing>, columnId: number, filterValue: boolean):
   return (row.original.is_tpa || !filterValue)
 }
 
+// Schema for what Listings page stores in local storage.
+const ListingsPageLocalStorage = z.object({
+  pageSize: z.number().default(25),
+  pageIndex: z.number().default(1),
+  sorting: z.object({ id: z.string(), desc: z.boolean() }).array(),
+  // columnFilters examples:
+  //  { "id": "is_mf", "value": false },
+  //  { "id": "neighborhood", "value": "" },
+  //  { "id": "price", "value": ["", undefined] }]  <-- range filter: undefined means no filter for that side of range
+  columnFilters: z.array(
+    z.object({
+      id: z.string(),
+      value: z.union(
+        [z.string(), z.boolean(), z.number(), z.array(z.string().optional(), z.string().optional())]
+      )
+    })
+  ),
+})
+type ListingsPageLocalStorage = z.infer<typeof ListingsPageLocalStorage>
+
 const MyColumnDef = z.object({
   accessorKey: z.string(),
   cell: z.function().default(() => basicAccessor),
@@ -121,22 +141,23 @@ type MyColumnDef = z.infer<typeof MyColumnDef>
 const MyColumn = z.tuple([z.string(), MyColumnDef.partial()]).or(z.tuple([z.string()]))
 type MyColumn = z.infer<typeof MyColumn>
 const colState = z.array(MyColumn).parse([
-  ['founddate', {visible:true, header: "DSU", cell: founddateAccessor}],
-  ['apn', {cell: apnAccessor}],
-  ['address', {visible: true, cell: addressAccessor }],
+  ['founddate', { visible: true, header: "DSU", cell: founddateAccessor }],
+  ['apn', { cell: apnAccessor }],
+  ['address', { visible: true, cell: addressAccessor }],
   ['zone', { visible: true }],
-  ['is_mf', { filterFn: mfFilterFn}],
-  ['max_cap_rate', { visible: true, header: "CapRate"}],
+  ['is_mf', { filterFn: mfFilterFn }],
+  ['is_tpa', { filterFn: tpaFilterFn }],
+  ['max_cap_rate', { visible: true, header: "CapRate" }],
   ['num_existing_buildings', {}],
   ['is_flag_lot', {}],
   ['analysis_id', { visible: false }],
   ['carports'],
   ['garages'],
-  ['neighborhood', {visible: true, filterFn: 'includesString'}],
-  ['parcel_size', {visible: true, header: 'Lot size', cell: asSqFtAccessor}],
-  ['existing_living_area', {cell: asSqFtAccessor}],
-  ['existing_floor_area', {cell: asSqFtAccessor}],
-  ['existing_FAR', {cell: roundingAccessor}],
+  ['neighborhood', { visible: true, filterFn: 'includesString' }],
+  ['parcel_size', { visible: true, header: 'Lot size', cell: asSqFtAccessor }],
+  ['existing_living_area', { cell: asSqFtAccessor }],
+  ['existing_floor_area', { cell: asSqFtAccessor }],
+  ['existing_FAR', { cell: roundingAccessor }],
   ['num_new_buildings'],
   ['new_building_areas'],
   ['existing_FAR', { cell: roundingAccessor }],
@@ -154,7 +175,7 @@ const colState = z.array(MyColumn).parse([
   ['main_building_poly_area'],
   ['accessory_buildings_polys_area:'],
   ['avail_geom_area', { cell: asSqFtAccessor }],
-  ['avail_area_by_FAR', { visible: true, header: 'Build sqft', cell: asSqFtAccessor}],
+  ['avail_area_by_FAR', { visible: true, header: 'Build sqft', cell: asSqFtAccessor }],
   ['parcel_sloped_area'],
   ['parcel_sloped_ratio'],
   ['total_score'],
@@ -169,7 +190,7 @@ const colState = z.array(MyColumn).parse([
   ['front_setback'],
   ['br', { visible: true }],
   ['ba', { visible: true }],
-  ['price', { visible: true, cell: priceAccessor, filterFn: 'inNumberRange'}],
+  ['price', { visible: true, cell: priceAccessor, filterFn: 'inNumberRange' }],
   ['zipcode'],
   ['seendate'],
   ['mlsid'],
@@ -181,12 +202,13 @@ const colState = z.array(MyColumn).parse([
   ['metadata'], // Need to make this one ALWAYS invisible
 ])
 
-const columns = colState.map( (i : MyColumn) => (
+const columns = colState.map((i: MyColumn) => (
   MyColumnDef.parse(
-    {...i[1] as object,
-      accessorKey:i[0],
+    {
+      ...i[1] as object,
+      accessorKey: i[0],
       header: (i[1] && i[1]['header']) as string || snakeCaseToTitleCase(i[0]),
-      enableColumnFilter:i[1] && "filterFn" in (i[1] as object)
+      enableColumnFilter: i[1] && "filterFn" in (i[1] as object)
     }
   )
 )) as MyColumnDef[]
@@ -214,9 +236,19 @@ export function ListingsPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   // column filters
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([
-    { id: 'is_mf', value: false }
+    { id: 'is_mf', value: false },
+    { id: 'is_tpa', value: false },
   ]);
+
   const isMfChecked = columnFilters.find((columnFilter) => columnFilter.id === 'is_mf').value as boolean
+  const isTpaChecked = columnFilters.find((columnFilter) => columnFilter.id === 'is_tpa').value as boolean
+
+  const onTpaFilterCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColumnFilters((draft) => {
+      const index = draft.findIndex((columnFilter) => columnFilter.id === 'is_tpa');
+      draft[index].value = e.target.checked;
+    });
+  }
   const onMfFilterCheck = (e) => {
     // update is_mf column filter which holds the master state of whether the mf-filter is active
     setColumnFilters((draft) => {
@@ -225,7 +257,7 @@ export function ListingsPage() {
     });
   }
   // column visibility
-  const initialVisibility = Object.fromEntries(columns.map(x => [x.accessorKey, x.visible, x.notathing]));
+  const initialVisibility = Object.fromEntries(columns.map(x => [x.accessorKey, x.visible]));
   const [columnVisibility, setColumnVisibility] = useImmer<Record<string, boolean>>(initialVisibility);
   const toggleVisibility = (event) => {
     setColumnVisibility((draft) => {
@@ -249,24 +281,28 @@ export function ListingsPage() {
     fetcher,
     { use: [swrLaggy] }
   );
+
   useEffect(() => {
     document.title = 'Listings'
     // load initial values of state from local storage
-    const settings = JSON.parse(window.localStorage.getItem('listings_page_settings'))
-    if (settings) {
+    const jsonSettings = JSON.parse(window.localStorage.getItem('listings_page_settings')) as object
+    if (jsonSettings) {
+      const settings = ListingsPageLocalStorage.parse(jsonSettings)
       console.log("Setting local state to", settings)
       setPageSize(settings.pageSize)
-      // setPageIndex(settings.pageIndex)
-      setSorting(settings.sorting)
-      setColumnFilters(settings.columnFilters)
+      setPageIndex(settings.pageIndex)
+      setSorting(settings.sorting as SortingState)
+      setColumnFilters(settings.columnFilters as ColumnFiltersState)
     }
   }, []);
 
   useEffect(() => {
     // update local storage when something changes
-    const settings = {
-      pageSize: pageSize, sorting: sorting, columnFilters: columnFilters,
-    }
+    const foo = { pageSize, pageIndex, sorting, columnFilters }
+    const settings = ListingsPageLocalStorage.parse(foo)
+    // const settings = {
+    //   pageSize: pageSize, sorting: sorting, columnFilters: columnFilters,
+    // }
     window.localStorage.setItem('listings_page_settings', JSON.stringify(settings));
   }, [pageSize, pageIndex, sorting, columnFilters]);
 
@@ -284,8 +320,7 @@ export function ListingsPage() {
     }) as Listing[])
     : [];
 
-  console.log("columns:", columns)
-  const table:Table<Listing> = useReactTable<Listing>({
+  const table: Table<Listing> = useReactTable<Listing>({
     data: listings,
     columns,
     state: {
@@ -334,12 +369,21 @@ export function ListingsPage() {
           setPageIndex={setPageIndex}
           setPageSize={setPageSize}
         />
-        <div className="form-control w-36">
-          <label className="cursor-pointer label">
-            <input type="checkbox" checked={isMfChecked} className="checkbox checkbox-accent"
-                   onChange={onMfFilterCheck}/>
-            <span className="label-text">Multifamily-only</span>
-          </label>
+        <div className='flex flex-row justify-left'>
+          <div className="form-control w-36">
+            <label className="cursor-pointer label">
+              <input type="checkbox" checked={isMfChecked} className="checkbox checkbox-accent"
+                     onChange={onMfFilterCheck}/>
+              <span className="label-text">Multifamily-only</span>
+            </label>
+          </div>
+          <div className="form-control w-24">
+            <label className="cursor-pointer label">
+              <input type="checkbox" checked={isTpaChecked} className="checkbox checkbox-accent"
+                     onChange={onTpaFilterCheck}/>
+              <span className="label-text">TPA only</span>
+            </label>
+          </div>
         </div>
 
         <ListingTable table={table} setColumnFilters={setColumnFilters}/>
