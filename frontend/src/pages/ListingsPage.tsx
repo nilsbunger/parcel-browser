@@ -108,6 +108,10 @@ const tpaFilterFn = (row: Row<Listing>, columnId: number, filterValue: boolean):
   return (row.original.is_tpa || !filterValue)
 }
 
+const neighborhoodFilterFn = (row: Row<Listing>, columnId: number, filterValue: string): boolean => {
+
+  return true
+}
 // Schema for what Listings page stores in local storage.
 const ListingsPageLocalStorage = z.object({
   pageSize: z.number().default(25),
@@ -153,7 +157,7 @@ const colState = z.array(MyColumn).parse([
   ['analysis_id', { visible: false }],
   ['carports'],
   ['garages'],
-  ['neighborhood', { visible: true, filterFn: 'includesString' }],
+  ['neighborhood', { visible: true, filterFn: neighborhoodFilterFn }],
   ['parcel_size', { visible: true, header: 'Lot size', cell: asSqFtAccessor }],
   ['existing_living_area', { cell: asSqFtAccessor }],
   ['existing_floor_area', { cell: asSqFtAccessor }],
@@ -221,7 +225,7 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
       // Then it's a min max filter
       query[`${item.id}__gte`] = parseInt(item.value[0] as string) || undefined;
       query[`${item.id}__lte`] = parseInt(item.value[1] as string) || undefined;
-    } else if (typeof item.value === 'string') {
+    } else if (typeof item.value === 'string' && item.value.length > 0) {
       query[`${item.id}__contains`] = item.value;
     } else if (typeof item.value == 'boolean') {
       query[`${item.id}`] = item.value;
@@ -231,17 +235,19 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
 }
 
 export function ListingsPage() {
-  const [pageSize, setPageSize] = useState<number>(50);
+  const [pageSize, setPageSize] = useState<number>(undefined);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   // column filters
   const [columnFilters, setColumnFilters] = useImmer<ColumnFiltersState>([
     { id: 'is_mf', value: false },
     { id: 'is_tpa', value: false },
+    { id: 'neighborhood', value: '' },
   ]);
 
   const isMfChecked = columnFilters.find((columnFilter) => columnFilter.id === 'is_mf').value as boolean
   const isTpaChecked = columnFilters.find((columnFilter) => columnFilter.id === 'is_tpa').value as boolean
+  const isNeighborhoodChecked = columnFilters.find((columnFilter) => columnFilter.id === 'neighborhood').value !== ''
 
   const onTpaFilterCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
     setColumnFilters((draft) => {
@@ -256,6 +262,16 @@ export function ListingsPage() {
       isMfFilter.value = !isMfFilter.value
     });
   }
+
+  const onNeighborhoodFilterCheck = (e) => {
+    setColumnFilters((draft) => {
+      const index = draft.findIndex((columnFilter) => columnFilter.id === 'neighborhood');
+      if (e.target.checked)
+        draft[index].value = 'North Park,Normal Heights,Clairemont/Bay Park,City Heights'
+      else
+        draft[index].value = '';
+    })
+  }
   // column visibility
   const initialVisibility = Object.fromEntries(columns.map(x => [x.accessorKey, x.visible]));
   const [columnVisibility, setColumnVisibility] = useImmer<Record<string, boolean>>(initialVisibility);
@@ -264,23 +280,6 @@ export function ListingsPage() {
       draft[event.target.id] = !draft[event.target.id];
     });
   };
-
-  const { data, error, isValidating } = useSWR(
-    [
-      '/api/listings',
-      {
-        params: {
-          limit: pageSize,
-          offset: pageIndex * pageSize,
-          order_by: sorting.length > 0 ? sorting[0].id : undefined,
-          asc: sorting.length > 0 ? !sorting[0].desc : undefined,
-          ...columnFiltersToQuery(columnFilters),
-        },
-      },
-    ],
-    fetcher,
-    { use: [swrLaggy] }
-  );
 
   useEffect(() => {
     document.title = 'Listings'
@@ -295,6 +294,23 @@ export function ListingsPage() {
       setColumnFilters(settings.columnFilters as ColumnFiltersState)
     }
   }, []);
+
+  const { data, error, isValidating } = useSWR(
+    [
+      pageSize && '/api/listings',  // if pageSize is undefined, we haven't initialized yet, so wait to fetch
+      {
+        params: {
+          limit: pageSize,
+          offset: pageIndex * pageSize,
+          order_by: sorting.length > 0 ? sorting[0].id : undefined,
+          asc: sorting.length > 0 ? !sorting[0].desc : undefined,
+          ...columnFiltersToQuery(columnFilters),
+        },
+      },
+    ],
+    fetcher,
+    { use: [swrLaggy] }
+  );
 
   useEffect(() => {
     // update local storage when something changes
@@ -382,6 +398,13 @@ export function ListingsPage() {
               <input type="checkbox" checked={isTpaChecked} className="checkbox checkbox-accent"
                      onChange={onTpaFilterCheck}/>
               <span className="label-text">TPA only</span>
+            </label>
+          </div>
+          <div className="form-control w-128">
+            <label className="cursor-pointer label">
+              <input type="checkbox" checked={isNeighborhoodChecked} className="checkbox checkbox-accent"
+                     onChange={onNeighborhoodFilterCheck}/>
+              <span className="label-text">Clairemont/Bay Park/North Park/Normal Heights/City Heights only</span>
             </label>
           </div>
         </div>

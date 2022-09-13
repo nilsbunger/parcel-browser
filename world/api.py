@@ -147,7 +147,7 @@ class ListingsFilters(Schema):
     is_mf: bool = False
     is_tpa: bool = False
     # neighborhood__contains: str = None
-    neighborhood: List[str] = Field(None)
+    neighborhood__contains: List[str] = Field(None)
 
 
 class RentalRatesSchema(ModelSchema):
@@ -202,7 +202,16 @@ def get_listings(
 ):
     # Strip away the filter params that are none
     # Filters are already validated by the ListingsFilters Schema above
-    filters_xlat = {"is_mf": "analyzedlisting__is_mf", "is_tpa": "analyzedlisting__is_tpa"}
+    filters_xlat = {
+        "is_mf": "analyzedlisting__is_mf",
+        "is_tpa": "analyzedlisting__is_tpa",
+        "neighborhood__contains": "neighborhood__in",
+    }
+
+    # TODO : Next line is a hack - we're sending neighborhood list as comma-separated string instead of array
+    if not filters.neighborhood__contains is None:
+        filters.neighborhood__contains = filters.neighborhood__contains[0].split(",")
+
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
