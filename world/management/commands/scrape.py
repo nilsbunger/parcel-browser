@@ -88,6 +88,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--parcel", action="store", help="Run analysis only (no scrape) on a single parcel"
         )
+        parser.add_argument(
+            "--single-process", action="store_true", help="Run analysis with only a single process"
+        )
 
     loggers_to_quiet = [
         "rasterio.env",
@@ -239,7 +242,7 @@ class Command(BaseCommand):
                 save_dir="./frontend/static/temp_computed_imgs",
                 save_as_model=True,
                 listings=parcel_listings,
-                single_process=bool(options["parcel"]),
+                single_process=bool(options["parcel"]) or bool(options["single_process"]),
             )
 
             # Save the errors to a csv

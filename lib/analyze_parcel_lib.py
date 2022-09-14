@@ -682,23 +682,39 @@ def analyze_batch(
         listings = [None] * len(parcels)
     n_jobs = 1 if single_process else 8
     log.info(f"Launching {n_jobs} process for analysis...")
-    parallel_results = Parallel(n_jobs=n_jobs)(
-        delayed(_analyze_one_parcel_worker)(
-            parcel,
-            utm_crs,
-            show_plot=False,
-            save_file=save_file,
-            save_dir=save_dir,
-            try_split_lot=try_split_lot,
-            i=i,
-            save_as_model=save_as_model,
-            listing=listing,
-        )
-        for i, parcel, listing in zip(range(num_analyze), parcels, listings)
-    )
 
-    analyzed = [x[0] for x in parallel_results if x[0] is not None]
-    errors = [x[1] for x in parallel_results if x[1] is not None]
+    if n_jobs == 1:
+        results = [
+            _analyze_one_parcel_worker(
+                parcels[i],
+                utm_crs,
+                save_file=save_file,
+                save_dir=save_dir,
+                try_split_lot=try_split_lot,
+                save_as_model=save_as_model,
+                listing=listings[i],
+                i=i,
+            )
+            for i in range(num_analyze)
+        ]
+    else:
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(_analyze_one_parcel_worker)(
+                parcel,
+                utm_crs,
+                show_plot=False,
+                save_file=save_file,
+                save_dir=save_dir,
+                try_split_lot=try_split_lot,
+                i=i,
+                save_as_model=save_as_model,
+                listing=listing,
+            )
+            for i, parcel, listing in zip(range(num_analyze), parcels, listings)
+        )
+
+    analyzed = [x[0] for x in results if x[0] is not None]
+    errors = [x[1] for x in results if x[1] is not None]
 
     if save_as_model:
         return analyzed, errors

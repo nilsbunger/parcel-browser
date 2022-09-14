@@ -168,9 +168,8 @@ def models_to_utm_gdf(
     serialized_models = serialize(
         "geojson", models, geometry_field=geometry_field, fields=(geometry_field,)
     )
-    data_frame = geopandas.GeoDataFrame.from_features(
-        json.loads(serialized_models), crs="EPSG:4326"
-    )
+    tmp = json.loads(serialized_models)
+    data_frame = geopandas.GeoDataFrame.from_features(tmp, crs="EPSG:4326")
     df: GeoDataFrame = data_frame.to_crs(utm_crs)
 
     # Now, attach the original model objects to the GeoDataFrame
