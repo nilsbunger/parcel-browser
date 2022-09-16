@@ -22,11 +22,10 @@ export function NewListingPage() {
     setAddressSearch(e.target.value);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearchSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log (e)
+    console.log(e)
     console.log("SUBMITTING")
-  }
 
     const fetchResponse = await fetch(`/dj/api/listings`, {
       method: 'POST',
@@ -49,7 +48,7 @@ export function NewListingPage() {
       console.log('Redirecting');
       navigate(`/analysis/${res.analysis_id}`);
     }
-  };
+  }
 
   return (
     <>
@@ -62,16 +61,17 @@ export function NewListingPage() {
             value={addressSearch}
             onChange={handleAddressSearch}
           />{'  '}
-          {data?.apn? !data.analyzed_listing && <button className='btn btn-sm btn-primary' type="submit">Analyze...</button> : ''}
+          {data?.apn ? !data.analyzed_listing &&
+              <button className='btn btn-sm btn-primary' type="submit">Analyze...</button> : ''}
         </form>
         {data?.apn ? (
           <>
             <p>FOUND: {data.apn} {data.address}.</p>
             {data.analyzed_listing && <p>
-              Analysis={data.analyzed_listing}. {'  '}
-              <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
+                Analysis={data.analyzed_listing}. {'  '}
+                <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
             </p>}
-              {/*<button onClick={handleAddListing}>Add listing</button>*/}
+            {/*<button onClick={handleAddListing}>Add listing</button>*/}
 
           </>
         ) : (
