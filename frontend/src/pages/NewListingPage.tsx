@@ -22,17 +22,11 @@ export function NewListingPage() {
     setAddressSearch(e.target.value);
   };
 
-  const handleSearchSubmit = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    console.log('Submitted');
-  };
-
-  const handleAddListing = async () => {
-    // Ensure that we have an APN
-    if (!data?.apn) {
-      console.log('No APN. Cannot add listing');
-      return;
-    }
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    console.log (e)
+    console.log("SUBMITTING")
+  }
 
     const fetchResponse = await fetch(`/dj/api/listings`, {
       method: 'POST',
@@ -67,23 +61,18 @@ export function NewListingPage() {
             type="text"
             value={addressSearch}
             onChange={handleAddressSearch}
-          />
-          <label>
-            <input
-              type="checkbox"
-              checked={addAsListing}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setAddAsListing(e.target.checked)
-              }
-            />
-            Add as a listing
-          </label>
+          />{'  '}
+          {data?.apn? !data.analyzed_listing && <button className='btn btn-sm btn-primary' type="submit">Analyze...</button> : ''}
         </form>
         {data?.apn ? (
           <>
-            <p>FOUND: {data.apn} {data.address}. Analysis={data.analyzed_listing}</p>
-            <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
-            {/*<button onClick={handleAddListing}>Add listing</button>*/}
+            <p>FOUND: {data.apn} {data.address}.</p>
+            {data.analyzed_listing && <p>
+              Analysis={data.analyzed_listing}. {'  '}
+              <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
+            </p>}
+              {/*<button onClick={handleAddListing}>Add listing</button>*/}
+
           </>
         ) : (
           <p>{JSON.stringify(data)}</p>

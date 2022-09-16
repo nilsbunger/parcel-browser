@@ -9,7 +9,7 @@ from lib.re_params import BuildableUnit
 class DevScenario(BaseModel):
     adu_qty: int
     unit_type: BuildableUnit
-    finances: Financials
+    finances: Financials = None
 
     def __repr__(self):
         return pformat({"adu_qty": self.adu_qty, "unit_type": self.unit_type})

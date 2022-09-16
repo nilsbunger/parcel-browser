@@ -73,15 +73,15 @@ export function DevScenarios({ scenarios }) {
                 </div>
                 <div className="stat">
                   <div className="stat-title">Cap Rate</div>
-                  <div className="stat-value">{scenario.finances.cap_rate}%</div>
+                  <div className="stat-value">{scenario.finances?.cap_rate || "?"}%</div>
                   <div className="stat-desc">cap</div>
                 </div>
               </div>
 
-              <h3>Total Capital In: ${scenario.finances.capital_sum.toLocaleString()}</h3>
-              <h3>NOI: ${scenario.finances.net_income.toLocaleString()}</h3>
+              <h3>Total Capital In: ${scenario.finances?.capital_sum.toLocaleString() || "?"}</h3>
+              <h3>NOI: ${scenario.finances?.net_income.toLocaleString() || "?"}</h3>
               <div className="divider"></div>
-              <DevFinances finances={scenario.finances}/>
+              {scenario.finances && <DevFinances finances={scenario.finances}/>}
               {/*<p>{JSON.stringify(scenario.finances)}</p>*/}
             </div>
             <div className="divider divider-horizontal"></div>

@@ -24,7 +24,7 @@ export function ListingHistory({mlsid}) {
         {data.map( (l) => (
           <tr key={l.founddate}>
             <td>{l.founddate.substring(0,10)}</td>
-            <td>${l.price.toLocaleString()}</td>
+            <td>${l.price?.toLocaleString()} {l.status==="OFFMARKET" ? "Off-market": ""}</td>
           </tr>
           ))}
         </tbody>

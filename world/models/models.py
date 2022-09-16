@@ -73,7 +73,27 @@ class PropertyListing(models.Model):
     )
 
     class Meta:
-        indexes = [models.Index(fields=["zipcode"]), models.Index(fields=["mlsid"])]
+        indexes = [
+            models.Index(fields=["zipcode"]),
+            models.Index(fields=["mlsid"]),
+            models.Index(fields=["parcel"]),
+        ]
+
+    @classmethod
+    def get_latest_or_create(cls, parcel):
+        try:
+            property_listing = cls.objects.filter(parcel=parcel).order_by("-founddate")[0]
+        except IndexError as e:
+            # No property listing for this parcel. Create an off-market property listing
+            property_listing = cls.objects.create(
+                mlsid=parcel.apn,
+                addr=parcel.address,
+                parcel=parcel,
+                status=cls.ListingStatus.OFFMARKET,
+                br=parcel.br,
+                ba=parcel.ba,
+            )
+        return property_listing
 
     @classmethod
     def active_listings_queryset(cls):

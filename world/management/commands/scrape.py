@@ -6,6 +6,7 @@ import logging
 import pprint
 import random
 import sys
+from typing import List, Tuple
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
@@ -107,8 +108,8 @@ class Command(BaseCommand):
         )
 
         logging.getLogger().setLevel(logging.DEBUG if options["verbose"] else logging.INFO)
-        for l in self.loggers_to_quiet:
-            logging.getLogger(l).setLevel(logging.INFO)
+        for prop_listing in self.loggers_to_quiet:
+            logging.getLogger(prop_listing).setLevel(logging.INFO)
         logging.debug("DEBUG log level")
         logging.info("INFO log level")
         logging.info(f"Running with options:\n{pprint.pformat(options)}")
@@ -165,14 +166,14 @@ class Command(BaseCommand):
         else:
             logging.info(f"Running matching")
 
-            listings = PropertyListing.active_listings_queryset().prefetch_related(
+            prop_listings = PropertyListing.active_listings_queryset().prefetch_related(
                 "analyzedlisting", "parcel"
             )
-            logging.info(f"Found {len(listings)} properties to associate")
-            for l in listings:
+            logging.info(f"Found {len(prop_listings)} properties to associate")
+            for prop_listing in prop_listings:
                 try:
-                    p_temp = l.parcel
-                    al_temp = l.analyzedlisting
+                    p_temp = prop_listing.parcel
+                    al_temp = prop_listing.analyzedlisting
                     # parcel, and analyzed listing exists. if we're caching, we can skip analysis and
                     # go to the next listing.
                     if not options["no_cache"]:
@@ -181,17 +182,17 @@ class Command(BaseCommand):
                 except ObjectDoesNotExist as e:
                     # we're missing a relationship, so we need to analyze this parcel.
                     pass
-                matched_parcel, error = address_to_parcel(l.addr, jurisdiction="SD")
+                matched_parcel, error = address_to_parcel(prop_listing.addr, jurisdiction="SD")
                 if error:
                     stats[error] += 1
                 else:
                     # Got matched parcel, record the foreign key link in the listing.
                     stats["success"] += 1
-                    l.parcel = matched_parcel
-                    l.save(update_fields={"parcel"})
+                    prop_listing.parcel = matched_parcel
+                    prop_listing.save(update_fields={"parcel"})
                     zipcode = matched_parcel.situs_zip
                     if matched_parcel.situs_juri == "SD":
-                        parcels_to_analyze.add((matched_parcel, l))
+                        parcels_to_analyze.add((matched_parcel, prop_listing))
                         zipcode = matched_parcel.situs_zip
                         if zipcode:
                             stats[f"info_sd_{zipcode[0:5]}"] += 1
@@ -224,15 +225,17 @@ class Command(BaseCommand):
             if options["parcel"]:
                 # Run on single parcel
                 parcels = [Parcel.objects.get(apn=options["parcel"])]
-                parcel_listings = [
+                property_listings: List[PropertyListing] = [
                     PropertyListing.active_listings_queryset()
                     .filter(parcel=parcels[0])
                     .latest("seendate")
                 ]
             else:
                 # Run on batch
-                parcels, parcel_listings = zip(*parcels_to_analyze)
-            logging.info(f"Running parcel analysis on {len(parcel_listings)} listings")
+                parcels: List[Parcel]
+                property_listings: List[PropertyListing]
+                parcels, property_listings = zip(*parcels_to_analyze)
+            logging.info(f"Running parcel analysis on {len(property_listings)} listings")
             sd_utm_crs = get_utm_crs()
             # NOTE: Make sure changes to the call here are also made in api.redo_analysis
             results, errors = analyze_batch(
@@ -241,7 +244,7 @@ class Command(BaseCommand):
                 save_file=True,
                 save_dir="./frontend/static/temp_computed_imgs",
                 save_as_model=True,
-                listings=parcel_listings,
+                property_listings=property_listings,
                 single_process=bool(options["parcel"]) or bool(options["single_process"]),
             )
 

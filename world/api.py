@@ -267,25 +267,29 @@ def get_listings(
     #         )
 
 
-@api.post("/analysis/{analysis_id}")
-def redo_analysis(request, analysis_id: int):
+@api.post("/analysis/")
+def redo_analysis(request, pl_id: int = None, al_id: int = None):
     """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
-    analyzed_listing = AnalyzedListing.objects.prefetch_related("listing").get(id=analysis_id)
-    property_listing = analyzed_listing.listing
+    if al_id:
+        analyzed_listing = AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
+        property_listing = analyzed_listing.listing
+    else:
+        property_listing = PropertyListing.objects.get(id=pl_id)
+
     sd_utm_crs = get_utm_crs()  # San Diego specific
 
     # Generally should match this call to analyze_batch() call in scrape.py
-    result = analyze_one_parcel(
+    analyzed_listing = analyze_one_parcel(
         property_listing.parcel,
         sd_utm_crs,
+        property_listing=property_listing,
         show_plot=False,
         save_file=True,
         save_dir="./frontend/static/temp_computed_imgs",
         save_as_model=True,
-        listing=property_listing,
     )
 
-    return {"analysisId": analysis_id}
+    return {"analysisId": analyzed_listing.id}
 
 
 @api.get("/address-search/{addr}")
@@ -306,8 +310,24 @@ def address_search(request, addr: str):
         analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by("-datetime_ran")[
             0
         ]
+    except IndexError as e:
+        analyzed_listing = None
     except Exception as e:
         traceback.print_exc()
         return {"error": "AnalyzedListing lookup failed:" + str(e)}
+    # if not analyzed_listing:
+    #     # this parcel has not been analyzed yet. Likely need to create a manual "OFFMARKET" property listing.
+    #     property_listing = PropertyListing.get_latest_or_create(parcel)
+    #     sd_utm_crs = get_utm_crs()  # San Diego specific
+    #     analyzed_listing = analyze_one_parcel(
+    #         parcel,
+    #         sd_utm_crs,
+    #         show_plot=False,
+    #         save_file=True,
+    #         save_dir="./frontend/static/temp_computed_imgs",
+    #         save_as_model=True,
+    #         property_listing=property_listing,
+    #     )
 
-    return {"apn": parcel.apn, "address": parcel.address, "analyzed_listing": analyzed_listing.id}
+    analysis_id = analyzed_listing.id if analyzed_listing else None
+    return {"apn": parcel.apn, "address": parcel.address, "analyzed_listing": analysis_id}

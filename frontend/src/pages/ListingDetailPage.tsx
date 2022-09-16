@@ -6,8 +6,8 @@ import { fetcher, post_csrf } from '../utils/fetcher';
 import { ListingHistory } from "../components/ListingHistory";
 import { DevScenarios } from "../components/DevScenarios";
 
-async function redoAnalysis(e, analysisId) {
-  const fetchResponse = post_csrf(`/api/analysis/${analysisId}`)
+async function redoAnalysis(e, analysisId: number) {
+  const fetchResponse = post_csrf(`/api/analysis/`, {al_id:analysisId})
   return fetchResponse
 }
 
@@ -16,8 +16,8 @@ const asFt = (m) => Math.round(m * 3.28).toLocaleString();
 const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
 
 function daysAtPrice(date) {
-  let foundtime = (new Date(date)).getTime()
-  let nowtime = Date.now()
+  const foundtime = (new Date(date)).getTime()
+  const nowtime = Date.now()
   return Math.round((nowtime - foundtime) / oneDay);
 }
 
@@ -36,7 +36,7 @@ function showAssumptions(assumptions) {
 
 export function ListingDetailPage({}) {
   const params = useParams();
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
   const { data, error } = useSWR(
     `/dj/api/analysis/${params.analysisId}`,
@@ -117,7 +117,7 @@ export function ListingDetailPage({}) {
 
         </div>
         <div>
-          <h1>${data.price.toLocaleString()}</h1>
+          <h1>${data.price ? data.price.toLocaleString() : "-- off-market"}</h1>
           <h2>{daysAtPrice(data.founddate)} days at this price</h2>
           <p>{asSqFt(data.existing_living_area.toLocaleString())} sq ft</p>
           <p>{data.br} BR</p>
