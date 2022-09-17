@@ -11,7 +11,7 @@ export const axiosPostInstance = axios.create({
 
 export async function post_csrf (url, params = {}, body = "") {
   return axiosPostInstance
-    .request({ url: url, params: params, data: body })
+    .request({ url: url, params: params, data: body , timeout:15000})
     .then((res) => res.data)
 }
 

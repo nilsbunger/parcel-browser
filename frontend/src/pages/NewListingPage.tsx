@@ -1,18 +1,18 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import useSWR from 'swr';
-import { fetcher } from '../utils/fetcher';
+import useSWR, { useSWRConfig } from 'swr';
+import { fetcher, post_csrf } from '../utils/fetcher';
 import { ErrorBoundary } from "react-error-boundary";
 
 export function NewListingPage() {
-  const navigate = useNavigate();
 
   const [addressSearch, setAddressSearch] = useState('');
-  const [addAsListing, setAddAsListing] = useState(false);
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false)
 
-  // This will make a call every time that addressSearch is mutated, which could
+  const { mutate } = useSWRConfig()
+// This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
   const { data, error } = useSWR(
     `/api/address-search/${addressSearch}`,
@@ -26,29 +26,13 @@ export function NewListingPage() {
     e.preventDefault()
     console.log(e)
     console.log("SUBMITTING")
-
-    const fetchResponse = await fetch(`/dj/api/listings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        apn: data.apn,
-        add_as_listing: addAsListing,
-        redo_analysis: false,
-      }),
-    });
-    const res = await fetchResponse.json();
-
-    if (res.error) {
-      console.log('An error has occurred');
-      setErr(res.error);
-    }
-    if (res.analysis_id) {
-      console.log('Redirecting');
-      navigate(`/analysis/${res.analysis_id}`);
-    }
+    setLoading(true)
+    const fetchResponse = await post_csrf(`/api/analysis/`, { apn: data.apn })
+    await mutate(`/api/address-search/${addressSearch}`)
+    setLoading(false)
+    return
   }
+
 
   return (
     <>
@@ -62,7 +46,7 @@ export function NewListingPage() {
             onChange={handleAddressSearch}
           />{'  '}
           {data?.apn ? !data.analyzed_listing &&
-              <button className='btn btn-sm btn-primary' type="submit">Analyze...</button> : ''}
+              <button className={'btn btn-sm btn-primary' + (loading ? ' loading':'')} type="submit">Analyze...</button> : ''}
         </form>
         {data?.apn ? (
           <>

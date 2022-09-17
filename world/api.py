@@ -13,7 +13,7 @@ from pydantic import Field
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel, address_to_parcels_loose
-from world.models import AnalyzedListing, PropertyListing, RentalData
+from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData
 
 
 # Django-ninja authentication guide: https://django-ninja.rest-framework.com/guides/authentication/
@@ -268,13 +268,14 @@ def get_listings(
 
 
 @api.post("/analysis/")
-def redo_analysis(request, pl_id: int = None, al_id: int = None):
+def redo_analysis(request, apn: str = None, al_id: int = None):
     """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
     if al_id:
         analyzed_listing = AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
         property_listing = analyzed_listing.listing
     else:
-        property_listing = PropertyListing.objects.get(id=pl_id)
+        parcel = Parcel.objects.get(apn=apn)
+        property_listing = PropertyListing.get_latest_or_create(parcel)
 
     sd_utm_crs = get_utm_crs()  # San Diego specific
 
@@ -315,19 +316,6 @@ def address_search(request, addr: str):
     except Exception as e:
         traceback.print_exc()
         return {"error": "AnalyzedListing lookup failed:" + str(e)}
-    # if not analyzed_listing:
-    #     # this parcel has not been analyzed yet. Likely need to create a manual "OFFMARKET" property listing.
-    #     property_listing = PropertyListing.get_latest_or_create(parcel)
-    #     sd_utm_crs = get_utm_crs()  # San Diego specific
-    #     analyzed_listing = analyze_one_parcel(
-    #         parcel,
-    #         sd_utm_crs,
-    #         show_plot=False,
-    #         save_file=True,
-    #         save_dir="./frontend/static/temp_computed_imgs",
-    #         save_as_model=True,
-    #         property_listing=property_listing,
-    #     )
 
     analysis_id = analyzed_listing.id if analyzed_listing else None
     return {"apn": parcel.apn, "address": parcel.address, "analyzed_listing": analysis_id}
