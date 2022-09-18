@@ -161,8 +161,8 @@ export function ListingDetailPage({}) {
 
         {/* Google maps embed*/}
         <iframe
-          width="450"
-          height="250"
+          width="500"
+          height="400"
           frameBorder={0}
           style={{ border: 0 }}
           referrerPolicy="no-referrer-when-downgrade"
@@ -178,10 +178,6 @@ export function ListingDetailPage({}) {
           </div>
         )}
       </div>
-
-      {/* Show development scenarios*/}
-      <DevScenarios scenarios={data.dev_scenarios}></DevScenarios>
-      <div className="divider"></div>
 
       {/* Show cards for FAR and geometry calculation */}
       <div className="flex flex-row w-full justify-left space-x-4 items-top">
@@ -203,9 +199,6 @@ export function ListingDetailPage({}) {
           <div className="card-body">
             <h2 className="card-title">Geometry calculations</h2>
             <p>Buildable area by geometry: {asSqFt(data.avail_geom_area)}</p>
-            {/*<div className="card-actions justify-end">*/}
-            {/*  <button className="btn btn-primary">Buy Now</button>*/}
-            {/*</div>*/}
           </div>
         </div>
         <div className="card bg-base-100 shadow-md">
@@ -215,6 +208,11 @@ export function ListingDetailPage({}) {
           </div>
         </div>
       </div>
+      {/* Show development scenarios*/}
+      <DevScenarios scenarios={data.dev_scenarios}></DevScenarios>
+      <div className="divider"></div>
+
+
       <h1>Assumptions</h1>
       {data.re_params && showAssumptions(data.re_params)}
       <h1 className='mt-5'>Details</h1>
