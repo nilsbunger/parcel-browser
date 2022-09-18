@@ -41,9 +41,9 @@ if env("DESPERATE"):
     eprint("*** END ENVIRONMENT VARIABLES ***")
 
 DJANGO_ENV = env("DJANGO_ENV")
-DEV_ENV = DJANGO_ENV == "development"
-DEBUG = DJANGO_ENV == "development"
-
+DEV_ENV = DJANGO_ENV == "development"  # running on local machine
+DEBUG = DJANGO_ENV == "development"  # run with extra debug facilities
+TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 LOCAL_DB = env("LOCAL_DB")
 if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")

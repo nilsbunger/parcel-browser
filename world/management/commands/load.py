@@ -91,10 +91,13 @@ class Command(BaseCommand):
             return
 
         # Do the actual load
-        lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True)
-        using_db = "local_db" if db_model == Topography else "default"
 
-        lm.save(strict=True, verbose=False, progress=True, using=using_db)
+        # We used to only support topos in the local DB; now we use whatever the LOCAL_DB= env variable says
+        # using_db = "local_db" if db_model == Topography else "default"
+        using_db = "default"
+        lm = LayerMapping(db_model, data_dir / fname, mapper, transform=True, using=using_db)
+
+        lm.save(strict=True, verbose=False, progress=True)
 
         # Execute post-load tasks
         if model == "Topography":
@@ -105,10 +108,10 @@ class Command(BaseCommand):
             )  # 2230 is NAD83, California Zone 6 code
             new_geom = new_geom.transform("EPSG:4326", clone=True)
             print("Recording topo extents in DB:", new_geom)
-            loaded, was_created = TopographyLoads.objects.using("local_db").get_or_create(
+            loaded, was_created = TopographyLoads.objects.using(using_db).get_or_create(
                 extents=new_geom
             )
             loaded.fname = fname
-            loaded.save(using="local_db")
+            loaded.save(using=using_db)
 
         self.stdout.write(self.style.SUCCESS("Finished writing data for model %s" % model))
