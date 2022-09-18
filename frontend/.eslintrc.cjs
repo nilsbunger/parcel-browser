@@ -21,6 +21,7 @@ module.exports = {
   rules: {
       '@typescript-eslint/restrict-template-expressions': "off",
       '@typescript-eslint/no-unnecessary-type-assertion': "off",
+      '@typescript-eslint/no-misused-promises': 'off',
   }
 };
 
