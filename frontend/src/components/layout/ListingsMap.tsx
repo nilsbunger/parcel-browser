@@ -59,6 +59,7 @@ function ListingsMap({ listings }: Props) {
                 </Link><br/>
                 Price: ${listing.price}<br/>
                 Zone: {listing.zone}<br/>
+                Parcel size: {asSqFt(listing.parcel_size)}<br/>
                 Avail building area: {asSqFt(listing.avail_geom_area)}sqft<br/>
                 FAR potential: {listing.potential_FAR.toPrecision(2)}
                 {/* Add any other information we want */}
