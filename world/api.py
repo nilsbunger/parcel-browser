@@ -1,4 +1,5 @@
 import pprint
+import tempfile
 import traceback
 from typing import List, Optional
 
@@ -232,16 +233,6 @@ def get_listings(
     if not asc:
         order_by = "-" + order_by
 
-    # A subquery that contains the primary keys of each latest listing per property
-    # This avoids having different listings of the same property but at different price points
-    # latest_listings_pks = Subquery(
-    #     PropertyListing.objects
-    #     # Ensure that any property listings we find have an analysis attached to it
-    #     .filter(analyzedlisting__isnull=False, **filter_params)
-    #     .order_by('mlsid', '-founddate')
-    #     .distinct('mlsid')
-    #     .values('pk')
-    # )
     listings = (
         PropertyListing.active_listings_queryset()
         .filter(analyzedlisting__isnull=False, **filter_params)
@@ -251,20 +242,6 @@ def get_listings(
     )
 
     return listings
-    # return (PropertyListing.objects
-    #         .filter(pk__in=latest_listings_pks)
-    #         # Prefetch because we need details on the analysis in the response.
-    #         # Later on, we should optimize so as to only pre-fetch the latest analysis, as there can
-    #         # be multiple for a property. We would also want to join all fields of the analysis
-    #         # directly into the response, but haven't found a good way to do this yet
-    #         .prefetch_related('analyzedlisting')
-    #         # Used to see if this listing is new or not, and for extracting previous price info
-    #         .prefetch_related('prev_listing')
-    #         # Prefetch parcel to attach information on the centroid of each parcel, used for map plotting
-    #         .prefetch_related('parcel')
-    #         .annotate(centroid=Centroid(F('parcel__geom')))
-    #         .order_by(order_by)
-    #         )
 
 
 @api.post("/analysis/")
@@ -279,16 +256,17 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
 
     sd_utm_crs = get_utm_crs()  # San Diego specific
 
-    # Generally should match this call to analyze_batch() call in scrape.py
-    analyzed_listing = analyze_one_parcel(
-        property_listing.parcel,
-        sd_utm_crs,
-        property_listing=property_listing,
-        show_plot=False,
-        save_file=True,
-        save_dir="./frontend/static/temp_computed_imgs",
-        save_as_model=True,
-    )
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # Generally should match this call to analyze_batch() call in scrape.py
+        analyzed_listing = analyze_one_parcel(
+            property_listing.parcel,
+            sd_utm_crs,
+            property_listing=property_listing,
+            show_plot=False,
+            save_file=True,
+            save_dir=tmpdirname,
+            save_as_model=True,
+        )
 
     return {"analysisId": analyzed_listing.id}
 

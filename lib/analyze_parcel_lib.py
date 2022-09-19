@@ -39,15 +39,13 @@ from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 
 log = logging.getLogger(__name__)
 
-# Connector to Cloudflare R2 for storing images. Right now we only support storing images from a local dev machine
-# because of the large topo database
-if DEV_ENV:
-    s3 = boto3.resource(
-        "s3",
-        endpoint_url=env("R2_ENDPOINT_URL"),
-        aws_access_key_id=env("R2_EDIT_ACCESS_KEY"),
-        aws_secret_access_key=env("R2_EDIT_SECRET_KEY"),
-    )
+# Connector to Cloudflare R2 for storing images. Ironically the instructions say to use the S3 API client!
+s3 = boto3.resource(
+    "s3",
+    endpoint_url=env("R2_ENDPOINT_URL"),
+    aws_access_key_id=env("R2_EDIT_ACCESS_KEY"),
+    aws_secret_access_key=env("R2_EDIT_SECRET_KEY"),
+)
 R2_BUCKET_NAME = "parsnip-images"
 
 MIN_BUILDING_AREA = 11  # ~150sqft
@@ -65,7 +63,7 @@ DEFAULT_SAVE_DIR = "./world/data/scenario-images/"
 colorkeys = list(mcolors.XKCD_COLORS.keys())
 
 
-def save_figures(
+def save_and_upload_figures(
     new_buildings_fig,
     cant_build_fig,
     split_lot_fig,
@@ -575,7 +573,7 @@ def analyze_one_parcel(
             a.salt = secrets.token_urlsafe(10)
             salt = a.salt
             a.save(update_fields=["salt"])
-            save_figures(
+            save_and_upload_figures(
                 new_buildings_fig,
                 cant_build_fig,
                 split_lot_fig,
@@ -595,7 +593,7 @@ def analyze_one_parcel(
             # LEGACY. Return analyzed as a dictionary with everything in it
             details["datetime_ran"] = datetime_ran
             salt = 0
-            save_figures(
+            save_and_upload_figures(
                 new_buildings_fig,
                 cant_build_fig,
                 split_lot_fig,
