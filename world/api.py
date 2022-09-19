@@ -247,6 +247,7 @@ def get_listings(
 @api.post("/analysis/")
 def redo_analysis(request, apn: str = None, al_id: int = None):
     """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
+
     if al_id:
         analyzed_listing = AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
         property_listing = analyzed_listing.listing
@@ -266,6 +267,7 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
             save_file=True,
             save_dir=tmpdirname,
             save_as_model=True,
+            force_uploads=True,
         )
 
     return {"analysisId": analyzed_listing.id}

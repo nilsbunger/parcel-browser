@@ -72,17 +72,17 @@ def save_and_upload_figures(
     apn,
     addr,
     messages,
-    save_as_model,
+    save_to_cloud,
 ):
     # Save figures
-    new_buildings_fname = os.path.join(save_dir, "new-buildings", apn + ".jpg")
+    new_buildings_fname = os.path.join(save_dir, "buildings-" + apn + ".jpg")
     new_buildings_fig.savefig(new_buildings_fname)
-    cant_build_fname = os.path.join(save_dir, "cant-build", apn + ".jpg")
+    cant_build_fname = os.path.join(save_dir, "cant-build-" + apn + ".jpg")
     cant_build_fig.savefig(cant_build_fname)
 
     if split_lot_fig:
-        split_lot_fig.savefig(os.path.join(save_dir, "lot-splits", apn + ".jpg"))
-    if save_as_model:
+        split_lot_fig.savefig(os.path.join(save_dir, "lot-splits-" + apn + ".jpg"))
+    if save_to_cloud:
         print(f"**** SAVING images for address {addr} to Cloudflare R2 ****")
         try:
             response = s3.meta.client.upload_file(
@@ -295,6 +295,7 @@ def analyze_one_parcel(
     try_garage_conversion=True,
     try_split_lot=True,
     save_as_model=False,
+    force_uploads=False,
 ):
     """Runs analysis on a single parcel of land
 
@@ -307,6 +308,9 @@ def analyze_one_parcel(
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
         property_listing (PropertyListing):
+        save_as_model (Boolean, optional): Whether to save Django model and upload to R2.
+                    I think this is always called with true.
+        force_uploads (Boolean, optional): Whether to force new uploads of images to R2.
     """
 
     re_params = ReParams()
@@ -568,9 +572,10 @@ def analyze_one_parcel(
         salt = 0
         if not created:
             salt = a.salt
-        if not salt:
-            # either it's newly created, or didn't have a salt entry.
-            a.salt = secrets.token_urlsafe(10)
+        if not salt or force_uploads:
+            # either it's newly created, didn't have a salt entry, or re-upload images.
+            if not salt:
+                a.salt = secrets.token_urlsafe(10)
             salt = a.salt
             a.save(update_fields=["salt"])
             save_and_upload_figures(
@@ -582,7 +587,7 @@ def analyze_one_parcel(
                 apn,
                 parcel.model.address,
                 messages,
-                save_as_model=True,
+                save_to_cloud=True,
             )
         else:
             log.debug(f"Reusing salt and images for {parcel.model.address}")
@@ -602,7 +607,7 @@ def analyze_one_parcel(
                 apn,
                 parcel.model.address,
                 messages,
-                save_as_model=False,
+                save_to_cloud=False,
             )
             return details
 
