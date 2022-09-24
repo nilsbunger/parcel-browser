@@ -178,28 +178,7 @@ class ListingsData(LoginRequiredMixin, View):
 
 class AnalysisDetailData(View):  # LoginRequiredMixin
     def get(self, request, id, *args, **kwargs):
-        analysis = AnalyzedListing.objects.get(id=id)
-
-        # An ad-hoc way of doing formatting for now
-        d = analysis.details
-        d["datetime_ran"] = analysis.datetime_ran
-        d["apn"] = analysis.parcel.apn
-        d["is_tpa"] = analysis.is_tpa
-        d["is_mf"] = analysis.is_mf
-        d["zone"] = analysis.zone
-        d["salt"] = analysis.salt
-        d["dev_scenarios"] = analysis.dev_scenarios
-        assert analysis.listing
-
-        listing_dict = json.loads(serialize("json", [analysis.listing]))[0]
-        d.update(listing_dict["fields"])
-        d["centroid_x"] = analysis.parcel.geom.centroid.coords[0]
-        d["centroid_y"] = analysis.parcel.geom.centroid.coords[1]
-        del d["parcel"]
-        del d["addr"]
-        del d["prev_listing"]
-
-        return JsonResponse(d, content_type="application/json", safe=False)
+        assert False, "This route should no longer be used"
 
 
 class ParcelDetailData(View):  # LoginRequiredMixin

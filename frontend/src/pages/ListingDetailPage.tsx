@@ -1,13 +1,16 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
 import { fetcher, post_csrf } from '../utils/fetcher';
 import { ListingHistory } from "../components/ListingHistory";
 import { DevScenarios } from "../components/DevScenarios";
+import { AnalysisGetResp, AnalysisPostRespSchema } from "../types";
 
 async function redoAnalysis(e, analysisId: number) {
-  const fetchResponse = post_csrf(`/api/analysis/`, {al_id:analysisId})
+  const fetchResponse = AnalysisPostRespSchema.parse(
+    await post_csrf(`/api/analysis/`, { al_id: analysisId })
+  )
   return fetchResponse
 }
 
@@ -15,17 +18,18 @@ const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
 const asFt = (m) => Math.round(m * 3.28).toLocaleString();
 const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
 
-function daysAtPrice(date) {
+function daysAtPrice(date: string | Date) {
   const foundtime = (new Date(date)).getTime()
   const nowtime = Date.now()
   return Math.round((nowtime - foundtime) / oneDay);
 }
 
-function showAssumptions(assumptions) {
+function showAssumptions(assumptions: object) {
   console.log(assumptions)
   return (<ul className="pl-5">{Object.keys(assumptions).map((assumption) => {
-    if (typeof (assumptions[assumption]) == 'object') {
-      return <li>{assumption}: {showAssumptions(assumptions[assumption])}</li>
+    const as: unknown = assumptions[assumption]
+    if (typeof as === 'object') {
+      return <li>{assumption}: {showAssumptions(as)}</li>
     } else {
       return <li>{assumption}:{assumptions[assumption]}</li>
     }
@@ -34,18 +38,18 @@ function showAssumptions(assumptions) {
 }
 
 
-export function ListingDetailPage({}) {
-  const params = useParams();
-  const navigate = useNavigate();
+export function ListingDetailPage() {
+  const params = useParams<{ analysisId: string }>();
+  // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
-  const { data, error } = useSWR(
-    `/dj/api/analysis/${params.analysisId}`,
+  const { data, error } = useSWR<AnalysisGetResp, string>(
+    `/api/analysis/${params.analysisId}`,
     fetcher
   );
   const { mutate } = useSWRConfig()
   useEffect(() => {
     if (data) {
-      document.title = data.address
+      document.title = data.details.address
     }
   }, [data]);
   if (error) return <div>ListingDetailPage failed its AJAX call. {error}</div>;
@@ -53,9 +57,9 @@ export function ListingDetailPage({}) {
 
   async function onRedoAnalysis(e) {
     setLoading(true)
-    const res = await redoAnalysis(e, params.analysisId);
+    const res = await redoAnalysis(e, Number(params.analysisId));
     setLoading(false)
-    return mutate(`/dj/api/analysis/${res.analysisId}`)
+    return mutate(`/api/analysis/${res.analysisId}`)
 
     // navigate('/analysis/' + res.analysisId, { replace: true });
   }
@@ -63,8 +67,8 @@ export function ListingDetailPage({}) {
   console.log(data);
   return (
     <>
-      {data.messages &&
-        data.messages.warning.map((warn) => (
+      {data.details.messages &&
+        data.details.messages.warning.map((warn) => (
           <div className="alert alert-warning shadow-lg py-1 rounded-lg">
             <div>
               <svg
@@ -89,14 +93,14 @@ export function ListingDetailPage({}) {
         <div>
           <h1 className={'hidden print:block'}><a className='link text-darkblue'
                                                   href={window.location.href}>
-            {data.address}</a></h1>
+            {data.details.address}</a></h1>
           <h1 className={'print:hidden'}>
             {loading && <progress className="progress w-36"/>}
-            {!loading && data.address}
+            {!loading && data.details.address}
           </h1>
           {data.is_tpa && <div className="badge badge-primary">TPA</div>}
           {data.is_mf && <div className="badge badge-accent ml-2">Multifam</div>}
-          <p>{data.neighborhood}</p>
+          <p>{data.listing.neighborhood}</p>
           <p>APN: {data.apn}</p>
           {/*<p>Build Sq Ft by FAR: {asSqFt(data.avail_area_by_FAR)}</p>*/}
           {/*<p>Sq Ft open area: {asSqFt(data.avail_geom_area)}</p>*/}
@@ -104,28 +108,28 @@ export function ListingDetailPage({}) {
           <p>Walk score: XX</p>
           <div className='divider'></div>
           <h2>Units and Rents</h2>
-          <p>Existing unit count: {data.existing_units_with_rent?.length}</p>
+          <p>Existing unit count: {data.details.existing_units_with_rent?.length}</p>
           <p>Assumed units and rents:</p>
           <ul>
-            {data.existing_units_with_rent?.map((unit) => (
+            {data.details.existing_units_with_rent?.map((unit) => (
                 <li>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
               )
             )}
             <li></li>
           </ul>
-          <p>({data.re_params?.existing_unit_rent_percentile}th percentile rents)</p>
+          <p>({data.details.re_params?.existing_unit_rent_percentile}th percentile rents)</p>
 
         </div>
         <div>
-          <h1>${data.price ? data.price.toLocaleString() : "-- off-market"}</h1>
-          <h2>{daysAtPrice(data.founddate)} days at this price</h2>
-          <p>{asSqFt(data.existing_living_area.toLocaleString())} sq ft</p>
-          <p>{data.br} BR</p>
-          <p>{data.ba} BA</p>
-          <p>{data.garages + data.carports} garage</p>
+          <h1>${data.listing.price ? data.listing.price.toLocaleString() : "-- off-market"}</h1>
+          <h2>{daysAtPrice(data.listing.founddate)} days at this price</h2>
+          <p>{asSqFt(data.details.existing_living_area.toLocaleString())} sq ft</p>
+          <p>{data.listing.br} BR</p>
+          <p>{data.listing.ba} BA</p>
+          <p>{data.details.garages + data.details.carports} garage</p>
         </div>
         <div className={'justify-end'}>
-          <img src={data.thumbnail} className="w-72"/>
+          <img src={data.listing.thumbnail} className="w-72"/>
           <button
             className="btn btn-secondary btn-xs mt-3"
             onClick={onRedoAnalysis}
@@ -166,12 +170,12 @@ export function ListingDetailPage({}) {
           frameBorder={0}
           style={{ border: 0 }}
           referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.address} San Diego`}
+          src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDeucEjPuJ4M6i7FSxKKO-MHMp_007Y7ds&q=${data.details.address} San Diego`}
           allowFullScreen
         ></iframe>
 
         {/* Lot split overview */}
-        {false && data.can_lot_split && (
+        {false && data.details.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
             <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`}/>
@@ -184,11 +188,11 @@ export function ListingDetailPage({}) {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">FAR calculations</h2>
-            <p>Current FAR: {data.existing_FAR.toFixed(2)}</p>
-            <p>Max FAR: {data.max_FAR.toFixed(2)}</p>
-            <p>Parcel size: {asSqFt(data.parcel_size)}</p>
+            <p>Current FAR: {data.details.existing_FAR.toFixed(2)}</p>
+            <p>Max FAR: {data.details.max_FAR.toFixed(2)}</p>
+            <p>Parcel size: {asSqFt(data.details.parcel_size)}</p>
             <p>
-              Buildable sq ft based on FAR: {asSqFt(data.avail_area_by_FAR)}
+              Buildable sq ft based on FAR: {asSqFt(data.details.avail_area_by_FAR)}
             </p>
             {/*<div className="card-actions justify-end">*/}
             {/*  <button className="btn btn-primary">Buy Now</button>*/}
@@ -198,13 +202,13 @@ export function ListingDetailPage({}) {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">Geometry calculations</h2>
-            <p>Buildable area by geometry: {asSqFt(data.avail_geom_area)}</p>
+            <p>Buildable area by geometry: {asSqFt(data.details.avail_geom_area)}</p>
           </div>
         </div>
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">Listing history</h2>
-            <ListingHistory mlsid={data.mlsid}/>
+            <ListingHistory mlsid={data.listing.mlsid}/>
           </div>
         </div>
       </div>
@@ -214,17 +218,20 @@ export function ListingDetailPage({}) {
 
 
       <h1>Assumptions</h1>
-      {data.re_params && showAssumptions(data.re_params)}
+      {data.details.re_params && showAssumptions(data.details.re_params)}
+
       <h1 className='mt-5'>Details</h1>
       <p> These are present primarily for debugging. Anything useful should be sent up above this section.</p>
+      <pre>
       {Object.keys(data).map((key) => {
         return (
           <p key={key}>
             {key}:{' '}
-            {JSON.stringify(data[key]).replace(/^"|"$/g, '')}
+            {JSON.stringify(data[key], null, 2).replace(/^"|"$/g, '')}
           </p>
         );
       })}
+      </pre>
     </>
   );
 }

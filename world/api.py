@@ -1,7 +1,8 @@
+import datetime
 import pprint
 import tempfile
 import traceback
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import django
 from django.contrib.gis.db.models.functions import Centroid
@@ -271,6 +272,32 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
         )
 
     return {"analysisId": analyzed_listing.id}
+
+
+class PropertyListingSchema(ModelSchema):
+    class Config:
+        model = PropertyListing
+        model_exclude = ("addr", "parcel", "prev_listing")
+
+
+class AnalysisResponseSchema(Schema):
+    datetime_ran: datetime.datetime
+    is_tpa: bool
+    is_mf: bool
+    zone: str
+    salt: str
+    dev_scenarios: List[Dict[str, Any]]
+    details: Dict[str, Any]
+    listing: PropertyListingSchema
+    apn: str = Field(None, alias="parcel.apn")
+    centroid: tuple = Field(None, alias="parcel.geom.centroid.coords")
+
+
+@api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
+def get_analysis(request, al_id: int):
+    """Get analysis results for a given analysis id"""
+    # al_json = AnalysisResponseSchema.from_orm(analyzed_listing).dict()
+    return AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
 
 
 @api.get("/address-search/{addr}")
