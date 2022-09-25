@@ -174,7 +174,7 @@ def _dev_potential_by_far(
                         messages,
                         percentile=re_params.new_unit_rent_percentile,
                         is_adu=True,
-                        cache_only=False,
+                        interpolate_distance=1000,
                     )
                     if len(new_units_rents) >= 1:
                         new_units_rent = sum(new_units_rents)
@@ -376,15 +376,13 @@ def analyze_one_parcel(
 
     # *** 2a. Compute rent for existing unit. Currently only run it for multifamily lots
     existing_units = property_listing.parcel.rental_units
-    existing_units_rents = [0]
-    if is_mf:
-        existing_units_rents = rent_data.rent_for_location(
-            property_listing,
-            existing_units,
-            messages,
-            percentile=re_params.existing_unit_rent_percentile,
-            cache_only=False,
-        )
+    existing_units_rents = rent_data.rent_for_location(
+        property_listing,
+        existing_units,
+        messages,
+        percentile=re_params.existing_unit_rent_percentile,
+        interpolate_distance=500 if is_mf else 1000,
+    )
     existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
 
     if (
