@@ -26,12 +26,12 @@ function daysAtPrice(date: string | Date) {
 
 function showAssumptions(assumptions: object) {
   console.log(assumptions)
-  return (<ul className="pl-5">{Object.keys(assumptions).map((assumption) => {
+  return (<ul className="pl-5">{Object.keys(assumptions).map((assumption, idx) => {
     const as: unknown = assumptions[assumption]
     if (typeof as === 'object') {
-      return <li>{assumption}: {showAssumptions(as)}</li>
+      return <li key={idx}>{assumption}: {showAssumptions(as)}</li>
     } else {
-      return <li>{assumption}:{assumptions[assumption]}</li>
+      return <li key={idx}>{assumption}:{assumptions[assumption]}</li>
     }
   })
   }</ul>)
@@ -68,8 +68,8 @@ export function ListingDetailPage() {
   return (
     <>
       {data.details.messages &&
-        data.details.messages.warning.map((warn) => (
-          <div className="alert alert-warning shadow-lg py-1 rounded-lg">
+        data.details.messages.warning.map((warn, idx) => (
+          <div key={idx} className="alert alert-warning shadow-lg py-1 rounded-lg">
             <div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -111,8 +111,8 @@ export function ListingDetailPage() {
           <p>Existing unit count: {data.details.existing_units_with_rent?.length}</p>
           <p>Assumed units and rents:</p>
           <ul>
-            {data.details.existing_units_with_rent?.map((unit) => (
-                <li>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
+            {data.details.existing_units_with_rent?.map((unit, idx) => (
+                <li key={idx}>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
               )
             )}
             <li></li>

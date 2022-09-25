@@ -41,7 +41,6 @@ export const ApiErrorSchema = z.object({
   error: z.string()
 })
 
-
 export const PropertyListingSchema = z.object({
   price: z.number(),
   br: z.number(),
@@ -60,6 +59,32 @@ export const FinanceLineItemSchema = z.tuple([
   z.number(), // value of line item
   z.string(), // notes / description of line item
 ])
+export type FinanceLineItem = z.infer<typeof FinanceLineItemSchema>
+
+export const DevScenarioFinanceSchema = z.object({
+  cap_rate: z.number(),
+  net_income: z.number(),
+  capital_sum: z.number(),
+  capital_flow: z.object({
+    acquisition: z.array(FinanceLineItemSchema),
+    construction: z.array(FinanceLineItemSchema),
+  }),
+  operating_flow: z.array(FinanceLineItemSchema),
+})
+export type DevScenarioFinance = z.infer<typeof DevScenarioFinanceSchema>
+
+export const DevScenarioSchema = z.object({
+  adu_qty: z.number(),
+  unit_type: z.object({
+    br: z.number(),
+    ba: z.number(),
+    sqft: z.number(),
+    stories: z.number(),
+    lotspace_required: z.number(),
+  }),
+  finances: DevScenarioFinanceSchema
+})
+export type DevScenario = z.infer<typeof DevScenarioSchema>
 
 export const AnalysisGetRespSchema = z.object({
   datetime_ran: z.date(),
@@ -70,21 +95,7 @@ export const AnalysisGetRespSchema = z.object({
   centroid: z.array(z.number()).length(2),
   listing: PropertyListingSchema,
   apn: z.string(),
-  dev_scenarios: z.array(
-    z.object({
-      adu_qty: z.number(),
-      finances: z.object({
-        cap_rate: z.number(),
-        net_income: z.number(),
-        capital_sum: z.number(),
-        capital_flow: z.object({
-          acquisition: z.array(FinanceLineItemSchema),
-          construction: z.array(FinanceLineItemSchema),
-          operating_flow: z.array(FinanceLineItemSchema),
-        })
-      })
-    })
-  ),
+  dev_scenarios: z.array(DevScenarioSchema),
   details: z.object({
     address: z.string(),
     parcel_size: z.number(),

@@ -1,11 +1,11 @@
 import * as React from "react";
+import { DevScenario, DevScenarioFinance, FinanceLineItem } from "../types";
 
-function titleCase(string){
+function titleCase(string: string){
   return string[0].toUpperCase() + string.slice(1).toLowerCase();
 }
 
-console.log(titleCase('Download Price History'));
-function FinanceTable({ data, children }) {
+function FinanceTable({ data, children } : { data: {[key: string]: FinanceLineItem[]}, children: React.ReactNode }) {
   return <div>
     {children}
     {Object.keys(data).map((category) => (<>
@@ -23,10 +23,9 @@ function FinanceTable({ data, children }) {
     ))
     }
   </div>
-
 }
 
-function DevFinances({ finances }) {
+function DevFinances({ finances }: { finances: DevScenarioFinance }) {
   return <div>
     <FinanceTable data={finances.capital_flow}>
       <h3>Capital Flows</h3>
@@ -39,7 +38,7 @@ function DevFinances({ finances }) {
   </div>
 }
 
-export function DevScenarios({ scenarios }) {
+export function DevScenarios({ scenarios }: { scenarios: DevScenario[] }) {
 
   return <div><h1 className="mt-10">ADU Scenarios</h1>
       {!scenarios && <div className="alert alert-info shadow-lg mt-3">
@@ -55,8 +54,8 @@ export function DevScenarios({ scenarios }) {
       }
     <div className="flex flex-row w-full justify-between items-top mt-5">
       <div className="divider divider-horizontal"></div>
-      {scenarios && scenarios.map((scenario) => {
-        return (<>
+      {scenarios && scenarios.map((scenario, idx) => {
+        return (<React.Fragment key={idx}>
             <div className="flex-auto">
               <h3>Scenario: {scenario.adu_qty} {scenario.unit_type.br}BR, {scenario.unit_type.ba}BA ADUs</h3>
               <p>Each {scenario.unit_type.sqft.toLocaleString()} sqft, {scenario.unit_type.stories} stories</p>
@@ -84,8 +83,8 @@ export function DevScenarios({ scenarios }) {
               {scenario.finances && <DevFinances finances={scenario.finances}/>}
               {/*<p>{JSON.stringify(scenario.finances)}</p>*/}
             </div>
-            <div className="divider divider-horizontal"></div>
-          </>
+            <div key={idx+9999} className="divider divider-horizontal"></div>
+          </React.Fragment>
         )
       })
       }
