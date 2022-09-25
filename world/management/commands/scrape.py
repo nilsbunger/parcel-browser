@@ -172,11 +172,13 @@ class Command(BaseCommand):
             logging.info(f"Found {len(prop_listings)} properties to associate")
             for prop_listing in prop_listings:
                 try:
-                    p_temp = prop_listing.parcel
-                    al_temp = prop_listing.analyzedlisting
-                    # parcel, and analyzed listing exists. if we're caching, we can skip analysis and
+                    # If we're caching and the parcel, and analyzed listing exists, we can skip analysis and
                     # go to the next listing.
-                    if not options["no_cache"]:
+                    if (
+                        not options["no_cache"]
+                        and prop_listing.parcel
+                        and prop_listing.analyzedlisting
+                    ):
                         stats[f"info_previously_matched"] += 1
                         continue
                 except ObjectDoesNotExist as e:
@@ -241,9 +243,7 @@ class Command(BaseCommand):
             results, errors = analyze_batch(
                 parcels,
                 utm_crs=sd_utm_crs,
-                save_file=True,
                 save_dir="./frontend/static/temp_computed_imgs",
-                save_as_model=True,
                 property_listings=property_listings,
                 single_process=bool(options["parcel"]) or bool(options["single_process"]),
             )

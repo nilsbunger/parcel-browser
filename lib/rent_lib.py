@@ -36,6 +36,7 @@ class RentService:
         self,
         listing: PropertyListing,
         units: [RentalUnit],
+        messages: any,
         percentile: int,
         is_adu=False,
         cache_only=True,
@@ -44,6 +45,7 @@ class RentService:
 
         :param PropertyListing listing: MLS property listing to get rents for
         :param [RentalUnit] units: if set, return the value for an ADU of adu_unit at the location
+        :param any messages:
         :param int percentile: what percentile we expect this property to rent for relative to mean rent
         :param bool is_adu: is this an ADU calculation (meaning it's not an 'actual' unit in the building
         :param bool cache_only:
@@ -66,6 +68,8 @@ class RentService:
             log.info(
                 f"Skipping {listing.addr}, APN={listing.parcel.apn} because there's no info on # of BR or BA"
             )
+            messages["warning"].append(f"Missing rent: No info on # of BR or BA")
+
             return []
         for unit in units:
             # check if we already have this unit result in our array...
@@ -93,6 +97,7 @@ class RentService:
             if len(x):
                 rd = x[0]
             else:
+                messages["stats"]["rent_rentometer_call"] += 1
                 log.info(f"CALLING Rentometer: {listing.addr}, {check_br}BR,{check_ba}BA")
                 try:
                     output = self._call_rentometer(lat, long, check_br, check_ba)
@@ -118,12 +123,16 @@ class RentService:
                 rd_list_for_parcel.append(rd)
             rent_cache[unit] = -1
             if rd.details.get("status_code") == 402:
+                messages["error"].append("Missing rent: Rentometer API limit exceeded")
                 log.critical(
                     "No credits available from Rentometer. Please buy more credits, then "
                     "run './manage.py rent_data reset_credits'"
                 )
                 return []
             if rd.details.get("status_code", 200) != 200:
+                messages["warning"].append(
+                    f"Missing rent for {unit.br}BR, {unit.ba}BA: Rental data (live or from DB) has non-200 error code"
+                )
                 # Got an error
                 log.info(
                     f"Skipping {unit.br}BR, {unit.ba}BA at {listing.addr}, mlsid={listing.mlsid},"

@@ -3,7 +3,7 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing financial models, and running
 scenarios in general.
 """
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 import logging
 import pprint
 import secrets
@@ -20,7 +20,7 @@ from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
 from lib.re_params import ReParams, get_build_specs
 from lib.rent_lib import RentService
-from mygeo.settings import DEV_ENV, env
+from mygeo.settings import env
 from mygeo.util import eprint
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
@@ -32,8 +32,6 @@ import datetime
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from lib.parcel_lib import *
-from pandas import DataFrame
-import random
 from joblib import Parallel, delayed
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 
@@ -137,6 +135,7 @@ rent_data = RentService()
 def _dev_potential_by_far(
     property_listing: PropertyListing,
     existing_units_rents: [int],
+    messages: any,
     is_mf: bool,
     far_area: int,
     geom_area: int,
@@ -172,6 +171,7 @@ def _dev_potential_by_far(
                     new_units_rents = adu_qty * rent_data.rent_for_location(
                         property_listing,
                         [adu_unit_spec],
+                        messages,
                         percentile=re_params.new_unit_rent_percentile,
                         is_adu=True,
                         cache_only=False,
@@ -290,41 +290,30 @@ def analyze_one_parcel(
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
     show_plot=False,
-    save_file=False,
     save_dir=DEFAULT_SAVE_DIR,
     try_garage_conversion=True,
     try_split_lot=True,
-    save_as_model=False,
     force_uploads=False,
-):
+) -> AnalyzedListing:
     """Runs analysis on a single parcel of land
 
     Args:
         parcel_model (Parcel): A Parcel Model object that we want to analyse.
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
-        save_file (Boolean, optional): Saves the parcel to an image file. Defaults to False.
         save_dir (str, optional): Directory to save the generated plots/csvs to. Defaults to DEFAULT_SAVE_DIR.
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
         property_listing (PropertyListing):
-        save_as_model (Boolean, optional): Whether to save Django model and upload to R2.
-                    I think this is always called with true.
         force_uploads (Boolean, optional): Whether to force new uploads of images to R2.
     """
 
     re_params = ReParams()
     too_high_df = too_low_df = buffered_buildings_geom = None
-    git_commit_hash = "Can't get in prod environment"
-    if DEV_ENV:
-        import git
-
-        git_commit_hash = git.Repo(search_parent_directories=True).head.object.hexsha
 
     parcel = parcel_model_to_utm_dc(parcel_model, utm_crs)
     apn = parcel.model.apn
-    messages = {"info": [], "warning": [], "error": [], "note": []}
-
+    messages = {"info": [], "warning": [], "error": [], "note": [], "stats": Counter({})}
     # *** 1. Get information about the parcel
 
     # Get parameters based on zoning
@@ -332,19 +321,14 @@ def analyze_one_parcel(
 
     # Technically don't need side or rear setbacks, but buffer by a small amount
     # to account for errors
-    zone_has_data = zone in ZONING_FRONT_SETBACKS_IN_FEET
-    if zone_has_data:
+    if zone in ZONING_FRONT_SETBACKS_IN_FEET:
+        front_setback = ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28
         max_far = get_far(zone, parcel.geometry.area)
     else:
+        front_setback = 5
         max_far = 0.6
         messages["warning"].append("Missing zone data for FAR and setbacks")
-
-    setback_widths = {
-        "front": ZONING_FRONT_SETBACKS_IN_FEET[zone] / 3.28 if zone_has_data else 5,
-        "side": None,
-        "back": None,
-        "alley": None,
-    }
+    setback_widths = {"front": front_setback, "side": None, "back": None, "alley": None}
 
     # Compute the spaces that we can't build on
     # Then, the setbacks around the parcel edges
@@ -397,6 +381,7 @@ def analyze_one_parcel(
         existing_units_rents = rent_data.rent_for_location(
             property_listing,
             existing_units,
+            messages,
             percentile=re_params.existing_unit_rent_percentile,
             cache_only=False,
         )
@@ -412,7 +397,7 @@ def analyze_one_parcel(
     ):
         log.debug("HUH")
 
-    # *** 2b. See what we can build on the lot, FAR-centric. Currently only run it for multifamily lots
+    # *** 2b. See what we can build on the lot, FAR-centric.
     assert property_listing
     dev_scenarios: List[DevScenario] = _dev_potential_by_far(
         property_listing,
@@ -454,36 +439,33 @@ def analyze_one_parcel(
 
     # 3. *** Plot and/or save results
     new_buildings_fig = cant_build_fig = split_lot_fig = None
-    if show_plot or save_file or save_as_model:
-        plt.close()
-        # Generate the figures
-        new_buildings_fig = plot_new_buildings(
-            parcel,
-            buildings,
-            utm_crs,
-            topos_df,
-            too_high_df,
-            too_low_df,
-            new_building_polys,
-            parcel_edges["front"],
-            flag_poly,
-        )
-        cant_build_fig = plot_cant_build(
-            parcel,
-            buildings,
-            utm_crs,
-            buffered_buildings_geom,
-            list(setbacks),
-            too_steep,
-            flag_poly,
-            parcel_edges["front"],
-        )
-        split_lot_fig = (
-            plot_split_lot(parcel, buildings, utm_crs, second_lot) if second_lot else None
-        )
-        # Show figures
-        if show_plot:
-            plt.show()
+    plt.close()
+    # Generate the figures
+    new_buildings_fig = plot_new_buildings(
+        parcel,
+        buildings,
+        utm_crs,
+        topos_df,
+        too_high_df,
+        too_low_df,
+        new_building_polys,
+        parcel_edges["front"],
+        flag_poly,
+    )
+    cant_build_fig = plot_cant_build(
+        parcel,
+        buildings,
+        utm_crs,
+        buffered_buildings_geom,
+        list(setbacks),
+        too_steep,
+        flag_poly,
+        parcel_edges["front"],
+    )
+    split_lot_fig = plot_split_lot(parcel, buildings, utm_crs, second_lot) if second_lot else None
+    # Show figures
+    if show_plot:
+        plt.show()
     max_cap_rate = 0
     if dev_scenarios:
         cap_rates = [
@@ -535,7 +517,6 @@ def analyze_one_parcel(
             "can_lot_split": second_lot is not None,
             "new_lot_area_ratio": second_lot_area_ratio,
             "new_lot_area": second_lot.area if second_lot else None,
-            "git_commit_hash": git_commit_hash,
             "front_setback": setback_widths["front"],
             "messages": messages,
         }
@@ -550,79 +531,59 @@ def analyze_one_parcel(
     }
 
     datetime_ran = datetime.datetime.now(datetime.timezone.utc)
-    if save_as_model:
-        # Save it as a database model, and return it
-        dev_scenarios_dict = [x.dict(exclude={"constr_costs"}) for x in dev_scenarios]
-        a, created = AnalyzedListing.objects.update_or_create(
-            listing=property_listing,
-            defaults={
-                "datetime_ran": datetime_ran,
-                "is_tpa": is_tpa,
-                "is_mf": is_mf,
-                "zone": zone,
-                "details": details,
-                "input_parameters": input_parameters,
-                "geometry_details": {},
-                "dev_scenarios": dev_scenarios_dict,
-                "parcel": parcel.model,
-            },
+    # Save it as a database model, and return it
+    dev_scenarios_dict = [x.dict(exclude={"constr_costs"}) for x in dev_scenarios]
+    a: AnalyzedListing
+    created: bool
+    a, created = AnalyzedListing.objects.update_or_create(
+        listing=property_listing,
+        defaults={
+            "datetime_ran": datetime_ran,
+            "is_tpa": is_tpa,
+            "is_mf": is_mf,
+            "zone": zone,
+            "details": details,
+            "input_parameters": input_parameters,
+            "geometry_details": {},
+            "dev_scenarios": dev_scenarios_dict,
+            "parcel": parcel.model,
+        },
+    )
+    # Salt for hashing filenames in R2 (or S3) buckets.
+    # Only upload images if there's a new salt since they don't typically change.
+    salt = 0
+    if not created:
+        salt = a.salt
+    if not salt or force_uploads:
+        # either it's newly created, didn't have a salt entry, or re-upload images.
+        if not salt:
+            a.salt = secrets.token_urlsafe(10)
+        salt = a.salt
+        a.save(update_fields=["salt"])
+        save_and_upload_figures(
+            new_buildings_fig,
+            cant_build_fig,
+            split_lot_fig,
+            salt,
+            save_dir,
+            apn,
+            parcel.model.address,
+            messages,
+            save_to_cloud=True,
         )
-        # Salt for hashing filenames in R2 (or S3) buckets.
-        # Only upload images if there's a new salt since they don't typically change.
-        salt = 0
-        if not created:
-            salt = a.salt
-        if not salt or force_uploads:
-            # either it's newly created, didn't have a salt entry, or re-upload images.
-            if not salt:
-                a.salt = secrets.token_urlsafe(10)
-            salt = a.salt
-            a.save(update_fields=["salt"])
-            save_and_upload_figures(
-                new_buildings_fig,
-                cant_build_fig,
-                split_lot_fig,
-                salt,
-                save_dir,
-                apn,
-                parcel.model.address,
-                messages,
-                save_to_cloud=True,
-            )
-        else:
-            log.debug(f"Reusing salt and images for {parcel.model.address}")
-        return a
     else:
-        assert False, "Deprecated - I don't think we use this"
-        if False:
-            # LEGACY. Return analyzed as a dictionary with everything in it
-            details["datetime_ran"] = datetime_ran
-            salt = 0
-            save_and_upload_figures(
-                new_buildings_fig,
-                cant_build_fig,
-                split_lot_fig,
-                salt,
-                save_dir,
-                apn,
-                parcel.model.address,
-                messages,
-                save_to_cloud=False,
-            )
-            return details
+        log.debug(f"Reusing salt and images for {parcel.model.address}")
+    return a
 
 
 def _analyze_one_parcel_worker(
     parcel: Parcel,
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
-    show_plot=False,
-    save_file=False,
     save_dir=DEFAULT_SAVE_DIR,
     try_garage_conversion=True,
     try_split_lot=True,
     i: int = 0,
-    save_as_model=False,
 ):
     assert property_listing is not None
     log.info(
@@ -633,11 +594,9 @@ def _analyze_one_parcel_worker(
             parcel,
             utm_crs,
             show_plot=False,
-            save_file=save_file,
             save_dir=save_dir,
             try_garage_conversion=try_garage_conversion,
             try_split_lot=try_split_lot,
-            save_as_model=save_as_model,
             property_listing=property_listing,
         )
 
@@ -658,13 +617,9 @@ def analyze_batch(
     parcels: list[Parcel],
     utm_crs: pyproj.CRS,
     property_listings: List[PropertyListing],
-    hood_name: str = "",
-    save_file=False,
     save_dir=None,
     limit: int = None,
-    shuffle=False,
     try_split_lot=True,
-    save_as_model=False,
     single_process=False,
 ):
     """
@@ -672,15 +627,10 @@ def analyze_batch(
         property_listings: a list of listings of same length as parcels. Maps each
         parcel to a listing to save, if preferred
     """
-    # Temporary, if none is provided
-    folder_name = get_folder_name(hood_name)
-    if not save_dir:
-        save_dir = os.path.join(DEFAULT_SAVE_DIR, folder_name, "")
-    else:
-        # Add a trailing slash if there isn't
-        save_dir = os.path.join(save_dir, "")
+    # Format save_dir properly
+    save_dir = os.path.join(save_dir, "")
 
-    # Make folder if doesn't exist
+    # Make folders if they don't exist
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     if not os.path.isdir(os.path.join(save_dir, "new-buildings")):
@@ -689,10 +639,6 @@ def analyze_batch(
         os.makedirs(os.path.join(save_dir, "lot-splits"))
     if not os.path.isdir(os.path.join(save_dir, "cant-build")):
         os.makedirs(os.path.join(save_dir, "cant-build"))
-
-    if shuffle:
-        parcels = list(parcels)
-        random.shuffle(parcels)
 
     num_analyze = min(len(parcels), int(limit)) if limit else len(parcels)
 
@@ -711,10 +657,8 @@ def analyze_batch(
                 parcels[i],
                 utm_crs,
                 property_listing=property_listings[i],
-                save_file=save_file,
                 save_dir=save_dir,
                 try_split_lot=try_split_lot,
-                save_as_model=save_as_model,
                 i=i,
             )
             for i in range(num_analyze)
@@ -722,32 +666,17 @@ def analyze_batch(
     else:
         results = Parallel(n_jobs=n_jobs)(
             delayed(_analyze_one_parcel_worker)(
-                parcel,
+                parcels[i],
                 utm_crs,
-                show_plot=False,
-                save_file=save_file,
+                property_listing=property_listings[i],
                 save_dir=save_dir,
                 try_split_lot=try_split_lot,
                 i=i,
-                save_as_model=save_as_model,
-                property_listing=property_listing,
             )
-            for i, parcel, property_listing in zip(range(num_analyze), parcels, property_listings)
+            for i in range(num_analyze)
         )
 
     analyzed = [x[0] for x in results if x[0] is not None]
     errors = [x[1] for x in results if x[1] is not None]
-
-    if save_as_model:
-        return analyzed, errors
-
-    if save_file:
-        # Export to csv
-        # First, create a Pandas dataframe
-        df = DataFrame.from_records(analyzed)
-        df.to_csv(os.path.join(save_dir, f"{folder_name}-results.csv"), index=False)
-        error_df = DataFrame.from_records(errors)
-        error_df.to_csv(os.path.join(save_dir, f"{folder_name}-errors.csv"), index=False)
-
     log.info(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
     return analyzed, errors

@@ -265,9 +265,7 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
             sd_utm_crs,
             property_listing=property_listing,
             show_plot=False,
-            save_file=True,
             save_dir=tmpdirname,
-            save_as_model=True,
             force_uploads=True,
         )
 
