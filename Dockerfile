@@ -38,20 +38,22 @@ WORKDIR /app
 ENV VIRTUAL_ENV=/app/venv
 RUN python3.9 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
+
+# Do package installations first, so that they're cached in most cases
+RUN pip install wheel
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+# WORKDIR /app/frontend
+# COPY frontend/package.json .
+
 COPY . .
 RUN mkdir -p dist/static
 RUN python manage.py collectstatic --noinput
 
 WORKDIR /app/frontend
-
-# install npm modules, then build
-RUN yarn install
+RUN yarn install && yarn cache clean
 RUN yarn build
 
 WORKDIR /app
