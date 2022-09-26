@@ -13,6 +13,14 @@ class Neighborhood(Enum):
     PacificBeach = [92109]
 
 
+# Neighborhood names matching the MLS listings site
+HIGH_PRIORITY_NEIGHBORHOODS = [
+    "North Park",
+    "Normal Heights",
+    "Clairemont/Bay Park",
+    "City Heights",
+]
+
 AllSdCityZips = [
     92014,
     92037,

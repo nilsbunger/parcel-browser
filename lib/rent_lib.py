@@ -2,10 +2,10 @@ import logging
 from statistics import NormalDist
 from typing import List
 
-import requests
-from requests import HTTPError
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+import requests
+from requests import HTTPError
 
 from mygeo.settings import env
 from world.models import PropertyListing
@@ -21,6 +21,7 @@ class RentService:
         listing: PropertyListing,
         units: [RentalUnit],
         messages: any,
+        dry_run: bool,
         percentile: int,
         interpolate_distance: int,
         is_adu=False,
@@ -30,6 +31,7 @@ class RentService:
         :param PropertyListing listing: MLS property listing to get rents for
         :param [RentalUnit] units: if set, return the value for an ADU of adu_unit at the location
         :param any messages:
+        :param bool dry_run: if True, don't make any changes to the database
         :param int percentile: what percentile we expect this property to rent for relative to mean rent
         :param bool is_adu: is this an ADU calculation (meaning it's not an 'actual' unit in the building
         :param int interpolate_distance: distance in meters to interpolate rents from before resorting to API call.
@@ -55,6 +57,7 @@ class RentService:
             # check if we already have this unit result in our array...
             if unit in rent_cache:
                 rents.append(round(rent_cache[unit]))
+                messages["stats"]["rent_from_memory_cache"] += 1
                 continue
             # ... or in the DB
             x = [r for r in rd_list_for_parcel if r.br == check_br and r.ba == check_ba]
@@ -63,12 +66,14 @@ class RentService:
             ), f"Multiple entries in RentalData for the same unit for APN={listing.parcel.apn}"
             if len(x):
                 rd = x[0]
+                messages["stats"]["rent_from_db"] += 1
             else:
                 # no match for rent in memory cache or DB... try interpolating rent from nearby parcels
                 tmp_rent = self.interpolate_rent_for_location(
                     listing, interpolate_distance, check_br, check_ba, messages, percentile
                 )
                 if tmp_rent > -1:
+                    messages["stats"]["rent_interpolated"] += 1
                     rent_cache[unit] = tmp_rent
                     rents.append(round(rent_cache[unit]))
                     continue
@@ -76,7 +81,7 @@ class RentService:
                 messages["stats"]["rent_rentometer_call"] += 1
                 log.info(f"CALLING Rentometer: {listing.addr}, {check_br}BR,{check_ba}BA")
                 rd = self._get_rental_data_from_rentometer(
-                    listing, check_br, check_ba, is_adu=is_adu
+                    listing, check_br, check_ba, dry_run, is_adu=is_adu
                 )
                 rd_list_for_parcel.append(rd)
             tmp_rent = self._calculate_rent_from_rentdata_instance(rd, messages, percentile)
@@ -107,8 +112,7 @@ class RentService:
                 br=check_br, ba=check_ba, location__distance_lte=(loc, D(m=interpolate_distance))
             )
             .annotate(distance=Distance("location", loc))
-            .order_by("distance")
-            .limit(20)
+            .order_by("distance")[0:19]
         )
         if len(near_rental_data) == 0:
             return -1
@@ -161,7 +165,7 @@ class RentService:
         return rent
 
     def _get_rental_data_from_rentometer(
-        self, listing: PropertyListing, br: int, ba: int, is_adu
+        self, listing: PropertyListing, br: int, ba: int, dry_run, is_adu
     ) -> RentalData:
         """Make a call to Rentometer, record the results in our DB, and return a RentalData model instance"""
         centroid = listing.parcel.geom.centroid
@@ -173,15 +177,26 @@ class RentService:
         )
 
         try:
-            output = self._call_rentometer(lat, long, br, ba)
+            # Call Rentometer, or if in dry_run mode, just return a dummy object
+            output = (
+                self._call_rentometer(lat, long, br, ba)
+                if not dry_run
+                else self._dry_run_resp(br, ba)
+            )
         except HTTPError as e:
             # create error output and save it as a rental data object
             log.error(
                 f"  ERROR - {listing.addr} - APN={listing.parcel_id}: RENTOMETER FAILED WITH ERROR",
-                e,
+                str(e),
             )
             output = e.response.json()  # creates 'errors' key
-            output.update({"bedrooms": br, "bathrooms": ba, "status_code": e.response.status_code})
+            output.update(
+                {
+                    "bedrooms": br,
+                    "baths": ba if ba < 2 else 2,
+                    "status_code": e.response.status_code,
+                }
+            )
         rd = RentalData(
             parcel=listing.parcel,
             br=output["bedrooms"],
@@ -191,7 +206,8 @@ class RentService:
             location=centroid,
             data_type=data_type,
         )
-        rd.save()
+        if not dry_run:
+            rd.save()
         return rd
 
     def _call_rentometer(self, lat, long, br, ba):
@@ -213,9 +229,24 @@ class RentService:
         del output["quickview_url"]
         return output
 
-    # Example output from Rentometer:
-    # output = {'address': None, 'latitude': '32.73427', 'longitude': '-117.169698', 'bedrooms': 2,
-    #           'baths': '1 only', 'building_type': 'Any', 'look_back_days': 365, 'mean': 2915,
-    #           'median': 2850, 'min': 1800, 'max': 4300, 'percentile_25': 2363, 'percentile_75': 3466,
-    #           'std_dev': 817, 'samples': 12, 'radius_miles': 0.5,
-    #           'quickview_url': 'https://www.rentometer.com/analysis/2-bed/32-73427-117-169698/oYsi8otxrsY/quickview',
+    def _dry_run_resp(self, br, ba):
+        log.info("  DRY RUN - Rentometer API call would have been made here")
+        # Example output from _call_rentometer_functtion:
+        return {
+            "address": None,
+            "latitude": "32.73427",
+            "longitude": "-117.169698",
+            "bedrooms": br,
+            "baths": ba if ba < 2 else 2,
+            "building_type": "Any",
+            "look_back_days": 365,
+            "mean": 2915,
+            "median": 2850,
+            "min": 1800,
+            "max": 4300,
+            "percentile_25": 2363,
+            "percentile_75": 3466,
+            "std_dev": 817,
+            "samples": 12,
+            "radius_miles": 0.5,
+        }

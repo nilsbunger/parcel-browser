@@ -12,6 +12,8 @@ import boto3
 from botocore.exceptions import ClientError
 import django
 
+from lib.neighborhoods import HIGH_PRIORITY_NEIGHBORHOODS
+
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
 django.setup()
@@ -136,10 +138,12 @@ def _dev_potential_by_far(
     property_listing: PropertyListing,
     existing_units_rents: [int],
     messages: any,
+    interp_dist: int,
     is_mf: bool,
     far_area: int,
     geom_area: int,
     re_params: ReParams,
+    dry_run: bool,
 ) -> List[DevScenario]:
     valid_scenarios = []
     existing_units_rent = sum(existing_units_rents)
@@ -172,9 +176,10 @@ def _dev_potential_by_far(
                         property_listing,
                         [adu_unit_spec],
                         messages,
+                        dry_run,
                         percentile=re_params.new_unit_rent_percentile,
                         is_adu=True,
-                        interpolate_distance=1000,
+                        interpolate_distance=interp_dist,
                     )
                     if len(new_units_rents) >= 1:
                         new_units_rent = sum(new_units_rents)
@@ -185,7 +190,7 @@ def _dev_potential_by_far(
                     finances = Financials()
                     constr_soft_cost = adu_sq_ft * re_params.constr_costs.soft_cost_rate
                     constr_hard_cost = adu_unit_spec.hard_build_cost * adu_qty
-                    constr_adu_fees = 14000 + 3000 * adu_qty
+                    constr_adu_fees = 14000 + 10000 * adu_qty
                     if not property_listing.price:
                         # no price => can't model finances but can still record unit config
                         valid_scenarios.append(
@@ -215,7 +220,7 @@ def _dev_potential_by_far(
                         (
                             "adu fees",
                             0 - constr_adu_fees,
-                            f"$14K base with $3K per unit (total guess)",
+                            f"$14K base plus $10K per unit (total guess)",
                         ),
                     ]
                     total_constr_cost = constr_hard_cost + constr_soft_cost + constr_adu_fees
@@ -289,6 +294,7 @@ def analyze_one_parcel(
     parcel_model: Parcel,
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
+    dry_run,
     show_plot=False,
     save_dir=DEFAULT_SAVE_DIR,
     try_garage_conversion=True,
@@ -300,11 +306,12 @@ def analyze_one_parcel(
     Args:
         parcel_model (Parcel): A Parcel Model object that we want to analyse.
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
+        property_listing (PropertyListing):
+        dry_run (Boolean):
         show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
         save_dir (str, optional): Directory to save the generated plots/csvs to. Defaults to DEFAULT_SAVE_DIR.
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
-        property_listing (PropertyListing):
         force_uploads (Boolean, optional): Whether to force new uploads of images to R2.
     """
 
@@ -374,20 +381,24 @@ def analyze_one_parcel(
         accessory_buildings_area,
     ) = _get_existing_floor_area_stats(parcel, buildings)
 
-    # *** 2a. Compute rent for existing unit. Currently only run it for multifamily lots
+    # *** 2a. Compute rent for existing unit.
     existing_units = property_listing.parcel.rental_units
+    if property_listing.neighborhood in HIGH_PRIORITY_NEIGHBORHOODS:
+        interp_dist = 500 if is_mf else 1000
+    else:
+        interp_dist = 3000
     existing_units_rents = rent_data.rent_for_location(
         property_listing,
         existing_units,
         messages,
+        dry_run,
         percentile=re_params.existing_unit_rent_percentile,
-        interpolate_distance=500 if is_mf else 1000,
+        interpolate_distance=interp_dist,
     )
     existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
 
     if (
         not len(existing_units_rents)
-        and is_mf
         and property_listing.br
         and property_listing.br > 0
         and property_listing.ba
@@ -400,10 +411,13 @@ def analyze_one_parcel(
     dev_scenarios: List[DevScenario] = _dev_potential_by_far(
         property_listing,
         existing_units_rents,
+        messages,
+        interp_dist,
         is_mf,
         int(avail_area_by_far),
         int(avail_geom.area),
         re_params,
+        dry_run,
     )
     # *** 2c. See what we can build on the lot -- geometry-focused
     new_building_polys = find_largest_rectangles_on_avail_geom(
@@ -436,7 +450,6 @@ def analyze_one_parcel(
             messages["note"].append("Lot split attempt failed with exception")
 
     # 3. *** Plot and/or save results
-    new_buildings_fig = cant_build_fig = split_lot_fig = None
     plt.close()
     # Generate the figures
     new_buildings_fig = plot_new_buildings(
@@ -531,21 +544,26 @@ def analyze_one_parcel(
     datetime_ran = datetime.datetime.now(datetime.timezone.utc)
     # Save it as a database model, and return it
     dev_scenarios_dict = [x.dict(exclude={"constr_costs"}) for x in dev_scenarios]
+    al_defaults = {
+        "datetime_ran": datetime_ran,
+        "is_tpa": is_tpa,
+        "is_mf": is_mf,
+        "zone": zone,
+        "details": details,
+        "input_parameters": input_parameters,
+        "geometry_details": {},
+        "dev_scenarios": dev_scenarios_dict,
+        "parcel": parcel.model,
+    }
+    if dry_run:
+        # dry-run -- create analyzed listing object but don't save it to DB, and bail out of function
+        a = AnalyzedListing(**al_defaults)
+        a.listing = property_listing
+        return a
     a: AnalyzedListing
     created: bool
     a, created = AnalyzedListing.objects.update_or_create(
-        listing=property_listing,
-        defaults={
-            "datetime_ran": datetime_ran,
-            "is_tpa": is_tpa,
-            "is_mf": is_mf,
-            "zone": zone,
-            "details": details,
-            "input_parameters": input_parameters,
-            "geometry_details": {},
-            "dev_scenarios": dev_scenarios_dict,
-            "parcel": parcel.model,
-        },
+        listing=property_listing, defaults=al_defaults
     )
     # Salt for hashing filenames in R2 (or S3) buckets.
     # Only upload images if there's a new salt since they don't typically change.
@@ -578,6 +596,7 @@ def _analyze_one_parcel_worker(
     parcel: Parcel,
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
+    dry_run: bool,
     save_dir=DEFAULT_SAVE_DIR,
     try_garage_conversion=True,
     try_split_lot=True,
@@ -591,15 +610,13 @@ def _analyze_one_parcel_worker(
         result = analyze_one_parcel(
             parcel,
             utm_crs,
+            property_listing,
+            dry_run,
             show_plot=False,
             save_dir=save_dir,
             try_garage_conversion=try_garage_conversion,
             try_split_lot=try_split_lot,
-            property_listing=property_listing,
         )
-
-        # Shouldn't need this as result should never be null, but we keep it as a sanity check
-        assert result is not None
         return result, None
     except Exception as e:
         # log.error()
@@ -615,6 +632,7 @@ def analyze_batch(
     parcels: list[Parcel],
     utm_crs: pyproj.CRS,
     property_listings: List[PropertyListing],
+    dry_run: bool,
     save_dir=None,
     limit: int = None,
     try_split_lot=True,
@@ -623,6 +641,7 @@ def analyze_batch(
     """
     Notable arguments:
         property_listings: a list of listings of same length as parcels. Maps each
+        dry_run: if True, don't save anything to filesystem or DB
         parcel to a listing to save, if preferred
     """
     # Format save_dir properly
@@ -642,10 +661,7 @@ def analyze_batch(
 
     log.info(f"Found {len(parcels)} parcels. Analyzing {num_analyze}.")
 
-    # There probably is a cleaner way of doing this
-    assert property_listings is not None  # test that the following branch is no longer needed.
-    # if property_listings is None:
-    #     property_listings = [None] * len(parcels)
+    assert property_listings is not None
     n_jobs = 1 if single_process else 8
     log.info(f"Launching {n_jobs} process for analysis...")
 
@@ -654,7 +670,8 @@ def analyze_batch(
             _analyze_one_parcel_worker(
                 parcels[i],
                 utm_crs,
-                property_listing=property_listings[i],
+                property_listings[i],
+                dry_run,
                 save_dir=save_dir,
                 try_split_lot=try_split_lot,
                 i=i,
@@ -666,7 +683,8 @@ def analyze_batch(
             delayed(_analyze_one_parcel_worker)(
                 parcels[i],
                 utm_crs,
-                property_listing=property_listings[i],
+                property_listings[i],
+                dry_run,
                 save_dir=save_dir,
                 try_split_lot=try_split_lot,
                 i=i,

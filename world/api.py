@@ -263,7 +263,8 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
         analyzed_listing = analyze_one_parcel(
             property_listing.parcel,
             sd_utm_crs,
-            property_listing=property_listing,
+            property_listing,
+            dry_run=False,
             show_plot=False,
             save_dir=tmpdirname,
             force_uploads=True,

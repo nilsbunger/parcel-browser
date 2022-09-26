@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 import datetime
 import logging
 import pprint
@@ -77,6 +77,11 @@ class Command(BaseCommand):
             "--no-cache",
             action="store_true",
             help="Don't use existing cached data even if it's available (both for scraping and for analysis)",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Don't store analysis to the database (not, it doesn't control scraping (aka fetching) at the moment)",
         )
         parser.add_argument(
             "--skip-matching",
@@ -242,16 +247,21 @@ class Command(BaseCommand):
             # NOTE: Make sure changes to the call here are also made in api.redo_analysis
             results, errors = analyze_batch(
                 parcels,
-                utm_crs=sd_utm_crs,
+                sd_utm_crs,
+                property_listings,
+                options["dry_run"],
                 save_dir="./frontend/static/temp_computed_imgs",
-                property_listings=property_listings,
                 single_process=bool(options["parcel"]) or bool(options["single_process"]),
             )
 
             # Save the errors to a csv
             error_df = DataFrame.from_records(errors)
             error_df.to_csv("./frontend/static/temp_computed_imgs/errors.csv", index=False)
-
+            stats = Counter({})
+            for result in results:
+                stats += result.details["messages"]["stats"]
+            logging.info("Aggregated Stats:")
+            logging.info(dict(stats))
             logging.info(
                 f"Analysis done! There are {len(results)} successes and {len(errors)} errors."
             )
