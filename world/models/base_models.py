@@ -116,11 +116,15 @@ class Parcel(models.Model):
 
     @property
     def address(self) -> str:
-        addr = (
-            f'{self.situs_pre_field or ""} {self.situs_addr} {self.situs_stre} '
-            f'{self.situs_suff or ""} {self.situs_post or ""}'
-        )
-        return addr.strip()
+        fields = [
+            str(self.situs_addr),
+            self.situs_pre_field or None,
+            self.situs_stre,
+            self.situs_suff or None,
+            self.situs_post or None,
+        ]
+        fields = [f for f in fields if f]
+        return " ".join(fields)
 
     @property
     def ba(self) -> float:
@@ -168,10 +172,9 @@ class Parcel(models.Model):
             lot_str = "%s acres" % self.acreage
         else:
             lot_str = "%s lot" % self.usable_sq_field
-        base_str = "%s %s %s %s: %s living, " % (
+        base_str = "%s %s %s: %s living, " % (
             self.apn,
-            self.situs_addr,
-            self.situs_stre,
+            self.address,
             self.situs_zip,
             self.total_lvg_field,
         )
