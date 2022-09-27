@@ -130,7 +130,7 @@ def address_to_parcel(
         postfix = rest[-1]
         rest = rest[:-1]
     # Separate the street suffix if it exists
-    if rest[-1] in street_suffixes:
+    if rest and (rest[-1] in street_suffixes):
         street_name = " ".join(rest[:-1])
         # get normalized street suffix if it exists... otherwise use the one given.
         street_suffix = normalize_suffix.get(rest[-1], rest[-1])
@@ -172,15 +172,20 @@ def address_to_parcel(
         elif len(parcels) == 0:
             # no match, but continue to second loop if needed
             continue
-        # more than one match -- see if the street suffix ('way', 'rd', ...) or jurisdiction ('SD') disambiguates it
+        # more than one match -- see if the street suffix ('way', 'rd', ...), prefix ('e', 'w', ...)
+        # or jurisdiction ('SD') disambiguates it
         # We track jurisdition because if we DO match in another jurisdiction, we know we didn't miss anything.
         matched_parcel_candidates = list()
         matched_jurisdiction_candidates = list()
         jurisdictions = set()
         for p in parcels:
-            if p.situs_suff and (p.situs_suff.lower() == street_suffix):
-                matched_parcel_candidates.append(p)
-            jurisdictions.add(p.situs_juri)
+            if not p.situs_pre_field or (
+                p.situs_pre_field and (p.situs_pre_field.lower() == street_prefix)
+            ):
+                if not street_suffix or (p.situs_suff.lower() == street_suffix):
+                    matched_parcel_candidates.append(p)
+                jurisdictions.add(p.situs_juri)
+            # keep jurisdiction match loose, since prefix and suffix are not always present
             if p.situs_juri == jurisdiction:
                 matched_jurisdiction_candidates.append(p)
         if len(matched_jurisdiction_candidates) == 1:
