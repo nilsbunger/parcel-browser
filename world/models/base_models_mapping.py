@@ -153,12 +153,17 @@ roads_mapping = {
     "rd30sfx": "RD30SFX",
     "rd30postd": "RD30POSTD",
     "rd30full": "RD30FULL",
-    "shape_stle": "SHAPE_STLe",
+    "shape_stle": "Shape_STLe",
     "geom": "MULTILINESTRING",
 }
 transitpriorityarea_mapping = {
     "name": "NAME",
     "shape_star": "Shape_STAr",
     "shape_stle": "Shape_STLe",
+    "geom": "MULTIPOLYGON",
+}
+housingsolutionarea_mapping = {
+    "tier": "TIER",
+    "allowance": "ALLOWANCE",
     "geom": "MULTIPOLYGON",
 }

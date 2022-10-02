@@ -1,5 +1,7 @@
 from enum import Enum
 from pathlib import Path
+
+from django.core.management import CommandParser
 import geopandas
 
 from django.contrib.gis.gdal import DataSource
@@ -18,8 +20,10 @@ from world.models import (
 )
 from django.core.management.base import BaseCommand
 
+from world.models.base_models import HousingSolutionArea
 from world.models.base_models_mapping import (
     buildingoutlines_mapping,
+    housingsolutionarea_mapping,
     parcel_mapping,
     roads_mapping,
     topography_mapping,
@@ -35,12 +39,13 @@ class LoadModel(Enum):
     Topography = 4
     Roads = 5
     TPA = 6
+    HousingSolutionArea = 7
 
 
 class Command(BaseCommand):
     help = "Load data from a shape file into a Django model"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser):
         parser.add_argument("model", choices=LoadModel.__members__)
         parser.add_argument("fname", nargs="?")
         parser.add_argument(
@@ -67,12 +72,18 @@ class Command(BaseCommand):
         elif model == "Topography":
             (db_model, mapper) = (Topography, topography_mapping)
         elif model == "Roads":
-            (fname, db_model, mapper) = ("Roads_All/ROADS_ALL.shp", Roads, roads_mapping)
+            (fname, db_model, mapper) = ("Roads_All/Roads_All.shp", Roads, roads_mapping)
         elif model == "TPA":
             (fname, db_model, mapper) = (
                 "TRANSIT_PRIORITY_AREA.shp",
                 TransitPriorityArea,
                 transitpriorityarea_mapping,
+            )
+        elif model == "HousingSolutionArea":
+            (fname, db_model, mapper) = (
+                "HOUSING_SOLUTION_AREAS/HOUSING_SOLUTION_AREAS.shp",
+                HousingSolutionArea,
+                housingsolutionarea_mapping,
             )
         else:
             eprint("Unknown model!")

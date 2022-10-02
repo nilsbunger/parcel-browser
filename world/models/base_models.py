@@ -270,3 +270,9 @@ class TransitPriorityArea(models.Model):
     shape_star = models.FloatField()
     shape_stle = models.FloatField()
     geom = models.MultiPolygonField(srid=4326)
+
+
+class HousingSolutionArea(models.Model):
+    tier = models.CharField(max_length=10)
+    allowance = models.CharField(max_length=150)
+    geom = models.MultiPolygonField(srid=4326)
