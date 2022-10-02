@@ -91,7 +91,7 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 1. Download Parcels, Building_outlines (under MISCELLANEOUS), Zoning_base_sd, Topos_2014_2Ft_PowayLaMesa ZIP, and Topos_2014_2Ft_LaJolla.gdb files from https://www.sangis.org/ . You'll need a free account. Get the associated PDF files as well, as they are useful in describing what the data means.
 2. Unzip and put all files in world/data/  
-3. Load the shape files into the DB:
+3. Load the shape files into the DB. NOTE: Use LOCAL_DB=0 or LOCAL_DB=1 to specify cloud or local DB to load.
 `./manage.py load Zoning`
 
 `./manage.py load Parcel`
@@ -104,8 +104,10 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 `./manage.py load Roads`
 
-4. Run ETL jobs as necessary, eg:
-`./manage.py analyze_parcels rebuild` - populates the analyze_parcels table
+`./manage.py load HousingSolutionArea'
+
+~~4. Run ETL jobs as necessary, eg:
+`./manage.py analyze_parcels rebuild` - populates the analyze_parcels table~~
 
 
 # Creating new GIS data tables from a shape file
@@ -113,18 +115,18 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 If you're adding a new class of GIS data based on a shape files, there are some tools to make it easier.
 
 1. Try inspecting your new shape file:
-- `ogrinfo <shapefile>.shp` -- shows layers  
+- `ogrinfo -so <shapefile>.shp` -- shows layers  
 - `ogrinfo -so <shapefile>.shp <layername>` -- examines a layer
 
 2. Generate Django models and mapping automatically:
-- Use `./manage.py orginspect <shapefile> <ModelName> --srid=4326 --mapping --multi` 
+- Use `./manage.py ogrinspect <shapefile> <ModelName> --srid=4326 --mapping --multi` 
 - Add the generated model and mapping to models.py.
+- Check which fields are nullable by running `load.py MODEL_NAME --check-nulls`. This will print out which fields have null in them. You'll need to add `blank=True null=True` to the respective models.py fields.
+3. Perform Django migrations
 - `./manage.py makemigrations`  
 - `./manage.py migrate`
-
-3. Check which fields are nullable by running `load.py MODEL_NAME --check-null-fields`. This will print out which fields have null in them. You'll need to add `blank=True null=True` to the respective models.py fields.
-
-4. Update the `load.py` management command to load this new type of shape file and then execute the load.
+4. Update the `load.py` management command to load this new type of shape file
+4. Execute the load management command as per Importing Data section above.
 
 See also the django GIS tutorial [here](https://docs.djangoproject.com/en/4.0/ref/contrib/gis/tutorial/#try-ogrinspect), which shows using ogrinspect this way 
 
