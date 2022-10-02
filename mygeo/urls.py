@@ -14,6 +14,7 @@ from world.views import (
     AddressToLatLong,
 )
 from world.api import api as world_api
+from co.co_api import api as co_api
 
 urlpatterns = [
     # Django-rendered routes
@@ -22,7 +23,9 @@ urlpatterns = [
     path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
+    path("dj/co/", include("co.urls")),
     # Django-generated API routes
+    path("api/co/", co_api.urls),
     path("api/", world_api.urls),
     path(
         "dj/api/parceltile/<int:z>/<int:x>/<int:y>",

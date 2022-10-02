@@ -11,12 +11,12 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import datetime
 import os
+import os
 from pathlib import Path
 import sys
 
 import environ
 
-import os
 from mygeo.util import eprint
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "rest_framework",
     # "rest_framework_gis",
     "world",
+    "co",
 ]
 
 MIDDLEWARE = [
@@ -153,11 +154,12 @@ if dbHost:
             "NAME": dbName,
             "USER": dbUserName,
             "PASSWORD": dbPassword,
-        }
+        },
     }
+    DATABASES["basedata"] = DATABASES["default"]
     if DEV_ENV:
-        # Topo DB is only available when running in a dev environment, since it requires a local computer.
-        DATABASES["local_db"] = {
+        # Running locally, base data can come from local machine
+        DATABASES["basedata"] = DATABASES["local_db"] = {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
             "HOST": "localhost",
             "NAME": "geodjango",
@@ -165,13 +167,7 @@ if dbHost:
             "PASSWORD": "",
         }
         # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
-        DATABASES["cloud_db"] = {
-            "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "HOST": dbHost,
-            "NAME": dbName,
-            "USER": dbUserName,
-            "PASSWORD": dbPassword,
-        }
+        DATABASES["cloud_db"] = DATABASES["default"]
 
 else:
     DATABASES = {}
@@ -216,7 +212,6 @@ STATIC_ROOT = BASE_DIR / "dist/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # WHITENOISE_INDEX_FILE = "index.html"
 WHITENOISE_ROOT = BASE_DIR / "dist/static"
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

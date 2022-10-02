@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
 from pandas import DataFrame
 
+from lib import mgmt_cmd_lib
 from lib.analyze_parcel_lib import analyze_batch
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
@@ -57,6 +58,7 @@ class Command(BaseCommand):
     help = "Parse MLS Listings for San Diego, analyze, and put into database. Optionally re-scrape"
 
     def add_arguments(self, parser):
+        mgmt_cmd_lib.add_common_arguments(parser)
         parser.add_argument(
             "--fetch", action="store_true", help="Fetch listings data from MLS service"
         )
@@ -69,9 +71,6 @@ class Command(BaseCommand):
             "--fetch-local",
             action="store_true",
             help="Fetch listings from localhost. Useful to see request stream, but it won't generate useful responses",
-        )
-        parser.add_argument(
-            "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
         )
         parser.add_argument(
             "--no-cache",
@@ -98,26 +97,8 @@ class Command(BaseCommand):
             "--single-process", action="store_true", help="Run analysis with only a single process"
         )
 
-    loggers_to_quiet = [
-        "rasterio.env",
-        "rasterio._env",
-        "git.cmd",
-        "shapely.geos",
-        "matplotlib.pyplot",
-        "matplotlib.font_manager",
-    ]
-
     def handle(self, *args, **options):
-        logging.basicConfig(
-            stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO
-        )
-
-        logging.getLogger().setLevel(logging.DEBUG if options["verbose"] else logging.INFO)
-        for prop_listing in self.loggers_to_quiet:
-            logging.getLogger(prop_listing).setLevel(logging.INFO)
-        logging.debug("DEBUG log level")
-        logging.info("INFO log level")
-        logging.info(f"Running with options:\n{pprint.pformat(options)}")
+        logging_lib.init(verbose=options["verbose"])
         # -----
         # 1. Scrape latest listings if directed to.
         # -----
