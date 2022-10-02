@@ -7,6 +7,7 @@ import { ListingDetailPage } from './pages/ListingDetailPage';
 import { NewListingPage } from './pages/NewListingPage';
 import WideLayout from "./layouts/WideLayout";
 import { RentalRatesPage } from "./pages/RentalRatesPage";
+import { CoMapPage } from "./pages/CoMapPage";
 
 export function MyRoutes() {
   return (
@@ -26,6 +27,7 @@ export function MyRoutes() {
             </Route>
             <Route path="search" element={<NewListingPage/>}/>
             <Route path="rental-rates" element={<RentalRatesPage/>}/>
+            <Route path="co-map" element={<CoMapPage/>}/>
           </Route>
           {/* Catch-all element below */}
           <Route path="*" element={<PageNotFound/>}/>

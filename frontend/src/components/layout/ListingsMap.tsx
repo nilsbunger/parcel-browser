@@ -9,10 +9,11 @@ type Props = { listings: Listing[] };
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
 
 function ListingsMap({ listings }: Props) {
+  const center = [32.7157, -117.1611]
   return (
     <ErrorBoundary fallback={<div>Error in ListingsMap</div>}>
       <MapContainer
-        center={[32.7157, -117.1611]}
+        center={center}
         zoom={13}
         scrollWheelZoom={true}
         className={'!h-[80vh] !w-5/12'}
@@ -28,9 +29,14 @@ function ListingsMap({ listings }: Props) {
         {/* See layer control example at https://react-leaflet.js.org/docs/example-layers-control/ */}
         <LayersControl position="topright">
           <LayersControl.Overlay name="Transit Priority Areas">
-            <TileLayer
-              url="/dj/tpatile/{z}/{x}/{y}"
-            />
+            <Marker position={center}>
+              <Popup>
+                A pretty CSS3 popup. <br/> Easily customizable.
+              </Popup>
+            </Marker>
+            {/*<TileLayer*/}
+            {/*  url="/dj/api/tpatile/{z}/{x}/{y}"*/}
+            {/*/>*/}
           </LayersControl.Overlay>
           <LayersControl.Overlay checked name="Layer group with circles">
             <Marker position={[5, 5]}>

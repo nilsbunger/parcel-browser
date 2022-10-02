@@ -22,6 +22,14 @@ module.exports = {
       '@typescript-eslint/restrict-template-expressions': "off",
       '@typescript-eslint/no-unnecessary-type-assertion': "off",
       '@typescript-eslint/no-misused-promises': 'off',
+      // Things we should turn on later but are too noisy right now:
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call)': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+
   }
 };
 
