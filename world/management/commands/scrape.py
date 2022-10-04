@@ -18,6 +18,7 @@ from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
 from lib.neighborhoods import AllSdCityZips, Neighborhood
 from lib.scraping_lib import scrape_san_diego_listings_by_zip_groups
+from lib import mgmt_cmd_lib
 from mygeo import settings
 from mygeo.util import eprint
 from world.models import Parcel, PropertyListing
@@ -98,7 +99,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        logging_lib.init(verbose=options["verbose"])
+        mgmt_cmd_lib.init(verbose=options["verbose"])
         # -----
         # 1. Scrape latest listings if directed to.
         # -----

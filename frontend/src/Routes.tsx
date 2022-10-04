@@ -27,7 +27,7 @@ export function MyRoutes() {
             </Route>
             <Route path="search" element={<NewListingPage/>}/>
             <Route path="rental-rates" element={<RentalRatesPage/>}/>
-            <Route path="co-map" element={<CoMapPage/>}/>
+            <Route path="map" element={<CoMapPage/>}/>
           </Route>
           {/* Catch-all element below */}
           <Route path="*" element={<PageNotFound/>}/>

@@ -20,8 +20,10 @@ from world.models import (
     BuildingOutlines,
     Parcel,
     PropertyListing,
+    Roads,
     Topography,
     TransitPriorityArea,
+    ZoningBase,
 )
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -39,8 +41,15 @@ class MapView(TemplateView):  # LoginRequiredMixin
 # ajax call for parcel tiles for big map
 class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Parcel
-    vector_tile_layer_name = "parcels"
-    vector_tile_fields = ("apn",)
+    vector_tile_layer_name = "parcel"
+    vector_tile_fields = ("apn", "pk")
+
+
+# ajax call for zoning tiles for big map
+class ZoningTileData(MVTView, ListView):  # LoginRequiredMixin
+    model = ZoningBase
+    vector_tile_layer_name = "zone_name"
+    vector_tile_fields = ("zone_name", "pk")
 
 
 # ajax call for topo tiles for big map
@@ -52,6 +61,13 @@ class TopoTileData(MVTView, ListView):  # LoginRequiredMixin
 class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
     model = TransitPriorityArea
     vector_tile_layer_name = "tpa"
+    vector_tile_fields = ("name", "pk")
+
+
+class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
+    model = Roads
+    vector_tile_layer_name = "road"
+    vector_tile_fields = ("rd30full", "roadsegid", "rightway", "abloaddr", "abhiaddr")
 
 
 # ------------------------------------------------------

@@ -292,11 +292,23 @@ class AnalysisResponseSchema(Schema):
     centroid: tuple = Field(None, alias="parcel.geom.centroid.coords")
 
 
+class ParcelSchema(ModelSchema):
+    class Config:
+        model = Parcel
+        model_exclude = ("geom",)
+
+
 @api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
 def get_analysis(request, al_id: int):
     """Get analysis results for a given analysis id"""
     # al_json = AnalysisResponseSchema.from_orm(analyzed_listing).dict()
     return AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
+
+
+@api.get("/parcel/{apn}", response=ParcelSchema)
+def get_parcel(request, apn: str):
+    """Get parcel info for a given APN"""
+    return Parcel.objects.get(apn=apn)
 
 
 @api.get("/address-search/{addr}")

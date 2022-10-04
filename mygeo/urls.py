@@ -20,7 +20,7 @@ urlpatterns = [
     # Django-rendered routes
     path("dj/admin/", admin.site.urls),
     path("dj/accounts/", include("django.contrib.auth.urls")),
-    path("dj/map/", MapView.as_view()),
+    # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
     path("dj/co/", include("co.urls")),
@@ -31,6 +31,16 @@ urlpatterns = [
         "dj/api/parceltile/<int:z>/<int:x>/<int:y>",
         views.ParcelTileData.as_view(),
         name="parcel-tile",
+    ),
+    path(
+        "dj/api/roadtile/<int:z>/<int:x>/<int:y>",
+        views.RoadTileData.as_view(),
+        name="road-tile",
+    ),
+    path(
+        "dj/api/zoningtile/<int:z>/<int:x>/<int:y>",
+        views.ZoningTileData.as_view(),
+        name="zoning-tile",
     ),
     path("dj/api/topotile/<int:z>/<int:x>/<int:y>", views.TopoTileData.as_view(), name="topo-tile"),
     path("dj/api/tpatile/<int:z>/<int:x>/<int:y>", views.TpaTileData.as_view(), name="tpa-tile"),

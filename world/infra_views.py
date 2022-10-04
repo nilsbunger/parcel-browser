@@ -42,7 +42,7 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
         if e.code == 404:
             raise Http404
         elif e.code == 500:
-            print("HI")
+            return HttpResponse("Frontend Server Error", status=500)
         else:
             raise e
     except URLError as e:
