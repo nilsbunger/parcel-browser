@@ -10,7 +10,8 @@ from lib.topo_lib import (
 )
 from django.core.management.base import BaseCommand
 
-from world.models import Parcel
+from world.models import Parcel, ZoningBase
+from world.models.base_models import ZoningMapLabel
 
 
 class Neighborhood(Enum):
@@ -24,10 +25,17 @@ class Neighborhood(Enum):
     # ... add more neighborhoods here
 
 
+class DataPrepCmd(Enum):
+    labels = 1
+    topos = 2
+
+
 class Command(BaseCommand):
     help = "Run data preparation tasks on loaded data prior to analysis"
 
     def add_arguments(self, parser):
+        parser.add_argument("cmd", choices=DataPrepCmd.__members__)
+
         parser.add_argument("hood", choices=Neighborhood.__members__)
         parser.add_argument(
             "--check",
@@ -36,7 +44,13 @@ class Command(BaseCommand):
             help="Check data instead of actually running all prep",
         )
 
-    def handle(self, hood, *args, **options):
+    def handle(self, cmd, hood, *args, **options):
+        if cmd == "topos":
+            self.handle_topos(cmd, hood, *args, **options)
+        elif cmd == "labels":
+            self.handle_labels(cmd, hood, *args, **options)
+
+    def handle_topos(self, cmd, hood, *args, **options):
         # Parcel Slopes calculation - depends on Analyzed Parcels and Topography to be loaded.
         # tracemalloc.start()
 
@@ -63,3 +77,11 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(f"Finished calculating parcel slopes for neighborhood {hood}")
             )
+
+    def handle_labels(self, cmd, hood, *args, **options):
+        ZoningMapLabel.objects.all().delete()
+        zone_blobs = ZoningBase.objects.all()
+        # zone_blobs = ZoningBase.objects.all().filter(zone_name__startswith="RS")
+        for blob in zone_blobs:
+            x = ZoningMapLabel(text=blob.zone_name, geom=blob.geom.centroid, model=blob)
+            x.save()

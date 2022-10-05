@@ -276,3 +276,21 @@ class HousingSolutionArea(models.Model):
     tier = models.CharField(max_length=10)
     allowance = models.CharField(max_length=150)
     geom = models.MultiPolygonField(srid=4326)
+
+
+# Map labels
+# Based on avoiding generic foreign keys: https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
+class MapLabel(models.Model):
+    text = models.CharField(max_length=20)
+    geom = models.PointField()
+
+    class Meta:
+        abstract = True
+
+
+class ZoningMapLabel(MapLabel):
+    model = models.OneToOneField(ZoningBase, on_delete=models.CASCADE)
+
+
+class TpaMapLabel(MapLabel):
+    model = models.OneToOneField(TransitPriorityArea, on_delete=models.CASCADE)

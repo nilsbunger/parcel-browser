@@ -9,14 +9,16 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import ListView, TemplateView
+from django.contrib.gis.db.models import GeometryField
 import geopandas as geopandas
+from vectortiles.mixins import BaseVectorTileView
+
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
 from world.models import (
-    AnalyzedListing,
     BuildingOutlines,
     Parcel,
     PropertyListing,
@@ -25,18 +27,9 @@ from world.models import (
     TransitPriorityArea,
     ZoningBase,
 )
+from world.models.base_models import ZoningMapLabel
 
 pp = pprint.PrettyPrinter(indent=2)
-
-
-# ------------------------------------------------------
-# Overall Map viewer at /map
-# ------------------------------------------------------
-
-# main map page
-class MapView(TemplateView):  # LoginRequiredMixin
-    template_name = "map2.html"
-
 
 # ajax call for parcel tiles for big map
 class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
@@ -44,12 +37,37 @@ class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
     vector_tile_layer_name = "parcel"
     vector_tile_fields = ("apn", "pk")
 
+    def get_vector_tile_queryset(self):
+        return (
+            self.vector_tile_queryset
+            if self.vector_tile_queryset is not None
+            else self.get_queryset()
+        )
+
+
+class ZoningLabelTile(MVTView, ListView):
+    model = ZoningMapLabel
+    vector_tile_fields = ("text",)
+
+    def get_vector_tile_queryset(self):
+        return self.model.objects.filter(text__regex=r"^[RC]")
+
 
 # ajax call for zoning tiles for big map
 class ZoningTileData(MVTView, ListView):  # LoginRequiredMixin
     model = ZoningBase
     vector_tile_layer_name = "zone_name"
-    vector_tile_fields = ("zone_name", "pk")
+    vector_tile_fields = ("zone_name",)
+
+    def get(self, request, *args, **kwargs):
+        """This is the same as the default get method, but I keep it here to show how it works"""
+        return BaseVectorTileView.get(
+            self, request=request, z=kwargs.get("z"), x=kwargs.get("x"), y=kwargs.get("y")
+        )
+
+    def get_vector_tile_queryset(self):
+        return self.model.objects.all()
+        # return self.model.objects.filter(zone_name__startswith='RS').select_related('zoningmaplabel')
 
 
 # ajax call for topo tiles for big map
@@ -63,15 +81,29 @@ class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
     vector_tile_layer_name = "tpa"
     vector_tile_fields = ("name", "pk")
 
+    def get_vector_tile_queryset(self):
+        return (
+            self.vector_tile_queryset
+            if self.vector_tile_queryset is not None
+            else self.get_queryset()
+        )
+
 
 class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Roads
     vector_tile_layer_name = "road"
     vector_tile_fields = ("rd30full", "roadsegid", "rightway", "abloaddr", "abhiaddr")
 
+    def get_vector_tile_queryset(self):
+        return (
+            self.vector_tile_queryset
+            if self.vector_tile_queryset is not None
+            else self.get_queryset()
+        )
+
 
 # ------------------------------------------------------
-# Parcel detail viewer at /parcel/<apn>
+# Parcel detail viewer at /dj/parcel/<apn>
 # ------------------------------------------------------
 
 # main detail page
@@ -144,52 +176,53 @@ def listing_prev_values(listing):
     return retval
 
 
-# ajax call to get current MLS listings. Return them from most recently created / updated to least.
-class ListingsData(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        assert (False, "THis route should no longer be used")
-        listings = PropertyListing.active_listings_queryset().prefetch_related(
-            "analyzedlisting", "prev_listing"
-        )
-        # listings = PropertyListing.acti.prefetch_related('analyzedlisting').prefetch_related(
-        #     'prev_listing').filter(
-        #     analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
-        serialized_listings = serialize("json", listings)
-
-        # An ad-hoc way of doing formatting for now
-        listings_formatted = []
-        for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
-            # founddate = str(listing.founddate.astimezone(
-            #     tz=ZoneInfo("America/Los_Angeles")).date())
-            latest_analysis = listing.analyzedlisting
-            if latest_analysis:
-                l = latest_analysis.details
-                l.update(listing_dict["fields"])
-                l["datetime_ran"] = latest_analysis.datetime_ran
-                l["analysis_id"] = latest_analysis.id
-            else:
-                l = listing_dict["fields"]
-            l["metadata"] = defaultdict()
-            if listing.parcel:
-                l["centroid_x"] = listing.parcel.geom.centroid.coords[0]
-                l["centroid_y"] = listing.parcel.geom.centroid.coords[1]
-
-            del l["parcel"]
-            del l["addr"]
-            del l["prev_listing"]
-            # Record new and updated listings
-            if not listing.prev_listing:
-                l["metadata"]["category"] = "new"
-                l["metadata"]["prev_values"] = {}
-            else:
-                l["metadata"]["category"] = "updated"
-                l["metadata"]["prev_values"] = listing_prev_values(listing)
-            listings_formatted.append(l)
-            # if founddate in listings_formatted:
-            #     listings_formatted[founddate].append(l)
-            # else:
-            #     listings_formatted[founddate] = [l]
-        return JsonResponse(listings_formatted, content_type="application/json", safe=False)
+#
+# # ajax call to get current MLS listings. Return them from most recently created / updated to least.
+# class ListingsData(LoginRequiredMixin, View):
+#     def get(self, request, *args, **kwargs):
+#         assert (False, "THis route should no longer be used")
+#         listings = PropertyListing.active_listings_queryset().prefetch_related(
+#             "analyzedlisting", "prev_listing"
+#         )
+#         # listings = PropertyListing.acti.prefetch_related('analyzedlisting').prefetch_related(
+#         #     'prev_listing').filter(
+#         #     analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
+#         serialized_listings = serialize("json", listings)
+#
+#         # An ad-hoc way of doing formatting for now
+#         listings_formatted = []
+#         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
+#             # founddate = str(listing.founddate.astimezone(
+#             #     tz=ZoneInfo("America/Los_Angeles")).date())
+#             latest_analysis = listing.analyzedlisting
+#             if latest_analysis:
+#                 l = latest_analysis.details
+#                 l.update(listing_dict["fields"])
+#                 l["datetime_ran"] = latest_analysis.datetime_ran
+#                 l["analysis_id"] = latest_analysis.id
+#             else:
+#                 l = listing_dict["fields"]
+#             l["metadata"] = defaultdict()
+#             if listing.parcel:
+#                 l["centroid_x"] = listing.parcel.geom.centroid.coords[0]
+#                 l["centroid_y"] = listing.parcel.geom.centroid.coords[1]
+#
+#             del l["parcel"]
+#             del l["addr"]
+#             del l["prev_listing"]
+#             # Record new and updated listings
+#             if not listing.prev_listing:
+#                 l["metadata"]["category"] = "new"
+#                 l["metadata"]["prev_values"] = {}
+#             else:
+#                 l["metadata"]["category"] = "updated"
+#                 l["metadata"]["prev_values"] = listing_prev_values(listing)
+#             listings_formatted.append(l)
+#             # if founddate in listings_formatted:
+#             #     listings_formatted[founddate].append(l)
+#             # else:
+#             #     listings_formatted[founddate] = [l]
+#         return JsonResponse(listings_formatted, content_type="application/json", safe=False)
 
 
 class AnalysisDetailData(View):  # LoginRequiredMixin

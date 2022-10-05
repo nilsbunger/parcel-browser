@@ -2,7 +2,7 @@ import * as React from 'react';
 import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { ErrorBoundary } from "react-error-boundary";
 import DeckGL from '@deck.gl/react';
-import { BitmapLayer, PathLayer } from '@deck.gl/layers';
+import { BitmapLayer, GeoJsonLayer, PathLayer } from '@deck.gl/layers';
 
 import { MapView } from '@deck.gl/core';
 import { TileLayer } from '@deck.gl/geo-layers';
@@ -41,9 +41,9 @@ const LINK_STYLE = {
 
 const zoneColor = (zone, extra) => {
   // console.log("ZONE COLOR on", zone)
-  if (zone.properties.zone_name.startsWith("C")) return [250, 0, 0, 50]
-  if (zone.properties.zone_name.startsWith("RS")) return [250, 250, 0, 50]
-  if (zone.properties.zone_name.startsWith("RM")) return [210, 210, 0, 50]
+  if (zone.properties.zone_name.startsWith("C")) return [250, 0, 0, 100]
+  if (zone.properties.zone_name.startsWith("RS")) return [250, 250, 0, 100]
+  if (zone.properties.zone_name.startsWith("RM")) return [210, 210, 0, 100]
   return [0, 0, 0, 0]
 }
 
@@ -77,6 +77,18 @@ const LAYER_DEFS = {
     onHover: null,
     visible: true,
   },
+  'zoning-tile-label-layer': {
+    data: '/dj/api/zoninglabeltile/{z}/{x}/{y}',
+    getLineColor: [128, 128, 128],
+    minZoom: 13,
+    lineWidthMinPixels: 2,
+    getTextSize: 12,
+    getTextColor: [50, 50, 50],
+    pickable: false,
+    pointType: 'text',  // ensures Point elements are rendered as a TextLayer
+    visible: true,
+    renderSubLayers: props => new GeoJsonLayer(props)
+  },
   'zoning-tile-layer': {
     data: '/dj/api/zoningtile/{z}/{x}/{y}',
     getLineColor: [128, 128, 128],
@@ -85,11 +97,10 @@ const LAYER_DEFS = {
     lineWidthMinPixels: 2,
     pickable: true,
     onHover: null,
-    visible:true,
+    visible: true,
   }
 
 }
-
 
 function mvtLayerWrapper(id, layers) {
   const layeropts = layers[id];
@@ -97,6 +108,7 @@ function mvtLayerWrapper(id, layers) {
 
   if (!layeropts.visible) return null
   const merged = { ...layeropts, id: id, onHover: onHover }
+  // console.log("MERGED", merged)
   return new MVTLayer(merged);
 }
 
@@ -144,7 +156,8 @@ function baseTileLayer(onTilesLoad, showTileBoundaries) {
         new BitmapLayer(props, {
           data: null,
           image: props.data,
-          bounds: [west, south, east, north]
+          bounds: [west, south, east, north],
+          desaturate: 0.8,
         }),
         showTileBoundaries && new PathLayer({
           id: `${props.id}-border`,
@@ -168,16 +181,15 @@ function baseTileLayer(onTilesLoad, showTileBoundaries) {
 }
 
 function LayerSquare({ enabled, color }) {
-  if (enabled)
-    return (
-      <span style={{ width: "20px", backgroundColor: color, border: "2px solid", borderColor: color }}>&nbsp;</span>)
-  else
-    return (<span style={{
-      width: "20px",
-      backgroundColor: "rgb(255, 255, 255)",
-      border: "2px solid",
-      borderColor: color
-    }}>&nbsp;</span>)
+  const styles = {
+    display: "inline-block",
+    width: "20px",
+    marginRight: "5px",
+    backgroundColor: enabled ? color : "rgb(255, 255, 255)",
+    border: "2px solid",
+    borderColor: color
+  }
+  return <div style={styles}>&nbsp;</div>
 }
 
 function CoMapLayerControl({ tpaEnabled, setTpaEnabled }) {
@@ -212,7 +224,7 @@ function CoMapLayerControl({ tpaEnabled, setTpaEnabled }) {
 
         <Menu.Dropdown>
           <Menu.Label>Residential zones</Menu.Label>
-          <Menu.Item>Single-family</Menu.Item>
+          <Menu.Item><LayerSquare enabled={true} color={"#3590f0"}/>Single-family</Menu.Item>
           <Menu.Item>Multi-family</Menu.Item>
           <Menu.Item>TPA</Menu.Item>
           <Menu.Item>Complete Communities</Menu.Item>
@@ -253,7 +265,7 @@ export function CoMapPage({ onTilesLoad = null }) {
   }, [])
   const onClick = useCallback((info, event) => {
     if (event.target.id !== "view-MapView") {
-      console.log("Map page click handler ignoring click on", event.target.id)
+      // console.log("Map page click handler ignoring click on", event.target.id)
       event.stopPropagation() // this doesn't seem to actually do anything ??
       return
     }
@@ -287,12 +299,13 @@ export function CoMapPage({ onTilesLoad = null }) {
           baseTileLayer(onTilesLoad, showTileBoundaries),
           mvtLayerWrapper('tpa-tile-layer', layers),
           mvtLayerWrapper('zoning-tile-layer', layers),
+          mvtLayerWrapper('zoning-tile-label-layer', layers),
           mvtLayerWrapper('parcel-tile-layer', layers),
           mvtLayerWrapper('road-tile-layer', layers),
-          // zoningTileLayer(layers),
           // paTileLayer(layers, setLayers),
           // roadTileLayer(layers),
           // parcelTileLayer(layers, ),
+          // zoningLabelTileLayer(),
         ]}
         views={new MapView({ repeat: true })}
         initialViewState={INITIAL_VIEW_STATE}
