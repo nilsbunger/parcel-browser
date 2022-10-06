@@ -107,7 +107,7 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 `./manage.py load HousingSolutionArea'
 
 ~~4. Run ETL jobs as necessary, eg:
-`./manage.py analyze_parcels rebuild` - populates the analyze_parcels table~~
+`./manage.py dataprep labels all`: (re-)generate labels for zones
 
 
 # Creating new GIS data tables from a shape file
