@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorBoundary } from "react-error-boundary";
 import DeckGL from '@deck.gl/react';
 import { BitmapLayer, GeoJsonLayer, PathLayer } from '@deck.gl/layers';
@@ -39,74 +39,79 @@ const LINK_STYLE = {
   cursor: 'grab'
 };
 
-const zoneColor = (zone, extra) => {
-  // console.log("ZONE COLOR on", zone)
-  if (zone.properties.zone_name.startsWith("C")) return [250, 0, 0, 100]
-  if (zone.properties.zone_name.startsWith("RS")) return [250, 250, 0, 100]
-  if (zone.properties.zone_name.startsWith("RM")) return [210, 210, 0, 100]
-  return [0, 0, 0, 0]
+const LAYER_COLORS: Record<string, [number, number, number, number]> = {
+  'tpa-vis-layer': [250, 0, 0, 30],
+  'compcomm-vis-layer': [1, 1, 1, 0],  // TODO : need to add
+  'sf-vis-layer': [250, 250, 0, 200],
+  'mf-vis-layer': [250, 180, 0, 200],
+  'c-vis-layer': [250, 0, 0, 200],
 }
 
-const LAYER_DEFS = {
-  'road-tile-layer': {
-    data: '/dj/api/roadtile/{z}/{x}/{y}',
-    getLineColor: [128, 128, 128],
-    getFillColor: [0, 0, 0, 255],
-    minZoom: 16,
-    lineWidthMinPixels: 2,
-    pickable: true,
-    onHover: null,
-    visible: true,
-  },
-  'parcel-tile-layer': {
-    data: '/dj/api/parceltile/{z}/{x}/{y}',
-    getLineColor: [128, 128, 128],
-    getFillColor: [0, 0, 0, 0],
-    minZoom: 16,
-    lineWidthMinPixels: 2,
-    pickable: true,
-    onHover: null,
-    visible: true,
-  },
-  'tpa-tile-layer': {
-    data: '/dj/api/tpatile/{z}/{x}/{y}',
-    getLineColor: [255, 255, 255],
-    getFillColor: [250, 0, 0, 30],
-    lineWidthMinPixels: 3,
-    pickable: true,
-    onHover: null,
-    visible: true,
-  },
-  'zoning-tile-label-layer': {
-    data: '/dj/api/zoninglabeltile/{z}/{x}/{y}',
-    getLineColor: [128, 128, 128],
-    minZoom: 13,
-    lineWidthMinPixels: 2,
-    getTextSize: 12,
-    getTextColor: [50, 50, 50],
-    pickable: false,
-    pointType: 'text',  // ensures Point elements are rendered as a TextLayer
-    visible: true,
-    renderSubLayers: props => new GeoJsonLayer(props)
-  },
-  'zoning-tile-layer': {
-    data: '/dj/api/zoningtile/{z}/{x}/{y}',
-    getLineColor: [128, 128, 128],
-    getFillColor: zoneColor,
-    minZoom: 0,
-    lineWidthMinPixels: 2,
-    pickable: true,
-    onHover: null,
-    visible: true,
+const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
+  return {
+    'road-tile-layer': {
+      data: '/dj/api/roadtile/{z}/{x}/{y}',
+      getLineColor: [128, 128, 128],
+      getFillColor: [0, 0, 0, 255],
+      minZoom: 16,
+      lineWidthMinPixels: 2,
+      pickable: true,
+      onHover: null,
+      visible: true,
+    },
+
+    'parcel-tile-layer': {
+      data: '/dj/api/parceltile/{z}/{x}/{y}',
+      getLineColor: [128, 128, 128],
+      getFillColor: [0, 0, 0, 0],
+      minZoom: 16,
+      lineWidthMinPixels: 2,
+      pickable: true,
+      onHover: null,
+      visible: true,
+    },
+    'tpa-tile-layer': {
+      data: '/dj/api/tpatile/{z}/{x}/{y}',
+      getLineColor: [255, 255, 255],
+      getFillColor: [250, 0, 0, 30],
+      lineWidthMinPixels: 3,
+      pickable: true,
+      onHover: null,
+      visible: true,
+    },
+    'zoning-tile-label-layer': {
+      data: '/dj/api/zoninglabeltile/{z}/{x}/{y}',
+      getLineColor: [128, 128, 128],
+      minZoom: 13,
+      lineWidthMinPixels: 2,
+      getTextSize: 12,
+      getTextColor: [50, 50, 50],
+      pickable: false,
+      pointType: 'text',  // ensures Point elements are rendered as a TextLayer
+      visible: true,
+      // renderSubLayers: props => new GeoJsonLayer(props)
+    },
+    'zoning-tile-layer': {
+      data: '/dj/api/zoningtile/{z}/{x}/{y}',
+      getLineColor: [128, 128, 128],
+      getFillColor: zoneColorFn,
+      minZoom: 0,
+      lineWidthMinPixels: 2,
+      pickable: true,
+      onHover: null,
+      visible: true,
+      updateTriggers: {
+        getFillColor: visibleLayers
+      }
+    }
   }
-
 }
 
-function mvtLayerWrapper(id, layers) {
+function mvtLayerWrapper(id, layers, visible=true) {
   const layeropts = layers[id];
   const onHover = useCallback(layeropts.onHover, [])
 
-  if (!layeropts.visible) return null
+  if (!visible) return null
   const merged = { ...layeropts, id: id, onHover: onHover }
   // console.log("MERGED", merged)
   return new MVTLayer(merged);
@@ -180,36 +185,32 @@ function baseTileLayer(onTilesLoad, showTileBoundaries) {
   });
 }
 
-function LayerSquare({ enabled, color }) {
+function LayerSquare({ enabled, color }: { enabled: boolean, color: [number, number, number, number] }) {
+  const rgbacolor = `rgba(${color[0]},${color[1]},${color[2]},${color[3] / 255.0})`
   const styles = {
     display: "inline-block",
     width: "20px",
     marginRight: "5px",
-    backgroundColor: enabled ? color : "rgb(255, 255, 255)",
+    backgroundColor: enabled ? rgbacolor : "rgb(255, 255, 255)",
     border: "2px solid",
-    borderColor: color
+    borderColor: rgbacolor
   }
   return <div style={styles}>&nbsp;</div>
 }
 
-function CoMapLayerControl({ tpaEnabled, setTpaEnabled }) {
+function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
 
-  const onClick = event => {
-    setTpaEnabled(!tpaEnabled);
-    console.log("MENU CLICK", event);
-    console.log(event.target.innerText);
-    event.stopPropagation()
+  const toggleLayer = (e, name) => {
+    // setTpaEnabled(!tpaEnabled);
+    e.stopPropagation()
+    setVisibleLayers((draft) => {
+      draft[name] = !draft[name]
+    })
   }
 
-  const clickblocker = event => {
-    // event.stopPropagation();
-    // event.preventDefault()
-    console.log("CLICK BLOCKER", event)
-    return true;
-  }
-
+  // console.log("Visible layers:", visibleLayers)
   return (
-    <div onClick={onClick}>
+    <div style={{ backgroundColor: "#777" }}>
       <Menu
         shadow="md"
         width={200}
@@ -224,16 +225,26 @@ function CoMapLayerControl({ tpaEnabled, setTpaEnabled }) {
 
         <Menu.Dropdown>
           <Menu.Label>Residential zones</Menu.Label>
-          <Menu.Item><LayerSquare enabled={true} color={"#3590f0"}/>Single-family</Menu.Item>
-          <Menu.Item>Multi-family</Menu.Item>
-          <Menu.Item>TPA</Menu.Item>
-          <Menu.Item>Complete Communities</Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'sf-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['sf-vis-layer']} color={LAYER_COLORS['sf-vis-layer']}/>Single-family
+          </Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'mf-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['mf-vis-layer']} color={LAYER_COLORS['mf-vis-layer']}/>Multi-family
+          </Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'tpa-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['tpa-vis-layer']} color={LAYER_COLORS['tpa-vis-layer']}/>TPA
+          </Menu.Item>
+          {/*<Menu.Item onClick={(e) => toggleLayer(e, 'compcomm-vis-layer')}>*/}
+          {/*  <LayerSquare enabled={visibleLayers['compcomm-vis-layer']} color={LAYER_COLORS['compcomm-vis-layer']}/>Complete Communities*/}
+          {/*</Menu.Item>*/}
           {/*<Menu.Item rightSection={<Text size="xs" color="dimmed">⌘K</Text>}>Search</Menu.Item>*/}
 
           <Menu.Divider/>
 
           <Menu.Label>Commercial zones</Menu.Label>
-          <Menu.Item>C</Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'c-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['c-vis-layer']} color={LAYER_COLORS['c-vis-layer']}/>Commercial zones
+          </Menu.Item>
           <Menu.Item></Menu.Item>
         </Menu.Dropdown>
       </Menu>
@@ -250,16 +261,29 @@ function CoMapLayerControl({ tpaEnabled, setTpaEnabled }) {
 
 }
 
+
 export function CoMapPage({ onTilesLoad = null }) {
   const showTileBoundaries = false;
   const [hoverInfo, setHoverInfo] = useState();
   const [selection, setSelection] = useState<{ selType: string, objId: number, info: object }>(null);
-  const [tpaEnabled, setTpaEnabled] = useState(true)
-  const [layers, setLayers] = useImmer<Record<string, object>>(LAYER_DEFS);
+  const [visibleLayers, setVisibleLayers] = useImmer<Record<string, boolean>>({
+    'tpa-vis-layer': true, 'mf-vis-layer': true, 'sf-vis-layer': false, 'compcomm-vis-layer': true, 'c-vis-layer': false
+  });
 
   const LONGITUDE_RANGE = [-117.35, -116.9];  // west, east constraint
   const LATITUDE_RANGE = [32.5, 33.25];       // south, north constraint
 
+  const zoneColorFn = (zone, extra) => {
+    console.log("ZONE COLOR on", zone)
+    if (zone.properties.zone_name.startsWith("C"))
+      return visibleLayers['c-vis-layer'] ? LAYER_COLORS['c-vis-layer'] : [0, 0, 0, 0]
+    if (zone.properties.zone_name.startsWith("RS"))
+      return visibleLayers['sf-vis-layer'] ? LAYER_COLORS['sf-vis-layer'] : [0, 0, 0, 0]
+    if (zone.properties.zone_name.startsWith("RM"))
+      return visibleLayers['mf-vis-layer'] ? LAYER_COLORS['mf-vis-layer'] : [0, 0, 0, 0]
+    return [0, 0, 0, 0]
+  }
+  const TILE_DEFS = TILE_DEFS2(zoneColorFn, visibleLayers)
   const onHover = useCallback((info, event) => {
     setHoverInfo(info);
   }, [])
@@ -297,15 +321,11 @@ export function CoMapPage({ onTilesLoad = null }) {
       <DeckGL
         layers={[
           baseTileLayer(onTilesLoad, showTileBoundaries),
-          mvtLayerWrapper('tpa-tile-layer', layers),
-          mvtLayerWrapper('zoning-tile-layer', layers),
-          mvtLayerWrapper('zoning-tile-label-layer', layers),
-          mvtLayerWrapper('parcel-tile-layer', layers),
-          mvtLayerWrapper('road-tile-layer', layers),
-          // paTileLayer(layers, setLayers),
-          // roadTileLayer(layers),
-          // parcelTileLayer(layers, ),
-          // zoningLabelTileLayer(),
+          mvtLayerWrapper('zoning-tile-layer', TILE_DEFS),
+          mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS),
+          mvtLayerWrapper('tpa-tile-layer', TILE_DEFS, visibleLayers['tpa-vis-layer']),
+          mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
+          mvtLayerWrapper('road-tile-layer', TILE_DEFS),
         ]}
         views={new MapView({ repeat: true })}
         initialViewState={INITIAL_VIEW_STATE}
@@ -319,7 +339,7 @@ export function CoMapPage({ onTilesLoad = null }) {
           return viewState;
         }}
       >
-        <CoMapLayerControl tpaEnabled={tpaEnabled} setTpaEnabled={setTpaEnabled}/>
+        <CoMapLayerControl visibleLayers={visibleLayers} setVisibleLayers={setVisibleLayers}/>
         <CoMapDrawer selection={selection} setSelection={setSelection}/>
 
       </DeckGL>
