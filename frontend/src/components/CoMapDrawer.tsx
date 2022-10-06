@@ -7,7 +7,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
 
 
-export function CoMapDrawer ({ selection, setSelection }) {
+export function CoMapDrawer({ selection, setSelection }) {
   const opened = selection !== null
   return (
     <Drawer
@@ -21,7 +21,7 @@ export function CoMapDrawer ({ selection, setSelection }) {
       withOverlay={false}
     >
       <ErrorBoundary fallback={<div>Failed to load details. Close the drawer and try again</div>}>
-        <ScrollArea grow="true" className="h-[90%]">
+        <ScrollArea className="h-[90%]">
           <CoMapDrawerContents selection={selection}/>
         </ScrollArea>
       </ErrorBoundary>
@@ -69,7 +69,7 @@ const CoMapDrawerContents = ({ selection }) => {
 
   if (selection.selType == "tpa-tile-layer") {
     return (
-      <p>TPA</p>
+      <p>Transit Priority Area Overlay</p>
     )
   }
   if (selection.selType == 'zoning-tile-layer') {
@@ -97,6 +97,16 @@ const CoMapDrawerContents = ({ selection }) => {
         <p>Road</p>
         <p>{p.abloaddr} - {p.abhiaddr} {p.rd30full}</p>
         <p>Width: {p.rightway} ft</p>
+      </div>
+    )
+  }
+  if (selection.selType == 'compcomm-tile-layer') {
+    const p = selection.info.object.properties;
+    return (
+      <div>
+        <p>Complete Community Overlay</p>
+        <p>{p.tier}</p>
+        <p>{p.allowance}</p>
       </div>
     )
   }

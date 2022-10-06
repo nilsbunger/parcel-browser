@@ -48,6 +48,11 @@ urlpatterns = [
     ),
     path("dj/api/topotile/<int:z>/<int:x>/<int:y>", views.TopoTileData.as_view(), name="topo-tile"),
     path("dj/api/tpatile/<int:z>/<int:x>/<int:y>", views.TpaTileData.as_view(), name="tpa-tile"),
+    path(
+        "dj/api/compcommtile/<int:z>/<int:x>/<int:y>",
+        views.CompCommTileData.as_view(),
+        name="compcomm-tile",
+    ),
     # path("dj/api/listings", views.ListingsData.as_view(), name="listings"),
     path("dj/api/analysis/<int:id>", views.AnalysisDetailData.as_view(), name="listing analysis"),
     path("dj/parcel/<str:apn>/geodata", ParcelDetailData.as_view()),

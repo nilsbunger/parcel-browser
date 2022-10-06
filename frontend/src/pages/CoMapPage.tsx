@@ -40,11 +40,12 @@ const LINK_STYLE = {
 };
 
 const LAYER_COLORS: Record<string, [number, number, number, number]> = {
-  'tpa-vis-layer': [250, 0, 0, 30],
-  'compcomm-vis-layer': [1, 1, 1, 0],  // TODO : need to add
-  'sf-vis-layer': [250, 250, 0, 200],
+  'tpa-vis-layer': [250, 0, 0, 30], // TPA
+  'pd-vis-layer': [0, 250, 0, 150],  // planned district
+  'compcomm-vis-layer': [0,0,250,50], // complete communities
+  'sf-vis-layer': [250, 250, 0, 200], // single-family
   'mf-vis-layer': [250, 180, 0, 200],
-  'c-vis-layer': [250, 0, 0, 200],
+  'c-vis-layer': [250, 0, 0, 200], // commercial
 }
 
 const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
@@ -59,7 +60,6 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       onHover: null,
       visible: true,
     },
-
     'parcel-tile-layer': {
       data: '/dj/api/parceltile/{z}/{x}/{y}',
       getLineColor: [128, 128, 128],
@@ -73,7 +73,16 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
     'tpa-tile-layer': {
       data: '/dj/api/tpatile/{z}/{x}/{y}',
       getLineColor: [255, 255, 255],
-      getFillColor: [250, 0, 0, 30],
+      getFillColor: LAYER_COLORS['tpa-vis-layer'],
+      lineWidthMinPixels: 3,
+      pickable: true,
+      onHover: null,
+      visible: true,
+    },
+    'compcomm-tile-layer': {
+      data: '/dj/api/compcommtile/{z}/{x}/{y}',
+      getLineColor: [255, 255, 255],
+      getFillColor: LAYER_COLORS['compcomm-vis-layer'],
       lineWidthMinPixels: 3,
       pickable: true,
       onHover: null,
@@ -210,7 +219,7 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
 
   // console.log("Visible layers:", visibleLayers)
   return (
-    <div style={{ backgroundColor: "#777" }}>
+    <div>
       <Menu
         shadow="md"
         width={200}
@@ -220,7 +229,7 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
         zIndex={1000}
       >
         <Menu.Target>
-          <Button>Layers</Button>
+          <Button className="btn btn-accent btn-xs text-white">Layers</Button>
         </Menu.Target>
 
         <Menu.Dropdown>
@@ -234,9 +243,12 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
           <Menu.Item onClick={(e) => toggleLayer(e, 'tpa-vis-layer')}>
             <LayerSquare enabled={visibleLayers['tpa-vis-layer']} color={LAYER_COLORS['tpa-vis-layer']}/>TPA
           </Menu.Item>
-          {/*<Menu.Item onClick={(e) => toggleLayer(e, 'compcomm-vis-layer')}>*/}
-          {/*  <LayerSquare enabled={visibleLayers['compcomm-vis-layer']} color={LAYER_COLORS['compcomm-vis-layer']}/>Complete Communities*/}
-          {/*</Menu.Item>*/}
+          <Menu.Item onClick={(e) => toggleLayer(e, 'compcomm-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['compcomm-vis-layer']} color={LAYER_COLORS['compcomm-vis-layer']}/>Complete Communities
+          </Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'pd-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['pd-vis-layer']} color={LAYER_COLORS['pd-vis-layer']}/>Planned Districts
+          </Menu.Item>
           {/*<Menu.Item rightSection={<Text size="xs" color="dimmed">⌘K</Text>}>Search</Menu.Item>*/}
 
           <Menu.Divider/>
@@ -267,7 +279,7 @@ export function CoMapPage({ onTilesLoad = null }) {
   const [hoverInfo, setHoverInfo] = useState();
   const [selection, setSelection] = useState<{ selType: string, objId: number, info: object }>(null);
   const [visibleLayers, setVisibleLayers] = useImmer<Record<string, boolean>>({
-    'tpa-vis-layer': true, 'mf-vis-layer': true, 'sf-vis-layer': false, 'compcomm-vis-layer': true, 'c-vis-layer': false
+    'tpa-vis-layer': true, 'mf-vis-layer': true, 'sf-vis-layer': true, 'compcomm-vis-layer': true, 'c-vis-layer': true, 'pd-vis-layer': true
   });
 
   const LONGITUDE_RANGE = [-117.35, -116.9];  // west, east constraint
@@ -275,7 +287,9 @@ export function CoMapPage({ onTilesLoad = null }) {
 
   const zoneColorFn = (zone, extra) => {
     console.log("ZONE COLOR on", zone)
-    if (zone.properties.zone_name.startsWith("C"))
+    if (["CVPD", "CCPD", "CUPD"].includes(zone.properties.zone_name.slice(0,4)))
+      return visibleLayers['pd-vis-layer'] ? LAYER_COLORS['pd-vis-layer'] : [0, 0, 0, 0];
+    if (["CC", "CR", "CO", "CP", "CN", "CV"].includes(zone.properties.zone_name.slice(0,2)))
       return visibleLayers['c-vis-layer'] ? LAYER_COLORS['c-vis-layer'] : [0, 0, 0, 0]
     if (zone.properties.zone_name.startsWith("RS"))
       return visibleLayers['sf-vis-layer'] ? LAYER_COLORS['sf-vis-layer'] : [0, 0, 0, 0]
@@ -324,6 +338,7 @@ export function CoMapPage({ onTilesLoad = null }) {
           mvtLayerWrapper('zoning-tile-layer', TILE_DEFS),
           mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS),
           mvtLayerWrapper('tpa-tile-layer', TILE_DEFS, visibleLayers['tpa-vis-layer']),
+          mvtLayerWrapper('compcomm-tile-layer', TILE_DEFS, visibleLayers['compcomm-vis-layer']),
           mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
           mvtLayerWrapper('road-tile-layer', TILE_DEFS),
         ]}

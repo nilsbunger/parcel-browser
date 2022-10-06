@@ -20,6 +20,7 @@ export default function Navbar(_props) {
   // const { logIn, logOut, isAuthenticated, currentUser } = useAuth()
   const isAuthenticated = false;
   const navigation = [
+    { name: 'Map', href: '/map', current: false },
     { name: 'Listings', href: '/listings', current: false },
     { name: 'Search', href: '/search', current: false },
     { name: 'Rental Rates', href: '/rental-rates', current: false }

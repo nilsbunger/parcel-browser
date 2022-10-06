@@ -27,7 +27,7 @@ from world.models import (
     TransitPriorityArea,
     ZoningBase,
 )
-from world.models.base_models import ZoningMapLabel
+from world.models.base_models import HousingSolutionArea, ZoningMapLabel
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -74,6 +74,12 @@ class ZoningTileData(MVTView, ListView):  # LoginRequiredMixin
 class TopoTileData(MVTView, ListView):  # LoginRequiredMixin
     model = Topography
     vector_tile_layer_name = "topography"
+
+
+class CompCommTileData(MVTView, ListView):  # LoginRequiredMixin
+    model = HousingSolutionArea
+    vector_tile_layer_name = "compcomm"
+    vector_tile_fields = ("tier", "allowance")
 
 
 class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
