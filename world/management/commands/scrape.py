@@ -6,7 +6,8 @@ import logging
 import pprint
 import random
 import sys
-from typing import List, Tuple
+import tempfile
+from typing import List
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
@@ -18,7 +19,6 @@ from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
 from lib.neighborhoods import AllSdCityZips, Neighborhood
 from lib.scraping_lib import scrape_san_diego_listings_by_zip_groups
-from lib import mgmt_cmd_lib
 from mygeo import settings
 from mygeo.util import eprint
 from world.models import Parcel, PropertyListing
@@ -227,14 +227,15 @@ class Command(BaseCommand):
             logging.info(f"Running parcel analysis on {len(property_listings)} listings")
             sd_utm_crs = get_utm_crs()
             # NOTE: Make sure changes to the call here are also made in api.redo_analysis
-            results, errors = analyze_batch(
-                parcels,
-                sd_utm_crs,
-                property_listings,
-                options["dry_run"],
-                save_dir="./frontend/static/temp_computed_imgs",
-                single_process=bool(options["parcel"]) or bool(options["single_process"]),
-            )
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                results, errors = analyze_batch(
+                    parcels,
+                    sd_utm_crs,
+                    property_listings,
+                    options["dry_run"],
+                    save_dir=tmpdirname,
+                    single_process=bool(options["parcel"]) or bool(options["single_process"]),
+                )
 
             # Save the errors to a csv
             error_df = DataFrame.from_records(errors)

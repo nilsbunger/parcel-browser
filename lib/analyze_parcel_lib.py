@@ -58,8 +58,6 @@ BUFFER_SIZES = {
 MAX_NEW_BUILDINGS = 2
 MAX_ASPECT_RATIO = 2.5
 
-DEFAULT_SAVE_DIR = "./world/data/scenario-images/"
-
 colorkeys = list(mcolors.XKCD_COLORS.keys())
 
 
@@ -295,8 +293,8 @@ def analyze_one_parcel(
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
     dry_run,
+    save_dir: str,  # this used to have a default, but it shouldn't be used
     show_plot=False,
-    save_dir=DEFAULT_SAVE_DIR,
     try_garage_conversion=True,
     try_split_lot=True,
     force_uploads=False,
@@ -308,8 +306,8 @@ def analyze_one_parcel(
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         property_listing (PropertyListing):
         dry_run (Boolean):
+        save_dir (str): Directory to save the generated plots/csvs to. Defaults to DEFAULT_SAVE_DIR.
         show_plot (Boolean, optional): Shows the parcel in a GUI. Defaults to False.
-        save_dir (str, optional): Directory to save the generated plots/csvs to. Defaults to DEFAULT_SAVE_DIR.
         try_garage_conversion (Boolean, optional): Whether to try converting garage to an ADU. Defaults to True.
         try_split_lot (Boolean, optional): Whether to try splitting the lot into two lots. Defaults to True.
         force_uploads (Boolean, optional): Whether to force new uploads of images to R2.
@@ -597,7 +595,7 @@ def _analyze_one_parcel_worker(
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
     dry_run: bool,
-    save_dir=DEFAULT_SAVE_DIR,
+    save_dir: str,  # this used to have a default, but it shouldn't be used
     try_garage_conversion=True,
     try_split_lot=True,
     i: int = 0,
@@ -612,8 +610,8 @@ def _analyze_one_parcel_worker(
             utm_crs,
             property_listing,
             dry_run,
-            show_plot=False,
             save_dir=save_dir,
+            show_plot=False,
             try_garage_conversion=try_garage_conversion,
             try_split_lot=try_split_lot,
         )
@@ -633,7 +631,7 @@ def analyze_batch(
     utm_crs: pyproj.CRS,
     property_listings: List[PropertyListing],
     dry_run: bool,
-    save_dir=None,
+    save_dir: str,
     limit: int = None,
     try_split_lot=True,
     single_process=False,

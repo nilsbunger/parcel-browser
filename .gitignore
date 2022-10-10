@@ -2,7 +2,7 @@
 .idea/
 .env*
 *.swp
-world/data
+deploy/data-files/
 public-app/
 venv/
 */.DS_Store
