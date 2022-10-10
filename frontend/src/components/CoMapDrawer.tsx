@@ -30,7 +30,6 @@ export function CoMapDrawer({ selection, setSelection }) {
   )
 }
 
-
 const ParcelDetails = ({ apn }) => {
   const { data, error } = useSWR<ParcelGetResp, string>(
     `/api/parcel/${apn}`,
@@ -61,17 +60,22 @@ const ParcelDetails = ({ apn }) => {
       </div>
     </div>
   )
+}
 
+const RoadDetails = ({ properties }) => {
+    return (
+      <div>
+        <p>Road</p>
+        <p>{properties.abloaddr} - {properties.abhiaddr} {properties.rd30full}</p>
+        <p>Width: {properties.rightway} ft</p>
+      </div>
+    )
 }
 
 const CoMapDrawerContents = ({ selection }) => {
   if (!selection) return <></>
 
-  if (selection.selType == "tpa-tile-layer") {
-    return (
-      <p>Transit Priority Area Overlay</p>
-    )
-  }
+  if (selection.selType == "tpa-tile-layer") return <p>Transit Priority Area Overlay</p>
   if (selection.selType == 'zoning-tile-layer') {
     return (
       <div>
@@ -82,24 +86,15 @@ const CoMapDrawerContents = ({ selection }) => {
       </div>
     )
   }
-  if (selection.selType == 'parcel-tile-layer') {
-    return (
-      <div>
-        <ParcelDetails apn={selection.info.object.properties.apn}/>
-        {/*<p>{selection.info.object.properties.apn}</p>*/}
-      </div>
-    )
-  }
-  if (selection.selType == 'road-tile-layer') {
-    const p = selection.info.object.properties;
-    return (
-      <div>
-        <p>Road</p>
-        <p>{p.abloaddr} - {p.abhiaddr} {p.rd30full}</p>
-        <p>Width: {p.rightway} ft</p>
-      </div>
-    )
-  }
+  if (selection.selType == 'r2-parcel-road-tile-layer')
+    console.log("HI", selection.info.object)
+    return selection.info.object.properties.apn ? <ParcelDetails apn={selection.info.object.properties.apn}/> : <RoadDetails properties={selection.info.object.properties}/>
+  if (selection.selType == 'parcel-tile-layer')
+    // this branch is unused now, since we combined parcel and zoning and serve them staticly
+    return <ParcelDetails apn={selection.info.object.properties.apn}/>
+  if (selection.selType == 'road-tile-layer')
+    // this branch is unused now, since we combined parcel and zoning and serve them staticly
+    return <RoadDetails properties={selection.info.object.properties}/>
   if (selection.selType == 'compcomm-tile-layer') {
     const p = selection.info.object.properties;
     return (

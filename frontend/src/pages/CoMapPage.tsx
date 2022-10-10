@@ -18,7 +18,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 32.7157,
   longitude: -117.1611,
   zoom: 10,
-  maxZoom: 20,
+  maxZoom: 19,
   minZoom: 10,
   maxPitch: 89,
   bearing: 0
@@ -50,26 +50,41 @@ const LAYER_COLORS: Record<string, [number, number, number, number]> = {
 
 const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
   return {
-    'road-tile-layer': {
-      data: '/dj/api/roadtile/{z}/{x}/{y}',
-      getLineColor: [128, 128, 128],
-      getFillColor: [0, 0, 0, 255],
-      minZoom: 16,
-      lineWidthMinPixels: 2,
-      pickable: true,
-      onHover: null,
-      visible: true,
-    },
-    'parcel-tile-layer': {
-      data: '/dj/api/parceltile/{z}/{x}/{y}',
+    // 'road-tile-layer': {
+    //   data: '/dj/api/roadtile/{z}/{x}/{y}',
+    //   getLineColor: [128, 128, 128],
+    //   getFillColor: [0, 0, 0, 255],
+    //   minZoom: 16,
+    //   maxZoom: 16,
+    //   lineWidthMinPixels: 2,
+    //   pickable: true,
+    //   onHover: null,
+    //   visible: true,
+    // },
+    // 'parcel-tile-layer': {
+    //   data: '/dj/api/parceltile/{z}/{x}/{y}',
+    //   getLineColor: [128, 128, 128],
+    //   getFillColor: [0, 0, 0, 0],
+    //   minZoom: 16,
+    //   lineWidthMinPixels: 4,
+    //   pickable: true,
+    //   onHover: null,
+    //   visible: true,
+    // },
+    //
+    'r2-parcel-road-tile-layer': {
+      // data: 'https://studio.mapbox.com/tilesets/nilshome3.6490sb5b/{z}/{x}/{y}',
+      data: 'https://pub-85a0692afccb46bda2791ad87e6d7675.r2.dev/sd/parcel-roads/{z}/{x}/{y}.pbf',
       getLineColor: [128, 128, 128],
       getFillColor: [0, 0, 0, 0],
       minZoom: 16,
-      lineWidthMinPixels: 2,
+      maxZoom: 16,
+      lineWidthMinPixels: 3,
       pickable: true,
       onHover: null,
       visible: true,
     },
+
     'tpa-tile-layer': {
       data: '/dj/api/tpatile/{z}/{x}/{y}',
       getLineColor: [255, 255, 255],
@@ -91,7 +106,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
     'zoning-tile-label-layer': {
       data: '/dj/api/zoninglabeltile/{z}/{x}/{y}',
       getLineColor: [128, 128, 128],
-      minZoom: 13,
+      minZoom: 15,
       lineWidthMinPixels: 2,
       getTextSize: 12,
       getTextColor: [50, 50, 50],
@@ -339,8 +354,9 @@ export function CoMapPage({ onTilesLoad = null }) {
           mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS),
           mvtLayerWrapper('tpa-tile-layer', TILE_DEFS, visibleLayers['tpa-vis-layer']),
           mvtLayerWrapper('compcomm-tile-layer', TILE_DEFS, visibleLayers['compcomm-vis-layer']),
-          mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
-          mvtLayerWrapper('road-tile-layer', TILE_DEFS),
+          mvtLayerWrapper('r2-parcel-road-tile-layer', TILE_DEFS),
+          // mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
+          // mvtLayerWrapper('road-tile-layer', TILE_DEFS),
         ]}
         views={new MapView({ repeat: true })}
         initialViewState={INITIAL_VIEW_STATE}
