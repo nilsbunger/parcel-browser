@@ -26,10 +26,9 @@ export interface Env {
   // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
   // MY_DURABLE_OBJECT: DurableObjectNamespace;
   //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  // MY_BUCKET: R2Bucket;
-  // NOTE: ENV variable parsnip_images connects us to the parsnip-images R2 bucket already, configured via
-  // Cloudflare dashboard.
+  // Bindings to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
+  // Configured via cloudflare dashboard:
+  parsnip_images: R2Bucket;
 }
 
 export default {

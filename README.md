@@ -175,3 +175,8 @@ We use the `LOCAL_DB=1` flag in our django app to select your local DB instance.
 
 Note: it's smart to inspect the json file to make sure no other STDOUT output
 went into it.
+
+# Future work
+
+* Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
+* 
