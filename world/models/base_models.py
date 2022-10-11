@@ -203,7 +203,7 @@ class Roads(models.Model):
     fnode = models.BigIntegerField()
     tnode = models.BigIntegerField()
     length = models.FloatField()
-    roadsegid = models.BigIntegerField()
+    roadsegid = models.BigIntegerField(unique=True, primary_key=True)
     postid = models.CharField(max_length=20)
     postdate = models.DateField()
     roadid = models.BigIntegerField()
