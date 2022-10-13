@@ -166,6 +166,7 @@ const CoMapDrawerContents = ({ selection }) => {
   if (!selection) return <></>
 
   if (selection.selType == "tpa-tile-layer") return <p>Transit Priority Area Overlay</p>
+  if (selection.selType == "ab2011-tile-layer") return <p>AB 2011 Eligibility Overlay</p>
   if (selection.selType == 'zoning-tile-layer') {
     return (
       <div>
