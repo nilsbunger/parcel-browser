@@ -86,6 +86,33 @@ export const DevScenarioSchema = z.object({
 })
 export type DevScenario = z.infer<typeof DevScenarioSchema>
 
+export type RoadGetResp = z.infer<typeof RoadGetRespSchema>
+export const RoadGetRespSchema = z.object({
+  roadsegid: z.number(),
+  segclass: z.string(),
+  funclass: z.string(),
+  segclass_decoded: z.string(),
+  funclass_decoded: z.string(),
+})
+
+interface EligibilityCheckSchema {
+  name?: string;
+  description?: string;
+  result?: string;
+  notes?: string[];
+  children?: EligibilityCheckSchema[];
+}
+
+// Eligibility test result
+export type EligibilityCheck = z.infer<typeof EligibilityCheckSchema>
+export const EligibilityCheckSchema: z.ZodType<EligibilityCheckSchema> = z.lazy( () =>  z.object({
+    name: z.string(),
+    description: z.string(),
+    result: z.any(),
+    notes: z.array(z.string()),
+    children: z.array(EligibilityCheckSchema),
+}))
+
 export type ParcelGetResp = z.infer<typeof ParcelGetRespSchema>
 export const ParcelGetRespSchema = z.object( {
   apn: z.string(),
@@ -147,6 +174,7 @@ export const ParcelGetRespSchema = z.object( {
   multi: z.string(),
   shape_star: z.number(),
   shape_stle: z.number(),
+  ab2011_result: EligibilityCheckSchema,
   // geom: z.object() // not sure how to rep this yet.
 })
 

@@ -1,28 +1,65 @@
-import pytest
+import logging
+import sys
+from time import perf_counter
 
-from lib.co.co_eligibility_lib import PrincipallyPermittedUseTest, TestResult, TestResultEnum
-from world.models import Parcel
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.measure import D
+from geopandas import GeoSeries
+from numpy import arctan, arctan2, degrees
+import pytest
+from shapely.geometry import LineString
+from shapely.ops import nearest_points
+
+from lib.co.co_eligibility_lib import (
+    CheckResult,
+    CheckResultEnum,
+    CommercialCorridorCheck,
+    PrincipallyPermittedUseCheck,
+)
+from lib.crs_lib import get_utm_crs, meters_to_latlong
+from lib.parcel_lib import models_to_utm_gdf, normalize_geometries
+from world.models import Parcel, Roads
+
+
+@pytest.mark.django_db(databases=["basedata", "default"])  # TODO: REMOVE DEFAULT
+class TestCommercialCorridor:
+    def test_on_wide_road(self):
+        pass
+
+    def test_multi_match(self):
+        # case when there are two roads with similar names, just different suffixes
+        apn = "4453701400"
+        parcel = Parcel.objects.using("basedata").get(apn=apn)
+        cc = CommercialCorridorCheck()
+        test_result = cc.run(parcel)
+        assert test_result == CheckResultEnum.passed
+
+    def test_on_narrow_road(self):
+        pass
+
+    def test_with_alleyway(self):
+        pass
 
 
 @pytest.mark.django_db(databases=["basedata"])
-class PrincipallyPermittedUseTest:
+class TestPrincipallyPermittedUse:
     def test_commercial_parcel(self):
         apn = "4151721900"
         parcel = Parcel.objects.using("basedata").get(apn=apn)
-        test_result = PrincipallyPermittedUseTest().run(parcel)
-        assert test_result == TestResult(result=TestResultEnum.passed, notes=["Zone(s): CC-4-2"])
+        test_result = PrincipallyPermittedUseCheck().run(parcel)
+        assert test_result == CheckResult(result=CheckResultEnum.passed, notes=["Zone(s): CC-4-2"])
         print("Running method A")
 
     def test_multifam_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="4472421600")  # RM-1-1 zone parcel
-        test_result = PrincipallyPermittedUseTest().run(parcel)
-        assert test_result == TestResult(
-            result=TestResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"]
+        test_result = PrincipallyPermittedUseCheck().run(parcel)
+        assert test_result == CheckResult(
+            result=CheckResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"]
         )
 
     def test_no_zone_data_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="5571022400")  # not in SD city
-        test_result = PrincipallyPermittedUseTest().run(parcel)
-        assert test_result == TestResult(
-            result=TestResultEnum.error, notes=["No zoning found for parcel"]
+        test_result = PrincipallyPermittedUseCheck().run(parcel)
+        assert test_result == CheckResult(
+            result=CheckResultEnum.error, notes=["No zoning found for parcel"]
         )

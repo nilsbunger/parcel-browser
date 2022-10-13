@@ -1,14 +1,19 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 import re
-from typing import List
+from typing import Any, List, Optional
 
+from django.contrib.gis.db.models.functions import Distance
 from pydantic import BaseModel
 
-from world.models import Parcel, ZoningBase
+from lib.crs_lib import meters_to_latlong
+from world.models import Parcel, Roads, ZoningBase
+from world.models.models import AnalyzedRoad
 
 
-class TestResultEnum(str, Enum):
+# Note: Inheriting Enum from str allows JSON serialization.
+# See https://stackoverflow.com/questions/24481852/serialising-an-enum-member-to-json
+class CheckResultEnum(str, Enum):
     passed: str = "passed"
     assumed_pass: str = "assumed_pass"
     likely_passed: str = "likely_passed"
@@ -18,60 +23,66 @@ class TestResultEnum(str, Enum):
     failed: str = "failed"
     error: str = "error"
 
-    def or_test(self, other: "TestResultEnum") -> "TestResultEnum":
+    def or_check(self, other: "CheckResultEnum") -> "CheckResultEnum":
         if self.passed in [self, other]:
-            return TestResultEnum(self.passed)
+            return CheckResultEnum(self.passed)
         elif self.assumed_pass in [self, other]:
-            return TestResultEnum(self.assumed_pass)
+            return CheckResultEnum(self.assumed_pass)
         elif self.likely_passed in [self, other]:
-            return TestResultEnum(self.likely_passed)
+            return CheckResultEnum(self.likely_passed)
         elif self.not_run in [self, other]:
-            return TestResultEnum(self.not_run)
+            return CheckResultEnum(self.not_run)
         elif self.uncertain in [self, other]:
-            return TestResultEnum(self.uncertain)
+            return CheckResultEnum(self.uncertain)
         elif self.likely_failed in [self, other]:
-            return TestResultEnum(self.likely_failed)
+            return CheckResultEnum(self.likely_failed)
         elif self.failed in [self, other]:
-            return TestResultEnum(self.failed)
+            return CheckResultEnum(self.failed)
         elif self.error in [self, other]:
-            return TestResultEnum(self.error)
+            return CheckResultEnum(self.error)
 
-    def and_test(self, other: "TestResultEnum") -> "TestResultEnum":
+    def and_check(self, other: "CheckResultEnum") -> "CheckResultEnum":
         if self.error in [self, other]:
-            return TestResultEnum(self.error)
+            return CheckResultEnum(self.error)
         elif self.failed in [self, other]:
-            return TestResultEnum(self.failed)
+            return CheckResultEnum(self.failed)
         elif self.not_run in [self, other]:
-            return TestResultEnum(self.not_run)
+            return CheckResultEnum(self.not_run)
         elif self.likely_failed in [self, other]:
-            return TestResultEnum(self.likely_failed)
+            return CheckResultEnum(self.likely_failed)
         elif self.uncertain in [self, other]:
-            return TestResultEnum(self.uncertain)
+            return CheckResultEnum(self.uncertain)
         elif self.likely_passed in [self, other]:
-            return TestResultEnum(self.likely_passed)
+            return CheckResultEnum(self.likely_passed)
         elif self.assumed_pass in [self, other]:
-            return TestResultEnum(self.assumed_pass)
+            return CheckResultEnum(self.assumed_pass)
         elif self.passed in [self, other]:
-            return TestResultEnum(self.passed)
+            return CheckResultEnum(self.passed)
         else:
-            raise ValueError("Invalid TestResultEnum value")
+            raise ValueError("Invalid CheckResultEnum value")
 
 
-class TestResult(BaseModel):
-    result: TestResultEnum
+class CheckResult(BaseModel):
+    result: Optional[CheckResultEnum]
+    notes: Optional[list[str]] = []
+    children: list["CheckResult"] = []
+
+
+class EligibilityCheck(BaseModel):
+    name: str
+    description: str
+    result: CheckResultEnum = CheckResultEnum.not_run
     notes: list[str] = []
-    children: list["TestResult"] = []
+    children: list["EligibilityCheck"] = []
 
+    def __init__(self, name: str, description: str, **data: Any):
+        super().__init__(name=name, description=description, **data)
+        # noinspection PyTypeChecker
 
-# zoned appropriately
-class EligibilityTest:
-    def __init__(self, name: str, description: str, test_function: callable):
-        self.name = name
-        self.description = description
-        self.test_function = test_function
-
-    def run(self, *args, **kwargs) -> TestResult:
-        return self.test_function(*args, **kwargs)
+    # noinspection PyTypeChecker
+    @abstractmethod
+    def run(self, *args, **kwargs) -> CheckResultEnum:
+        assert False, "run() needs to be implemented in child class"
 
     def __str__(self):
         return self.name
@@ -80,106 +91,168 @@ class EligibilityTest:
         return self.name
 
 
-class LogicTest(EligibilityTest):
-    def __init__(self, name: str, description: str, tests: List[EligibilityTest]):
-        super().__init__(name, description, self.run)
-        self.tests = tests
-
-    @abstractmethod
-    def run(self, parcel: Parcel) -> TestResult:
-        pass
+class LogicCheck(EligibilityCheck, ABC):
+    def __init__(self, name: str, description: str, checks: List[EligibilityCheck]):
+        super().__init__(name, description)
+        self.children = checks
 
 
-class AndTest(LogicTest):
-    def __init__(self, tests: List[EligibilityTest]):
-        description = "All tests must pass"
-        super().__init__("And", description, tests)
+class AndCheck(LogicCheck):
+    def __init__(self, checks: List[EligibilityCheck]):
+        super().__init__("And", "All checks must pass", checks)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        tr = TestResult(children=[test.run(parcel) for test in self.tests])
-        result = TestResultEnum.passed
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        self.result: CheckResultEnum = CheckResultEnum.passed
+        for check in self.children:
+            self.result = self.result.and_check(check.run(parcel))
+            if self.result in [CheckResultEnum.error, CheckResultEnum.failed]:
+                return self.result
+        return self.result
 
 
-class OrTest(EligibilityTest):
-    def __init__(self, tests: List[EligibilityTest]):
-        description = "At least one test must pass"
-        super().__init__("Or", description, tests)
+class OrCheck(LogicCheck):
+    def __init__(self, checks: List[EligibilityCheck]):
+        super().__init__("Or", "At least one check must pass", checks)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return any(test.run(parcel) for test in self.tests)
+    def run(self, parcel: Parcel) -> CheckResult:
+        assert False, "Finish implementation, see AndCheck"
+        return any(check.run(parcel) for check in self.checks)
 
 
 # ----- SPECIFIC TESTS FOR AB 2011 COMMERCIAL ZONING IN SAN DIEGO ------ #
 # Office, retail or parking is a Principally Permitted use (no Conditional User Permit or Discretionary Review required)
 # Anything w/ CC, CN, CO, CR, CP, or CV is eligible
-class PrincipallyPermittedUseTest(EligibilityTest):
+class PrincipallyPermittedUseCheck(EligibilityCheck):
     def __init__(self):
         description = "Office, retail or parking is a Principally Permitted use (no Conditional User Permit or Discretionary Review required)"
-        super().__init__("Principally Permitted Use", description, self.run)
+        super().__init__("Principally Permitted Use", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        self.zones = ZoningBase.objects.using("basedata").filter(geom__intersects=parcel.geom)
-        if len(self.zones) == 0:
-            return TestResult(result=TestResultEnum.error, notes=["No zoning found for parcel"])
-        zone_names: list[str] = [zone.zone_name for zone in self.zones]
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        zones = ZoningBase.objects.using("basedata").filter(geom__intersects=parcel.geom)
+        if len(zones) == 0:
+            self.notes.append("No zoning found for this parcel")
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.error
+            return self.result
+        zone_names: list[str] = [zone.zone_name for zone in zones]
         matches = [bool(re.match(r"^(CC|CN|CO|CR|CP|CV)", zone_name)) for zone_name in zone_names]
-        notes = ["Zone(s): " + ", ".join(zone_names)]
+        self.notes.append("Zone(s): " + ", ".join(zone_names))
         if all(matches):
-            result = TestResultEnum.passed
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.passed
         elif not any(matches):
-            result = TestResultEnum.failed
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.failed
         else:
-            result = TestResultEnum.uncertain
-            notes.append("Overlapping zones, some of which are eligible")
-        return TestResult(result=result, notes=notes)
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.uncertain
+            self.notes.append("Overlapping zones, some of which are eligible")
+        # noinspection PyTypeChecker
+        return self.result
 
 
-class UrbanizedAreaTest(EligibilityTest):
+class UrbanizedAreaCheck(EligibilityCheck):
     def __init__(self):
         description = "Located within a city with an urbanized area or urban use area"
-        super().__init__("Urbanized Area", description, self.run)
+        super().__init__("Urbanized Area", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class DevelopedNeighborsTest(EligibilityTest):
-    def __init__(self):
+class DevelopedNeighborsCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "At least 75 percent of the perimeter of the site adjoins parcels that are developed with urban uses. For purposes of this subdivision, parcels that are only separated by a street or highway shall be considered to be adjoined."
-        super().__init__("Developed Neighbors", description, self.run)
+        super().__init__("Developed Neighbors", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class CommercialCorridorTest(EligibilityTest):
-    def __init__(self):
+class CommercialCorridorCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Abuts a commercial corridor (a local road 70 to 150 feet wide)"
-        super().__init__("Commercial Corridor", description, self.run)
+        super().__init__("Commercial Corridor", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        x = AnalyzedRoad.objects.using("basedata").filter(
+            road__rd30pred=parcel.situs_pre_field,
+            road__rd30name=parcel.situs_stre,
+            road__rd30sfx=parcel.situs_suff,
+            road__abloaddr__lte=parcel.situs_addr,
+            road__abhiaddr__gte=parcel.situs_addr,
+        )
+        parcel_addr = f"{parcel.situs_addr} {parcel.situs_stre}"
+        if len(x) == 0:
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.error
+            self.notes.append(f"Didn't find road for addr = {parcel_addr} for this parcel")
+        elif len(x) > 1:
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.error
+            self.notes.append(f"Found multiple roads for addr = {parcel_addr} for this parcel")
+        else:
+            road = x[0]
+            if road.status != road.Status.OK:
+                # noinspection PyTypeChecker
+                self.result = CheckResultEnum.error
+                self.notes.append(
+                    f"Found road for {parcel_addr}, but road analysis failed with error: {road.status}"
+                )
+                return self.result
+            min_width_meters = 70 / 3.28084
+            max_width_meters = 150 / 3.28084
+            low_width = round(road.low_width * 3.28084, 1)
+            high_width = round(road.high_width * 3.28084, 1)
+            width_range = (
+                f"{low_width} ft"
+                if (low_width == high_width)
+                else f"{low_width} to {high_width} ft"
+            )
+
+            if road.low_width >= min_width_meters and road.high_width <= max_width_meters:
+                # noinspection PyTypeChecker
+                self.result = CheckResultEnum.passed
+                self.notes.append(f"Road at {parcel_addr} is {width_range} wide")
+            elif road.high_width < min_width_meters:
+                # noinspection PyTypeChecker
+                self.result = CheckResultEnum.failed
+                self.notes.append(f"Road at {parcel_addr} is too narrow ({width_range})")
+            elif road.low_width > max_width_meters:
+                # noinspection PyTypeChecker
+                self.result = CheckResultEnum.failed
+                self.notes.append(f"Road at {parcel_addr} is too wide ({width_range})")
+            else:
+                # noinspection PyTypeChecker
+                self.result = CheckResultEnum.uncertain
+                self.notes.append(f"Part of road at {parcel_addr} is in range ({width_range})")
+        return self.result
 
 
-class CommercialFrontageTest(EligibilityTest):
-    def __init__(self):
+class CommercialFrontageCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Frontage along the commercial corridor of a minimum of 50 feet"
-        super().__init__("Commercial Frontage", description, self.run)
+        super().__init__("Commercial Frontage", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class UnderAcresTest(EligibilityTest):
-    def __init__(self, acres):
+class UnderAcresCheck(EligibilityCheck):
+    def __init__(self, acres: int) -> None:
         description = f"Not greater than {acres} acres"
-        super().__init__(f"Under {acres} Acres", description, self.run)
+        super().__init__(f"Under {acres} Acres", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NoHousingTest(EligibilityTest):
+class NoHousingCheck(EligibilityCheck):
     # - **Prior protected housing / historic structure.
     # - ** Existing housing or historic structure on the lot
     # - **Demolition of ANY type protected housing**
@@ -189,64 +262,139 @@ class NoHousingTest(EligibilityTest):
     #     - historic structure
     #     - 1 to 4 dwelling units
     #     - vacant and zoned for housing but not multifamily
-    def __init__(self, acres):
+    def __init__(self) -> None:
         description = f"There can't be any housing on the lot in the past N years (CHECK DETAILS)"
-        super().__init__(f"Under{acres}Acres", description, self.run)
+        super().__init__(f"NoHousingInPast", description)
 
-    def run(self, parcel: Parcel) -> TestResult:
-        return TestResult(result=TestResult.result.not_run)
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NoIndustrialNeighborsTest(EligibilityTest):
-    def __init__(self):
+class NoIndustrialNeighborsCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not a site or adjoined to any site where more than one-third of the square footage on the site is dedicated to industrial use"
-        super().__init__("No Industrial Neighbors", description, self.run)
+        super().__init__("No Industrial Neighbors", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NoMobileHomePark(EligibilityTest):
-    def __init__(self):
+class NoMobileHomePark(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not a lot governed under the Mobilehome Residency Law, RV Park Law, or Special Occupancy Parks Acts"
-        super().__init__("No Mobile Home Park", description, self.run)
+        super().__init__("No Mobile Home Park", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class TribalResourceTest(EligibilityTest):
-    def __init__(self):
+class TribalResourceCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not located on a site that contains tribal resources"
-        super().__init__("No Tribal Resource", description, self.run)
+        super().__init__("No Tribal Resource", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NotHighFireHazardTest(EligibilityTest):
-    def __init__(self):
+class NotHighFireHazardCheck(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not located in a very high fire hazard severity zone"
-        super().__init__("Not High Fire Hazard", description, self.run)
+        super().__init__("Not High Fire Hazard", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NotNearFreeway(EligibilityTest):
-    def __init__(self):
+class NotNearFreeway(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not located within 500 feet of a freeway, including limited access roads(?)"
-        super().__init__("Not Near Freeway", description, self.run)
+        super().__init__("Not Near Freeway", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # for fast (not 100% accurate) distance calculations, keep calculation in degrees.
+        # Lat and long delta aren't necessarily the same, so we use the average of them.
+        (lat_delta, long_delta) = meters_to_latlong(
+            500 / 3.28, baselat=parcel.geom.centroid.y, baselong=parcel.geom.centroid.x
+        )
+
+        roads = (
+            Roads.objects.filter(funclass="F")
+            .filter(geom__dwithin=(parcel.geom.centroid, (lat_delta + long_delta) / 2 * 1.5))
+            .annotate(distance=Distance("geom", parcel.geom.centroid))
+        )
+        if len(roads) == 0:
+            self.notes.append("No freeways within 500 feet")
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.passed
+            return self.result
+        else:
+            self.notes.append(
+                f"Near freeway: {roads[0].rd30full}, {round(roads[0].distance.standard)} feet away"
+            )
+            # noinspection PyTypeChecker
+            self.result = CheckResultEnum.failed
+            return self.result
 
 
-class NotNearOilGas(EligibilityTest):
-    def __init__(self):
+class NotNearOilGas(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not located within 3,200 feet of an oil or gas extraction well"
-        super().__init__("Not Near Oil/Gas", description, self.run)
+        super().__init__("Not Near Oil/Gas", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class NotNeighborhoodPlan(EligibilityTest):
-    def __init__(self):
+class NotNeighborhoodPlan(EligibilityCheck):
+    def __init__(self) -> None:
         description = "Not part of Neighborhood Plan (master planned community), unless multifamily is allowed in the plan"
-        super().__init__("Not Neighborhood Plan", description, self.run)
+        super().__init__("Not Neighborhood Plan", description)
+
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        # noinspection PyTypeChecker
+        return CheckResultEnum.not_run
 
 
-class EligibilityTestSuite:
-    def __init__(self, test, name, description):
-        self.test = test
+class EligibilityCheckSuite:
+    def __init__(self, check, name, description):
+        self.check = check
         self.name = name
         self.description = description
+        self.result = CheckResultEnum.not_run
 
-    def run(self, parcel: Parcel) -> TestResult:
-        results = []
-        for test in self.tests:
-            results.append(test.run(parcel))
-        return results
+    def run(self, parcel: Parcel) -> CheckResultEnum:
+        self.result = self.check.run(parcel)
+        print("HI")
+        return self.result
+
+
+class AB2011Eligible(EligibilityCheckSuite):
+    def __init__(self):
+        name = "AB 2011 Eligible"
+        description = "AB 2011 Eligible description"
+        check = AndCheck(
+            [
+                PrincipallyPermittedUseCheck(),
+                # UrbanizedAreaCheck(),
+                # DevelopedNeighborsCheck(),
+                CommercialCorridorCheck(),
+                # CommercialFrontageCheck(),
+                # UnderAcresCheck(5),
+                # NoHousingCheck(),
+                # NoIndustrialNeighborsCheck(),
+                # NoMobileHomePark(),
+                # TribalResourceCheck(),
+                # NotHighFireHazardCheck(),
+                NotNearFreeway(),
+                # NotNearOilGas(),
+                # NotNeighborhoodPlan(),
+            ]
+        )
+        super().__init__(check, name, description)

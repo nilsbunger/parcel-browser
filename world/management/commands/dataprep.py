@@ -36,7 +36,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("cmd", choices=DataPrepCmd.__members__)
 
-        parser.add_argument("hood", choices=Neighborhood.__members__)
+        parser.add_argument("--hood", choices=Neighborhood.__members__)
         parser.add_argument(
             "--check",
             "-c",
@@ -49,6 +49,8 @@ class Command(BaseCommand):
             self.handle_topos(cmd, hood, *args, **options)
         elif cmd == "labels":
             self.handle_labels(cmd, hood, *args, **options)
+        elif cmd == "mvt":
+            self.handle_make_mvt(cmd, hood, *args, **options)
 
     def handle_topos(self, cmd, hood, *args, **options):
         # Parcel Slopes calculation - depends on Analyzed Parcels and Topography to be loaded.
@@ -85,3 +87,8 @@ class Command(BaseCommand):
         for blob in zone_blobs:
             x = ZoningMapLabel(text=blob.zone_name, geom=blob.geom.centroid, model=blob)
             x.save()
+
+    def handle_mvts(self, cmd, *args, **options):
+        """Generate static, hostable MVT tiles"""
+
+        pass

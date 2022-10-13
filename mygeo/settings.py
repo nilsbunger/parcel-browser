@@ -172,6 +172,8 @@ if dbHost:
 else:
     DATABASES = {}
 
+CONN_MAX_AGE = 3600  # allow persistent DB connection (in seconds)
+
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 

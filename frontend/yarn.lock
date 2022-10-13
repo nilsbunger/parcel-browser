@@ -1975,6 +1975,11 @@
   dependencies:
     tslib "^2.4.0"
 
+"@tabler/icons@^1.103.0":
+  version "1.103.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-1.103.0.tgz#d112adc9301b229ceca99fd87949b0df56de79f8"
+  integrity sha512-oXUNf/Bn+88Xm+uWVht9MRRB/usDtjNrzKr7XhlB1P6V4vpWdG68OMffEONDbFqvEMC/eGYfhLI/PUHsR2XN4A==
+
 "@tanstack/react-table@^8.5.2":
   version "8.5.2"
   resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.5.2.tgz#1e547649b8f057eddbe769b04612914a2efa5d09"

@@ -13,9 +13,10 @@ from ninja.security import HttpBearer, django_auth
 from pydantic import Field
 
 from lib.analyze_parcel_lib import analyze_one_parcel
+from lib.co.co_eligibility_lib import AB2011Eligible, EligibilityCheck
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel, address_to_parcels_loose
-from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData
+from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, Roads
 
 
 # Django-ninja authentication guide: https://django-ninja.rest-framework.com/guides/authentication/
@@ -293,9 +294,20 @@ class AnalysisResponseSchema(Schema):
 
 
 class ParcelSchema(ModelSchema):
+    ab2011_result: Optional[EligibilityCheck] = None
+
     class Config:
         model = Parcel
         model_exclude = ("geom",)
+
+
+class RoadSchema(ModelSchema):
+    segclass_decoded: str  # custom field which is a property on model Road
+    funclass_decoded: str  # custom field which is a property on model Road
+
+    class Config:
+        model = Roads
+        model_fields = ("roadsegid", "segclass", "funclass")
 
 
 @api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
@@ -308,7 +320,18 @@ def get_analysis(request, al_id: int):
 @api.get("/parcel/{apn}", response=ParcelSchema)
 def get_parcel(request, apn: str):
     """Get parcel info for a given APN"""
-    return Parcel.objects.get(apn=apn)
+    parcel = Parcel.objects.get(apn=apn)
+    x = AB2011Eligible()
+    x.run(parcel)
+    retval = ParcelSchema.from_orm(parcel)
+    retval.ab2011_result = x.check
+    return retval
+
+
+@api.get("/road/{road_segid}", response=RoadSchema)
+def get_road(request, road_segid: int):
+    """Get road info for a given road segid"""
+    return Roads.objects.get(roadsegid=road_segid)
 
 
 @api.get("/address-search/{addr}")

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import datetime
 import logging
+import os
 import pprint
 import random
 import sys
@@ -237,9 +238,9 @@ class Command(BaseCommand):
                     single_process=bool(options["parcel"]) or bool(options["single_process"]),
                 )
 
-            # Save the errors to a csv
-            error_df = DataFrame.from_records(errors)
-            error_df.to_csv("./frontend/static/temp_computed_imgs/errors.csv", index=False)
+                # Save the errors to a csv
+                error_df = DataFrame.from_records(errors)
+                error_df.to_csv(os.path.join(tmpdirname, "errors.csv"))
             stats = Counter({})
             for result in results:
                 stats += result.details["messages"]["stats"]

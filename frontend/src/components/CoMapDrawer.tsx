@@ -1,11 +1,18 @@
 import useSWR from "swr";
-import { ParcelGetResp } from "../types";
+import { EligibilityCheck, ParcelGetResp, RoadGetResp } from "../types";
 import { fetcher } from "../utils/fetcher";
 import { stringify } from "../utils/utils";
-import { Drawer, ScrollArea } from "@mantine/core";
+import { Drawer, ScrollArea, Tooltip } from "@mantine/core";
 import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
-
+import {
+  BadgeCheckIcon,
+  DotsVerticalIcon, ExclamationIcon,
+  InformationCircleIcon,
+  QuestionMarkCircleIcon,
+  XCircleIcon
+} from "@heroicons/react/solid";
+import { MinusCircleIcon } from "@heroicons/react/outline";
 
 export function CoMapDrawer({ selection, setSelection }) {
   const opened = selection !== null
@@ -30,6 +37,70 @@ export function CoMapDrawer({ selection, setSelection }) {
   )
 }
 
+const renderEligibilityTitleRow = (eligibility: EligibilityCheck) => {
+  let passFail
+  switch (eligibility.result) {
+    case 'passed':
+      passFail =
+        <Tooltip label={"Passed"}><BadgeCheckIcon className="inline-block align-middle h-6 w-6 text-success"/></Tooltip>
+      break
+    case 'failed':
+      passFail =
+        <Tooltip label={"Failed"}><XCircleIcon className="inline-block align-middle h-6 w-6 text-error"/></Tooltip>
+      break
+    case 'not_run':
+      passFail = <Tooltip label={"Not run"}><MinusCircleIcon
+        className="inline-block align-middle h-6 w-6 text-slate-200"/></Tooltip>
+      break
+    case 'uncertain':
+      passFail = <Tooltip label={"Uncertain"}><QuestionMarkCircleIcon
+        className="inline-block align-middle h-6 w-6 text-warning"/></Tooltip>
+      break
+    case 'error':
+      passFail = <Tooltip label={"Error"}><ExclamationIcon
+        className="inline-block align-middle h-6 w-6 text-error"/></Tooltip>
+      break
+
+    default:
+      passFail = <span>{eligibility.result[0].toUpperCase() + eligibility.result.substring(1)}</span>
+      break
+  }
+
+  const rowname = (eligibility.name == 'And') ? "All of these checks must pass:" : eligibility.name
+  return <>
+    {passFail}
+    <Tooltip
+      multiline
+      width={220}
+      withArrow
+      transition="fade"
+      transitionDuration={200}
+      label={eligibility.description}
+    >
+      <span className={"leading-6"}>
+        {" " + rowname + " "}
+        <InformationCircleIcon className="inline align-text-bottom h-4 w-4 text-info"/>
+      </span>
+    </Tooltip>
+  </>
+
+}
+
+const EligibilityCheck = ({ eligibility, level }: { eligibility: EligibilityCheck, level: number }) => {
+  return (<>
+    {renderEligibilityTitleRow(eligibility)}
+
+    {eligibility.notes.map((note, idx) =>
+      <p key={idx}><DotsVerticalIcon className="inline-block align-middle h-6 w-6 text-slate-200"/>{" " + note}</p>)
+    }
+    {eligibility.children.map((child, idx) => (
+      <div className="ml-5" key={idx}>
+        <EligibilityCheck eligibility={child} level={level + 1}/>
+      </div>
+    ))}
+  </>)
+}
+
 const ParcelDetails = ({ apn }) => {
   const { data, error } = useSWR<ParcelGetResp, string>(
     `/api/parcel/${apn}`,
@@ -41,35 +112,54 @@ const ParcelDetails = ({ apn }) => {
   return (
     <div>
       <h3>Parcel {apn}</h3>
-      <div><p className="font-bold">Address</p>
+      <div><p className="mt-5 font-bold">Address</p>
         {data.situs_addr || 0}{data.situs_pre_field || ""} {data.situs_stre || ""} {data?.situs_post || ""} {data?.situs_suff || ""}
         <br/>{data.situs_juri} {data.situs_zip}
       </div>
-      <div><p className="font-bold">Owner</p>
+      <div><p className="mt-5 font-bold">Owner</p>
         {data.own_name1} {data.own_name2} {data.own_name3}
         <br/>{data.own_addr1}
         <br/>{data.own_addr2} {data.own_addr3} {data.own_addr4}
         <br/>{data.own_zip}
       </div>
-      <div><p className="font-bold">Stats</p>
+      <div><p className="mt-5 font-bold">Stats</p>
         Lot size: {data.usable_sq_field} sqft
         <br/>Interior size: {data.total_lvg_field} sqft
         <br/># of units: {data.unitqty}
         <br/>Bedrooms: {data.bedrooms}
         <br/>Baths: {data.baths}
       </div>
+      <div><p className="mt-5 font-bold">AB 2011 Eligibility</p></div>
+      <div>
+        <EligibilityCheck eligibility={data.ab2011_result} level={0}/>
+      </div>
     </div>
   )
 }
 
 const RoadDetails = ({ properties }) => {
-    return (
-      <div>
-        <p>Road</p>
-        <p>{properties.abloaddr} - {properties.abhiaddr} {properties.rd30full}</p>
-        <p>Width: {properties.rightway} ft</p>
-      </div>
-    )
+  const { data, error } = useSWR<RoadGetResp, string>(
+    `/api/road/${properties.roadsegid}`,
+    fetcher
+  );
+  if (error) return <div>failed to load road segid={properties.roadsegid}</div>
+  if (!data) return <div>loading road segid={properties.roadsegid}</div>
+  console.log("ROAD:", properties)
+  return (
+    <div>
+      <p>Road</p>
+      <p> {properties.abloaddr && <span>{properties.abloaddr} - {properties.abhiaddr}</span>}
+        {properties.rd30full}</p>
+      <p>Width: {properties.rightway} ft</p>
+      {properties.roadsegid && <p>Segment ID: {properties.roadsegid}</p>}
+      <p>Functional class: {data.funclass_decoded}</p>
+      <p>Segment class: {data.segclass_decoded}</p>
+      <span className={"text-xs"}>
+        <pre>{stringify(data, 5, null, 2)}</pre>
+      </span>
+
+    </div>
+  )
 }
 
 const CoMapDrawerContents = ({ selection }) => {
@@ -87,8 +177,8 @@ const CoMapDrawerContents = ({ selection }) => {
     )
   }
   if (selection.selType == 'r2-parcel-road-tile-layer')
-    console.log("HI", selection.info.object)
-    return selection.info.object.properties.apn ? <ParcelDetails apn={selection.info.object.properties.apn}/> : <RoadDetails properties={selection.info.object.properties}/>
+    return selection.info.object.properties.apn ? <ParcelDetails apn={selection.info.object.properties.apn}/> :
+      <RoadDetails properties={selection.info.object.properties}/>
   if (selection.selType == 'parcel-tile-layer')
     // this branch is unused now, since we combined parcel and zoning and serve them staticly
     return <ParcelDetails apn={selection.info.object.properties.apn}/>

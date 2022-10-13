@@ -4,9 +4,37 @@ import logging
 from typing import Dict
 
 from django.contrib.gis.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.db.models import Subquery
 
-from world.models import Parcel
+from world.models import Parcel, Roads
+
+
+class AnalyzedRoad(models.Model):
+    class Status(models.IntegerChoices):
+        OK = 0
+        TOO_SHORT = 1
+        INSIDE_PARCEL = 2
+        CROSSES_PARCEL = 3
+        NO_WIDTHS = 4
+        UNSTABLE_WIDTHS = 5
+        EXCEPTION = 6
+
+    status = models.IntegerField(choices=Status.choices, default=Status.OK)
+
+    road = models.OneToOneField(Roads, on_delete=models.CASCADE, primary_key=True, unique=True)
+    low_width = models.FloatField(null=True)  # conservatively low width, in meters
+    avg_width = models.FloatField(null=True)  # average width without outliers, in meters
+    high_width = models.FloatField(null=True)  # believably high width, in meters
+    stdev_width = models.FloatField(null=True)  # standard deviation of "good widths", in meters
+    all_widths = ArrayField(models.FloatField(), null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["low_width"]),
+            models.Index(fields=["avg_width"]),
+            models.Index(fields=["high_width"]),
+        ]
 
 
 class AnalyzedParcel(models.Model):

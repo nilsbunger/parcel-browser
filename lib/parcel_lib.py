@@ -150,7 +150,10 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, b
 
 
 def models_to_utm_gdf(
-    models: list[django.contrib.gis.db.models], utm_crs: pyproj.CRS, geometry_field: str = "geom"
+    models: list[django.contrib.gis.db.models],
+    utm_crs: pyproj.CRS,
+    geometry_field: str = "geom",
+    fields=[],
 ) -> GeoDataFrame:
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
@@ -159,15 +162,15 @@ def models_to_utm_gdf(
         models ([Model]): A list of Django GIS models to convert
         utm_crs: The destination projection
         geometry_field (str): The field that stores the geometry
+        fields (list): A list of fields to include in the dataframe. If empty, just get the geom field
 
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
     if len(models) == 0:
         return geopandas.GeoDataFrame(columns=["feature"], geometry="feature")
-    serialized_models = serialize(
-        "geojson", models, geometry_field=geometry_field, fields=(geometry_field,)
-    )
+    fields = (geometry_field,) if not fields else fields
+    serialized_models = serialize("geojson", models, geometry_field=geometry_field, fields=fields)
     tmp = json.loads(serialized_models)
     data_frame = geopandas.GeoDataFrame.from_features(tmp, crs="EPSG:4326")
     df: GeoDataFrame = data_frame.to_crs(utm_crs)
@@ -206,39 +209,27 @@ def polygon_to_utm(poly: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.C
     return shapely.ops.transform(projection, shapely_poly)
 
 
-def normalize_geometries(parcel, buildings):
-    """Normalizes the parcel and buildings to (0,0).
+def normalize_geometries(gdf: GeoDataFrame, gdf_list: list[GeoDataFrame]):
+    """Normalizes geometries to the main gdf (0,0). This is useful for plotting
 
     Args:
-        parcel (GeoDataFrame): The parcel in a UTM-projected Dataframe
-        buildings (GeoDataFrame): The buildings in a UTM-projected Dataframe
+        gdf1 (GeoDataFrame): The geometry that should represent 0,0, in a dataframe (often a parcel).
+        gdf_list (GeoDataFrame): Other objects that should be normalized
 
     Returns:
-        A tuple containing the normalized parcel and buildings
+        A tuple containing the normalized main geodataframe, and the list of normalized geodataframes
         (parcel (Polygon), buildings ([Polygon]))
     """
-    offset_bounds = parcel.total_bounds
+    center = gdf.centroid
 
     # move parcel coordinates to be 0,0 based so they're easier to see.
-    parcel_boundary_multipoly = parcel.translate(xoff=-offset_bounds[0], yoff=-offset_bounds[1])[0]
-    parcel_boundary_poly = parcel_boundary_multipoly[0]
+    gdf_xlat = GeoDataFrame(gdf)
+    gdf_xlat.geometry = gdf.translate(xoff=-center.x, yoff=-center.y)
 
-    # translated is a list of buildings, each building represented as a MultiPolygon
-    # Most MultiPolygons will have just one Polygon. Not sure which ones will have multiple
-    # as it makes sense that one building is one polygon
-    building_polys = []
-    for building_geom in buildings.geometry:
-        # This function returns the translated building as a multipolygon
-        # However, a building should be only one polygon, and so we assert this
-        # for a sanity check.
-        translated_building_multipoly = shapely.affinity.translate(
-            building_geom, xoff=-offset_bounds[0], yoff=-offset_bounds[1]
-        )
-        assert len(translated_building_multipoly.geoms) == 1
-
-        building_polys.append(translated_building_multipoly[0])
-
-    return parcel_boundary_poly, building_polys
+    return gdf_xlat, [
+        GeoDataFrame(gdf2, geometry=gdf2.translate(xoff=-center.x, yoff=-center.y))
+        for gdf2 in gdf_list
+    ]
 
 
 def collapse_multipolygon_list(multipolygons):

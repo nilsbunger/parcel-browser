@@ -1,4 +1,7 @@
 import pyproj
+from pyproj import CRS, Transformer
+from pyproj.aoi import AreaOfInterest
+from pyproj.database import query_utm_crs_info
 
 
 def get_utm_crs() -> pyproj.CRS:
@@ -7,6 +10,52 @@ def get_utm_crs() -> pyproj.CRS:
     # sd_utm_crs = pyproj.CRS.from_wkt(SAN_DIEGO_UTM_CRS_WKT)
     sd_utm_crs = pyproj.CRS(proj="utm", zone=11, ellps="WGS84")
     return sd_utm_crs
+
+
+from math import cos, sin, asin, sqrt, radians
+
+
+def latlong_to_utm_crs(lat, long):
+    """Return a CRS object for the UTM zone that contains the given lat/long"""
+    # From https://pyproj4.github.io/pyproj/stable/examples.html#find-utm-crs-by-latitude-and-longitude
+    utm_crs_list = query_utm_crs_info(
+        datum_name="WGS 84",
+        area_of_interest=AreaOfInterest(
+            west_lon_degree=long,
+            south_lat_degree=lat,
+            east_lon_degree=long,
+            north_lat_degree=lat,
+        ),
+    )
+    utm_crs = CRS.from_epsg(utm_crs_list[0].code)
+    return utm_crs
+
+
+def meters_to_latlong(meters, baselat, baselong):
+    crs = latlong_to_utm_crs(baselat, baselong)
+    (base_x, base_y) = Transformer.from_crs("epsg:4326", crs).transform(baselat, baselong)
+    transformer = Transformer.from_crs(crs_from=crs, crs_to="EPSG:4326")
+    (lat1, long1) = transformer.transform(meters + base_x, meters + base_y)
+    (lat2, long2) = transformer.transform(base_x, base_y)
+    return (lat1 - lat2, long1 - long2)
+
+
+def latlong_to_meters(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees). Return value in meters.
+    Haversine Formula
+    Ref: https://gis.stackexchange.com/questions/61924/python-gdal-degrees-to-meters-without-reprojecting
+    """
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * asin(sqrt(a))
+    km = 6371000 * c
+    return km
 
 
 # Well-known text of San Diego region UTM projection (UTM Zone 11 North). This is the coordinate system

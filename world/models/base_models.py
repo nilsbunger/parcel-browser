@@ -1,4 +1,3 @@
-import math
 from typing import List
 
 from django.contrib.gis.db import models
@@ -263,6 +262,60 @@ class Roads(models.Model):
     rd30full = models.CharField(max_length=41)
     shape_stle = models.FloatField()
     geom = models.MultiLineStringField(srid=4326)
+
+    funclass_dict = {
+        "1": "Freeway to freeway ramp",
+        "2": "Light (2-lane) collector street",
+        "3": "Rural collector road",
+        "4": "Major road/4-lane major road",
+        "5": "Rural light collector/local road",
+        "6": "Prime (primary) arterial",
+        "7": "Private street",
+        "8": "Recreational parkway",
+        "9": "Rural mountain road",
+        "A": "Alley",
+        "B": "Class I bicycle path",
+        "C": "Collector/4-lane collector street",
+        "D": "Two-lane major street",
+        "E": "Expressway",
+        "F": "Freeway",
+        "L": "Local street/cul-de-sac",
+        "M": "Military street within base",
+        "P": "Paper street",
+        "Q": "Undocumented",
+        "R": "Freeway/expressway on/off ramp",
+        "S": "Six-lane major street",
+        "T": "Transitway",
+        "U": "Unpaved road",
+        "W": "Pedestrianway/bikeway",
+    }
+
+    segclass_dict = {
+        "1": "Freeway/Expressway",
+        "2": "Highway/State Routes",
+        "3": "Minor Highway/Major Roads",
+        "4": "Arterial or Collector",
+        "5": "Local Street",
+        "6": "Unpaved Road",
+        "7": "Private Road",
+        "8": "Freeway Transition Ramp",
+        "9": "Freeway On/Off Ramp",
+        "A": "Alley",
+        "H": "Speed Hump",
+        "M": "Military Street within Base",
+        "P": "Paper Street",
+        "Q": "Undocumented",
+        "W": "Walkway",
+        "Z": "Named Private Street",
+    }
+
+    @property
+    def funclass_decoded(self) -> str:
+        return self.funclass_dict.get(self.funclass, "Unknown")
+
+    @property
+    def segclass_decoded(self) -> str:
+        return self.segclass_dict.get(self.segclass, "Unknown")
 
 
 class TransitPriorityArea(models.Model):

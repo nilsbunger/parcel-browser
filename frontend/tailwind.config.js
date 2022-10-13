@@ -35,7 +35,7 @@ module.exports = {
 
       // default colors that we don't use:
 
-      // slate: colors.slate,
+      slate: colors.slate,
       // gray: colors.gray,
       // zinc: colors.zinc,
       // neutral: colors.neutral,
