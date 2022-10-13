@@ -81,6 +81,9 @@ class Command(BaseCommand):
 
         include_count = 0
         skip_count = dict({})
+        assert (
+            False
+        ), "This uses an old version of AnalyzedParcel schema... it's defunct and replaced by dataprep cmd"
         for idx, parcel in enumerate(parcels):
             if idx % 1000 == 0:
                 print("Processing # %d" % idx)

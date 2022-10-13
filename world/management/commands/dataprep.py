@@ -1,7 +1,14 @@
+from collections import Counter
 from enum import Enum
+import pprint
+
 import django
 from django.contrib.gis.db.models import Extent
+from django.contrib.gis.geos import MultiPolygon
+from django.db.models import Subquery
+from django.contrib.gis.db.models import Union
 
+from lib.co.co_eligibility_lib import AB2011Eligible, CheckResultEnum
 from lib.crs_lib import get_utm_crs
 from lib.topo_lib import (
     calculate_parcel_slopes,
@@ -10,7 +17,7 @@ from lib.topo_lib import (
 )
 from django.core.management.base import BaseCommand
 
-from world.models import Parcel, ZoningBase
+from world.models import AnalyzedParcel, Parcel, ZoningBase
 from world.models.base_models import ZoningMapLabel
 
 
@@ -28,6 +35,7 @@ class Neighborhood(Enum):
 class DataPrepCmd(Enum):
     labels = 1
     topos = 2
+    ab2011 = 3
 
 
 class Command(BaseCommand):
@@ -36,7 +44,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("cmd", choices=DataPrepCmd.__members__)
 
-        parser.add_argument("hood", choices=Neighborhood.__members__)
+        parser.add_argument("--hood", choices=Neighborhood.__members__)
         parser.add_argument(
             "--check",
             "-c",
@@ -49,6 +57,36 @@ class Command(BaseCommand):
             self.handle_topos(cmd, hood, *args, **options)
         elif cmd == "labels":
             self.handle_labels(cmd, hood, *args, **options)
+        elif cmd == "ab2011":
+            self.handle_ab2011_map(cmd, hood, *args, **options)
+
+    def handle_ab2011_map(self, cmd, hood, *args, **options):
+        # TODO: Add CC back into the query, we removed it since we already ran it
+        c_zones: MultiPolygon = ZoningBase.objects.filter(
+            zone_name__regex=r"^(CO|CN|CV)"
+        ).aggregate(a=Union("geom"))["a"]
+        comm_parcels = Parcel.objects.filter(geom__intersects=c_zones)
+        stats = Counter({})
+        print(comm_parcels)
+        ab2011_parcels = []
+        ab2011_maybe_parcels = []
+        print(f"Checking {len(comm_parcels)} parcels for AB2011 eligibility")
+        for idx, parcel in enumerate(comm_parcels):
+            if idx % 50 == 0:
+                print(idx, ":", stats)
+            x = AB2011Eligible()
+            result = x.run(parcel)
+            stats[result] += 1
+            AnalyzedParcel(apn=parcel, ab2011_eligible=result).save()
+        #     if result in [CheckResultEnum.failed, CheckResultEnum.error]:
+        #     if result == CheckResultEnum.passed:
+        #         ab2011_parcels.append(parcel.apn)
+        #     else:
+        #         ab2011_maybe_parcels.append(parcel.apn)
+        #
+        # ab2011_layer = Parcel.objects.filter(apn__in=ab2011_parcels).aggregate(a=Union('geom'))['a']
+        # ab2011_maybe_layer = Parcel.objects.filter(apn__in=ab2011_maybe_parcels).aggregate(a=Union('geom'))['a']
+        pprint.pprint(stats)
 
     def handle_topos(self, cmd, hood, *args, **options):
         # Parcel Slopes calculation - depends on Analyzed Parcels and Topography to be loaded.

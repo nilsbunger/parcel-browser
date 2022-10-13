@@ -7,6 +7,7 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Subquery
 
+from lib.types import CheckResultEnum
 from world.models import Parcel, Roads
 
 
@@ -38,14 +39,22 @@ class AnalyzedRoad(models.Model):
 
 
 class AnalyzedParcel(models.Model):
-    apn = models.CharField(max_length=10, blank=True, null=True, unique=True)
-    lot_size = models.IntegerField(blank=True, null=True)
-    building_size = models.IntegerField(blank=True, null=True)
-    skip = models.BooleanField(blank=True, null=True)
-    skip_reason = models.CharField(max_length=254, blank=True, null=True)
+    apn = models.OneToOneField(
+        max_length=10, unique=True, primary_key=True, to=Parcel, on_delete=models.CASCADE
+    )
+    ab2011_eligible = models.CharField(
+        max_length=20, choices=[(x.value, x.name) for x in CheckResultEnum]
+    )
+    # lot_size = models.IntegerField(blank=True, null=True)
+    # building_size = models.IntegerField(blank=True, null=True)
+    # skip = models.BooleanField(blank=True, null=True)
+    # skip_reason = models.CharField(max_length=254, blank=True, null=True)
 
     class Meta:
-        indexes = [models.Index(fields=["apn"])]
+        indexes = [
+            models.Index(fields=["apn"]),
+            models.Index(fields=["ab2011_eligible"]),
+        ]
 
 
 class ParcelSlope(models.Model):

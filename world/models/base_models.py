@@ -317,6 +317,13 @@ class Roads(models.Model):
     def segclass_decoded(self) -> str:
         return self.segclass_dict.get(self.segclass, "Unknown")
 
+    # Meta class for Roads model
+    class Meta:
+        indexes = [
+            # index for looking up a road segment given a parcel address:
+            models.Index(fields=["rd30pred", "rd30name", "rd30sfx", "abloaddr", "abhiaddr"]),
+        ]
+
 
 class TransitPriorityArea(models.Model):
     name = models.CharField(max_length=30)

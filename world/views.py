@@ -18,7 +18,9 @@ from vectortiles.mixins import BaseVectorTileView
 from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
+from lib.types import CheckResultEnum
 from world.models import (
+    AnalyzedParcel,
     BuildingOutlines,
     Parcel,
     PropertyListing,
@@ -105,6 +107,18 @@ class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
             self.vector_tile_queryset
             if self.vector_tile_queryset is not None
             else self.get_queryset()
+        )
+
+
+class Ab2011TileData(MVTView, ListView):
+    model = AnalyzedParcel
+    vector_tile_fields = ("apn__geom",)
+    vector_tile_geom_name = "apn__geom"
+
+    def get_vector_tile_queryset(self):
+        print("HI")
+        return self.model.objects.filter(
+            ab2011_eligible__in=[CheckResultEnum.passed, CheckResultEnum.uncertain]
         )
 
 

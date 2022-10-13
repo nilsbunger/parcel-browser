@@ -49,6 +49,11 @@ urlpatterns = [
     path("dj/api/topotile/<int:z>/<int:x>/<int:y>", views.TopoTileData.as_view(), name="topo-tile"),
     path("dj/api/tpatile/<int:z>/<int:x>/<int:y>", views.TpaTileData.as_view(), name="tpa-tile"),
     path(
+        "dj/api/ab2011tile/<int:z>/<int:x>/<int:y>",
+        views.Ab2011TileData.as_view(),
+        name="ab2011-tile",
+    ),
+    path(
         "dj/api/compcommtile/<int:z>/<int:x>/<int:y>",
         views.CompCommTileData.as_view(),
         name="compcomm-tile",

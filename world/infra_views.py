@@ -49,7 +49,6 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
         if type(e.reason) == ConnectionRefusedError:
             # Frontend is probably not running
             return HttpResponse("Can't connect to frontend... Do you need to start yarn dev?")
-        print("HI")
 
     content_type = response.headers.get("Content-Type")
     if content_type == "text/html; charset=UTF-8":

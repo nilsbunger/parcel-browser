@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { ErrorBoundary } from "react-error-boundary";
 import DeckGL from '@deck.gl/react';
-import { BitmapLayer, GeoJsonLayer, PathLayer } from '@deck.gl/layers';
+import { BitmapLayer, PathLayer } from '@deck.gl/layers';
 
 import { MapView } from '@deck.gl/core';
 import { TileLayer } from '@deck.gl/geo-layers';
@@ -42,10 +42,11 @@ const LINK_STYLE = {
 const LAYER_COLORS: Record<string, [number, number, number, number]> = {
   'tpa-vis-layer': [250, 0, 0, 30], // TPA
   'pd-vis-layer': [0, 250, 0, 150],  // planned district
-  'compcomm-vis-layer': [0,0,250,50], // complete communities
+  'compcomm-vis-layer': [0, 0, 250, 50], // complete communities
   'sf-vis-layer': [250, 250, 0, 200], // single-family
   'mf-vis-layer': [250, 180, 0, 200],
   'c-vis-layer': [250, 0, 0, 200], // commercial
+  'ab2011-vis-layer': [0, 250, 50, 100], // AB2011 // TODO: same color as planned district
 }
 
 const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
@@ -127,11 +128,21 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       updateTriggers: {
         getFillColor: visibleLayers
       }
-    }
+    },
+    'ab2011-tile-layer': {
+      data: '/dj/api/ab2011tile/{z}/{x}/{y}',
+      getLineColor: [255, 255, 255],
+      getFillColor: LAYER_COLORS['ab2011-vis-layer'],
+      lineWidthMinPixels: 3,
+      pickable: true,
+      onHover: null,
+      visible: true,
+    },
+
   }
 }
 
-function mvtLayerWrapper(id, layers, visible=true) {
+function mvtLayerWrapper(id, layers, visible = true) {
   const layeropts = layers[id];
   const onHover = useCallback(layeropts.onHover, [])
 
@@ -248,31 +259,34 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
         </Menu.Target>
 
         <Menu.Dropdown>
-          <Menu.Label>Residential zones</Menu.Label>
+          <Menu.Label>Base zones</Menu.Label>
           <Menu.Item onClick={(e) => toggleLayer(e, 'sf-vis-layer')}>
             <LayerSquare enabled={visibleLayers['sf-vis-layer']} color={LAYER_COLORS['sf-vis-layer']}/>Single-family
           </Menu.Item>
           <Menu.Item onClick={(e) => toggleLayer(e, 'mf-vis-layer')}>
             <LayerSquare enabled={visibleLayers['mf-vis-layer']} color={LAYER_COLORS['mf-vis-layer']}/>Multi-family
           </Menu.Item>
-          <Menu.Item onClick={(e) => toggleLayer(e, 'tpa-vis-layer')}>
-            <LayerSquare enabled={visibleLayers['tpa-vis-layer']} color={LAYER_COLORS['tpa-vis-layer']}/>TPA
-          </Menu.Item>
-          <Menu.Item onClick={(e) => toggleLayer(e, 'compcomm-vis-layer')}>
-            <LayerSquare enabled={visibleLayers['compcomm-vis-layer']} color={LAYER_COLORS['compcomm-vis-layer']}/>Complete Communities
-          </Menu.Item>
           <Menu.Item onClick={(e) => toggleLayer(e, 'pd-vis-layer')}>
             <LayerSquare enabled={visibleLayers['pd-vis-layer']} color={LAYER_COLORS['pd-vis-layer']}/>Planned Districts
           </Menu.Item>
           {/*<Menu.Item rightSection={<Text size="xs" color="dimmed">⌘K</Text>}>Search</Menu.Item>*/}
-
-          <Menu.Divider/>
-
-          <Menu.Label>Commercial zones</Menu.Label>
           <Menu.Item onClick={(e) => toggleLayer(e, 'c-vis-layer')}>
             <LayerSquare enabled={visibleLayers['c-vis-layer']} color={LAYER_COLORS['c-vis-layer']}/>Commercial zones
           </Menu.Item>
           <Menu.Item></Menu.Item>
+          <Menu.Divider/>
+          <Menu.Label>Overlays</Menu.Label>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'tpa-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['tpa-vis-layer']} color={LAYER_COLORS['tpa-vis-layer']}/>TPA
+          </Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'compcomm-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['compcomm-vis-layer']} color={LAYER_COLORS['compcomm-vis-layer']}/>Complete
+            Communities
+          </Menu.Item>
+          <Menu.Item onClick={(e) => toggleLayer(e, 'ab2011-vis-layer')}>
+            <LayerSquare enabled={visibleLayers['ab2011-vis-layer']} color={LAYER_COLORS['ab2011-vis-layer']}/>AB 2011 Eligible
+          </Menu.Item>
+
         </Menu.Dropdown>
       </Menu>
     </div>
@@ -294,7 +308,13 @@ export function CoMapPage({ onTilesLoad = null }) {
   const [hoverInfo, setHoverInfo] = useState();
   const [selection, setSelection] = useState<{ selType: string, objId: number, info: object }>(null);
   const [visibleLayers, setVisibleLayers] = useImmer<Record<string, boolean>>({
-    'tpa-vis-layer': true, 'mf-vis-layer': true, 'sf-vis-layer': true, 'compcomm-vis-layer': true, 'c-vis-layer': true, 'pd-vis-layer': true
+    'tpa-vis-layer': false,
+    'mf-vis-layer': false,
+    'sf-vis-layer': false,
+    'compcomm-vis-layer': false,
+    'c-vis-layer': false,
+    'pd-vis-layer': false,
+    'ab2011-vis-layer': true,
   });
 
   const LONGITUDE_RANGE = [-117.35, -116.9];  // west, east constraint
@@ -302,9 +322,9 @@ export function CoMapPage({ onTilesLoad = null }) {
 
   const zoneColorFn = (zone, extra) => {
     console.log("ZONE COLOR on", zone)
-    if (["CVPD", "CCPD", "CUPD"].includes(zone.properties.zone_name.slice(0,4)))
+    if (["CVPD", "CCPD", "CUPD"].includes(zone.properties.zone_name.slice(0, 4)))
       return visibleLayers['pd-vis-layer'] ? LAYER_COLORS['pd-vis-layer'] : [0, 0, 0, 0];
-    if (["CC", "CR", "CO", "CP", "CN", "CV"].includes(zone.properties.zone_name.slice(0,2)))
+    if (["CC", "CR", "CO", "CP", "CN", "CV"].includes(zone.properties.zone_name.slice(0, 2)))
       return visibleLayers['c-vis-layer'] ? LAYER_COLORS['c-vis-layer'] : [0, 0, 0, 0]
     if (zone.properties.zone_name.startsWith("RS"))
       return visibleLayers['sf-vis-layer'] ? LAYER_COLORS['sf-vis-layer'] : [0, 0, 0, 0]
@@ -354,6 +374,7 @@ export function CoMapPage({ onTilesLoad = null }) {
           mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS),
           mvtLayerWrapper('tpa-tile-layer', TILE_DEFS, visibleLayers['tpa-vis-layer']),
           mvtLayerWrapper('compcomm-tile-layer', TILE_DEFS, visibleLayers['compcomm-vis-layer']),
+          mvtLayerWrapper('ab2011-tile-layer', TILE_DEFS, visibleLayers['ab2011-vis-layer']),
           mvtLayerWrapper('r2-parcel-road-tile-layer', TILE_DEFS),
           // mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
           // mvtLayerWrapper('road-tile-layer', TILE_DEFS),
