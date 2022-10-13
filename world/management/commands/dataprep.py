@@ -61,9 +61,8 @@ class Command(BaseCommand):
             self.handle_ab2011_map(cmd, hood, *args, **options)
 
     def handle_ab2011_map(self, cmd, hood, *args, **options):
-        # TODO: Add CC back into the query, we removed it since we already ran it
         c_zones: MultiPolygon = ZoningBase.objects.filter(
-            zone_name__regex=r"^(CO|CN|CV)"
+            zone_name__regex=r"^(CC|CO|CN|CV)"
         ).aggregate(a=Union("geom"))["a"]
         comm_parcels = Parcel.objects.filter(geom__intersects=c_zones)
         stats = Counter({})
