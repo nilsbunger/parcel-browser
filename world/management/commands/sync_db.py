@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import sys
 
@@ -6,17 +7,25 @@ from django.db.models import DateField, DateTimeField
 
 from mygeo.settings import LOCAL_DB
 from world.models import AnalyzedListing, PropertyListing, RentalData
+from world.models.models import AnalyzedParcel, AnalyzedRoad
+
+
+class SyncCmd(Enum):
+    cloud2local = 1
+    local2cloud = 2
 
 
 class Command(BaseCommand):
     help = "Sync tables from cloud to local to simplify local development: PropertyListing, AnalyzedListing, RentalData"
 
     def add_arguments(self, parser):
+        parser.add_argument("cmd", choices=SyncCmd.__members__)
+        parser.add_argument("tables", nargs="*", help="Tables to sync (for local2cloud only")
         parser.add_argument(
             "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
         )
 
-    def handle(self, *args, **options):
+    def handle(self, cmd, tables, *args, **options):
         logging.basicConfig(
             stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO
         )
@@ -24,6 +33,23 @@ class Command(BaseCommand):
         logging.debug("DEBUG log level")
         logging.info("INFO log level")
         assert LOCAL_DB == 0
+        if cmd == "cloud2local":
+            self.handle_cloud2local(*args, **options)
+        elif cmd == "local2cloud":
+            self.handle_local2cloud(*args, **options)
+        else:
+            raise Exception(f"Unknown command {cmd}")
+
+    def handle_local2cloud(self, *args, **options):
+        for model in [AnalyzedParcel, AnalyzedRoad]:
+            logging.info(f"{model}: Deleting all entries from CLOUD DB")
+            model.objects.using("cloud_db").all().delete()
+            logging.info(f"{model}: Getting all entries from LOCAL DB and writing to Cloud DB")
+            items = model.objects.using("local_db").all()
+            model.objects.using("cloud_db").bulk_create(items)
+        logging.info("DONE migrating data")
+
+    def handle_cloud2local(self, *args, **options):
 
         # Remove auto_now and auto_now_add so that dates move over correctly.
         logging.info(f"Eliminating pre-save hooks on dates")
