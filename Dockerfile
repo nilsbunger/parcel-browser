@@ -59,5 +59,5 @@ RUN yarn build
 WORKDIR /app
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", ":8080", "--workers", "2", "mygeo.wsgi:application"]
+CMD ["gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
 # CMD ["sleep", "999999"]

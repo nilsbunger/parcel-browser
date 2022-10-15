@@ -91,6 +91,8 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS['tpa-vis-layer'],
       lineWidthMinPixels: 3,
+      minZoom: 12,
+      maxZoom: 15,
       pickable: true,
       onHover: null,
       visible: true,
@@ -100,6 +102,8 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS['compcomm-vis-layer'],
       lineWidthMinPixels: 3,
+      minZoom: 12,
+      maxZoom: 15,
       pickable: true,
       onHover: null,
       visible: true,
@@ -108,6 +112,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       data: '/dj/api/zoninglabeltile/{z}/{x}/{y}',
       getLineColor: [128, 128, 128],
       minZoom: 15,
+      maxZoon: 15,
       lineWidthMinPixels: 2,
       getTextSize: 12,
       getTextColor: [50, 50, 50],
@@ -120,7 +125,8 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       data: '/dj/api/zoningtile/{z}/{x}/{y}',
       getLineColor: [128, 128, 128],
       getFillColor: zoneColorFn,
-      minZoom: 0,
+      minZoom: 12,
+      maxZoom: 15,
       lineWidthMinPixels: 2,
       pickable: true,
       onHover: null,
@@ -134,6 +140,8 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS['ab2011-vis-layer'],
       lineWidthMinPixels: 3,
+      minZoom: 12,
+      maxZoom: 15,
       pickable: true,
       onHover: null,
       visible: true,
@@ -364,18 +372,19 @@ export function CoMapPage({ onTilesLoad = null }) {
     };
   }, []);
 
-
+  const zonesVisible = visibleLayers['c-vis-layer'] || visibleLayers['pd-vis-layer']
+                      || visibleLayers['sf-vis-layer'] || visibleLayers['mf-vis-layer']
   return (
     <ErrorBoundary fallback={<div>Error loading commercial map</div>}>
       <DeckGL
         layers={[
           baseTileLayer(onTilesLoad, showTileBoundaries),
-          mvtLayerWrapper('zoning-tile-layer', TILE_DEFS),
-          mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS),
+          mvtLayerWrapper('zoning-tile-layer', TILE_DEFS, zonesVisible),
+          mvtLayerWrapper('zoning-tile-label-layer', TILE_DEFS, zonesVisible),
           mvtLayerWrapper('tpa-tile-layer', TILE_DEFS, visibleLayers['tpa-vis-layer']),
           mvtLayerWrapper('compcomm-tile-layer', TILE_DEFS, visibleLayers['compcomm-vis-layer']),
           mvtLayerWrapper('ab2011-tile-layer', TILE_DEFS, visibleLayers['ab2011-vis-layer']),
-          mvtLayerWrapper('r2-parcel-road-tile-layer', TILE_DEFS),
+          mvtLayerWrapper('r2-parcel-road-tile-layer', TILE_DEFS, true),
           // mvtLayerWrapper('parcel-tile-layer', TILE_DEFS),
           // mvtLayerWrapper('road-tile-layer', TILE_DEFS),
         ]}
