@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django.contrib.gis",
+    "silk",
     "rest_framework",
     # "rest_framework_gis",
     "world",
@@ -92,6 +93,10 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Add silky right after security middleware.
+if DEV_ENV:
+    MIDDLEWARE.insert(1, "silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "mygeo.urls"
 
@@ -124,6 +129,9 @@ except:
 # See also https://docs.djangoproject.com/en/4.0/ref/settings/#secure-proxy-ssl-header
 # and https://fly.io/docs/reference/runtime-environment/
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SILKY_AUTHENTICATION = True  # User must login
+SILKY_AUTHORISATION = True  # User must have permissions
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases

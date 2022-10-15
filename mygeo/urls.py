@@ -19,6 +19,7 @@ urlpatterns = [
     # Django-rendered routes
     path("dj/admin/", admin.site.urls),
     path("dj/accounts/", include("django.contrib.auth.urls")),
+    path("dj/silk/", include("silk.urls", namespace="silk")),
     # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
