@@ -56,6 +56,15 @@ Browse to http://localhost:8000/map or http://localhost:8000/admin .
 
 If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
 
+# Simulating production environment locallly
+
+1. Build frontend files: 
+`cd frontend && yarn build && cd ..`
+
+2. Serve with similar command line as in production:
+`DJANGO_ENV=prod LOCAL_DB=0 gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
+
+
 # System architecture
 
 The app is a Django application at its core.
