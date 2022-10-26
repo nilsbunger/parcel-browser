@@ -32,25 +32,31 @@ RUN npm install --location=global yarn
 
 RUN chsh -s /usr/bin/bash
 
+# RUN pip install "poetry==$POETRY_VERSION"
+RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.2.2
+ENV PATH="/root/.local/bin:$PATH"
+
+
 WORKDIR /app
 
 # Set up a python virtual env for all subsequent commands
-ENV VIRTUAL_ENV=/app/venv
-RUN python3.9 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# ENV VIRTUAL_ENV=/app/venv
+# RUN python3.9 -m venv $VIRTUAL_ENV
+# ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
 
 # Do package installations first, so that they're cached in most cases
-RUN pip install wheel
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-# WORKDIR /app/frontend
-# COPY frontend/package.json .
+# RUN pip install wheel
+# COPY requirements.txt .
+# RUN pip install -r requirements.txt
+COPY pyproject.toml .
+COPY poetry.lock .
+RUN poetry install --only-main --no-root --no-interaction --no-ansi
 
 COPY . .
 RUN mkdir -p dist/static
-RUN python manage.py collectstatic --noinput
+RUN poetry run python manage.py collectstatic --noinput
 
 WORKDIR /app/frontend
 RUN yarn install && yarn cache clean
@@ -59,5 +65,5 @@ RUN yarn build
 WORKDIR /app
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
+CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
 # CMD ["sleep", "999999"]

@@ -9,7 +9,7 @@ processes = []
 #   dockerfile = "Dockerfile"
 
 [deploy]
- release_command = "python manage.py migrate"
+ release_command = "poetry run python manage.py migrate"
 
 [env]
   PORT = "8080"

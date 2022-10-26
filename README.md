@@ -6,16 +6,15 @@ This is currently working on a Mac with M1 processor. Will need tweaks for other
 
 `brew install gdal` - translator library for raster and vector geospatial data formats
 
-`brew install python3` - use python 3.8 or newer
+`brew install python3` - use python 3.9 or newer
 
 `pip3 install geopandas` - adds support for geographic data to pandas objects
 
+`brew install pipx` - pipx is a tool for installing and running Python applications in isolated environments
+
+`pipx ensurepath` - makes sure pipx is in your path  
 
 From the project directory:
-`python3 -m venv ./venv` to create a venv ([ref](https://docs.python.org/3/library/venv.html))
-
-`source ./venv/bin/activate` activates the virtual env. You need to do this in any terminal window where you're running Django, Jupyter Lab, or related tools.
-
 `cp .env.example .env` -- create your .env file.
 
 # Install or update dependencies
@@ -50,7 +49,7 @@ You'll need to run frontend and backend servers:
 `cd frontend && yarn dev` -- start frontend (parcel) dev server
 
 Now start the Django server (remember to start the virtual env if you didn't already):
-`./manage.py runserver`
+`poetry run ./manage.py runserver`
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin . 
 
@@ -62,8 +61,19 @@ If you haven't loaded any data, you should see an OpenStreetMap map at /map, but
 `cd frontend && yarn build && cd ..`
 
 2. Serve with similar command line as in production:
-`DJANGO_ENV=prod LOCAL_DB=0 gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
+`DJANGO_ENV=prod LOCAL_DB=0 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
 
+=======
+# Using poetry
+
+We use poetry as our package manager for python. It installs packages and manages your virtual environment.
+A few useful commands:
+* `poetry shell` : start a shell in the virtual environment. That shell will give you
+the right python version and all the packages installed.
+* `poetry add <package>` : add a package to the project (and update pyproject.toml and poetry.lock)
+* `poetry add --group dev <package>` : add a development-only package
+* `poetry env info` : show info about the virtual environment
+* `poetry show --tree`: show the dependency tree
 
 # System architecture
 
@@ -77,9 +87,12 @@ The major components of the system are:
     - Shapely (geometry manipulation)
     - GeoPandas (GeoDataFrame and GeoSeries), which includes pandas for data analysis and shapely for geometry manipulation.
 - Front end:
-    - OpenLayers map viewer (see, for example, map.ts)
+  - React
+  - Deck.gl (for mapping using webgl)
+  - Some older pages using Shapely and react-table (react-table is kind of a nightmare)
 
-When you're working on the code, you'll want the docs open for Shapely, GeoPandas, and Django querysets and GeoDjango. You can google for all of them.
+When you're working on the code, you'll want the docs open for Shapely, GeoPandas, Django querysets and GeoDjango. 
+You can google for all of them.
 
 
 # Management commands
@@ -113,9 +126,9 @@ But if you're loading new data, or setting up a new DB, follow these instruction
 
 `./manage.py load Roads`
 
-`./manage.py load HousingSolutionArea'
+`./manage.py load HousingSolutionArea`
 
-~~4. Run ETL jobs as necessary, eg:
+4. Run ETL jobs as necessary, eg:
 `./manage.py dataprep labels all`: (re-)generate labels for zones
 
 
@@ -187,5 +200,9 @@ went into it.
 
 # Future work
 
+<<<<<<< HEAD
 * Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
 * 
+=======
+* Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
+>>>>>>> 078999a (use poetry instead of pip for package mgmt; ensure silk is only a dev dependency)

@@ -31,20 +31,24 @@ env = environ.Env(
     LOCAL_DB=(bool, False),
     BUILD_PHASE=(str, "False"),
     DESPERATE=(bool, False),
+    DJANGO_LOG_LEVEL=(bool, "INFO"),
 )
 
 # if totally desperate we can print out all the environment variables for debugging Docker stuff.
-if env("DESPERATE"):
-    eprint("*** START ENVIRONMENT VARIABLES ***")
-    for name, value in os.environ.items():
-        eprint("{0}: {1}".format(name, value))
-    eprint("*** END ENVIRONMENT VARIABLES ***")
+# if env("DESPERATE"):
+#     eprint("*** START ENVIRONMENT VARIABLES ***")
+#     for name, value in os.environ.items():
+#         eprint("{0}: {1}".format(name, value))
+#     eprint("*** END ENVIRONMENT VARIABLES ***")
 
 DJANGO_ENV = env("DJANGO_ENV")
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 DEBUG = DJANGO_ENV == "development"  # run with extra debug facilities
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 LOCAL_DB = env("LOCAL_DB")
+DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
+eprint("Django Log Level", DJANGO_LOG_LEVEL)
+
 if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
@@ -73,12 +77,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django.contrib.gis",
-    "silk",
-    "rest_framework",
+    # "rest_framework",
     # "rest_framework_gis",
     "world",
     "co",
 ]
+
+if DEV_ENV:
+    INSTALLED_APPS += ["silk"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -150,6 +156,7 @@ else:
         env("DB_PASSWORD"),
     )
 
+
 if dbHost:
     # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
     # Additionally define the 'topo' DB where the topo model lives, since it is very large.
@@ -180,7 +187,7 @@ if dbHost:
 else:
     DATABASES = {}
 
-CONN_MAX_AGE = 3600  # allow persistent DB connection (in seconds)
+CONN_MAX_AGE = None  # allow persistent DB connection forever
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -243,6 +250,7 @@ LOGGING = {
     },
     "handlers": {
         "console": {
+            "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
@@ -260,7 +268,12 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
+            "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": DJANGO_LOG_LEVEL,
             "propagate": False,
         },
         "parsnip.commands": {

@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.defaults import page_not_found
 
+from mygeo import settings
 from world import views
 from world.infra_views import frontend_proxy_view
 from world.views import (
@@ -19,7 +20,6 @@ urlpatterns = [
     # Django-rendered routes
     path("dj/admin/", admin.site.urls),
     path("dj/accounts/", include("django.contrib.auth.urls")),
-    path("dj/silk/", include("silk.urls", namespace="silk")),
     # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
@@ -68,3 +68,8 @@ urlpatterns = [
     # All other routes - send to React for rendering
     re_path(r"^(.*)$", frontend_proxy_view),
 ]
+
+if settings.DEV_ENV:
+    urlpatterns += [
+        path("dj/silk/", include("silk.urls", namespace="silk")),
+    ]
