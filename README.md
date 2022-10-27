@@ -196,6 +196,15 @@ We use the `LOCAL_DB=1` flag in our django app to select your local DB instance.
 Note: it's smart to inspect the json file to make sure no other STDOUT output
 went into it.
 
+# Hardcore debugging
+
+Sometimes we get segmentation faults because of stupid issues with shapely libraries.
+An example of how to debug that:
+* ` lldb --arch arm64 python ./manage.py scrape -- --parcel 3091021200 --verbose -v3 --dry-run`
+* Inside lldb, run `run` to start the program, and `cont` when it pauses
+* When it crashes, run `bt` to get a backtrace
+
+
 # Future work
 
 * Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
