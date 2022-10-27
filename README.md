@@ -19,11 +19,11 @@ From the project directory:
 
 # Install or update dependencies
 
-`pip install -r requirements.txt`
+`poetry install` -- install python package dependencies
 
 `cd frontend && yarn install` -- install dependencies for frontned
 
-Note: You'll periodically need to update python and yarn dependencies as the code changes.
+Note: You'll periodically need to update dependencies as the code changes.
 
 # Set up a local database
 
