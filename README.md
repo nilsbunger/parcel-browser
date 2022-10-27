@@ -55,6 +55,21 @@ Browse to http://localhost:8000/map or http://localhost:8000/admin .
 
 If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
 
+# Management commands
+
+In `world/management/commands/` you'll find our custom command-line commands for
+doing ETL and various other processing. This is the easiest place to 
+write code that isn't a web request.
+
+You can add a new file in this
+directory and it will magically become a Django mgmt command, eg 
+`./manage.py <command> <params>`, where <command> is the name of the file you 
+created.
+
+Some examples:
+* `LOCAL_DB=0 ./manage.py scrape --fetch --no-cache` -- daily scraping run. Requires Wireguard tunnel to cloud postgres to be running
+* `./manage.py` -- list all management commands. The commmands we created are in `world` and `co` apps.
+
 # Simulating production environment locallly
 
 1. Build frontend files: 
@@ -94,17 +109,6 @@ The major components of the system are:
 When you're working on the code, you'll want the docs open for Shapely, GeoPandas, Django querysets and GeoDjango. 
 You can google for all of them.
 
-
-# Management commands
-
-In `world/management/commands/` you'll find our custom command-line commands for
-doing ETL and various other processing. This is the easiest place to 
-write code that isn't a web request.
-
-You can add a new file in this
-directory and it will magically become a Django mgmt command, eg 
-`./manage.py <command> <params>`, where <command> is the name of the file you 
-created.
 
 # Importing data
 
@@ -157,12 +161,6 @@ You'll need to manipulate the generated models in a few ways:
 - **TIP:** To make things easier, you can set up a custom start point for the data to save, so you don't have to always run `load.py` from the start again. Simply add `fid_range=(START,END)` as an argument to `lm.save()`. For reference: https://docs.djangoproject.com/en/4.0/ref/contrib/gis/layermapping/
 3. There are no indexes or foreign keys in this model. Depending on how you intend to use it, you should consider adding those. They can be added later, of course.
 
-# Scripts
-
-We're working on several scripts that run outside a Django environment. This is in flux, but here's one you can try:
-`./manage.py runscript richard_parcel_test`
-This comes from the scripts/ directory, and you can create more files there.
-
 # Using a cloud DB instead of local DB
 
 The Django app can be pointed at a cloud DB easily. You just need to set the env variable LOCAL_DB=0. You can set that in your own .env file, or add it to each command line, or add it to the shell environment. At that point, all Django commands (like `migrate`, `runserver`, and our custom scripts) will access the cloud DB.
@@ -200,9 +198,4 @@ went into it.
 
 # Future work
 
-<<<<<<< HEAD
 * Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
-* 
-=======
-* Editable layers in the map, eg to define a housing unit. Use something like https://github.com/uber/nebula.gl, which works with deck.gl
->>>>>>> 078999a (use poetry instead of pip for package mgmt; ensure silk is only a dev dependency)
