@@ -40,7 +40,9 @@ env = environ.Env(
 #     for name, value in os.environ.items():
 #         eprint("{0}: {1}".format(name, value))
 #     eprint("*** END ENVIRONMENT VARIABLES ***")
-
+AUTH0_DOMAIN = env("AUTH0_DOMAIN")
+AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
+AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
 DJANGO_ENV = env("DJANGO_ENV")
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 DEBUG = DJANGO_ENV == "development"  # run with extra debug facilities
@@ -53,7 +55,9 @@ if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
     eprint("**** DEBUG=FALSE ****")
-eprint(f"**** DJANGO_ENV is {'DEV (meaning on a local machine)' if DEV_ENV else 'PROD'} ****")
+eprint(
+    f"**** DJANGO_ENV is {'DEVELOPMENT (meaning on a local machine)' if DEV_ENV else 'PRODUCTION'} ****"
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -138,6 +142,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SILKY_AUTHENTICATION = True  # User must login
 SILKY_AUTHORISATION = True  # User must have permissions
+SILKY_PYTHON_PROFILER = True
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases

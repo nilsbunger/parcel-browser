@@ -5,7 +5,9 @@ from django.urls import path, include, re_path
 from django.views.defaults import page_not_found
 
 from mygeo import settings
+import world
 from world import views
+import world.auth_views
 from world.infra_views import frontend_proxy_view
 from world.views import (
     ParcelDetailView,
@@ -17,16 +19,24 @@ from world.api import api as world_api
 from co.co_api import api as co_api
 
 urlpatterns = [
-    # Django-rendered routes
+    #### ---- Django-rendered routes
     path("dj/admin/", admin.site.urls),
-    path("dj/accounts/", include("django.contrib.auth.urls")),
+    # auth0 auth routes
+    path("dj/", world.auth_views.index, name="auth0_index"),
+    path("dj/login", world.auth_views.login, name="login"),
+    path("dj/logout", world.auth_views.logout, name="logout"),
+    path("dj/callback", world.auth_views.callback, name="callback"),
+    # Original django-auth.... not sure what to do with it yet
+    # path("dj/accounts/", include("django.contrib.auth.urls")),
     # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
     path("dj/co/", include("co.urls")),
     # Django-generated API routes
     path("api/co/", co_api.urls),
+    # new-school APIs using django-ninja
     path("api/", world_api.urls),
+    # old-school APIs serving vector tiles
     path(
         "dj/api/parceltile/<int:z>/<int:x>/<int:y>",
         views.ParcelTileData.as_view(),
@@ -60,11 +70,11 @@ urlpatterns = [
         name="compcomm-tile",
     ),
     # path("dj/api/listings", views.ListingsData.as_view(), name="listings"),
-    path("dj/api/analysis/<int:id>", views.AnalysisDetailData.as_view(), name="listing analysis"),
+    # path("dj/api/analysis/<int:id>", views.AnalysisDetailData.as_view(), name="listing analysis"),
     path("dj/parcel/<str:apn>/geodata", ParcelDetailData.as_view()),
     path("dj/parcel/<str:apn>/geodata/neighbor", IsolatedNeighborDetailData.as_view()),
-    # Add catch-all for routes that should NOT go to react
-    re_path(r"^(?:dj|api)/.*$", page_not_found, {"exception": django.http.Http404()}),
+    # Add catch-all for routes that should NOT go to react (ones starting with dj/ or api/)
+    re_path(r"^(?:dj|api)/.+$", page_not_found, {"exception": django.http.Http404()}),
     # All other routes - send to React for rendering
     re_path(r"^(.*)$", frontend_proxy_view),
 ]

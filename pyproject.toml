@@ -41,6 +41,7 @@ scraperapi-sdk = "^0.2.2"
 scrapy = "^2.7.0"
 shapely = "^1.8.5.post1"
 geopandas = "^0.12.0"
+authlib = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 django-silk = "^5.0.1"
