@@ -16,7 +16,8 @@ from lib.neighborhoods import HIGH_PRIORITY_NEIGHBORHOODS
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
-django.setup()
+if __name__ == "__main__":
+    django.setup()
 
 from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
@@ -313,6 +314,9 @@ def analyze_one_parcel(
         force_uploads (Boolean, optional): Whether to force new uploads of images to R2.
     """
 
+    log.info(
+        f"Parcel analysis: APN={parcel_model.apn}, addr={property_listing.addr if property_listing else 'No listing'}"
+    )
     re_params = ReParams()
     too_high_df = too_low_df = buffered_buildings_geom = None
 
@@ -590,42 +594,6 @@ def analyze_one_parcel(
     return a
 
 
-def _analyze_one_parcel_worker(
-    parcel: Parcel,
-    utm_crs: pyproj.CRS,
-    property_listing: PropertyListing,
-    dry_run: bool,
-    save_dir: str,  # this used to have a default, but it shouldn't be used
-    try_garage_conversion=True,
-    try_split_lot=True,
-    i: int = 0,
-):
-    assert property_listing is not None
-    log.info(
-        f"Parcel analysis: index={i}, APN={parcel.apn}, addr={property_listing.addr if property_listing else 'No listing'}"
-    )
-    try:
-        result = analyze_one_parcel(
-            parcel,
-            utm_crs,
-            property_listing,
-            dry_run,
-            save_dir=save_dir,
-            show_plot=False,
-            try_garage_conversion=try_garage_conversion,
-            try_split_lot=try_split_lot,
-        )
-        return result, None
-    except Exception as e:
-        # log.error()
-        log.error(f"Exception on parcel {parcel.apn}", exc_info=True)
-        # raise e
-        return None, {
-            "apn": parcel.apn,
-            "error": e,
-        }
-
-
 def analyze_batch(
     parcels: list[Parcel],
     utm_crs: pyproj.CRS,
@@ -636,6 +604,8 @@ def analyze_batch(
     try_split_lot=True,
     single_process=False,
 ):
+    from lib.parallel_worker import analyze_one_parcel_worker
+
     """
     Notable arguments:
         property_listings: a list of listings of same length as parcels. Maps each
@@ -665,7 +635,7 @@ def analyze_batch(
 
     if n_jobs == 1:
         results = [
-            _analyze_one_parcel_worker(
+            analyze_one_parcel_worker(
                 parcels[i],
                 utm_crs,
                 property_listings[i],
@@ -678,7 +648,7 @@ def analyze_batch(
         ]
     else:
         results = Parallel(n_jobs=n_jobs)(
-            delayed(_analyze_one_parcel_worker)(
+            delayed(analyze_one_parcel_worker)(
                 parcels[i],
                 utm_crs,
                 property_listings[i],

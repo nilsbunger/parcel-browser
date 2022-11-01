@@ -30,7 +30,8 @@ from mygeo.settings import TOPO_DB_ALIAS
 # over from the main process, so we need to set up Django again. Otherwise,
 # the other Django-related imports will all fail. Not sure if this is the best
 # way to do it, should experiment with others too.
-django.setup()
+if __name__ == "__main__":
+    django.setup()
 
 
 colors = {25: "red", 20: "orange", 15: "gold", 10: "greenyellow", 5: "springgreen", 0: "white"}
