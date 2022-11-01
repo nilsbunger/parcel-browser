@@ -52,7 +52,7 @@ ENV DJANGO_ENV=production
 # RUN pip install -r requirements.txt
 COPY pyproject.toml .
 COPY poetry.lock .
-RUN poetry install --only-main --no-root --no-interaction --no-ansi
+RUN poetry install --only main --no-root --no-interaction --no-ansi
 
 COPY . .
 RUN mkdir -p dist/static

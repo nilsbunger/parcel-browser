@@ -27,7 +27,7 @@ urlpatterns = [
     path("dj/logout", world.auth_views.logout, name="logout"),
     path("dj/callback", world.auth_views.callback, name="callback"),
     # Original django-auth.... not sure what to do with it yet
-    # path("dj/accounts/", include("django.contrib.auth.urls")),
+    path("dj/accounts/", include("django.contrib.auth.urls")),
     # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),

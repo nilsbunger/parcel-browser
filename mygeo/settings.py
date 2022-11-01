@@ -40,9 +40,7 @@ env = environ.Env(
 #     for name, value in os.environ.items():
 #         eprint("{0}: {1}".format(name, value))
 #     eprint("*** END ENVIRONMENT VARIABLES ***")
-AUTH0_DOMAIN = env("AUTH0_DOMAIN")
-AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
-AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
+BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 DEBUG = DJANGO_ENV == "development"  # run with extra debug facilities
@@ -50,6 +48,11 @@ TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 LOCAL_DB = env("LOCAL_DB")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 eprint("Django Log Level", DJANGO_LOG_LEVEL)
+
+if not BUILD_PHASE:
+    AUTH0_DOMAIN = env("AUTH0_DOMAIN")
+    AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
 
 if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
@@ -150,7 +153,7 @@ dbHost = None
 if LOCAL_DB:
     eprint("****** LOCAL DATABASE ******")
     (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "geodjango", env("USER"), "")
-elif env("BUILD_PHASE") == "True":
+elif BUILD_PHASE:
     eprint("****** NO DB - BUILD PHASE ******")
 else:
     eprint("****** CLOUD DATABASE ******")
