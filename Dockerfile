@@ -19,14 +19,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 # postgresql-client -- for psql
 RUN apt-get update && apt-get install -y \
     nodejs \
-    gdal-bin \
-    libgdal-dev \
-    python3.9 \
+    gdal-bin=3.0.4+dfsg-1build3 \
+    libgdal-dev=3.0.4+dfsg-1build3 \
+    python3.9=3.9.15-1+focal1 \
     python3.9-distutils \
     python3.9-venv \
     python3.9-dev \
     openssh-client \
-    postgresql-client
+    postgresql-client=12+214ubuntu0.1
 
 RUN npm install --location=global yarn
 
