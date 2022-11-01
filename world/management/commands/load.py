@@ -1,25 +1,24 @@
 from enum import Enum
 from pathlib import Path
-
-from django.core.management import CommandParser
-import geopandas
+import subprocess
 
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
+from django.core.management import CommandParser
+from django.core.management.base import BaseCommand
+import geopandas
 
 from mygeo.util import eprint
 from world.models import (
-    Parcel,
-    ZoningBase,
     BuildingOutlines,
+    Parcel,
+    Roads,
     Topography,
     TopographyLoads,
-    Roads,
     TransitPriorityArea,
+    ZoningBase,
 )
-from django.core.management.base import BaseCommand
-
 from world.models.base_models import HousingSolutionArea
 from world.models.base_models_mapping import (
     buildingoutlines_mapping,
@@ -42,11 +41,67 @@ class LoadModel(Enum):
     HousingSolutionArea = 7
 
 
+class Cmd(Enum):
+    db = 1
+    tiles = 2
+
+
+class Region(Enum):
+    sd = 1
+    sf = 2
+
+
+sf_schemas = {
+    "shapefiles": {
+        "ZoningDistricts": {
+            "field_name_mappings": [
+                ("zoning", "zoning"),
+            ]
+        },
+        "ZoningHeightBulkDistricts": {
+            "field_name_mappings": [("height", "height_name"), ("gen_hght", "height_val")]
+        },
+        "ZoningSpecialUseDistricts": {
+            "field_name_mappings": [("name", "su_name"), ("url", "su_url")],
+        },
+        "Parcels": {
+            "field_name_mappings": [
+                ("from_addre", "from_addr"),
+                ("to_address", "to_addr"),
+                ("street_nam", "street"),
+                ("street_typ", "suffix"),
+                ("mapblklot", "mapblklot"),
+                ("Geometry", "Geometry"),
+            ],
+            "group_by_field": "mapblklot,Geometry",
+        },
+        "Streets": {
+            "field_name_mappings": [("name", "name"), ("type", "type"), ("Geometry", "Geometry")]
+        },
+    },
+    "tilelayers": {
+        "zoning": {"shapes": ["ZoningDistricts"]},
+        "parcelroads": {"shapes": ["Parcels", "Roads"]},
+    },
+}
+schemas = {
+    "sf": sf_schemas,
+}
+
+
 class Command(BaseCommand):
     help = "Load data from a shape file into a Django model"
 
     def add_arguments(self, parser: CommandParser):
-        parser.add_argument("model", choices=LoadModel.__members__)
+        parser.add_argument(
+            "cmd",
+            choices=Cmd.__members__,
+            help="Command to run: db=load model into DB; tiles=generate + upload static tiles",
+        )
+        parser.add_argument(
+            "region", choices=Region.__members__, help="Region (sd, sf) to load data for"
+        )
+        # parser.add_argument("model", choices=LoadModel.__members__)
         parser.add_argument("fname", nargs="?")
         parser.add_argument(
             "--check-nulls",
@@ -55,8 +110,73 @@ class Command(BaseCommand):
             "blank=True null=True in the model).",
         )
 
-    def handle(self, model, fname=None, *args, **options):
+    def handle(self, cmd, region, fname, check_nulls, model=None, *args, **options):
+        if cmd == "db":
+            self.db_cmd(region, model, fname, check_nulls)
+        elif cmd == "tiles":
+            self.tiles_cmd(region, model, fname)
+        else:
+            eprint("Unknown command!")
 
+    def tiles_cmd(self, region, model, fname):
+        from mygeo import settings
+
+        dir = settings.BASE_DIR / "deploy" / "data-files" / region
+        shapefiles = sorted(Path(dir).rglob("*.shp"))
+        # Turn shape-file into line-delimited GeoJSON (ldgeojson) w/ translation to lat/long. Convert the shapefiles
+        # 1:1 into GeoJSON files. Consolidation happens in later step
+        for shapefile in shapefiles:  # TODO: Temporarily just get one file (the zoning file)
+            eprint(f"Processing {shapefile}")
+            shape_name = shapefile.parts[
+                -2
+            ]  # use leaf directory name (e.g. "ZoningDistrict") as the file name
+            layer_name = shapefile.stem  # filename w/o extension
+            outfile = dir / "out" / f"{shape_name}.geojson.ld"
+            shape_cfg = schemas["sf"]["shapefiles"][shape_name]
+            ogrsql = f"'SELECT " + ",".join(
+                [f"{mapping[0]} AS {mapping[1]}" for mapping in shape_cfg["field_name_mappings"]]
+            )
+            ogrsql += f' FROM "{shapefile.stem}"'
+            if "group_by_field" in shape_cfg:
+                ogrsql += f' GROUP BY {shape_cfg["group_by_field"]}'
+            ogrsql += "'"
+            ogr2ogr_cmd = f"ogr2ogr -dim 2 -t_srs 'EPSG:4326' -f 'GeoJSON' -dialect sqlite -sql {ogrsql} {outfile} {shapefile}"
+            eprint(f"Running: {ogr2ogr_cmd}")
+            process_result = subprocess.run(ogr2ogr_cmd, check=True, shell=True)
+            assert (
+                process_result.returncode == 0
+            ), f"ogr2ogr failed with return code {process_result.returncode}"
+
+        for layername, layercfg in schemas[region]["tilelayers"].items():
+            eprint(f"Building tile layer: {layername}")
+            shapefiles = [str(dir / "out" / f"{shape}.geojson.ld") for shape in layercfg["shapes"]]
+
+            # Now make the tilelayer from the GeoJSON file(s). Multiple shapefiles get combined here into one MVTile layer.
+            process_result2 = subprocess.run(
+                f"tippecanoe --no-feature-limit --no-tile-size-limit --minimum-zoom=16 --maximum-zoom=16 "
+                f"--read-parallel -l {layername} --no-tile-compression {' '.join(shapefiles)} "
+                f"--output-to-directory {dir / 'out' / layername}",
+                check=True,
+                shell=True,
+            )
+            assert (
+                process_result2.returncode == 0
+            ), f"tippecanoe failed with return code {process_result2.returncode}"
+            print(process_result)
+            # schema = self.schemas[region][shape_name]
+            # with fiona.open(shapefile) as src:
+            #     dest = tempfile.TemporaryFile()
+            #     with fiona.open(dir / "out" / (shape_name + ".ldgeojson"), "w", driver="GeoJSON", crs="EPSG:4326",
+            #                     schema=schema) as dst:
+            #         for f in src:
+            #             dst.write(f)
+            #     print("DONE")
+
+        print(dir)
+        pass
+
+    def db_cmd(self, region, model=None, fname=None, *args, **options):
+        assert False, "Update for regions, new paths, and automating file discovery"
         print(model)
         data_dir = Path(__file__).resolve().parent.parent.parent / "data"
         if model == "Parcel":

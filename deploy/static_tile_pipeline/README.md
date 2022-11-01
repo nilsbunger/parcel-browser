@@ -2,11 +2,14 @@
 
 # Creating a static vector tile set, hostable by R2.
 
+What this process does is translate shapefiles (which we get from the cities) into vector tiles. Vector tiles are 
+the format consumed by our mapping viewers.
+
 References:
 https://geovation.github.io/build-your-own-static-vector-tile-pipeline
 https://geovation.github.io/tiler
 https://docs.mapbox.com/mapbox-tiling-service/guides/tileset-sources/#line-delimited-geojson
-
+https://github.com/dwtkns/gdal-cheat-sheet -- lots of ogr2ogr command examples
 
 # Tools:
 
@@ -17,6 +20,7 @@ In virtualenv:
 Other:
 
 * brew install tippecanoe rclone
+* QGIS app for viewing shapefiles and vector tiles
 
 # Sequence:
 
@@ -24,11 +28,15 @@ We've done this with the parcels and roads shapefiles first, as they are the slo
 load and most detailed. It can be extended to zoning and other layers, though you need
 to filter those similar to the TileData view in world/views.py
 
+* Look at the shapefile, understand its fields and coordinate system.
+`fio info --indent 2 <shpfile>` gives the data schema AND
+* Browse shapefile with QGIS app and see all the attributes (Layer / Open Attribute Table)
+
 * Turn shape-file into line-delimited GeoJSON (ldgeojson) w/ translation to lat/long
   (EPSG4326)
 
 `ogr2ogr -dim 2 -f 'GeoJSON' -sql "SELECT RD30FULL as rd30full, ROADSEGID as roadsegid, RIGHTWAY as rightway, ABLOADDR as abloaddr, ABHIADDR as abhiaddr from Roads_all" -t_srs 'EPSG:4326' /tmp/roads.ldgeojson.ld ../Roads_all/Roads_all.shp`
-`ogr2ogr -dim 2 -f 'GeoJSON' -sql "SELECT APN as apn, from PARCELS" -t_srs 'EPSG:4326' /tmp/parcel.ldgeojson.ld ../PARCELS/PARCELS.shp`
+`ogr2ogr -dim 2 -f 'GeoJSON' -sql "SELECT APN as apn from PARCELS" -t_srs 'EPSG:4326' /tmp/parcel.ldgeojson.ld ../PARCELS/PARCELS.shp`
 
      - Output file is about 2x larger than input file.
      - We select attributes here to change them to lowercase. The next step can just
