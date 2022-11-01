@@ -21,11 +21,12 @@ from mygeo import settings
 # In dev, this requires running a frontend server at localhost:1234 in dev by executing `yarn dev` in
 # the frontend/ directory.
 
-# PRODUCTION SERVING: We just serve index.html for views we handle, then the react-router handles the rest.
+
 class FrontEndProxyView(LoginRequiredMixin, TemplateView):
     pass
 
 
+# PRODUCTION SERVING: We just serve index.html for views we handle, then the react-router handles the rest.
 frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name="index.html")
 
 

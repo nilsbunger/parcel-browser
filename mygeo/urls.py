@@ -70,6 +70,4 @@ urlpatterns = [
 ]
 
 if settings.DEV_ENV:
-    urlpatterns += [
-        path("dj/silk/", include("silk.urls", namespace="silk")),
-    ]
+    urlpatterns.insert(0, path("dj/silk/", include("silk.urls", namespace="silk")))

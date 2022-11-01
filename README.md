@@ -2,20 +2,31 @@
 Home3 application for evaluating parcels for upzoning.
 
 # Setup steps
-This is currently working on a Mac with M1 processor. Will need tweaks for other environments.
+This is currently working on a Mac with M1 processor. It may need tweaks for other environments. Note 
+that we also have a Dockerfile which you can build an image from or look at for commands
+to create a working environment.
 
-`brew install gdal` - translator library for raster and vector geospatial data formats
+`brew install gdal geos` - geospatial libraries. 
+Check [supported versions](https://docs.djangoproject.com/en/4.1/ref/contrib/gis/install/geolibs/) 
+in Django docs if you have problems.
 
-`brew install python3` - use python 3.9 or newer
+~~`brew install python3` - use python 3.9 or newer~~ - replaced by pyenv below.
 
 `pip3 install geopandas` - adds support for geographic data to pandas objects
 
 `brew install pipx` - pipx is a tool for installing and running Python applications in isolated environments
 
+`brew pin gdal geos pipx geos ` - pin gdal and pipx so they don't get upgraded
+
 `pipx ensurepath` - makes sure pipx is in your path  
 
 From the project directory:
 `cp .env.example .env` -- create your .env file.
+
+
+Depending on your setup, you might need to add library paths as follows to your .zshrc or other shell init file (adjusting version numbers as required):
+* `export GEOS_LIBRARY_PATH=/opt/homebrew/lib/libgeos_c.1.17.0.dylib`
+* `export GDAL_LIBRARY_PATH=/opt/homebrew/lib/libgdal.31.dylib`
 
 # Install or update dependencies
 
@@ -29,17 +40,19 @@ Note: You'll periodically need to update dependencies as the code changes.
 
 You'll need a local DB or access to a cloud DB to run the service. A local DB is best for dev, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally. 
 
-1. `brew install postgres`
+* `brew install postgresql@14`
 
-2. `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions. Installs it with the protobuf support compiled in.
+* `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions. Installs it with the protobuf support compiled in.
 
-3. `brew services start postgres` -- Run the Postgres server as a service in the background
+* `brew pin postgresql@14 postgis ` - pin packages so they don't get upgraded
 
-4. `createdb geodjango` -- postgres command to create the database
+* `brew services start postgres` -- Run the Postgres server as a service in the background
 
-5. `./manage.py migrate` -- apply django migrations to the local DB
+* `createdb geodjango` -- postgres command to create the database
 
-6. `./manage.py createsuperuser` -- give yourself a superadmin account on django
+* `./manage.py migrate` -- apply django migrations to the local DB
+
+* `./manage.py createsuperuser` -- give yourself a superadmin account on django
 
 The above is mostly a one-time setup. 
 
@@ -161,10 +174,14 @@ You'll need to manipulate the generated models in a few ways:
 - **TIP:** To make things easier, you can set up a custom start point for the data to save, so you don't have to always run `load.py` from the start again. Simply add `fid_range=(START,END)` as an argument to `lm.save()`. For reference: https://docs.djangoproject.com/en/4.0/ref/contrib/gis/layermapping/
 3. There are no indexes or foreign keys in this model. Depending on how you intend to use it, you should consider adding those. They can be added later, of course.
 
-# Using a cloud DB instead of local DB
+# Using the fly.io prod DB instead of local DB
 
-The Django app can be pointed at a cloud DB easily. You just need to set the env variable LOCAL_DB=0. You can set that in your own .env file, or add it to each command line, or add it to the shell environment. At that point, all Django commands (like `migrate`, `runserver`, and our custom scripts) will access the cloud DB.
+The local Django app can be pointed at our fly.io DB:
+1. Set up Wireguard tunnel running from your machine to cloud DB at fly.io. Fly.io has instructions on this.
+2. From deploy/postgres directory: `fly proxy 15999:5432` to put the production DB at local port 15999
+3. Add LOCAL_DB=0 before any `./manage.py` command to use the cloud DB instead of local DB.
 
+We mostly use this config for running the daily listings scrape + analysis.
 
 # Copying data from one DB to another
 

@@ -9,10 +9,11 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import ListView, TemplateView
-from django.contrib.gis.db.models import GeometryField
 import geopandas as geopandas
-from vectortiles.mixins import BaseVectorTileView
 
+from mygeo import settings
+
+from vectortiles.mixins import BaseVectorTileView
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
@@ -23,7 +24,6 @@ from world.models import (
     AnalyzedParcel,
     BuildingOutlines,
     Parcel,
-    PropertyListing,
     Roads,
     Topography,
     TransitPriorityArea,
@@ -31,7 +31,12 @@ from world.models import (
 )
 from world.models.base_models import HousingSolutionArea, ZoningMapLabel
 
+if settings.DEV_ENV:
+    from silk.profiling.profiler import silk_profile
+
+
 pp = pprint.PrettyPrinter(indent=2)
+
 
 # ajax call for parcel tiles for big map
 class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
@@ -116,10 +121,14 @@ class Ab2011TileData(MVTView, ListView):
     vector_tile_geom_name = "apn__geom"
 
     def get_vector_tile_queryset(self):
-        print("HI")
+        print("HI AB 2011")
         return self.model.objects.filter(
             ab2011_eligible__in=[CheckResultEnum.passed, CheckResultEnum.uncertain]
         )
+
+    # @silk_profile(name="Get AB2011 tile")
+    def get_tile(self, x, y, z):
+        return super().get_tile(x, y, z)
 
 
 # ------------------------------------------------------
