@@ -72,6 +72,8 @@ SESSION_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
+AUTH_USER_MODEL = "world.User"
+
 # Application definition
 
 INSTALLED_APPS = [

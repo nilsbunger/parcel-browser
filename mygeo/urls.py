@@ -23,9 +23,9 @@ urlpatterns = [
     path("dj/admin/", admin.site.urls),
     # auth0 auth routes
     path("dj/", world.auth_views.index, name="auth0_index"),
-    path("dj/login", world.auth_views.login, name="login"),
-    path("dj/logout", world.auth_views.logout, name="logout"),
-    path("dj/callback", world.auth_views.callback, name="callback"),
+    path("dj/login", world.auth_views.login, name="auth0_login"),
+    path("dj/logout", world.auth_views.logout, name="auth0_logout"),
+    path("dj/callback", world.auth_views.callback, name="auth0_callback"),
     # Original django-auth.... not sure what to do with it yet
     path("dj/accounts/", include("django.contrib.auth.urls")),
     # path("dj/map/", MapView.as_view()),
