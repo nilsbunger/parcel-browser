@@ -84,12 +84,8 @@ def save_and_upload_figures(
     if save_to_cloud:
         print(f"**** SAVING images for address {addr} to Cloudflare R2 ****")
         try:
-            response = s3.meta.client.upload_file(
-                new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
-            )
-            response = s3.meta.client.upload_file(
-                cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
-            )
+            response = s3.meta.client.upload_file(new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}")
+            response = s3.meta.client.upload_file(cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}")
         except ClientError as e:
             eprint(f"ERROR uploading images for {addr} to R2. Error = {e}")
             messages["warning"].append(f"ERROR uploading images for {addr} to R2")
@@ -111,9 +107,7 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
     existing_FAR = existing_floor_area / parcel_size
     if buildings is not None:
         main_building_area = buildings[buildings.building_type == "MAIN"].geometry.area.sum()
-        accessory_buildings_area = buildings[
-            buildings.building_type == "ACCESSORY"
-        ].geometry.area.sum()
+        accessory_buildings_area = buildings[buildings.building_type == "ACCESSORY"].geometry.area.sum()
     else:
         main_building_area = accessory_buildings_area = 0
     return (
@@ -223,26 +217,15 @@ def _dev_potential_by_far(
                         ),
                     ]
                     total_constr_cost = constr_hard_cost + constr_soft_cost + constr_adu_fees
-                    vacancy_cost = 0 - round(
-                        re_params.vacancy_rate * (new_units_rent + existing_units_rent)
-                    )
+                    vacancy_cost = 0 - round(re_params.vacancy_rate * (new_units_rent + existing_units_rent))
                     insurance_cost = round(
-                        (0 - property_listing.price + total_constr_cost)
-                        * re_params.insurance_cost_rate
-                        / 12
+                        (0 - property_listing.price + total_constr_cost) * re_params.insurance_cost_rate / 12
                     )
-                    repair_cost = 0 - round(
-                        re_params.repair_cost_rate * (new_units_rent + existing_units_rent)
-                    )
+                    repair_cost = 0 - round(re_params.repair_cost_rate * (new_units_rent + existing_units_rent))
                     prop_taxes = round(
-                        0
-                        - (property_listing.price + total_constr_cost)
-                        * re_params.prop_tax_rate
-                        / 12
+                        0 - (property_listing.price + total_constr_cost) * re_params.prop_tax_rate / 12
                     )
-                    mgmt_cost = 0 - round(
-                        re_params.mgmt_cost_rate * (new_units_rent + existing_units_rent)
-                    )
+                    mgmt_cost = 0 - round(re_params.mgmt_cost_rate * (new_units_rent + existing_units_rent))
                     finances.operating_flow = [
                         [
                             "rent: existing units",
@@ -359,9 +342,7 @@ def analyze_one_parcel(
         buildings = models_to_utm_gdf(list(buildings), utm_crs)
         identify_building_types(parcel.geometry, buildings)
         buffered_buildings_geom = get_buffered_building_geom(buildings, BUFFER_SIZES)
-        too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(
-            parcel, buildings, topos_df, utm_crs
-        )
+        too_high_df, too_low_df, cant_build_elev = get_too_high_or_low(parcel, buildings, topos_df, utm_crs)
         cant_build = unary_union([buffered_buildings_geom, *setbacks, *too_steep, cant_build_elev])
 
     avail_area_by_far = get_avail_floor_area(parcel, buildings, max_far)
@@ -481,9 +462,7 @@ def analyze_one_parcel(
         plt.show()
     max_cap_rate = 0
     if dev_scenarios:
-        cap_rates = [
-            scenario.finances.cap_rate_calc for scenario in dev_scenarios if scenario.finances
-        ]
+        cap_rates = [scenario.finances.cap_rate_calc for scenario in dev_scenarios if scenario.finances]
         cap_rates.append(0)  # in case there are no scenarios with finances
         max_cap_rate = max(cap_rates)
 
@@ -510,9 +489,7 @@ def analyze_one_parcel(
             "potential_FAR": max_far - existing_FAR,
             "avail_area_by_FAR": avail_area_by_far,
             "num_new_buildings": len(new_building_polys),
-            "new_building_areas": ",".join(
-                [str(int(round(poly.area))) for poly in new_building_polys]
-            ),
+            "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
             "total_added_building_area": total_added_building_area,
             "garage_con_units": garage_con_units,
             "garage_con_area": garage_con_area,
@@ -564,9 +541,7 @@ def analyze_one_parcel(
         return a
     a: AnalyzedListing
     created: bool
-    a, created = AnalyzedListing.objects.update_or_create(
-        listing=property_listing, defaults=al_defaults
-    )
+    a, created = AnalyzedListing.objects.update_or_create(listing=property_listing, defaults=al_defaults)
     # Salt for hashing filenames in R2 (or S3) buckets.
     # Only upload images if there's a new salt since they don't typically change.
     salt = 0

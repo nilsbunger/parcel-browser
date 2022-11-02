@@ -37,14 +37,10 @@ class Redfin:
         return self.meta_property("belowTheFold", {"propertyId": property_id, **kwargs}, page=True)
 
     def hood_photos(self, property_id, **kwargs):
-        return self.meta_request(
-            "api/home/details/hood-photos", {"propertyId": property_id, **kwargs}
-        )
+        return self.meta_request("api/home/details/hood-photos", {"propertyId": property_id, **kwargs})
 
     def more_resources(self, property_id, **kwargs):
-        return self.meta_request(
-            "api/home/details/moreResourcesInfo", {"propertyId": property_id, **kwargs}
-        )
+        return self.meta_request("api/home/details/moreResourcesInfo", {"propertyId": property_id, **kwargs})
 
     def page_header(self, property_id, **kwargs):
         return self.meta_request(
@@ -59,14 +55,10 @@ class Redfin:
         )
 
     def building_details_page(self, property_id, **kwargs):
-        return self.meta_request(
-            "api/building/details-page/v1", {"propertyId": property_id, **kwargs}
-        )
+        return self.meta_request("api/building/details-page/v1", {"propertyId": property_id, **kwargs})
 
     def owner_estimate(self, property_id, **kwargs):
-        return self.meta_request(
-            "api/home/details/owner-estimate", {"propertyId": property_id, **kwargs}
-        )
+        return self.meta_request("api/home/details/owner-estimate", {"propertyId": property_id, **kwargs})
 
     def claimed_home_seller_data(self, property_id, **kwargs):
         return self.meta_request(
@@ -75,20 +67,14 @@ class Redfin:
         )
 
     def cost_of_home_ownership(self, property_id, **kwargs):
-        return self.meta_request(
-            "do/api/costOfHomeOwnershipDetails", {"propertyId": property_id, **kwargs}
-        )
+        return self.meta_request("do/api/costOfHomeOwnershipDetails", {"propertyId": property_id, **kwargs})
 
     # Listing ID Requests
     def floor_plans(self, listing_id, **kwargs):
-        return self.meta_request(
-            "api/home/details/listing/floorplans", {"listingId": listing_id, **kwargs}
-        )
+        return self.meta_request("api/home/details/listing/floorplans", {"listingId": listing_id, **kwargs})
 
     def tour_list_date_picker(self, listing_id, **kwargs):
-        return self.meta_request(
-            "do/tourlist/getDatePickerData", {"listingId": listing_id, **kwargs}
-        )
+        return self.meta_request("do/tourlist/getDatePickerData", {"listingId": listing_id, **kwargs})
 
     # Table ID Requests
 
@@ -169,9 +155,7 @@ class Redfin:
         )
 
     def avm_details(self, property_id, listing_id, **kwargs):
-        return self.meta_property(
-            "avm", {"propertyId": property_id, "listingId": listing_id, **kwargs}
-        )
+        return self.meta_property("avm", {"propertyId": property_id, "listingId": listing_id, **kwargs})
 
     def tour_insights(self, property_id, listing_id, **kwargs):
         return self.meta_property(

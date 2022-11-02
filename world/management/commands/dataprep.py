@@ -61,9 +61,9 @@ class Command(BaseCommand):
             self.handle_ab2011_map(cmd, hood, *args, **options)
 
     def handle_ab2011_map(self, cmd, hood, *args, **options):
-        c_zones: MultiPolygon = ZoningBase.objects.filter(
-            zone_name__regex=r"^(CC|CO|CN|CV)"
-        ).aggregate(a=Union("geom"))["a"]
+        c_zones: MultiPolygon = ZoningBase.objects.filter(zone_name__regex=r"^(CC|CO|CN|CV)").aggregate(
+            a=Union("geom")
+        )["a"]
         comm_parcels = Parcel.objects.filter(geom__intersects=c_zones)
         stats = Counter({})
         print(comm_parcels)
@@ -111,9 +111,7 @@ class Command(BaseCommand):
                 calculate_parcel_slopes_mp(bounding_box, sd_utm_crs)
             else:
                 calculate_parcel_slopes(bounding_box, sd_utm_crs)
-            self.stdout.write(
-                self.style.SUCCESS(f"Finished calculating parcel slopes for neighborhood {hood}")
-            )
+            self.stdout.write(self.style.SUCCESS(f"Finished calculating parcel slopes for neighborhood {hood}"))
 
     def handle_labels(self, cmd, hood, *args, **options):
         ZoningMapLabel.objects.all().delete()

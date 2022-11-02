@@ -82,9 +82,7 @@ class Command(BaseCommand):
         # TODO: We don't clean up ANalyzedRoad entries that should be excluded. Maybe we should list *all* roads in
         #  AnalyzedRoads, even ones we aren't analyzing. If we do that we need to index on exclusion criteria.
         roads_qs = (
-            Roads.objects.filter(lpsjur="SD")
-            .exclude(funclass__in=["1", "A", "B", "F", "W"])
-            .order_by("roadsegid")
+            Roads.objects.filter(lpsjur="SD").exclude(funclass__in=["1", "A", "B", "F", "W"]).order_by("roadsegid")
         )
         start_idx = 23923 + 13743  # TODO: REMOVE INDEX
         stats = Counter({})
@@ -160,9 +158,7 @@ class Command(BaseCommand):
                 # Get the road width at multiple points (subsegments).
                 for subsegment in subsegs:
                     start_pt = road_under_test_df.interpolate(subsegment, normalized=True).values[0]
-                    end_pt = road_under_test_df.interpolate(
-                        subsegment + 0.1, normalized=True
-                    ).values[0]
+                    end_pt = road_under_test_df.interpolate(subsegment + 0.1, normalized=True).values[0]
                     mid_line = LineString([start_pt, end_pt])
                     midpoint = mid_line.centroid
                     dx = end_pt.x - start_pt.x
@@ -171,9 +167,7 @@ class Command(BaseCommand):
                         [[-dy + midpoint.x, dx + midpoint.y], [dy + midpoint.x, -dx + midpoint.y]]
                     )
                     scale_fact = 200 / normal_line.length
-                    normal_line = shapely.affinity.scale(
-                        normal_line, xfact=scale_fact, yfact=scale_fact
-                    )
+                    normal_line = shapely.affinity.scale(normal_line, xfact=scale_fact, yfact=scale_fact)
                     clipped_line_df = geopandas.overlay(
                         GeoDataFrame(geometry=GeoSeries(normal_line), crs=sd_utm_crs),
                         parcels_blob_df,
@@ -224,9 +218,7 @@ class Command(BaseCommand):
                         # with at least 5 entries, throw away largest and smallest
                         good_widths = good_widths[1:-1]
                     analyzed_road.avg_width = round(statistics.mean(good_widths), 2)
-                    analyzed_road.stdev_width = round(
-                        statistics.pstdev(good_widths, analyzed_road.avg_width), 2
-                    )
+                    analyzed_road.stdev_width = round(statistics.pstdev(good_widths, analyzed_road.avg_width), 2)
                     if analyzed_road.stdev_width / analyzed_road.avg_width > 0.1:
                         stats["skip:width_too_unstable"] += 1
                         logging.info(f"  Road width stdev is too large - skipping road")
@@ -254,12 +246,8 @@ class Command(BaseCommand):
 
         # Roads table says width of Clairemont Mesa Blvd is 102 ft
         main_parcel = Parcel.objects.using("basedata").get(apn=apn)
-        main_parcel_df = models_to_utm_gdf(
-            [main_parcel], sd_utm_crs, fields=["apn", "address", "geom"]
-        )
-        roads_df, parcels_df = get_nearby_parcels_and_roads_df(
-            main_parcel, distance=100, crs=sd_utm_crs
-        )
+        main_parcel_df = models_to_utm_gdf([main_parcel], sd_utm_crs, fields=["apn", "address", "geom"])
+        roads_df, parcels_df = get_nearby_parcels_and_roads_df(main_parcel, distance=100, crs=sd_utm_crs)
 
         for idx, row in roads_df.iterrows():
             sys.stderr.write(f"{row['rd30full']} {row['length']}, dist={roads[idx].distance}\n")

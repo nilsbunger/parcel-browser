@@ -137,9 +137,7 @@ def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, b
     elif len(zones) > 1:
         # We're on the boundary of two zones. Find the one with the most overlap with parcel.
         zones_df = models_to_utm_gdf(zones, utm_crs)
-        max_intersect_index = argmax(
-            [geom.intersection(parcel.geometry).area for geom in zones_df.geometry]
-        )
+        max_intersect_index = argmax([geom.intersection(parcel.geometry).area for geom in zones_df.geometry])
         zone = zones[int(max_intersect_index)].zone_name
     elif len(zones) == 0:
         raise Exception("Parcel has no zoning info.")
@@ -227,8 +225,7 @@ def normalize_geometries(gdf: GeoDataFrame, gdf_list: list[GeoDataFrame]):
     gdf_xlat.geometry = gdf.translate(xoff=-center.x, yoff=-center.y)
 
     return gdf_xlat, [
-        GeoDataFrame(gdf2, geometry=gdf2.translate(xoff=-center.x, yoff=-center.y))
-        for gdf2 in gdf_list
+        GeoDataFrame(gdf2, geometry=gdf2.translate(xoff=-center.x, yoff=-center.y)) for gdf2 in gdf_list
     ]
 
 
@@ -315,26 +312,20 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) -> dict:
     d = {"front": None, "side": None, "back": None, "alley": None}
 
     # Get our adjacent parcels
-    intersecting_parcels = Parcel.objects.filter(geom__intersects=parcel.model.geom).exclude(
-        apn=parcel.model.apn
-    )
+    intersecting_parcels = Parcel.objects.filter(geom__intersects=parcel.model.geom).exclude(apn=parcel.model.apn)
     intersecting_utm = models_to_utm_gdf(intersecting_parcels, utm_crs)
 
     # First Heuristic for determining street side:
     # The sides that intersect with other parcels are definetely not street side
     # Find the intersections between the adjacent parcels and the parcel
     other_parcels_geom = intersecting_utm.dissolve().geometry[0]
-    parcels_intersection = other_parcels_geom.intersection(
-        parcel.geometry.boundary
-    )  # MultiLineString
+    parcels_intersection = other_parcels_geom.intersection(parcel.geometry.boundary)  # MultiLineString
 
     # The difference between the outline and the intersection is the street side
     # NOTE: this implementation to find the street side is not perfect. It's possible
     # that a side that doesn't have an adjacent parcel is the back of a lot, or just has
     # wilderness or something behind it.
-    street_edges = parcel.geometry.boundary.difference(
-        parcels_intersection
-    )  # MultiLineString or Linestring
+    street_edges = parcel.geometry.boundary.difference(parcels_intersection)  # MultiLineString or Linestring
 
     # Flag for Alley analysis. The is_alley_edge function is currently slow, but it works.
     # See the function for more details
@@ -414,10 +405,7 @@ def identify_building_types(parcel_geom: Polygonal, buildings: GeoDataFrame) -> 
 
     # Go through each building and label it's building_type appropriately
     for i, building in buildings.iterrows():
-        if (
-            building.geometry.intersection(parcel_geom).area / building.geometry.area
-            < ENCROACHMENT_THRESHOLD
-        ):
+        if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
             buildings.loc[i, "building_type"] = "ENCROACHMENT"
         else:
             buildings.loc[i, "building_type"] = "ACCESSORY"
@@ -457,11 +445,7 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
         existing_floor_area = total_lvg_by_model + garage_area
     elif buildings is not None:
         existing_floor_area = sum(
-            [
-                bldg.geometry.area
-                for i, bldg in buildings.iterrows()
-                if bldg.building_type != "ENCROACHMENT"
-            ]
+            [bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"]
         )
 
     return max(0, max_FAR * parcel.geometry.area - existing_floor_area)
@@ -479,9 +463,7 @@ def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes: Dict) -> P
     """
     # TODO: Fix buffer sizes
     # Buffer sizes according to building type, in meters
-    return unary_union(
-        buildings.geometry.buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2)
-    )
+    return unary_union(buildings.geometry.buffer(buffer_sizes["ACCESSORY"], cap_style=2, join_style=2))
 
 
 def maximal_rectangles(matrix):
@@ -545,9 +527,7 @@ def maximal_rectangles(matrix):
     return dictrects
 
 
-def clamp_placed_polygon_to_size(
-    big_rect, parcel_boundary, max_area, rotate_parcel_by, translate_parcel_by
-):
+def clamp_placed_polygon_to_size(big_rect, parcel_boundary, max_area, rotate_parcel_by, translate_parcel_by):
     """Takes an axis-aligned rectangle (big_rect) with area bigger than max_area, and shrinks it so that it's
     still within the bounds of big_rect, but with area as max_area. The algorithm will squish the rectangle
     to be as square as possible. If after squishing to a square, the size is still too big, then the square
@@ -601,21 +581,13 @@ def clamp_placed_polygon_to_size(
     to_place_four_corners = [(minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny)]
 
     # Find the closest corner of the bigger rectangle to the lot lines
-    closest_corner_index = argmin(
-        [Point(*corner).distance(parcel_boundary) for corner in big_rect_four_corners]
-    )
+    closest_corner_index = argmin([Point(*corner).distance(parcel_boundary) for corner in big_rect_four_corners])
 
     # Now perform a translation that puts the building in the corner of the big
     # rectangle that's closest to lot lines. This lets our building "hug" the lot lines.
     # This frees up more available space for other buildings to be placed
-    x_offset = (
-        big_rect_four_corners[closest_corner_index][0]
-        - to_place_four_corners[closest_corner_index][0]
-    )
-    y_offset = (
-        big_rect_four_corners[closest_corner_index][1]
-        - to_place_four_corners[closest_corner_index][1]
-    )
+    x_offset = big_rect_four_corners[closest_corner_index][0] - to_place_four_corners[closest_corner_index][0]
+    y_offset = big_rect_four_corners[closest_corner_index][1] - to_place_four_corners[closest_corner_index][1]
     rect_to_place = shapely.affinity.translate(rect_to_place, xoff=x_offset, yoff=y_offset)
 
     return rect_to_place
@@ -678,9 +650,7 @@ def biggest_poly_over_rotation(
         sorted_keys = sorted(bigrects.keys(), key=lambda k: bigrects[k][0], reverse=True)
         # filter out rects which violate our optional aspect ratio constraint
         if max_aspect_ratio:
-            sorted_keys = [
-                k for k in sorted_keys if aspect_ratio(bigrects[k][1]) <= max_aspect_ratio
-            ]
+            sorted_keys = [k for k in sorted_keys if aspect_ratio(bigrects[k][1]) <= max_aspect_ratio]
 
         if not sorted_keys:
             continue
@@ -700,9 +670,7 @@ def biggest_poly_over_rotation(
             biggest_rect_xlat_amount = translation_amount
         if do_plots:
             p1 = geopandas.GeoSeries(avail_geom).plot()
-            plot_rect = shapely.affinity.translate(
-                rect, xoff=translation_amount[0], yoff=translation_amount[1]
-            )
+            plot_rect = shapely.affinity.translate(rect, xoff=translation_amount[0], yoff=translation_amount[1])
             plot_rect = shapely.affinity.rotate(plot_rect, -rot, origin=(0, 0))
             geopandas.GeoSeries(plot_rect).plot(ax=p1, color="green")
             p1.set_title(f"{rot} deg; unrotated back")
@@ -758,12 +726,8 @@ def get_second_lot(lots, main_building):
     return [lot for lot in lots if lot.intersection(main_building).area < 0.1][0]
 
 
-def split_lot(
-    parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_lot_ratio: float = 0.5
-):
-    main_building = [
-        bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"
-    ][0]
+def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_lot_ratio: float = 0.5):
+    main_building = [bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"][0]
 
     # Turn the main building into a rectangle to simplify calculations
     min_rect = main_building.minimum_rotated_rectangle
@@ -844,9 +808,7 @@ def split_lot(
     return new_second_lot, new_area_ratio
 
 
-def identify_flag(
-    parcel: ParcelDC, front_street_edge: Union[MultiLineString, LineString]
-) -> Union[Polygon, None]:
+def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, LineString]) -> Union[Polygon, None]:
     """Will return a polygon representing the area of the "flag handle" if the lot is a flag.
     If it isn't, returns None. Uses Binary search to find when the length of the handle blows up,
     in which case we have the start and end points of the flag.
@@ -884,9 +846,7 @@ def identify_flag(
     seek_line = shapely.affinity.scale(front_street_edge, 100, 100, 100)
 
     start = 0
-    stop = max(
-        [seek_line.distance(Point(point)) for point in parcel.geometry.geoms[0].exterior.coords]
-    )
+    stop = max([seek_line.distance(Point(point)) for point in parcel.geometry.geoms[0].exterior.coords])
 
     # Use bianry search to seek until it gets to at least 1.3x the width, or until intersection turns into line
     for i in range(15):
@@ -930,9 +890,7 @@ def get_too_high_or_low(parcel: ParcelDC, buildings: GeoDataFrame, topos: GeoDat
     if topos.empty:
         return GeoDataFrame(), GeoDataFrame(), Polygon()
 
-    main_building = [
-        bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"
-    ][0]
+    main_building = [bldg.geometry for i, bldg in buildings.iterrows() if bldg.building_type == "MAIN"][0]
 
     # Find the elevation of the main building
     main_building_topo_index = argmin(
@@ -997,9 +955,7 @@ def is_alley_edge(edge: LineString, utm_crs: pyproj.CRS):
     line_geos = GEOSGeometry(transformed.wkt, srid=4326)
 
     # NOTE: This is a very slow query. It seems querying by distance is slow.
-    nearest_road = (
-        Roads.objects.annotate(distance=Distance("geom", line_geos)).order_by("distance").first()
-    )
+    nearest_road = Roads.objects.annotate(distance=Distance("geom", line_geos)).order_by("distance").first()
 
     # Hardcoded, in meters
     if nearest_road.distance.m > 25:

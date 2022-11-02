@@ -45,11 +45,7 @@ class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
     vector_tile_fields = ("apn", "pk")
 
     def get_vector_tile_queryset(self):
-        return (
-            self.vector_tile_queryset
-            if self.vector_tile_queryset is not None
-            else self.get_queryset()
-        )
+        return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
 class ZoningLabelTile(MVTView, ListView):
@@ -95,11 +91,7 @@ class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
     vector_tile_fields = ("name", "pk")
 
     def get_vector_tile_queryset(self):
-        return (
-            self.vector_tile_queryset
-            if self.vector_tile_queryset is not None
-            else self.get_queryset()
-        )
+        return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
 class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
@@ -108,11 +100,7 @@ class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
     vector_tile_fields = ("rd30full", "roadsegid", "rightway", "abloaddr", "abhiaddr")
 
     def get_vector_tile_queryset(self):
-        return (
-            self.vector_tile_queryset
-            if self.vector_tile_queryset is not None
-            else self.get_queryset()
-        )
+        return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
 class Ab2011TileData(MVTView, ListView):
@@ -122,9 +110,7 @@ class Ab2011TileData(MVTView, ListView):
 
     def get_vector_tile_queryset(self):
         print("HI AB 2011")
-        return self.model.objects.filter(
-            ab2011_eligible__in=[CheckResultEnum.passed, CheckResultEnum.uncertain]
-        )
+        return self.model.objects.filter(ab2011_eligible__in=[CheckResultEnum.passed, CheckResultEnum.uncertain])
 
     # @silk_profile(name="Get AB2011 tile")
     def get_tile(self, x, y, z):
@@ -172,9 +158,7 @@ class ParcelDetailView(View):  # LoginRequiredMixin
         # https://photon.komoot.io/ -- address resolution
         # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
         utm_crs = get_utm_crs()
-        parcel_data_frame = geopandas.GeoDataFrame.from_features(
-            json.loads(serialized_parcel), crs="EPSG:4326"
-        )
+        parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
         parcel_in_utm = parcel_data_frame.to_crs(utm_crs)
         lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
         print(repr(parcel))
@@ -369,7 +353,5 @@ class AddressToLatLong(View):  # LoginRequiredMixin,
 
         if parcel != None:
             coords = parcel.geom.centroid
-            return HttpResponse(
-                json.dumps({"x": coords.x, "y": coords.y}), content_type="application/json"
-            )
+            return HttpResponse(json.dumps({"x": coords.x, "y": coords.y}), content_type="application/json")
         return HttpResponse("404")

@@ -83,9 +83,7 @@ def address_to_parcels_loose(addr: str) -> List[Parcel]:
     """Take a street address, and return any that loosely match, best match on top. For typeahead matching"""
     addr_normalized = re.sub(r"\.", "", addr.lower())
     addr_parts = addr_normalized.split()
-    pquery = Parcel.objects.annotate(
-        str_situs_addr=RawSQL("select cast(situs_addr as VARCHAR)", ())
-    )
+    pquery = Parcel.objects.annotate(str_situs_addr=RawSQL("select cast(situs_addr as VARCHAR)", ()))
     if addr_parts[0].isnumeric():
         pquery = pquery.filter(str_situs_addr__regex=r"%s" % addr_parts[0])
         x = addr_parts.pop()
@@ -179,9 +177,7 @@ def address_to_parcel(
         matched_jurisdiction_candidates = list()
         jurisdictions = set()
         for p in parcels:
-            if not p.situs_pre_field or (
-                p.situs_pre_field and (p.situs_pre_field.lower() == street_prefix)
-            ):
+            if not p.situs_pre_field or (p.situs_pre_field and (p.situs_pre_field.lower() == street_prefix)):
                 if not street_suffix or (p.situs_suff.lower() == street_suffix):
                     matched_parcel_candidates.append(p)
                 jurisdictions.add(p.situs_juri)
@@ -192,15 +188,10 @@ def address_to_parcel(
             return matched_jurisdiction_candidates[0], None
         elif len(matched_jurisdiction_candidates) == 0:
             return None, "match_out_of_jurisdiction"
-        elif (
-            len(matched_parcel_candidates) == 1
-            and matched_parcel_candidates[0].situs_juri == jurisdiction
-        ):
+        elif len(matched_parcel_candidates) == 1 and matched_parcel_candidates[0].situs_juri == jurisdiction:
             return matched_parcel_candidates[0], None
         else:
-            print(
-                f"Multiple matches ({len(parcels)}) for {addr_normalized} in jurisdiction {jurisdiction}"
-            )
+            print(f"Multiple matches ({len(parcels)}) for {addr_normalized} in jurisdiction {jurisdiction}")
             return None, f"multimatch_{jurisdictions}"
     # After exact and inexact attempts, we're still here, and nothing matched.
     if hyphenated_addr_num:

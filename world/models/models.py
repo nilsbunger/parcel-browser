@@ -39,12 +39,8 @@ class AnalyzedRoad(models.Model):
 
 
 class AnalyzedParcel(models.Model):
-    apn = models.OneToOneField(
-        max_length=10, unique=True, primary_key=True, to=Parcel, on_delete=models.CASCADE
-    )
-    ab2011_eligible = models.CharField(
-        max_length=20, choices=[(x.value, x.name) for x in CheckResultEnum]
-    )
+    apn = models.OneToOneField(max_length=10, unique=True, primary_key=True, to=Parcel, on_delete=models.CASCADE)
+    ab2011_eligible = models.CharField(max_length=20, choices=[(x.value, x.name) for x in CheckResultEnum])
     # lot_size = models.IntegerField(blank=True, null=True)
     # building_size = models.IntegerField(blank=True, null=True)
     # skip = models.BooleanField(blank=True, null=True)
@@ -75,9 +71,7 @@ class PropertyListing(models.Model):
         ACTIVE = "ACTIVE"
         PENDING = "PENDING"
         SOLD = "SOLD"
-        MISSING = (
-            "MISSING"  # means it was listed as active and no longer is. it might have gone pending
-        )
+        MISSING = "MISSING"  # means it was listed as active and no longer is. it might have gone pending
         WITHDRAWN = "WITHDRAWN"
         OFFMARKET = "OFFMARKET"
 
@@ -96,9 +90,7 @@ class PropertyListing(models.Model):
     listing_url = models.CharField(max_length=100, blank=True, null=True)
     soldprice = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=15, choices=ListingStatus.choices)
-    parcel = models.ForeignKey(
-        Parcel, on_delete=models.CASCADE, to_field="apn", blank=True, null=True
-    )
+    parcel = models.ForeignKey(Parcel, on_delete=models.CASCADE, to_field="apn", blank=True, null=True)
     prev_listing = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,
@@ -135,9 +127,7 @@ class PropertyListing(models.Model):
     @classmethod
     def active_listings_queryset(cls):
         """Find listings where the latest listing is active or OFFMARKET (meaning we are tracking it)."""
-        latest_entries = Subquery(
-            cls.objects.order_by("mlsid", "-founddate").distinct("mlsid").values("pk")
-        )
+        latest_entries = Subquery(cls.objects.order_by("mlsid", "-founddate").distinct("mlsid").values("pk"))
         listings = (
             cls.objects.filter(pk__in=latest_entries)
             .filter(status__in=["ACTIVE", "OFFMARKET"])
@@ -151,9 +141,7 @@ class PropertyListing(models.Model):
         Returns a stats dictionary."""
         listings = cls.active_listings_queryset().prefetch_related("parcel")
         now = datetime.datetime.now(datetime.timezone.utc)
-        seen_recently = (
-            not_seen_recently
-        ) = not_in_sd = stale_no_parcel = seen_recently_no_parcel = 0
+        seen_recently = not_seen_recently = not_in_sd = stale_no_parcel = seen_recently_no_parcel = 0
         stale_listings = []
         stats = defaultdict(int)
         logging.info("Looking for stale listings:")

@@ -58,9 +58,7 @@ if DEBUG:
     eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
 else:
     eprint("**** DEBUG=FALSE ****")
-eprint(
-    f"**** DJANGO_ENV is {'DEVELOPMENT (meaning on a local machine)' if DEV_ENV else 'PRODUCTION'} ****"
-)
+eprint(f"**** DJANGO_ENV is {'DEVELOPMENT (meaning on a local machine)' if DEV_ENV else 'PRODUCTION'} ****")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/

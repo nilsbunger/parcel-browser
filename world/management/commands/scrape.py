@@ -61,9 +61,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         mgmt_cmd_lib.add_common_arguments(parser)
-        parser.add_argument(
-            "--fetch", action="store_true", help="Fetch listings data from MLS service"
-        )
+        parser.add_argument("--fetch", action="store_true", help="Fetch listings data from MLS service")
         parser.add_argument(
             "--fetch-zip",
             action="store",
@@ -89,12 +87,8 @@ class Command(BaseCommand):
             action="store_true",
             help="Don't run listing-to-address matching (also skips parcel analysis)",
         )
-        parser.add_argument(
-            "--skip-analysis", action="store_true", help="Don't run parcel analysis"
-        )
-        parser.add_argument(
-            "--parcel", action="store", help="Run analysis only (no scrape) on a single parcel"
-        )
+        parser.add_argument("--skip-analysis", action="store_true", help="Don't run parcel analysis")
+        parser.add_argument("--parcel", action="store", help="Run analysis only (no scrape) on a single parcel")
         parser.add_argument(
             "--single-process", action="store_true", help="Run analysis with only a single process"
         )
@@ -113,11 +107,7 @@ class Command(BaseCommand):
                     logging.info("Exiting")
                     sys.exit(1)
 
-            zip_groups = (
-                [[options["fetch_zip"]]]
-                if options["fetch_zip"]
-                else zip_groups_from_zips(AllSdCityZips)
-            )
+            zip_groups = [[options["fetch_zip"]]] if options["fetch_zip"] else zip_groups_from_zips(AllSdCityZips)
             logging.info(
                 f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, Cache={options["no_cache"] is False}'
             )
@@ -162,11 +152,7 @@ class Command(BaseCommand):
                 try:
                     # If we're caching and the parcel, and analyzed listing exists, we can skip analysis and
                     # go to the next listing.
-                    if (
-                        not options["no_cache"]
-                        and prop_listing.parcel
-                        and prop_listing.analyzedlisting
-                    ):
+                    if not options["no_cache"] and prop_listing.parcel and prop_listing.analyzedlisting:
                         stats[f"info_previously_matched"] += 1
                         continue
                 except ObjectDoesNotExist as e:
@@ -199,9 +185,7 @@ class Command(BaseCommand):
                                     f"error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}"
                                 ] += 1
                             else:
-                                stats[
-                                    f"info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}"
-                                ] += 1
+                                stats[f"info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}"] += 1
                 # print("SAVED")
             logging.info("DONE. Final stats associating parcels with listings:")
             logging.info(pprint.pformat(dict(stats)))
@@ -216,9 +200,7 @@ class Command(BaseCommand):
                 # Run on single parcel
                 parcels = [Parcel.objects.get(apn=options["parcel"])]
                 property_listings: List[PropertyListing] = [
-                    PropertyListing.active_listings_queryset()
-                    .filter(parcel=parcels[0])
-                    .latest("seendate")
+                    PropertyListing.active_listings_queryset().filter(parcel=parcels[0]).latest("seendate")
                 ]
             else:
                 # Run on batch
@@ -246,6 +228,4 @@ class Command(BaseCommand):
                 stats += result.details["messages"]["stats"]
             logging.info("Aggregated Stats:")
             logging.info(dict(stats))
-            logging.info(
-                f"Analysis done! There are {len(results)} successes and {len(errors)} errors."
-            )
+            logging.info(f"Analysis done! There are {len(results)} successes and {len(errors)} errors.")

@@ -25,17 +25,13 @@ def plot_parcel_boundary_lengths(parcel: ParcelDC, axes):
     # The parcel geometry boundary is always a MultiLineString.
     for line_string in parcel.geometry.boundary.geoms:
         x, y = line_string.coords.xy
-        line_segments = [
-            LineString([(x[i], y[i]), (x[i + 1], y[i + 1])]) for i in range(len(x) - 1)
-        ]
+        line_segments = [LineString([(x[i], y[i]), (x[i + 1], y[i + 1])]) for i in range(len(x) - 1)]
 
         for line in line_segments:
             # Only plot side lengths if they're not super short (like if they're parts)
             # of a curve.
             if line.length > 2.5:
-                axes.annotate(
-                    text="{:.0f}m".format(line.length), xy=line.centroid.coords[:][0], ha="center"
-                )
+                axes.annotate(text="{:.0f}m".format(line.length), xy=line.centroid.coords[:][0], ha="center")
 
 
 def plot_new_buildings(
@@ -57,9 +53,7 @@ def plot_new_buildings(
     # Create the lot dataframe, which contains the parcel outline and existing buildings
 
     if buildings is not None:
-        lot_df = geopandas.GeoDataFrame(
-            geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs
-        )
+        lot_df = geopandas.GeoDataFrame(geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
     else:
         lot_df = geopandas.GeoDataFrame(geometry=[parcel.geometry.boundary], crs=utm_crs)
 
@@ -80,9 +74,7 @@ def plot_new_buildings(
 
     # Plot new buildings
     for idx, poly in enumerate(new_buildings):
-        geopandas.GeoSeries(poly).plot(
-            ax=ax, color=NEW_BUILDING_COLORS[idx % len(NEW_BUILDING_COLORS)], alpha=0.6
-        )
+        geopandas.GeoSeries(poly).plot(ax=ax, color=NEW_BUILDING_COLORS[idx % len(NEW_BUILDING_COLORS)], alpha=0.6)
 
         ax.annotate(
             text="${:.0f}ft^2$".format(poly.area * 10.7639),
@@ -95,14 +87,10 @@ def plot_new_buildings(
     return fig
 
 
-def plot_split_lot(
-    parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS, second_lot: Polygonal
-):
+def plot_split_lot(parcel: ParcelDC, buildings: GeoDataFrame, utm_crs: pyproj.CRS, second_lot: Polygonal):
     fig = plt.figure(f"lot_split-{parcel.model.apn}")
     ax = fig.add_subplot()
-    lot_df = geopandas.GeoDataFrame(
-        geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs
-    )
+    lot_df = geopandas.GeoDataFrame(geometry=[*buildings.geometry, parcel.geometry.boundary], crs=utm_crs)
     lot_df.plot(ax=ax)
     plot_parcel_boundary_lengths(parcel, ax)
     plt.title("Lot split: " + parcel.model.apn + ";" + parcel.model.address)
@@ -125,9 +113,7 @@ def plot_cant_build(
     ax = fig.add_subplot()
 
     lot_geom = (
-        [*buildings.geometry, parcel.geometry.boundary]
-        if buildings is not None
-        else [parcel.geometry.boundary]
+        [*buildings.geometry, parcel.geometry.boundary] if buildings is not None else [parcel.geometry.boundary]
     )
     lot_df = geopandas.GeoDataFrame(geometry=lot_geom, crs=utm_crs)
     lot_df.plot(ax=ax)

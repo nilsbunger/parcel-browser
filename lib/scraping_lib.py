@@ -28,9 +28,7 @@ class MyItemPipeline:
 
     def process_item(self, item, spider):
         """Accept a single listing pulled from an HTML page, and save it to the PropertyListing DB table."""
-        listing_fields = {
-            k: item[k] for k in ["price", "addr", "br", "ba", "mlsid", "size"] if k in item
-        }
+        listing_fields = {k: item[k] for k in ["price", "addr", "br", "ba", "mlsid", "size"] if k in item}
         log.debug(f"Found listing: {item}")
         try:
             try:
@@ -45,9 +43,7 @@ class MyItemPipeline:
                 ).order_by("founddate")
                 # most likely case is the first listing has the found date we want but still has a zip code,
                 # which we deprecated in the listing.
-                print(
-                    f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}"
-                )
+                print(f"*** WARNING *** MULTIPLE MATCHING LISTINGS IN DB for MLSID={listings[0].mlsid}")
                 self.stats.inc_value("error:listing/multiple_entries_in_db")
                 if len(listings) != 2:
                     print("NEED TO DEBUG THIS CASE")
@@ -79,9 +75,7 @@ class MyItemPipeline:
             else:
                 # Property WITH these parameters seen, so update the "seendate" in-place on the current entry.
                 property.full_clean()
-                property.save(
-                    update_fields=["seendate", "thumbnail", "listing_url", "neighborhood"]
-                )
+                property.save(update_fields=["seendate", "thumbnail", "listing_url", "neighborhood"])
                 self.stats.inc_value("info:listing/no_change")
         except Exception as e:
             print(e)
@@ -112,9 +106,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def start_requests(self):
-        headers = {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"
-        }
+        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/48.0"}
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, "
             "like Gecko) Chrome/99.0.4844.84 Safari/537.36"
@@ -178,11 +170,7 @@ class SanDiegoMlsSpider(scrapy.Spider):
 
     def san_diego_listings_url(self, zips: [int]):
         """Generate a URL to query listings from homesalessandiego.com in a range of zipcodres"""
-        hostname = (
-            "http://localhost:8000/"
-            if self.localhost_mode
-            else "https://www.homesalessandiego.com/"
-        )
+        hostname = "http://localhost:8000/" if self.localhost_mode else "https://www.homesalessandiego.com/"
         path = "search/results/mrys/"
         try:
             zip_string = "&".join([f"zip={zip}" for zip in zips])

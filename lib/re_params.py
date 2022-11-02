@@ -40,9 +40,7 @@ class BuildableUnit(RentalUnit):
 
 def get_build_specs(constr_costs: ConstructionCosts) -> List[BuildableUnit]:
     # Types of units that can be built
-    sm_adu_build = BuildableUnit(
-        sqft=750, br=2, ba=1, stories=1, lotspace_required=800, constr_costs=constr_costs
-    )
+    sm_adu_build = BuildableUnit(sqft=750, br=2, ba=1, stories=1, lotspace_required=800, constr_costs=constr_costs)
     lg_adu_build = BuildableUnit(
         sqft=1200, br=3, ba=2, stories=1, lotspace_required=1300, constr_costs=constr_costs
     )

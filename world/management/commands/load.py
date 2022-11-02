@@ -75,9 +75,7 @@ sf_schemas = {
             ],
             "group_by_field": "mapblklot,Geometry",
         },
-        "Streets": {
-            "field_name_mappings": [("name", "name"), ("type", "type"), ("Geometry", "Geometry")]
-        },
+        "Streets": {"field_name_mappings": [("name", "name"), ("type", "type"), ("Geometry", "Geometry")]},
     },
     "tilelayers": {
         "zoning": {"shapes": ["ZoningDistricts"]},
@@ -98,9 +96,7 @@ class Command(BaseCommand):
             choices=Cmd.__members__,
             help="Command to run: db=load model into DB; tiles=generate + upload static tiles",
         )
-        parser.add_argument(
-            "region", choices=Region.__members__, help="Region (sd, sf) to load data for"
-        )
+        parser.add_argument("region", choices=Region.__members__, help="Region (sd, sf) to load data for")
         # parser.add_argument("model", choices=LoadModel.__members__)
         parser.add_argument("fname", nargs="?")
         parser.add_argument(
@@ -127,9 +123,7 @@ class Command(BaseCommand):
         # 1:1 into GeoJSON files. Consolidation happens in later step
         for shapefile in shapefiles:  # TODO: Temporarily just get one file (the zoning file)
             eprint(f"Processing {shapefile}")
-            shape_name = shapefile.parts[
-                -2
-            ]  # use leaf directory name (e.g. "ZoningDistrict") as the file name
+            shape_name = shapefile.parts[-2]  # use leaf directory name (e.g. "ZoningDistrict") as the file name
             layer_name = shapefile.stem  # filename w/o extension
             outfile = dir / "out" / f"{shape_name}.geojson.ld"
             shape_cfg = schemas["sf"]["shapefiles"][shape_name]
@@ -143,9 +137,7 @@ class Command(BaseCommand):
             ogr2ogr_cmd = f"ogr2ogr -dim 2 -t_srs 'EPSG:4326' -f 'GeoJSON' -dialect sqlite -sql {ogrsql} {outfile} {shapefile}"
             eprint(f"Running: {ogr2ogr_cmd}")
             process_result = subprocess.run(ogr2ogr_cmd, check=True, shell=True)
-            assert (
-                process_result.returncode == 0
-            ), f"ogr2ogr failed with return code {process_result.returncode}"
+            assert process_result.returncode == 0, f"ogr2ogr failed with return code {process_result.returncode}"
 
         for layername, layercfg in schemas[region]["tilelayers"].items():
             eprint(f"Building tile layer: {layername}")
@@ -234,14 +226,10 @@ class Command(BaseCommand):
         if model == "Topography":
             # record completion of topography load
             ds = DataSource(data_dir / fname)
-            new_geom = GEOSGeometry(
-                ds[0].extent.wkt, srid=2230
-            )  # 2230 is NAD83, California Zone 6 code
+            new_geom = GEOSGeometry(ds[0].extent.wkt, srid=2230)  # 2230 is NAD83, California Zone 6 code
             new_geom = new_geom.transform("EPSG:4326", clone=True)
             print("Recording topo extents in DB:", new_geom)
-            loaded, was_created = TopographyLoads.objects.using(using_db).get_or_create(
-                extents=new_geom
-            )
+            loaded, was_created = TopographyLoads.objects.using(using_db).get_or_create(extents=new_geom)
             loaded.fname = fname
             loaded.save(using=using_db)
 

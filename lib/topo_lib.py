@@ -98,8 +98,7 @@ def calculate_parcel_slopes_mp(
     parcels = parcels[start_idx:]
     # bucket_stats_list is a list of dicts
     bucket_stats_list = Parallel(n_jobs=8)(
-        delayed(calculate_parcel_slope_worker)(parcel, utm_crs, topo_areas, i)
-        for i, parcel in enumerate(parcels)
+        delayed(calculate_parcel_slope_worker)(parcel, utm_crs, topo_areas, i) for i, parcel in enumerate(parcels)
     )
 
     bucket_stats_df = pd.DataFrame(bucket_stats_list)
@@ -111,9 +110,7 @@ def calculate_parcel_slopes_mp(
     print(bucket_stats_df.loc[bucket_stats_df["error"] is True, "apn"])
 
 
-def calculate_parcel_slopes(
-    bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0
-):
+def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
     """Calculate slopes for all parcels within a bounding box that are in analyzed_parcel table without
     a 'skip' flag. Records slopes in the database."""
     # Prevent memory leak in matplotlib by using non-gui backend. see
@@ -176,9 +173,7 @@ def calculate_parcel_slopes(
     print(error_parcels)
 
 
-def calculate_slopes_for_parcel(
-    parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int, use_cache=True
-):
+def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int, use_cache=True):
 
     cached_slopes = ParcelSlope.objects.filter(parcel=parcel.model)
     if use_cache and len(cached_slopes) > 0:
@@ -188,9 +183,7 @@ def calculate_slopes_for_parcel(
     else:
         cached_slopes.delete()
         # Rebuild parcel slopes
-        topo_list = list(
-            TopographyLoads.objects.using(TOPO_DB_ALIAS).values_list("extents", flat=True)
-        )
+        topo_list = list(TopographyLoads.objects.using(TOPO_DB_ALIAS).values_list("extents", flat=True))
         topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
 
         # Will we need this line?
@@ -237,16 +230,12 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
         if not _check_parcel_has_topo(parcel, topo_areas):
             x = parcel.geom.centroid.x
             y = parcel.geom.centroid.y
-            plt.plot(
-                x, y, marker="o", markersize=2, markeredgecolor="red", markerfacecolor="yellow"
-            )
+            plt.plot(x, y, marker="o", markersize=2, markeredgecolor="red", markerfacecolor="yellow")
             outside_parcels += 1
         else:
             x = parcel.geom.centroid.x
             y = parcel.geom.centroid.y
-            plt.plot(
-                x, y, marker="o", markersize=1, markeredgecolor="green", markerfacecolor="green"
-            )
+            plt.plot(x, y, marker="o", markersize=1, markeredgecolor="green", markerfacecolor="green")
 
     print(f"Done. {outside_parcels} found outside the bounds of topo information.")
     print("Close plot to end.")
@@ -294,9 +283,7 @@ def create_slopes_for_parcel(
             grade_poly, throwaway_inner = regularize_to_multipolygon(grade_poly)
             throwaways += throwaway_inner
 
-        fill_holes = [
-            Polygon(interior) for interior in yield_interiors(grade_poly) if interior.length < 15
-        ]
+        fill_holes = [Polygon(interior) for interior in yield_interiors(grade_poly) if interior.length < 15]
         grade_poly = unary_union([grade_poly] + fill_holes)
         grade_poly, throwaway_inner = regularize_to_multipolygon(grade_poly)
         throwaways += throwaway_inner
@@ -321,9 +308,7 @@ def create_slopes_for_parcel(
     return p1, grade_polys
 
 
-def save_slope_object(
-    parcel: Parcel, bucket: int, grade_poly: shapely.geometry, utm_crs: pyproj.CRS
-):
+def save_slope_object(parcel: Parcel, bucket: int, grade_poly: shapely.geometry, utm_crs: pyproj.CRS):
     # Save the final slope data (a multipolygon) for this bucket.
     # An empty Shapely Multipolygon becomes a GeometryCollection, which doesn't translate
     # properly. So check for emptyness directly instead.
@@ -332,9 +317,7 @@ def save_slope_object(
         slope.polys = django.contrib.gis.geos.MultiPolygon()
     else:
         assert grade_poly.geom_type == "MultiPolygon"
-        slope.polys = django.contrib.gis.geos.GEOSGeometry(
-            grade_poly.wkt, srid=int(utm_crs.srs.split(":")[1])
-        )
+        slope.polys = django.contrib.gis.geos.GEOSGeometry(grade_poly.wkt, srid=int(utm_crs.srs.split(":")[1]))
         slope.polys.transform("EPSG:4326")  # in-place conversion to lat-long
     slope.save()
     return slope

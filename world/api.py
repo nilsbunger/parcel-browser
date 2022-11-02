@@ -170,9 +170,7 @@ class RentalRatesSchema(ModelSchema):
 
 @api.get("/rentalrates")  # response=List[RentalRatesSchema])
 def get_rental_rates(request) -> List[RentalRatesSchema]:
-    rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by(
-        "parcel", "-details__mean"
-    )
+    rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by("parcel", "-details__mean")
     pid: str = ""
     retlist = []
     for rd in rental_data:
@@ -200,9 +198,7 @@ def get_rental_rates(request) -> List[RentalRatesSchema]:
 
 @api.get("/listings", response=List[ListingSchema])
 @paginate
-def get_listings(
-    request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)
-):
+def get_listings(request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)):
     # Strip away the filter params that are none
     # Filters are already validated by the ListingsFilters Schema above
     filters_xlat = {
@@ -349,9 +345,7 @@ def address_search(request, addr: str):
     if error:
         return {"error": f"An error occurred: {error}"}
     try:
-        analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by("-datetime_ran")[
-            0
-        ]
+        analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by("-datetime_ran")[0]
     except IndexError as e:
         analyzed_listing = None
     except Exception as e:

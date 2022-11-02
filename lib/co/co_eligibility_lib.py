@@ -156,11 +156,7 @@ class CommercialCorridorCheck(EligibilityCheck):
             max_width_meters = 150 / 3.28084
             low_width = round(road.low_width * 3.28084, 1)
             high_width = round(road.high_width * 3.28084, 1)
-            width_range = (
-                f"{low_width} ft"
-                if (low_width == high_width)
-                else f"{low_width} to {high_width} ft"
-            )
+            width_range = f"{low_width} ft" if (low_width == high_width) else f"{low_width} to {high_width} ft"
 
             if road.low_width >= min_width_meters and road.high_width <= max_width_meters:
                 # noinspection PyTypeChecker
@@ -232,7 +228,9 @@ class NoIndustrialNeighborsCheck(EligibilityCheck):
 
 class NoMobileHomePark(EligibilityCheck):
     def __init__(self) -> None:
-        description = "Not a lot governed under the Mobilehome Residency Law, RV Park Law, or Special Occupancy Parks Acts"
+        description = (
+            "Not a lot governed under the Mobilehome Residency Law, RV Park Law, or Special Occupancy Parks Acts"
+        )
         super().__init__("No Mobile Home Park", description)
 
     def run(self, parcel: Parcel) -> CheckResultEnum:
@@ -283,9 +281,7 @@ class NotNearFreeway(EligibilityCheck):
             self.result = CheckResultEnum.passed
             return self.result
         else:
-            self.notes.append(
-                f"Near freeway: {roads[0].rd30full}, {round(roads[0].distance.standard)} feet away"
-            )
+            self.notes.append(f"Near freeway: {roads[0].rd30full}, {round(roads[0].distance.standard)} feet away")
             # noinspection PyTypeChecker
             self.result = CheckResultEnum.failed
             return self.result
@@ -303,7 +299,9 @@ class NotNearOilGas(EligibilityCheck):
 
 class NotNeighborhoodPlan(EligibilityCheck):
     def __init__(self) -> None:
-        description = "Not part of Neighborhood Plan (master planned community), unless multifamily is allowed in the plan"
+        description = (
+            "Not part of Neighborhood Plan (master planned community), unless multifamily is allowed in the plan"
+        )
         super().__init__("Not Neighborhood Plan", description)
 
     def run(self, parcel: Parcel) -> CheckResultEnum:

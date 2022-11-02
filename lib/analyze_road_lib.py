@@ -14,9 +14,7 @@ def analyze_road_batch(
     if n_jobs == 1:
         results = [analyze_road_worker(road, utm_crs) for road in roads]
     else:
-        results = Parallel(n_jobs=n_jobs)(
-            delayed(parallel_analyze_road_worker)(road, utm_crs) for road in roads
-        )
+        results = Parallel(n_jobs=n_jobs)(delayed(parallel_analyze_road_worker)(road, utm_crs) for road in roads)
 
 
 def analyze_road_worker(road: Roads, utm_crs: pyproj.CRS):

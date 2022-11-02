@@ -22,6 +22,4 @@ def init(verbose):
 
 
 def add_common_arguments(parser):
-    parser.add_argument(
-        "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
-    )
+    parser.add_argument("--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)")

@@ -14,17 +14,13 @@ class Command(BaseCommand):
 
     # Positional arguments
     def add_arguments(self, parser):
-        parser.add_argument(
-            "cmd_name", type=str, help="Command to run. Valid option are: dedup, reset_credits"
-        )
+        parser.add_argument("cmd_name", type=str, help="Command to run. Valid option are: dedup, reset_credits")
 
     def handle(self, *args, **options):
         log.setLevel(logging.INFO)
         if options["cmd_name"] == "reset_credits":
             log.info("Removing out of credit errors from our Rentometer data cache")
-            l = RentalData.objects.filter(
-                details__status_code=402
-            )  # 402 means no credits available
+            l = RentalData.objects.filter(details__status_code=402)  # 402 means no credits available
             l.delete()
         elif options["cmd_name"] == "dedup":
             rd_dupes = (
@@ -34,9 +30,7 @@ class Command(BaseCommand):
             )
             log.info(f"Found {len(rd_dupes)} duplicates. Removing:")
             for rd in rd_dupes:
-                items = RentalData.objects.filter(
-                    parcel_id=rd["parcel_id"], br=rd["br"], ba=rd["ba"]
-                )
+                items = RentalData.objects.filter(parcel_id=rd["parcel_id"], br=rd["br"], ba=rd["ba"])
                 assert len(items) > 1
                 for item in items[1:]:
                     item.delete()

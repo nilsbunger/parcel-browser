@@ -53,13 +53,9 @@ class TestPrincipallyPermittedUse:
     def test_multifam_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="4472421600")  # RM-1-1 zone parcel
         test_result = PrincipallyPermittedUseCheck().run(parcel)
-        assert test_result == CheckResult(
-            result=CheckResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"]
-        )
+        assert test_result == CheckResult(result=CheckResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"])
 
     def test_no_zone_data_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="5571022400")  # not in SD city
         test_result = PrincipallyPermittedUseCheck().run(parcel)
-        assert test_result == CheckResult(
-            result=CheckResultEnum.error, notes=["No zoning found for parcel"]
-        )
+        assert test_result == CheckResult(result=CheckResultEnum.error, notes=["No zoning found for parcel"])

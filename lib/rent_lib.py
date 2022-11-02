@@ -42,9 +42,7 @@ class RentService:
         rents = []
         # check for exact match in DB in case we've already done this parcel
         if not is_adu and (listing.parcel.br < 1 or listing.parcel.ba < 1):
-            log.info(
-                f"Skipping {listing.addr}, APN={listing.parcel.apn} because there's no info on # of BR or BA"
-            )
+            log.info(f"Skipping {listing.addr}, APN={listing.parcel.apn} because there's no info on # of BR or BA")
             messages["warning"].append(f"Missing rent: No info on # of BR or BA")
 
             return []
@@ -61,9 +59,7 @@ class RentService:
                 continue
             # ... or in the DB
             x = [r for r in rd_list_for_parcel if r.br == check_br and r.ba == check_ba]
-            assert (
-                len(x) <= 1
-            ), f"Multiple entries in RentalData for the same unit for APN={listing.parcel.apn}"
+            assert len(x) <= 1, f"Multiple entries in RentalData for the same unit for APN={listing.parcel.apn}"
             if len(x):
                 rd = x[0]
                 messages["stats"]["rent_from_db"] += 1
@@ -80,9 +76,7 @@ class RentService:
                 # couldn't interpolate rent... time to use an API credit
                 messages["stats"]["rent_rentometer_call"] += 1
                 log.info(f"CALLING Rentometer: {listing.addr}, {check_br}BR,{check_ba}BA")
-                rd = self._get_rental_data_from_rentometer(
-                    listing, check_br, check_ba, dry_run, is_adu=is_adu
-                )
+                rd = self._get_rental_data_from_rentometer(listing, check_br, check_ba, dry_run, is_adu=is_adu)
                 rd_list_for_parcel.append(rd)
             tmp_rent = self._calculate_rent_from_rentdata_instance(rd, messages, percentile)
             if tmp_rent == -1:
@@ -117,13 +111,9 @@ class RentService:
         if len(near_rental_data) == 0:
             return -1
         # TODO: This isn't real interpolation... we literally just return the closest match within our distance limit
-        return self._calculate_rent_from_rentdata_instance(
-            near_rental_data[0], messages, percentile
-        )
+        return self._calculate_rent_from_rentdata_instance(near_rental_data[0], messages, percentile)
 
-    def _calculate_rent_from_rentdata_instance(
-        self, rd: RentalData, messages, percentile: int
-    ) -> int:
+    def _calculate_rent_from_rentdata_instance(self, rd: RentalData, messages, percentile: int) -> int:
         """Use the data in a RentalData instance to calculate the rent for a given percentile"""
         rent = -1
         # "rd" object either came from the DB or was created with an API call. Either way it can still have an error
@@ -135,9 +125,7 @@ class RentService:
             )
             return -1
         if rd.details.get("status_code", 200) != 200:
-            messages["warning"].append(
-                f"Missing rent: Rental data (live or from DB) has non-200 error code"
-            )
+            messages["warning"].append(f"Missing rent: Rental data (live or from DB) has non-200 error code")
             return -1
 
         # Ridiculous patch-up required -- 75th percentile is sometimes higher than max from rentometer??
@@ -178,11 +166,7 @@ class RentService:
 
         try:
             # Call Rentometer, or if in dry_run mode, just return a dummy object
-            output = (
-                self._call_rentometer(lat, long, br, ba)
-                if not dry_run
-                else self._dry_run_resp(br, ba)
-            )
+            output = self._call_rentometer(lat, long, br, ba) if not dry_run else self._dry_run_resp(br, ba)
         except HTTPError as e:
             # create error output and save it as a rental data object
             log.error(

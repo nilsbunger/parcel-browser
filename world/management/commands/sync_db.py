@@ -21,14 +21,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("cmd", choices=SyncCmd.__members__)
         parser.add_argument("tables", nargs="*", help="Tables to sync (for local2cloud only")
-        parser.add_argument(
-            "--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)"
-        )
+        parser.add_argument("--verbose", action="store_true", help="Do verbose logging (DEBUG-level logging)")
 
     def handle(self, cmd, tables, *args, **options):
-        logging.basicConfig(
-            stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO
-        )
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if options["verbose"] else logging.INFO)
         logging.getLogger().setLevel(logging.DEBUG if options["verbose"] else logging.INFO)
         logging.debug("DEBUG log level")
         logging.info("INFO log level")

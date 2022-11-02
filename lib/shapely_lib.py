@@ -19,9 +19,7 @@ def regularize_to_multipolygon(grade_poly):
         return grade_poly, throwaways
     else:
         throwaways = [poly for poly in grade_poly.geoms if poly.geom_type != "Polygon"]
-        grade_poly = MultiPolygon(
-            [poly for poly in grade_poly.geoms if poly.geom_type == "Polygon"]
-        )
+        grade_poly = MultiPolygon([poly for poly in grade_poly.geoms if poly.geom_type == "Polygon"])
         return grade_poly, throwaways
 
 
