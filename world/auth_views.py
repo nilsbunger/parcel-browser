@@ -23,7 +23,9 @@ oauth.register(
 
 
 def login(request):
-    return oauth.auth0.authorize_redirect(request, request.build_absolute_uri(reverse("callback")))
+    return oauth.auth0.authorize_redirect(
+        request, request.build_absolute_uri(reverse("auth0_callback"))
+    )
 
 
 # The callback route is responsible for actually saving the session for the user, so when they visit again
