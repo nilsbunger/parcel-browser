@@ -72,6 +72,13 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
 AUTH_USER_MODEL = "world.User"
 
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+    # `allauth` specific authentication methods, such as login by e-mail
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -82,8 +89,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "django_extensions",
     "django.contrib.gis",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    #   'allauth.socialaccount.providers.google',   ## many more social auth providers available
     # "rest_framework",
     # "rest_framework_gis",
     "world",
@@ -92,6 +104,23 @@ INSTALLED_APPS = [
 
 if DEV_ENV:
     INSTALLED_APPS += ["silk"]
+
+# django-allauth requires using django sites
+SITE_ID = 1
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    # 'google': {
+    #     # For each OAuth based provider, either add a ``SocialApp``
+    #     # (``socialaccount`` app) containing the required client
+    #     # credentials, or list them here:
+    #     'APP': {
+    #         'client_id': '123',
+    #         'secret': '456',
+    #         'key': ''
+    #     }
+    # }
+}
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -200,6 +229,8 @@ CONN_MAX_AGE = None  # allow persistent DB connection forever
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -215,8 +246,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGIN_URL = "/dj/accounts/login/"
+# Authentication config
+LOGIN_URL = "/dj/all-auth/accounts/login/"
 LOGIN_REDIRECT_URL = "/listings/"
+LOGOUT_REDIRECT_URL = "/"
+# Authentication -- all-auth config
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_MAX_EMAIL_ADDRESSES = 2
+# ACCOUNT_USER_MODEL_USERNAME_FIELD
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
