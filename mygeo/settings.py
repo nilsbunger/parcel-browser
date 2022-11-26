@@ -89,12 +89,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
-    "django.contrib.sites",
+    # "django.contrib.sites",   # seems to disable site switching for django-allauth?
     "django_extensions",
     "django.contrib.gis",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.socialaccount.providers.amazon_cognito",
     #   'allauth.socialaccount.providers.google',   ## many more social auth providers available
     # "rest_framework",
     # "rest_framework_gis",
@@ -107,8 +108,12 @@ if DEV_ENV:
 
 # django-allauth requires using django sites
 SITE_ID = 1
+
 # Provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
+    "amazon_cognito": {
+        "DOMAIN": "https://parsnip.auth.us-west-2.amazoncognito.com",
+    }
     # 'google': {
     #     # For each OAuth based provider, either add a ``SocialApp``
     #     # (``socialaccount`` app) containing the required client
