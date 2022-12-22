@@ -1,9 +1,9 @@
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import AbstractUser, PermissionsMixin, UserManager
+from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.mail import send_mail
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -20,21 +20,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _("users")
         abstract = False
 
-    username_validator = UnicodeUsernameValidator()
-
-    username = models.CharField(
-        _("username"),
-        max_length=150,
-        unique=True,
-        help_text=_("Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."),
-        validators=[username_validator],
-        error_messages={
-            "unique": _("A user with that username already exists."),
-        },
-    )
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
-    email = models.EmailField(_("email address"), blank=True)
+    email = models.EmailField(_("email address"), unique=True)
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,
@@ -53,8 +41,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     EMAIL_FIELD = "email"
-    USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     def clean(self):
         super().clean()
@@ -74,3 +62,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
+
+
+#
+# # Read-only shadow of what we get from Auth0
+# class Auth0User(models.Model):
+#     created = models.DateTimeField(auto_now_add=True)
+#     sub = models.OneToOneField('world.User', to_field="sub", unique=True, related_name="auth0_user",
+#                                on_delete=models.CASCADE)
+#     details = models.JSONField(blank=True, null=True)
+#
+#     def __str__(self):
+#         return "Auth0 sub '{}' is user '{}'".format(self.sub, self.user)

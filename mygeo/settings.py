@@ -69,11 +69,18 @@ eprint(f"**** DJANGO_ENV is {'DEVELOPMENT (meaning on a local machine)' if DEV_E
 SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
 AUTH_USER_MODEL = "world.User"
 
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+    # `allauth` specific authentication methods, such as login by e-mail
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -84,16 +91,52 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    # "django.contrib.sites",   # seems to disable site switching for django-allauth?
     "django_extensions",
     "django.contrib.gis",
-    # "rest_framework",
-    # "rest_framework_gis",
+    ## For django-two-factor-auth package:
+    "django_otp",
+    "django_otp.plugins.otp_static",
+    "django_otp.plugins.otp_totp",
+    # 'django_otp.plugins.otp_email',  # <- if you want email capability.
+    "two_factor",
+    "two_factor.plugins.phonenumber",  # <- if you want phone number capability.
+    # 'two_factor.plugins.email',  # <- if you want email capability.
+    "two_factor.plugins.yubikey",  # <- for yubikey capability.
+    ## END for django-two-factor-auth package
+    ## For django-allauth package:
+    # "allauth",
+    # "allauth.account",
+    # "allauth.socialaccount",
+    # "allauth.socialaccount.providers.amazon_cognito",
+    #   'allauth.socialaccount.providers.google',   ## many more social auth providers available
+    ## END for django-allauth package
     "world",
     "co",
 ]
 
 if DEV_ENV:
     INSTALLED_APPS += ["silk"]
+
+# django-allauth requires using django sites
+SITE_ID = 1
+
+# Provider specific settings
+SOCIALACCOUNT_PROVIDERS = {
+    "amazon_cognito": {
+        "DOMAIN": "https://parsnip.auth.us-west-2.amazoncognito.com",
+    }
+    # 'google': {
+    #     # For each OAuth based provider, either add a ``SocialApp``
+    #     # (``socialaccount`` app) containing the required client
+    #     # credentials, or list them here:
+    #     'APP': {
+    #         'client_id': '123',
+    #         'secret': '456',
+    #         'key': ''
+    #     }
+    # }
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -102,9 +145,11 @@ MIDDLEWARE = [
     # ----------------------------------------------------------------------------
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # UNSAFE: Uncomment this out later. Post requests don't work with this turned on
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    ## For django-two-factor-auth package: - must be after AuthenticationMiddleware
+    "django_otp.middleware.OTPMiddleware",
+    ## END for django-two-factor-auth package
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -166,7 +211,6 @@ else:
         env("DB_PASSWORD"),
     )
 
-
 if dbHost:
     # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
     # Additionally define the 'topo' DB where the topo model lives, since it is very large.
@@ -202,12 +246,17 @@ CONN_MAX_AGE = None  # allow persistent DB connection forever
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -217,8 +266,26 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGIN_URL = "/dj/accounts/login/"
-LOGIN_REDIRECT_URL = "/listings/"
+# Authentication config
+# LOGIN_URL = "/dj/all-auth/accounts/login/"
+# LOGIN_REDIRECT_URL = "/listings/"
+LOGIN_URL = "two_factor:login"
+LOGIN_REDIRECT_URL = "two_factor:profile"
+
+LOGOUT_REDIRECT_URL = "/"
+# # Authentication -- django-allauth config
+# ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+# ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+# ACCOUNT_MAX_EMAIL_ADDRESSES = 2
+# # ACCOUNT_USER_MODEL_USERNAME_FIELD
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+# # Authentication -- django-two-factor-auth config
+TWO_FACTOR_PATCH_ADMIN = True
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

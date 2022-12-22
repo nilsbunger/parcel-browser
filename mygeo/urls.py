@@ -1,6 +1,8 @@
 """mygeo URL Configuration"""
 import django
 from django.contrib import admin
+from django.contrib.auth.decorators import user_passes_test
+from django.core.exceptions import PermissionDenied
 from django.urls import path, include, re_path
 from django.views.defaults import page_not_found
 
@@ -23,17 +25,36 @@ def trigger_error(request):
     division_by_zero = 1 / 0
 
 
+def check_if_superuser(user):
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    raise PermissionDenied
+
+
+# To protect against brute force and other attacks, protect admin login behind the main login
+superuser_login_required = user_passes_test(check_if_superuser)
+
+# admin.site.login = superuser_login_required(admin.site.login)
+from two_factor.urls import urlpatterns as tf_urls
+
 urlpatterns = [
     path("sentry-debug/", trigger_error),
     #### ---- Django-rendered routes
     path("dj/admin/", admin.site.urls),
-    # auth0 auth routes
-    path("dj/", world.auth_views.index, name="auth0_index"),
-    path("dj/login", world.auth_views.login, name="auth0_login"),
-    path("dj/logout", world.auth_views.logout, name="auth0_logout"),
-    path("dj/callback", world.auth_views.callback, name="auth0_callback"),
-    # Original django-auth.... not sure what to do with it yet
-    path("dj/accounts/", include("django.contrib.auth.urls")),
+    # django-two-factor-auth URLS
+    path("", include(tf_urls)),
+    # # django-allauth routes
+    # path("dj/all-auth/accounts/", include("allauth.urls")),
+    # # auth0 auth routes
+    # path("dj/", world.auth_views.index, name="auth0_index"),
+    # path("dj/login", world.auth_views.login, name="auth0_login"),
+    # path("dj/logout", world.auth_views.logout, name="auth0_logout"),
+    # path("dj/callback", world.auth_views.callback, name="auth0_callback"),
+    # # Original django-auth.... not sure what to do with it yet
+    # path("dj/accounts/", include("django.contrib.auth.urls")),
+    # Deprecated routes:
     # path("dj/map/", MapView.as_view()),
     path("dj/map/search/<str:address>", AddressToLatLong.as_view()),
     path("dj/parcel/<str:apn>", ParcelDetailView.as_view()),
