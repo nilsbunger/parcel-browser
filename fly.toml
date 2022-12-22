@@ -25,8 +25,8 @@ processes = []
   protocol = "tcp"
   script_checks = []
   [services.concurrency]
-    hard_limit = 20
-    soft_limit = 15
+    hard_limit = 15
+    soft_limit = 10
     type = "connections"
 
   [[services.ports]]
@@ -38,11 +38,11 @@ processes = []
     handlers = ["tls", "http"]
     port = 443
 
-#   [[services.tcp_checks]]
-#     grace_period = "1s"
-#     interval = "15s"
-#     restart_limit = 0
-#     timeout = "2s"
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "30s"
+    restart_limit = 0
+    timeout = "10s"
 
 # [[statics]]
 #   guest_path = "/app/public"
