@@ -33,11 +33,15 @@ def check_if_superuser(user):
 superuser_login_required = user_passes_test(check_if_superuser)
 
 # admin.site.login = superuser_login_required(admin.site.login)
+from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
     #### ---- Django-rendered routes
     path("dj/admin/", admin.site.urls),
-    path("dj/all-auth/accounts/", include("allauth.urls")),
+    # django-two-factor-auth URLS
+    path("", include(tf_urls)),
+    # # django-allauth routes
+    # path("dj/all-auth/accounts/", include("allauth.urls")),
     # # auth0 auth routes
     # path("dj/", world.auth_views.index, name="auth0_index"),
     # path("dj/login", world.auth_views.login, name="auth0_login"),
