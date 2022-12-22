@@ -18,7 +18,13 @@ from world.views import (
 from world.api import api as world_api
 from co.co_api import api as co_api
 
+
+def trigger_error(request):
+    division_by_zero = 1 / 0
+
+
 urlpatterns = [
+    path("sentry-debug/", trigger_error),
     #### ---- Django-rendered routes
     path("dj/admin/", admin.site.urls),
     # auth0 auth routes
