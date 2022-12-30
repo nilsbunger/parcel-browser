@@ -19,48 +19,44 @@ import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from mygeo.util import eprint
-
+from mygeo.util import is_pytest_running
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-# SECURITY WARNING: don't run with debug turned on in production!
+### CORE configuration variables
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 env = environ.Env(
     LOCAL_DB=(bool, False),
-    BUILD_PHASE=(str, "False"),
-    DESPERATE=(bool, False),
-    DJANGO_LOG_LEVEL=(bool, "INFO"),
+    TEST_ENV=(bool, False),  # Running tests; disables silk and other dev infra
+    BUILD_PHASE=(str, "False"),  ## TODO: this should be switchable to a boolean
+    DJANGO_LOG_LEVEL=(str, "INFO"),
+    DJANGO_ENV=(str, "production"),
+    SENTRY_DSN=(str, None),
 )
-
-# if totally desperate we can print out all the environment variables for debugging Docker stuff.
-# if env("DESPERATE"):
-#     eprint("*** START ENVIRONMENT VARIABLES ***")
-#     for name, value in os.environ.items():
-#         eprint("{0}: {1}".format(name, value))
-#     eprint("*** END ENVIRONMENT VARIABLES ***")
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")
-DEV_ENV = DJANGO_ENV == "development"  # running on local machine
-DEBUG = DJANGO_ENV == "development"  # run with extra debug facilities
-TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 LOCAL_DB = env("LOCAL_DB")
+TEST_ENV = env("TEST_ENV")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 eprint("Django Log Level", DJANGO_LOG_LEVEL)
+eprint("TEST_ENV", TEST_ENV)
+DEV_ENV = DJANGO_ENV == "development"  # running on local machine
+DEBUG = DEV_ENV  # run with extra debug facilities
+TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
+
+eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
+if TEST_ENV:
+    eprint(f"  ** TEST ENVIRONMENT **")
 
 if not BUILD_PHASE:
     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
     AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
 
-if DEBUG:
-    eprint("**** RUNNING IN (insecure) DEVELOPMENT MODE ****")
-else:
-    eprint("**** DEBUG=FALSE ****")
-eprint(f"**** DJANGO_ENV is {'DEVELOPMENT (meaning on a local machine)' if DEV_ENV else 'PRODUCTION'} ****")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -73,6 +69,7 @@ SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
+# AUTH_USER_MODEL = "userflows.User"
 AUTH_USER_MODEL = "world.User"
 
 AUTHENTICATION_BACKENDS = [
@@ -102,7 +99,7 @@ INSTALLED_APPS = [
     "two_factor",
     "two_factor.plugins.phonenumber",  # <- if you want phone number capability.
     # 'two_factor.plugins.email',  # <- if you want email capability.
-    "two_factor.plugins.yubikey",  # <- for yubikey capability.
+    # "two_factor.plugins.yubikey",  # <- for yubikey capability.
     ## END for django-two-factor-auth package
     ## For django-allauth package:
     # "allauth",
@@ -113,9 +110,10 @@ INSTALLED_APPS = [
     ## END for django-allauth package
     "world",
     "co",
+    # "userflows",
 ]
 
-if DEV_ENV:
+if DEV_ENV and not TEST_ENV:
     INSTALLED_APPS += ["silk"]
 
 # django-allauth requires using django sites
@@ -123,9 +121,9 @@ SITE_ID = 1
 
 # Provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
-    "amazon_cognito": {
-        "DOMAIN": "https://parsnip.auth.us-west-2.amazoncognito.com",
-    }
+    # "amazon_cognito": {
+    #     "DOMAIN": "https://parsnip.auth.us-west-2.amazoncognito.com",
+    # }
     # 'google': {
     #     # For each OAuth based provider, either add a ``SocialApp``
     #     # (``socialaccount`` app) containing the required client
@@ -155,7 +153,7 @@ MIDDLEWARE = [
 ]
 
 # Add silky right after security middleware.
-if DEV_ENV:
+if DEV_ENV and not TEST_ENV:
     MIDDLEWARE.insert(1, "silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "mygeo.urls"
@@ -245,8 +243,10 @@ CONN_MAX_AGE = None  # allow persistent DB connection forever
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
-
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+if DEV_ENV:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # TODO: Fill in
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -313,20 +313,21 @@ WHITENOISE_ROOT = BASE_DIR / "dist/static"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# Sentry error monitoring
-sentry_sdk.init(
-    dsn="https://dbc6f4f1eb644227b0fe36988811ee8f@o4504370018713600.ingest.sentry.io/4504370023235584",
-    integrations=[
-        DjangoIntegration(),
-    ],
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=1.0,
-    # If you wish to associate users to errors (assuming you are using
-    # django.contrib.auth) you may enable sending PII data.
-    send_default_pii=True,
-)
+# Sentry error monitoring (don't use on localhost)
+if not DEV_ENV and not TEST_ENV:
+    sentry_sdk.init(
+        dsn=env("SENTRY_DSN"),
+        integrations=[
+            DjangoIntegration(),
+        ],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production.
+        traces_sample_rate=1.0,
+        # If you wish to associate users to errors (assuming you are using
+        # django.contrib.auth) you may enable sending PII data.
+        send_default_pii=True,
+    )
 
 
 LOGGING_CONFIG = "logging.config.dictConfig"
