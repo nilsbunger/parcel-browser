@@ -2,6 +2,8 @@
 # FROM python:${PYTHON_VERSION}
 
 # Ubuntu 20.04 LTS std support until April 2025, EOL April 2030.
+# focal = Ubuntu 20.04 LTS *** our current version
+# jammy = Ubuntu 22.04 LTS - was released April 2022
 FROM ubuntu:20.04
 
 # Deadsnakes repo needed for python 3.9
@@ -21,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     gdal-bin=3.0.4+dfsg-1build3 \
     libgdal-dev=3.0.4+dfsg-1build3 \
-    python3.9=3.9.15-1+focal1 \
+    python3.9 \
     python3.9-distutils \
     python3.9-venv \
     python3.9-dev \
