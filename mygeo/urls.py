@@ -8,7 +8,7 @@ from django.views.defaults import page_not_found
 
 from mygeo import settings
 from world.infra_views import frontend_proxy_view
-from mygeo.ninja_api import ninja_api
+from world.api import world_api
 from co.co_api import api as co_api
 
 # from userflows.api import userflows_api
@@ -47,7 +47,7 @@ urlpatterns = [
     # Django-ninja API routes, per app
     path("api/co/", co_api.urls),
     # path("api/userflows", userflows_api.urls),
-    path("api/", ninja_api.urls),  # generic / fallback APIs
+    path("api/", world_api.urls),  # generic / fallback APIs
     # Old-school django routes (including dj/api/ stuff, which should transition to django-ninja)
     path("dj/", include("world.urls")),
     # Add catch-all for routes that should NOT go to react (ones starting with dj/ or api/)

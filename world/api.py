@@ -6,12 +6,12 @@ from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F
 from ninja import NinjaAPI, Query
 from ninja.pagination import paginate
+from ninja.security import django_auth
 
 from lib.analyze_parcel_lib import analyze_one_parcel
 from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.crs_lib import get_utm_crs
 from lib.listings_lib import address_to_parcel
-from mygeo.ninja_api import api
 from mygeo.util import field_exists_on_model
 from world.api_gis_schema import (
     AnalysisResponseSchema,
@@ -25,18 +25,21 @@ from world.api_gis_schema import (
 from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, Roads
 
 
+# Require auth on all API routes (can be overriden if needed)
+world_api = NinjaAPI(auth=django_auth, csrf=True)
+
 ################################################################################################
 ## GIS APIs
 ################################################################################################
 
 
-@api.get("/listinghistory", response=List[ListingHistorySchema])
+@world_api.get("/listinghistory", response=List[ListingHistorySchema])
 def get_listing_history(request, mlsid: str):
     listings = PropertyListing.objects.filter(mlsid=mlsid).order_by("-founddate")
     return listings
 
 
-@api.get("/rentalrates")  # response=List[RentalRatesSchema])
+@world_api.get("/rentalrates")  # response=List[RentalRatesSchema])
 def get_rental_rates(request) -> List[RentalRatesSchema]:
     rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by("parcel", "-details__mean")
     pid: str = ""
@@ -64,7 +67,7 @@ def get_rental_rates(request) -> List[RentalRatesSchema]:
     return retlist
 
 
-@api.get("/listings", response=List[ListingSchema])
+@world_api.get("/listings", response=List[ListingSchema])
 @paginate
 def get_listings(request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)):
     # Strip away the filter params that are none
@@ -110,7 +113,7 @@ def get_listings(request, order_by: str = "founddate", asc: bool = False, filter
     return listings
 
 
-@api.post("/analysis/")
+@world_api.post("/analysis/")
 def redo_analysis(request, apn: str = None, al_id: int = None):
     """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
 
@@ -138,14 +141,14 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
     return {"analysisId": analyzed_listing.id}
 
 
-@api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
+@world_api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
 def get_analysis(request, al_id: int):
     """Get analysis results for a given analysis id"""
     # al_json = AnalysisResponseSchema.from_orm(analyzed_listing).dict()
     return AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
 
 
-@api.get("/parcel/{apn}", response=ParcelSchema)
+@world_api.get("/parcel/{apn}", response=ParcelSchema)
 def get_parcel(request, apn: str):
     """Get parcel info for a given APN"""
     parcel = Parcel.objects.get(apn=apn)
@@ -156,13 +159,13 @@ def get_parcel(request, apn: str):
     return retval
 
 
-@api.get("/road/{road_segid}", response=RoadSchema)
+@world_api.get("/road/{road_segid}", response=RoadSchema)
 def get_road(request, road_segid: int):
     """Get road info for a given road segid"""
     return Roads.objects.get(roadsegid=road_segid)
 
 
-@api.get("/address-search/{addr}")
+@world_api.get("/address-search/{addr}")
 def address_search(request, addr: str):
     """Look up an address and return a parcel if there's a single match."""
     # Takes in an address. Returns a list of possible parcels/APNs

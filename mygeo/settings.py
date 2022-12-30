@@ -102,8 +102,8 @@ INSTALLED_APPS = [
     # "two_factor.plugins.yubikey",  # <- for yubikey capability.
     ## END for django-two-factor-auth package
     ## For django-allauth package:
-    # "allauth",
-    # "allauth.account",
+    "allauth",
+    "allauth.account",
     # "allauth.socialaccount",
     # "allauth.socialaccount.providers.amazon_cognito",
     #   'allauth.socialaccount.providers.google',   ## many more social auth providers available
@@ -277,11 +277,12 @@ LOGOUT_REDIRECT_URL = "/"
 # ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 # ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 # ACCOUNT_MAX_EMAIL_ADDRESSES = 2
-# # ACCOUNT_USER_MODEL_USERNAME_FIELD
-# ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_USERNAME_REQUIRED = False
-# ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+# Authentication -- set up django-allauth to use email as username:
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # # Authentication -- django-two-factor-auth config
 TWO_FACTOR_PATCH_ADMIN = True
