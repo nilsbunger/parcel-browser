@@ -68,9 +68,9 @@ export default function Navbar(_props) {
                       </div>
                     </div>
                   </div>
+                  {/* Desktop - Notification bell icon */}
                   <div className="hidden md:block">
                     <div className="ml-4 md:ml-6">
-                      {/* Desktop - Notification bell icon */}
                       {/*<button*/}
                       {/*  type="button"*/}
                       {/*  className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"*/}
@@ -80,6 +80,7 @@ export default function Navbar(_props) {
                       {/*</button>*/}
                       {/*<Auth0LoginButton />*/}
                       {/* Desktop - Profile dropdown */}
+                      {!isAuthenticated && <span>No auth</span>}
                       {isAuthenticated && (
                         // this uses https://headlessui.dev/react/menu Menu
                         <Menu
@@ -121,6 +122,7 @@ export default function Navbar(_props) {
                       )}
                     </div>
                   </div>
+                  {/* Mobile menu */}
                   <div className="-mr-2 flex md:hidden">
                     {/* Mobile menu hamburger button */}
                     <Disclosure.Button className="bg-gray-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
