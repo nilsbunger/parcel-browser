@@ -39,7 +39,7 @@ pp = pprint.PrettyPrinter(indent=2)
 
 
 # ajax call for parcel tiles for big map
-class ParcelTileData(MVTView, ListView):  # LoginRequiredMixin
+class ParcelTileData(MVTView, ListView, LoginRequiredMixin):
     model = Parcel
     vector_tile_layer_name = "parcel"
     vector_tile_fields = ("apn", "pk")
