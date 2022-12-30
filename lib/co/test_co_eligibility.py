@@ -1,14 +1,5 @@
-import logging
-import sys
-from time import perf_counter
-
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.measure import D
-from geopandas import GeoSeries
-from numpy import arctan, arctan2, degrees
 import pytest
-from shapely.geometry import LineString
-from shapely.ops import nearest_points
+
 
 from lib.co.co_eligibility_lib import (
     CheckResult,
