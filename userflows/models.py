@@ -1,17 +1,18 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin, UserManager
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-# This was originally a copy of AbstractUser in Django source code (django/contrib/auth/base_user.py),
-# to allow us to transition to a custom user model,
-# following the recipe in comment 18 of https://code.djangoproject.com/ticket/25313#comment:18
-# Note that we copied AbstractBaseUser, since we need to change the primary-key username field
+# Create your models here.
 class User(AbstractBaseUser, PermissionsMixin):
+    # This was originally a copy of AbstractUser in Django source code (django/contrib/auth/base_user.py),
+    # to allow us to transition to a custom user model,
+    # following the recipe in comment 18 of https://code.djangoproject.com/ticket/25313#comment:18
+    # Note that we copied AbstractBaseUser, since we need to change the primary-key username field
     class Meta:
         swappable = "AUTH_USER_MODEL"
         # Use the default table name for the user model during migration to a custom user model
@@ -37,6 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ),
     )
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    email_verified_ts = models.DateTimeField(_("email verified date"), default=None, null=True)
 
     objects = UserManager()
 
@@ -63,14 +65,28 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
+    _token_generator = PasswordResetTokenGenerator()
 
-#
-# # Read-only shadow of what we get from Auth0
-# class Auth0User(models.Model):
-#     created = models.DateTimeField(auto_now_add=True)
-#     sub = models.OneToOneField('world.User', to_field="sub", unique=True, related_name="auth0_user",
-#                                on_delete=models.CASCADE)
-#     details = models.JSONField(blank=True, null=True)
+    # Token for email verification
+    def get_verif_token(self):
+        return self._token_generator.make_token(self)
+
+    def verify_token(self, token):
+        if self._token_generator.check_token(self, token):
+            self.is_active = True
+            self.email_verified_ts = timezone.now()
+            self.save()
+            return True
+        return False
+
+
+# class Profile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+#     phone = models.CharField(max_length=20, blank=True)
+#     address = models.CharField(max_length=100, blank=True)
+#     city = models.CharField(max_length=100, blank=True)
+#     state = models.CharField(max_length=2, blank=True)
+#     zip = models.CharField(max_length=10, blank=True)
 #
 #     def __str__(self):
-#         return "Auth0 sub '{}' is user '{}'".format(self.sub, self.user)
+#         return self.user.email

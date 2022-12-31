@@ -8,8 +8,6 @@ from .base_models import (
     ZoningBase,
 )
 
-from .user_model import User
-
 from .models import AnalyzedListing, AnalyzedParcel, ParcelSlope, PropertyListing
 
 from .rental_data import RentalData

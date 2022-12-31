@@ -68,8 +68,7 @@ SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
 
-# AUTH_USER_MODEL = "userflows.User"
-AUTH_USER_MODEL = "world.User"
+AUTH_USER_MODEL = "userflows.User"
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
@@ -94,10 +93,10 @@ INSTALLED_APPS = [
     "django_otp",
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
-    # 'django_otp.plugins.otp_email',  # <- if you want email capability.
+    # 'django_otp.plugins.otp_email',  # <- if you want email as a second factor (kinda weird)
     "two_factor",
     "two_factor.plugins.phonenumber",  # <- if you want phone number capability.
-    # 'two_factor.plugins.email',  # <- if you want email capability.
+    # 'two_factor.plugins.email',  # <- if you want email as a second factor (kinda weird).
     # "two_factor.plugins.yubikey",  # <- for yubikey capability.
     ## END for django-two-factor-auth package
     ## For django-allauth package:
@@ -109,7 +108,7 @@ INSTALLED_APPS = [
     ## END for django-allauth package
     "world",
     "co",
-    # "userflows",
+    "userflows",
 ]
 
 if DEV_ENV and not TEST_ENV:
