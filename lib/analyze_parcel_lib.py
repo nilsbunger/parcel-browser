@@ -23,7 +23,7 @@ from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
 from lib.re_params import ReParams, get_build_specs
 from lib.rent_lib import RentService
-from mygeo.settings import env
+from mygeo.settings import TEST_ENV, env
 from mygeo.util import eprint
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
@@ -41,12 +41,14 @@ from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
 log = logging.getLogger(__name__)
 
 # Connector to Cloudflare R2 for storing images. Ironically the instructions say to use the S3 API client!
-s3 = boto3.resource(
-    "s3",
-    endpoint_url=env("R2_ENDPOINT_URL"),
-    aws_access_key_id=env("R2_EDIT_ACCESS_KEY"),
-    aws_secret_access_key=env("R2_EDIT_SECRET_KEY"),
-)
+cloudflare_r2 = None
+if not TEST_ENV:
+    cloudflare_r2 = boto3.resource(
+        "s3",
+        endpoint_url=env("R2_ENDPOINT_URL"),
+        aws_access_key_id=env("R2_EDIT_ACCESS_KEY"),
+        aws_secret_access_key=env("R2_EDIT_SECRET_KEY"),
+    )
 R2_BUCKET_NAME = "parsnip-images"
 
 MIN_BUILDING_AREA = 11  # ~150sqft
@@ -84,8 +86,12 @@ def save_and_upload_figures(
     if save_to_cloud:
         print(f"**** SAVING images for address {addr} to Cloudflare R2 ****")
         try:
-            response = s3.meta.client.upload_file(new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}")
-            response = s3.meta.client.upload_file(cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}")
+            response = cloudflare_r2.meta.client.upload_file(
+                new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
+            )
+            response = cloudflare_r2.meta.client.upload_file(
+                cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
+            )
         except ClientError as e:
             eprint(f"ERROR uploading images for {addr} to R2. Error = {e}")
             messages["warning"].append(f"ERROR uploading images for {addr} to R2")
