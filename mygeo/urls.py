@@ -39,7 +39,7 @@ urlpatterns = [
     # django-two-factor-auth URLS
     path("", include(tf_urls), name="two-factor-urls"),
     # # django-allauth routes
-    # path("dj/all-auth/accounts/", include("allauth.urls")),
+    # path("dj/allauth/accounts/", include("allauth.urls")),
     # # Original django-auth.... not sure what to do with it yet
     path("dj/accounts/", include("django.contrib.auth.urls")),
     path("dj/co/", include("co.urls")),

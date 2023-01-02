@@ -1,17 +1,31 @@
 from django.test import TestCase
 from django.test import Client
 from django.urls import get_resolver, reverse
+from django.apps import apps as django_apps
 import pytest
 
+import mygeo
+from mygeo import settings
 
-@pytest.mark.django_db(databases=["basedata", "default"])
+whitelist_noauth = [
+    "/account/login/",
+    "/dj/accounts/login/",
+    "/dj/accounts/password_reset/",
+    "/dj/accounts/password_reset/done/",
+    "/dj/accounts/reset/1/2/",
+    "/dj/accounts/reset/done/",
+]
+whitelist_404 = ["/api/", "/api/co/"]
+
+
+@pytest.mark.django_db(databases=["default"])
 class TestAuthenticationPaths:
 
     # WARNING: don't include an __init__ method, or pytest will skip the tests
     # def __init__(self):
     #     pass
 
-    def setup(self):
+    def setup_method(self):
         self.url_resolver = get_resolver()
 
     def test_authentication_flow(self, client: Client):
@@ -27,16 +41,43 @@ class TestAuthenticationPaths:
 
     def test_authentication_required(self, client: Client):
         # Test view access without being authenticated
-        view_url = reverse("view_name")
+        view_url = reverse("frontend_proxy_view", args=["any_path"])
         response = client.get(view_url)
         assert response.status_code == 302  # Expect a redirect to login page
 
-    def test_all_urls_authentication(self):
-        # Test that all URLs are valid
+    def test_account_login(self, client: Client):
+        response = client.get("/account/login/")
+        assert response.status_code == 200
+        User = django_apps.get_model(settings.AUTH_USER_MODEL)
+        foo = User.objects.all()
+        foo = list(foo)
+        print(foo)
 
-        # Iterate over the URL patterns in the resolver
-        for url_pattern in self.url_resolver.url_patterns:
-            # Get the URL pattern name and path
-            name = url_pattern.name
-            path = url_pattern.pattern.regex.pattern
-            print(f"{name}: {path}")
+    def test_all_urls_logged_out(self, client: Client):
+        # Test all URLs that require auth, actually require auth
+
+        url_patterns = mygeo.urls.urlpatterns
+        failures = 0
+        tests = 0
+        for url in mygeo.util.each_url_with_placeholder(url_patterns):
+            # print (f"Testing URL: {url}")
+            tests += 1
+            if url == "/sentry-debug/":
+                with pytest.raises(ZeroDivisionError):
+                    response = client.get(url)
+            else:
+                response = client.get(url)
+                if url in whitelist_noauth:
+                    assert response.status_code == 200
+                else:
+                    if response.status_code not in [302, 401, 405]:
+                        if response.status_code == 404:
+                            if url in whitelist_404:
+                                continue
+                        print(
+                            f"Problem: Url {url} returned code {response.status_code}, expected 302, 401, or 405"
+                        )
+                        failures += 1
+                    # assert response.status_code == 302
+        print(f"Finished testing {tests} URLs")
+        assert failures == 0, f"Failed {failures} URLs above"

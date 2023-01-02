@@ -83,6 +83,12 @@ Some examples:
 * `LOCAL_DB=0 ./manage.py scrape --fetch --no-cache` -- daily scraping run. Requires Wireguard tunnel to cloud postgres to be running
 * `./manage.py` -- list all management commands. The commmands we created are in `world` and `co` apps.
 
+# Run tests
+
+We use pytest for testing. Run tests with:
+* `poetry run pytest -s` to run all tests , OR
+* `poetry run pytest -s -k <test name>` to run a specific test
+
 # Simulating production environment locallly
 
 1. Build frontend files: 
@@ -98,10 +104,13 @@ We use poetry as our package manager for python. It installs packages and manage
 A few useful commands:
 * `poetry shell` : start a shell in the virtual environment. That shell will give you
 the right python version and all the packages installed.
+* `poetry run <command>` : run a single command in the virtual environment
+(alternative to `poetry shell` for a single command) 
 * `poetry add <package>` : add a package to the project (and update pyproject.toml and poetry.lock)
 * `poetry add --group dev <package>` : add a development-only package
 * `poetry env info` : show info about the virtual environment
 * `poetry show --tree`: show the dependency tree
+* `poetry install`: install dependencies based on pyproject.toml and poetry.lock
 
 # System architecture
 
@@ -212,6 +221,19 @@ We use the `LOCAL_DB=1` flag in our django app to select your local DB instance.
 
 Note: it's smart to inspect the json file to make sure no other STDOUT output
 went into it.
+
+# Github Actions
+
+We use Github Actions to run our tests and deploy to fly.io. 
+The config is in `.github/workflows`.
+
+Github Action's runner images are found in [this repo](https://github.com/actions/runner-images). We currently use
+the Ubuntu 20.04 image which includes Postgres 14.6.
+
+[This blog post](https://blog.healthchecks.io/2020/11/using-github-actions-to-run-django-tests/) has an
+example of a Github Action configuration with Django and Postgres. 
+
+
 
 # Hardcore debugging
 

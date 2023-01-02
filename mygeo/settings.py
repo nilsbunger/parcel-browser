@@ -197,6 +197,7 @@ SILKY_PYTHON_PROFILER = True
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 dbHost = None
+dbPassword = None
 if LOCAL_DB:
     eprint("**** LOCAL DATABASE ****")
     (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "geodjango", env("USER"), "")
@@ -227,6 +228,7 @@ else:
         },
     }
     if dbPassword:
+        eprint("**** SETTING DB PASSWORD ****")
         DATABASES["default"]["PASSWORD"] = dbPassword
     DATABASES["basedata"] = DATABASES["default"].copy()
     DATABASES["basedata"]["TEST"] = {"MIRROR": "default"}
