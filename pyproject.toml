@@ -46,6 +46,9 @@ sentry-sdk = "^1.12.1"
 django-two-factor-auth = {extras = ["phonenumbers"], version = "^1.14.0"}
 django-allauth = "^0.52.0"
 
+[tool.poetry.group.test.dependencies]
+pytest-django = "^4.5.2"
+
 [tool.poetry.group.dev.dependencies]
 django-silk = "^5.0.1"
 locust = "^2.12.2"
