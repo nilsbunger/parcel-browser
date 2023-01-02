@@ -39,6 +39,6 @@ jobs:
         DB_HOST: localhost
         DB_NAME: geodjango
         DB_USERNAME: postgres
-        DB_PASSWORD: postgres
+        DB_PASSWORD: password
       run: |
         poetry run pytest -s
