@@ -22,9 +22,9 @@ from mygeo.util import eprint
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 FRONTEND_DIR = BASE_DIR.parent / "frontend"
 
+executable_name = os.path.basename(sys.argv[0])
 
 ### CORE configuration variables
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
@@ -42,10 +42,11 @@ LOCAL_DB = env("LOCAL_DB")
 TEST_ENV = env("TEST_ENV")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 eprint("Django Log Level", DJANGO_LOG_LEVEL)
-eprint("TEST_ENV", TEST_ENV)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 DEBUG = DEV_ENV  # run with extra debug facilities
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
+TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
+eprint("TEST_ENV", TEST_ENV)
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
@@ -111,7 +112,10 @@ INSTALLED_APPS = [
     "userflows",
 ]
 
-if DEV_ENV and not TEST_ENV:
+# silk profiler
+ENABLE_SILK = DEV_ENV and not TEST_ENV
+
+if ENABLE_SILK:
     INSTALLED_APPS += ["silk"]
 
 # django-allauth requires using django sites
@@ -150,8 +154,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Add silky right after security middleware.
-if DEV_ENV and not TEST_ENV:
+# Add silk profiler right after security middleware.
+if ENABLE_SILK:
     MIDDLEWARE.insert(1, "silk.middleware.SilkyMiddleware")
 
 ROOT_URLCONF = "mygeo.urls"
@@ -186,6 +190,7 @@ except:
 # and https://fly.io/docs/reference/runtime-environment/
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Silk profiler
 SILKY_AUTHENTICATION = True  # User must login
 SILKY_AUTHORISATION = True  # User must have permissions
 SILKY_PYTHON_PROFILER = True

@@ -5,7 +5,7 @@ import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.serializers import serialize
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.views.generic import ListView, TemplateView
@@ -31,7 +31,7 @@ from world.models import (
 )
 from world.models.base_models import HousingSolutionArea, ZoningMapLabel
 
-if settings.DEV_ENV:
+if settings.ENABLE_SILK:
     from silk.profiling.profiler import silk_profile
 
 
@@ -39,7 +39,7 @@ pp = pprint.PrettyPrinter(indent=2)
 
 
 # ajax call for parcel tiles for big map
-class ParcelTileData(MVTView, ListView, LoginRequiredMixin):
+class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
     model = Parcel
     vector_tile_layer_name = "parcel"
     vector_tile_fields = ("apn", "pk")
@@ -48,7 +48,7 @@ class ParcelTileData(MVTView, ListView, LoginRequiredMixin):
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-class ZoningLabelTile(MVTView, ListView):
+class ZoningLabelTile(LoginRequiredMixin, MVTView, ListView):
     model = ZoningMapLabel
     vector_tile_fields = ("text",)
 
@@ -57,7 +57,7 @@ class ZoningLabelTile(MVTView, ListView):
 
 
 # ajax call for zoning tiles for big map
-class ZoningTileData(MVTView, ListView):  # LoginRequiredMixin
+class ZoningTileData(LoginRequiredMixin, MVTView, ListView):
     model = ZoningBase
     vector_tile_layer_name = "zone_name"
     vector_tile_fields = ("zone_name",)
@@ -74,18 +74,18 @@ class ZoningTileData(MVTView, ListView):  # LoginRequiredMixin
 
 
 # ajax call for topo tiles for big map
-class TopoTileData(MVTView, ListView):  # LoginRequiredMixin
+class TopoTileData(LoginRequiredMixin, MVTView, ListView):
     model = Topography
     vector_tile_layer_name = "topography"
 
 
-class CompCommTileData(MVTView, ListView):  # LoginRequiredMixin
+class CompCommTileData(LoginRequiredMixin, MVTView, ListView):
     model = HousingSolutionArea
     vector_tile_layer_name = "compcomm"
     vector_tile_fields = ("tier", "allowance")
 
 
-class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
+class TpaTileData(LoginRequiredMixin, MVTView, ListView):
     model = TransitPriorityArea
     vector_tile_layer_name = "tpa"
     vector_tile_fields = ("name", "pk")
@@ -94,7 +94,7 @@ class TpaTileData(MVTView, ListView):  # LoginRequiredMixin
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
+class RoadTileData(LoginRequiredMixin, MVTView, ListView):
     model = Roads
     vector_tile_layer_name = "road"
     vector_tile_fields = ("rd30full", "roadsegid", "rightway", "abloaddr", "abhiaddr")
@@ -103,7 +103,7 @@ class RoadTileData(MVTView, ListView):  # LoginRequiredMixin
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-class Ab2011TileData(MVTView, ListView):
+class Ab2011TileData(LoginRequiredMixin, MVTView, ListView):
     model = AnalyzedParcel
     vector_tile_fields = ("apn__geom",)
     vector_tile_geom_name = "apn__geom"
@@ -122,14 +122,17 @@ class Ab2011TileData(MVTView, ListView):
 # ------------------------------------------------------
 
 # main detail page
-class ParcelDetailView(View):  # LoginRequiredMixin
+class ParcelDetailView(LoginRequiredMixin, View):
     template_name = "parcel-detail.html"
 
     def tuple_sub(self, t1, t2):
         return tuple(map(lambda i, j: (i - j) * 1000, t1, t2))
 
     def get(self, request, apn, *args, **kwargs):
-        parcel = Parcel.objects.get(apn=apn)
+        try:
+            parcel = Parcel.objects.get(apn=apn)
+        except Parcel.DoesNotExist as e:
+            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
         # Example of how to combine two objects into one geojson serialization:
         # serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
@@ -189,63 +192,17 @@ def listing_prev_values(listing):
     return retval
 
 
-#
-# # ajax call to get current MLS listings. Return them from most recently created / updated to least.
-# class ListingsData(LoginRequiredMixin, View):
-#     def get(self, request, *args, **kwargs):
-#         assert (False, "THis route should no longer be used")
-#         listings = PropertyListing.active_listings_queryset().prefetch_related(
-#             "analyzedlisting", "prev_listing"
-#         )
-#         # listings = PropertyListing.acti.prefetch_related('analyzedlisting').prefetch_related(
-#         #     'prev_listing').filter(
-#         #     analyzedlisting__isnull=False).distinct().order_by('-founddate')[0:500]
-#         serialized_listings = serialize("json", listings)
-#
-#         # An ad-hoc way of doing formatting for now
-#         listings_formatted = []
-#         for listing, listing_dict in zip(listings, json.loads(serialized_listings)):
-#             # founddate = str(listing.founddate.astimezone(
-#             #     tz=ZoneInfo("America/Los_Angeles")).date())
-#             latest_analysis = listing.analyzedlisting
-#             if latest_analysis:
-#                 l = latest_analysis.details
-#                 l.update(listing_dict["fields"])
-#                 l["datetime_ran"] = latest_analysis.datetime_ran
-#                 l["analysis_id"] = latest_analysis.id
-#             else:
-#                 l = listing_dict["fields"]
-#             l["metadata"] = defaultdict()
-#             if listing.parcel:
-#                 l["centroid_x"] = listing.parcel.geom.centroid.coords[0]
-#                 l["centroid_y"] = listing.parcel.geom.centroid.coords[1]
-#
-#             del l["parcel"]
-#             del l["addr"]
-#             del l["prev_listing"]
-#             # Record new and updated listings
-#             if not listing.prev_listing:
-#                 l["metadata"]["category"] = "new"
-#                 l["metadata"]["prev_values"] = {}
-#             else:
-#                 l["metadata"]["category"] = "updated"
-#                 l["metadata"]["prev_values"] = listing_prev_values(listing)
-#             listings_formatted.append(l)
-#             # if founddate in listings_formatted:
-#             #     listings_formatted[founddate].append(l)
-#             # else:
-#             #     listings_formatted[founddate] = [l]
-#         return JsonResponse(listings_formatted, content_type="application/json", safe=False)
-
-
-class AnalysisDetailData(View):  # LoginRequiredMixin
+class AnalysisDetailData(LoginRequiredMixin, View):
     def get(self, request, id, *args, **kwargs):
         assert False, "This route should no longer be used"
 
 
-class ParcelDetailData(View):  # LoginRequiredMixin
+class ParcelDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
-        parcel = Parcel.objects.get(apn=apn)
+        try:
+            parcel = Parcel.objects.get(apn=apn)
+        except Parcel.DoesNotExist as e:
+            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
         serialized = serialize(
             "geojson",
@@ -256,16 +213,20 @@ class ParcelDetailData(View):  # LoginRequiredMixin
 
 
 # ajax call to get neighboring building data
-class IsolatedNeighborDetailData(View):  # LoginRequiredMixin
+class IsolatedNeighborDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
-        parcel = Parcel.objects.get(apn=apn)
+        try:
+            parcel = Parcel.objects.get(apn=apn)
+        except Parcel.DoesNotExist as e:
+            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
+
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
         serializedBuildings = serialize("geojson", buildings, geometry_field="geom")
 
         return HttpResponse(serializedBuildings, content_type="application/json")
 
 
-class AddressToLatLong(View):  # LoginRequiredMixin,
+class AddressToLatLong(LoginRequiredMixin, View):
     def get(self, request, address):
         suffixDict = {
             "Alley": "ALY",

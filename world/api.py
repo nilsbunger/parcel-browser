@@ -2,6 +2,7 @@ import tempfile
 import traceback
 from typing import List
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F
 from ninja import NinjaAPI, Query
@@ -26,7 +27,7 @@ from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, R
 
 
 # Require auth on all API routes (can be overriden if needed)
-world_api = NinjaAPI(auth=django_auth, csrf=True)
+world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", docs_decorator=staff_member_required)
 
 ################################################################################################
 ## GIS APIs
