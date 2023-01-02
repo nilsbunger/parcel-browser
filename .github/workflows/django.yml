@@ -9,7 +9,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 4
       matrix:
@@ -38,5 +38,5 @@ jobs:
         DB_USERNAME: runner
         DB_PASSWORD: ''
       run: |
-        pytest -s
+        poetry run pytest -s
         # python manage.py test
