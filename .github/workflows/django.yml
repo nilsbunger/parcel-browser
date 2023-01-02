@@ -1,0 +1,42 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Start PostgreSQL
+      run: |
+        sudo systemctl start postgresql.service
+        sudo -u postgres createuser -s runner
+    - name: Install Dependencies
+      run: |
+        curl -sSL https://install.python-poetry.org | python3.9 - --version 1.2.2
+        # python -m pip install --upgrade pip
+        poetry install --only main,test --no-root --no-interaction --no-ansi
+        # pip install -r requirements.txt
+    - name: Run Tests
+      env:
+        DB_HOST: localhost
+        DB_NAME: geodjango
+        DB_USERNAME: runner
+        DB_PASSWORD: ''
+      run: |
+        pytest -s
+        # python manage.py test
