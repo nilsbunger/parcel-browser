@@ -46,11 +46,10 @@ DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 DEBUG = DEV_ENV  # run with extra debug facilities
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
-eprint("TEST_ENV", TEST_ENV)
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
-    eprint(f"  ** TEST ENVIRONMENT **")
+    eprint(f"**** TEST ENVIRONMENT ****")
 
 # if not BUILD_PHASE:
 #     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
@@ -199,12 +198,12 @@ SILKY_PYTHON_PROFILER = True
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 dbHost = None
 if LOCAL_DB:
-    eprint("****** LOCAL DATABASE ******")
+    eprint("**** LOCAL DATABASE ****")
     (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "geodjango", env("USER"), "")
 elif BUILD_PHASE:
-    eprint("****** NO DB - BUILD PHASE ******")
+    eprint("**** NO DB - BUILD PHASE ****")
 else:
-    eprint("****** CLOUD DATABASE ******")
+    eprint("**** CLOUD DATABASE ****")
     (dbHost, dbName, dbUserName, dbPassword) = (
         env("DB_HOST"),
         env("DB_NAME"),
@@ -212,7 +211,9 @@ else:
         env("DB_PASSWORD"),
     )
 
-if dbHost:
+if BUILD_PHASE:
+    DATABASES = {}
+else:
     # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
     # Additionally define the 'topo' DB where the topo model lives, since it is very large.
     # The 'topo' DB is set up as a local DB, which is useful if we're running our scraping locally on a computer,
@@ -223,24 +224,31 @@ if dbHost:
             "HOST": dbHost,
             "NAME": dbName,
             "USER": dbUserName,
-            "PASSWORD": dbPassword,
         },
     }
-    DATABASES["basedata"] = DATABASES["default"]
+    if dbPassword:
+        DATABASES["default"]["PASSWORD"] = dbPassword
+    DATABASES["basedata"] = DATABASES["default"].copy()
+    DATABASES["basedata"]["TEST"] = {"MIRROR": "default"}
+
     if DEV_ENV:
         # Running locally, base data can come from local machine
-        DATABASES["basedata"] = DATABASES["local_db"] = {
+        DATABASES["basedata"] = {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
             "HOST": "localhost",
             "NAME": "geodjango",
             "USER": env("USER"),
-            "PASSWORD": "",
+            "TEST": {
+                "MIRROR": "default",
+            },
         }
-        # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
-        DATABASES["cloud_db"] = DATABASES["default"]
+        if dbPassword:
+            DATABASES["basedata"]["PASSWORD"] = dbPassword
+        DATABASES["local_db"] = DATABASES["basedata"].copy()
 
-else:
-    DATABASES = {}
+        # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
+        DATABASES["cloud_db"] = DATABASES["default"].copy()
+        DATABASES["cloud_db"]["TEST"] = {"MIRROR": "default"}
 
 CONN_MAX_AGE = None  # allow persistent DB connection forever
 
