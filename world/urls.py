@@ -6,8 +6,8 @@ from .views import AddressToLatLong, IsolatedNeighborDetailData, ParcelDetailDat
 # These are all scoped with 'dj/' in front of them. These are old-school URL paths -
 #  we do api paths with django-ninja, and the others are mostly deprecated pages.
 urlpatterns = [
-    path("map/search/<str:address>", AddressToLatLong.as_view()),
-    path("parcel/<str:apn>", ParcelDetailView.as_view()),
+    path("map/search/<str:address>", AddressToLatLong.as_view(), name="world_address_to_latlong"),
+    path("parcel/<str:apn>", ParcelDetailView.as_view(), name="world_parcel_detail"),
     # old-school APIs serving vector tiles
     path(
         "api/parceltile/<int:z>/<int:x>/<int:y>",
@@ -41,6 +41,10 @@ urlpatterns = [
         views.CompCommTileData.as_view(),
         name="compcomm-tile",
     ),
-    path("parcel/<str:apn>/geodata", ParcelDetailData.as_view()),
-    path("parcel/<str:apn>/geodata/neighbor", IsolatedNeighborDetailData.as_view()),
+    path("parcel/<str:apn>/geodata", ParcelDetailData.as_view(), name="parcel-detail-data"),
+    path(
+        "parcel/<str:apn>/geodata/neighbor",
+        IsolatedNeighborDetailData.as_view(),
+        name="isolated-neighbor-detail-data",
+    ),
 ]

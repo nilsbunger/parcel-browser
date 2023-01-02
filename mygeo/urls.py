@@ -33,11 +33,11 @@ superuser_login_required = user_passes_test(check_if_superuser)
 from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
-    path("sentry-debug/", trigger_error),
+    path("sentry-debug/", trigger_error, name="sentry-debug"),
     #### ---- Django-rendered routes
     path("dj/admin/", admin.site.urls),
     # django-two-factor-auth URLS
-    path("", include(tf_urls)),
+    path("", include(tf_urls), name="two-factor-urls"),
     # # django-allauth routes
     # path("dj/all-auth/accounts/", include("allauth.urls")),
     # # Original django-auth.... not sure what to do with it yet
@@ -51,10 +51,10 @@ urlpatterns = [
     # Old-school django routes (including dj/api/ stuff, which should transition to django-ninja)
     path("dj/", include("world.urls")),
     # Add catch-all for routes that should NOT go to react (ones starting with dj/ or api/)
-    re_path(r"^(?:dj|api)/.+$", page_not_found, {"exception": django.http.Http404()}),
+    re_path(r"^(?:dj|api)/.+$", page_not_found, {"exception": django.http.Http404()}, name="page_not_found"),
     # All other routes - send to React for rendering
-    re_path(r"^(.*)$", frontend_proxy_view),
+    re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
 ]
 
-if settings.DEV_ENV:
+if settings.ENABLE_SILK:
     urlpatterns.insert(0, path("dj/silk/", include("silk.urls", namespace="silk")))
