@@ -9,10 +9,4 @@ class Migration(migrations.Migration):
         ("userflows", "0001_initial"),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name="user",
-            name="email_verified_ts",
-            field=models.DateTimeField(default=None, null=True, verbose_name="email verified date"),
-        ),
-    ]
+    operations = []
