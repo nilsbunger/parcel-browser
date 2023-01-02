@@ -38,7 +38,7 @@ jobs:
     - name: Run Tests
       env:
         DB_HOST: localhost
-        DB_NAME: geodjango
+        DB_NAME: postgres
         DB_USERNAME: runner
         DB_PASSWORD: runner
       run: |
