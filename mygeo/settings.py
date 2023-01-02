@@ -52,10 +52,10 @@ eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONM
 if TEST_ENV:
     eprint(f"  ** TEST ENVIRONMENT **")
 
-if not BUILD_PHASE:
-    AUTH0_DOMAIN = env("AUTH0_DOMAIN")
-    AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
-    AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
+# if not BUILD_PHASE:
+#     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
+#     AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
+#     AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
 
 
 # Quick-start development settings - unsuitable for production
