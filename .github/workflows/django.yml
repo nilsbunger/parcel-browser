@@ -17,6 +17,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install apt dependencies
+      run: |
+        sudo apt-get install -y gdal-bin=3.0.4 libgdal-dev=3.0.4
+    - name: Install Poetry
+      run: pipx install poetry
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -28,10 +33,7 @@ jobs:
         sudo -u postgres createuser -s runner
     - name: Install Dependencies
       run: |
-        curl -sSL https://install.python-poetry.org | python3.9 - --version 1.2.2
-        # python -m pip install --upgrade pip
         poetry install --only main,test --no-root --no-interaction --no-ansi
-        # pip install -r requirements.txt
     - name: Run Tests
       env:
         DB_HOST: localhost
@@ -40,4 +42,3 @@ jobs:
         DB_PASSWORD: ''
       run: |
         poetry run pytest -s
-        # python manage.py test
