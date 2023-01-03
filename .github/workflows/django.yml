@@ -13,33 +13,54 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.9]
+        python-version: [ 3.9 ]
+        pg-major: [ 14 ]
+        postgis-major: [ 3 ]
+        postgis-version: [ 3.2.2+dfsg-1.pgdg110+1 ]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install apt dependencies
-      run: |
-        sudo apt-get install -y gdal-bin=3.0.4+dfsg-1build3 libgdal-dev=3.0.4+dfsg-1build3
-    - name: Install Poetry
-      run: pipx install poetry
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'poetry'
-    - name: Start PostgreSQL
-      run: |
-        sudo systemctl start postgresql.service
-        sudo -u postgres createuser -s runner
-        sudo -u postgres psql -c "ALTER USER runner WITH PASSWORD 'runner';"
-    - name: Install Dependencies
-      run: |
-        poetry install --only main,test --no-root --no-interaction --no-ansi
-    - name: Run Tests
-      env:
-        DB_HOST: localhost
-        DB_NAME: postgres
-        DB_USERNAME: runner
-        DB_PASSWORD: runner
-      run: |
-        poetry run pytest -s
+      - uses: actions/checkout@v3
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin=3.0.4+dfsg-1build3 libgdal-dev=3.0.4+dfsg-1build3
+          sudo apt-get install -y --no-install-recommends \
+             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}=${{ matrix.postgis-version }} \
+             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}-scripts
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        # and make virtualenvs live under the project directory (in .venv/) ...
+        run: |
+          pipx install poetry
+          python -m poetry config virtualenvs.in-project true
+
+      - name: Setup up virtualenv caching
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: ${{ runner.os }}-pydeps-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Start PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres createuser -s runner
+          sudo -u postgres psql -c "ALTER USER runner WITH PASSWORD 'runner';"
+
+      - name: Install Dependencies
+        run: poetry install --only main,test --no-root --no-interaction --no-ansi
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+
+      - name: Run Tests
+        env:
+          DB_HOST: localhost
+          DB_NAME: postgres
+          DB_USERNAME: runner
+          DB_PASSWORD: runner
+        run: |
+          poetry run pytest -s
