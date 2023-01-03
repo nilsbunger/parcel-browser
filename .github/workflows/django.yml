@@ -16,7 +16,7 @@ jobs:
         python-version: [ 3.9 ]
         pg-major: [ 14 ]
         postgis-major: [ 3 ]
-        postgis-version: [ 3.2.2+dfsg-1.pgdg110+1 ]
+        postgis-version: [ 3.3.2+dfsg-1.pgdg20.04+1 ]
 
     steps:
       - uses: actions/checkout@v3
