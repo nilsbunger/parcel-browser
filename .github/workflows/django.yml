@@ -1,10 +1,10 @@
 name: Django CI
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push, pull_request]
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
 
 jobs:
   build:
@@ -16,51 +16,70 @@ jobs:
         python-version: [ 3.9 ]
         pg-major: [ 14 ]
         postgis-major: [ 3 ]
-        postgis-version: [ 3.2.2+dfsg-1.pgdg110+1 ]
+        postgis-version: [ 3.3.2+dfsg-1.pgdg20.04+1 ]
+
+    services:
+      postgres:
+        image: postgis/postgis:14-3.3   # versions available: https://registry.hub.docker.com/r/postgis/postgis/
+        env:
+          # must specify password for PG Docker container image, see: https://registry.hub.docker.com/_/postgres?tab=description&page=1&name=10
+          POSTGRES_PASSWORD: runner
+          POSTGRES_DB: postgres
+        ports:
+            - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install apt dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gdal-bin=3.0.4+dfsg-1build3 libgdal-dev=3.0.4+dfsg-1build3
-          sudo apt-get install -y --no-install-recommends \
-             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}=${{ matrix.postgis-version }} \
-             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}-scripts
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
+      # Install poetry and make virtualenvs live under the project directory (in .venv/) ...
       - name: Install Poetry
-        # and make virtualenvs live under the project directory (in .venv/) ...
         run: |
-          pipx install poetry
+          python -m pip install poetry==1.3.1
           python -m poetry config virtualenvs.in-project true
+        #          pipx install poetry
+
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get install --no-install-recommends -y gdal-bin=3.0.4+dfsg-1build3 libgdal-dev=3.0.4+dfsg-1build3
+        # sudo apt-get update --no-install-recommends
+#          sudo apt-get install -y --no-install-recommends \
+#             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}=${{ matrix.postgis-version }} \
+#             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}-scripts
 
       - name: Setup up virtualenv caching
-        uses: actions/cache@v2
+        id: cache-deps
+        uses: actions/cache@v3
         with:
-          path: .venv
+          path: parsnip/.venv
           key: ${{ runner.os }}-pydeps-${{ hashFiles('**/poetry.lock') }}
 
-      - name: Start PostgreSQL
-        run: |
-          sudo systemctl start postgresql.service
-          sudo -u postgres createuser -s runner
-          sudo -u postgres psql -c "ALTER USER runner WITH PASSWORD 'runner';"
-
-      - name: Install Dependencies
-        run: poetry install --only main,test --no-root --no-interaction --no-ansi
+      - name: Install virtualenv dependencies
+        run: python -m poetry install --only main,test --no-root --no-interaction --no-ansi
         if: steps.cache-deps.outputs.cache-hit != 'true'
+
+      - name: Collect static files
+        run: python -m poetry run python manage.py collectstatic --noinput
+
+#      - name: Start PostgreSQL
+#        run: |
+#          sudo systemctl start postgresql.service
+#          sudo -u postgres createuser -s runner
+#          sudo -u postgres psql -c "ALTER USER runner WITH PASSWORD 'runner';"
 
       - name: Run Tests
         env:
           DB_HOST: localhost
           DB_NAME: postgres
-          DB_USERNAME: runner
+          DB_USERNAME: postgres
           DB_PASSWORD: runner
+          TEST_ENV: true
         run: |
-          poetry run pytest -s
+          python -m poetry run python -m pytest -s
