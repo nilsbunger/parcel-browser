@@ -11,12 +11,6 @@ from world.models import Parcel, Roads, ZoningBase
 from world.models.models import AnalyzedRoad
 
 
-class CheckResult(BaseModel):
-    result: Optional[CheckResultEnum]
-    notes: Optional[list[str]] = []
-    children: list["CheckResult"] = []
-
-
 class EligibilityCheck(BaseModel):
     name: str
     description: str
@@ -64,7 +58,7 @@ class OrCheck(LogicCheck):
     def __init__(self, checks: List[EligibilityCheck]):
         super().__init__("Or", "At least one check must pass", checks)
 
-    def run(self, parcel: Parcel) -> CheckResult:
+    def run(self, parcel: Parcel):
         assert False, "Finish implementation, see AndCheck"
         return any(check.run(parcel) for check in self.checks)
 

@@ -2,7 +2,6 @@ import pytest
 
 
 from lib.co.co_eligibility_lib import (
-    CheckResult,
     CheckResultEnum,
     CommercialCorridorCheck,
     PrincipallyPermittedUseCheck,
@@ -37,16 +36,22 @@ class TestPrincipallyPermittedUse:
     def test_commercial_parcel(self):
         apn = "4151721900"
         parcel = Parcel.objects.using("basedata").get(apn=apn)
-        test_result = PrincipallyPermittedUseCheck().run(parcel)
-        assert test_result == CheckResult(result=CheckResultEnum.passed, notes=["Zone(s): CC-4-2"])
-        print("Running method A")
+        use_check = PrincipallyPermittedUseCheck()
+        retval = use_check.run(parcel)
+        assert retval == CheckResultEnum.passed == use_check.result
+        assert use_check.notes == ["Zone(s): CC-4-2"]
 
     def test_multifam_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="4472421600")  # RM-1-1 zone parcel
-        test_result = PrincipallyPermittedUseCheck().run(parcel)
-        assert test_result == CheckResult(result=CheckResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"])
+        use_check = PrincipallyPermittedUseCheck()
+        retval = use_check.run(parcel)
+        assert retval == CheckResultEnum.failed == use_check.result
+        assert use_check.notes == ["Zone(s): RM-1-1, RM-1-3"]
+        # assert test_result == CheckResult(result=CheckResultEnum.failed, notes=["Zone(s): RM-1-1, RM-1-3"])
 
     def test_no_zone_data_parcel(self):
         parcel = Parcel.objects.using("basedata").get(apn="5571022400")  # not in SD city
-        test_result = PrincipallyPermittedUseCheck().run(parcel)
-        assert test_result == CheckResult(result=CheckResultEnum.error, notes=["No zoning found for parcel"])
+        use_check = PrincipallyPermittedUseCheck()
+        retval = use_check.run(parcel)
+        assert retval == CheckResultEnum.error == use_check.result
+        assert use_check.notes == ["No zoning found for this parcel"]
