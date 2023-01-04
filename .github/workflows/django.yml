@@ -65,16 +65,13 @@ jobs:
         run: python -m poetry install --only main,test --no-root --no-interaction --no-ansi
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
-      - name: Collect static files
-        run: python -m poetry run python manage.py collectstatic --noinput
-
 #      - name: Start PostgreSQL
 #        run: |
 #          sudo systemctl start postgresql.service
 #          sudo -u postgres createuser -s runner
 #          sudo -u postgres psql -c "ALTER USER runner WITH PASSWORD 'runner';"
 
-      - name: Run Tests
+      - name: Collect static and run tests
         env:
           DB_HOST: localhost
           DB_NAME: postgres
@@ -82,4 +79,5 @@ jobs:
           DB_PASSWORD: runner
           TEST_ENV: true
         run: |
+          python -m poetry run python manage.py collectstatic --noinput
           python -m poetry run python -m pytest -s
