@@ -5,6 +5,7 @@ from django.apps import apps as django_apps
 import pytest
 
 import mygeo
+from mygeo import urls
 from mygeo import settings
 
 whitelist_noauth = [
@@ -56,7 +57,7 @@ class TestAuthenticationPaths:
     def test_all_urls_logged_out(self, client: Client):
         # Test all URLs that require auth, actually require auth
 
-        url_patterns = mygeo.urls.urlpatterns
+        url_patterns = urls.urlpatterns
         failures = 0
         tests = 0
         for url in mygeo.util.each_url_with_placeholder(url_patterns):

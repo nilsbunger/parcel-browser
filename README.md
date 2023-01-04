@@ -70,26 +70,65 @@ If you haven't loaded any data, you should see an OpenStreetMap map at /map, but
 
 # Management commands
 
-In `world/management/commands/` you'll find our custom command-line commands for
-doing ETL and various other processing. This is the easiest place to 
-write code that isn't a web request.
+## Finding management commands
+Run `./manage.py` with no options to see all the managemenet commands available, organized by Django 'app'.
 
-You can add a new file in this
-directory and it will magically become a Django mgmt command, eg 
-`./manage.py <command> <params>`, where <command> is the name of the file you 
-created.
+This lists all commands defined by all Django apps in the project:
+* built-in apps (eg "django", "auth", ...) 
+* third party apps (eg "django_extensions", "silk", ...) 
+* our apps (eg. "world", "co", "userflows", ...)
+
+## Existing management commands
+
+In `world/management/commands/` and `co/management/commands` you'll find our custom command-line commands for
+doing ETL and various other processing. 
 
 Some examples:
-* `LOCAL_DB=0 ./manage.py scrape --fetch --no-cache` -- daily scraping run. Requires Wireguard tunnel to cloud postgres to be running
+* `LOCAL_DB=0 ./manage.py scrape --fetch --no-cache` -- daily scraping run. 
+This requires Wireguard tunnel to cloud postgres to be running
 * `./manage.py` -- list all management commands. The commmands we created are in `world` and `co` apps.
 
-# Run tests
+## Custom management commands
+
+Custom management commands are the easiest way to write python code that interacts with our database and isn't a web app.
+
+You can add a new file in this directory and <app>/management/comands and it magically become a Django mgmt command.
+It can be run with `./manage.py <command> <params>`, where <command> is the name of the file you created.{
+
+# Testing
+
+## Running tests
 
 We use pytest for testing. Run tests with:
 * `poetry run pytest -s` to run all tests , OR
-* `poetry run pytest -s -k <test name>` to run a specific test
+* `poetry run pytest -s -k <match>` to run any class or test matching <match>
 
-# Simulating production environment locallly
+## Test files
+
+Any file that starts with test*.py is picked up by pytest. See examples in `userflows/tests.py` and 
+`lib/co/test_co_eligibility.py` for inspiration.
+
+## Populating the DB for tests
+
+The test DB is empty by default. 
+You can add more data by following the example. 
+
+You can get data from the existing DB by dumping it:
+
+`./manage.py dumpdata <app.model> --pks pk1,pk2,pk3 --format yaml`
+
+We've extended the dumpdata command to support APNs. Any model with an APN field can be looked up by APN, 
+using the `--apns` option. For example:
+
+`./manage.py dumpdata world.Parcel --apns 4151721900,4472421600,5571022400 --format yaml`
+
+You can take that output and load it as a fixture. See `conftest.py` to either append to the existing fixtures 
+or create a new one and load it in that file.
+
+# Simulating the production environment locallly
+
+You don't usually need to do this, but if you need to debug an environment more similar to production,
+you can run the app in production mode as follows:
 
 1. Build frontend files: 
 `cd frontend && yarn build && cd ..`
@@ -97,10 +136,13 @@ We use pytest for testing. Run tests with:
 2. Serve with similar command line as in production:
 `DJANGO_ENV=prod LOCAL_DB=0 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
 
+It is possible to go even higher fidelity, by running in a docker container.
+
 =======
 # Using poetry
 
-We use poetry as our package manager for python. It installs packages and manages your virtual environment.
+We use poetry as our python package manager. It installs packages and manages your virtual environment.
+
 A few useful commands:
 * `poetry shell` : start a shell in the virtual environment. That shell will give you
 the right python version and all the packages installed.
@@ -110,7 +152,7 @@ the right python version and all the packages installed.
 * `poetry add --group dev <package>` : add a development-only package
 * `poetry env info` : show info about the virtual environment
 * `poetry show --tree`: show the dependency tree
-* `poetry install`: install dependencies based on pyproject.toml and poetry.lock
+* `poetry install`: install dependencies based on pyproject.toml and poetry.lock into a venv.
 
 # System architecture
 

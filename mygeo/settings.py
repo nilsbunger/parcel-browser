@@ -43,14 +43,18 @@ TEST_ENV = env("TEST_ENV")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 eprint("Django Log Level", DJANGO_LOG_LEVEL)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
-DEBUG = DEV_ENV  # run with extra debug facilities
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
+
+# DEBUG variable - controls display of error messages, static file handling, etc. Never use it in production!
+DEBUG = DEV_ENV and not TEST_ENV
+# NOTE: DEBUG is set to false within tests regardless of the value of DEBUG here.
+
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
     eprint(f"**** TEST ENVIRONMENT ****")
-
+eprint(f"**** DEBUG == {DEBUG} ****")
 # if not BUILD_PHASE:
 #     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
 #     AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
@@ -316,9 +320,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = "/static/"
+
+# Where static files are collected to (eg by "python manage.py collectstatic")
 STATIC_ROOT = BASE_DIR / "dist/static/"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+
+# Static files storage.
+if TEST_ENV:
+    # Don't use manifest storage in testing, as per https://docs.djangoproject.com/en/4.1/ref/contrib/staticfiles/
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # WHITENOISE_INDEX_FILE = "index.html"
+
+# Absolute path to a directory of files which will be served at the root of your application
+# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL
 WHITENOISE_ROOT = BASE_DIR / "dist/static"
 
 # Default primary key field type
