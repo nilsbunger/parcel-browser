@@ -1,0 +1,283 @@
+- model: world.parcel
+  pk: 3322507
+  fields:
+    apn: '5571022400'
+    apn_8: '55710224'
+    parcelid: 31612
+    own_name1: ESQUIG JONATHAN I&JOSEPHINE S
+    own_name2: null
+    own_name3: null
+    fractint: 1.0
+    own_addr1: '1426 E 7TH ST #A&B'
+    own_addr2: NATIONAL CITY CA
+    own_addr3: null
+    own_addr4: null
+    own_zip: '91950'
+    situs_juri: NC
+    situs_stre: 7TH
+    situs_suff: ST
+    situs_post: null
+    situs_pre_field: E
+    situs_addr: 1426
+    situs_frac: null
+    situs_buil: null
+    situs_suit: null
+    legldesc: PAR 1\
+    asr_land: 153866
+    asr_impr: 207126
+    asr_total: 360992
+    doctype: '1'
+    docnmbr: '563657'
+    docdate: '102010'
+    acreage: 0.0
+    taxstat: T
+    ownerocc: Y
+    tranum: '06045'
+    asr_zone: 2
+    asr_landus: 12
+    unitqty: 2
+    submap: PM15038
+    subname: PARCEL MAP NO 15038
+    nucleus_zo: '20'
+    nucleus_us: '120'
+    situs_comm: NATIONAL CITY
+    year_effec: '89'
+    total_lvg_field: 2852
+    bedrooms: '004'
+    baths: '030'
+    addition_a: 0
+    garage_con: null
+    garage_sta: null
+    carport_st: null
+    pool: null
+    par_view: null
+    usable_sq_field: '06400'
+    qual_class: D055
+    nucleus_si: 1426
+    nucleus_1: 0
+    nucleus_2: null
+    situs_zip: 91950-2623
+    x_coord: 6302495.37092004
+    y_coord: 1828484.44964108
+    overlay_ju: NC
+    sub_type: 1
+    multi: N
+    shape_star: 7157.26045
+    shape_stle: 363.307950343
+    geom: SRID=4326;MULTIPOLYGON (((-117.092111362067 32.6805050704712, -117.092285984362
+      32.6804545149868, -117.092410042084 32.6807787046612, -117.09222885398 32.6808302396465,
+      -117.092111362067 32.6805050704712)))
+- model: world.parcel
+  pk: 3606985
+  fields:
+    apn: '4472421600'
+    apn_8: '44724216'
+    parcelid: 331065
+    own_name1: JOHNSON VICKI
+    own_name2: null
+    own_name3: null
+    fractint: 1.0
+    own_addr1: P O BOX 2203
+    own_addr2: LA JOLLA CA
+    own_addr3: null
+    own_addr4: null
+    own_zip: '92038'
+    situs_juri: SD
+    situs_stre: ORANGE
+    situs_suff: AVE
+    situs_post: null
+    situs_pre_field: null
+    situs_addr: 3586
+    situs_frac: null
+    situs_buil: null
+    situs_suit: null
+    legldesc: BLK 35*LOTS 25 TO 28*W 38 FT*
+    asr_land: 389836
+    asr_impr: 292376
+    asr_total: 682212
+    doctype: '1'
+    docnmbr: '256662'
+    docdate: 062518
+    acreage: 0.0
+    taxstat: T
+    ownerocc: null
+    tranum: 08241
+    asr_zone: 3
+    asr_landus: 13
+    unitqty: 2
+    submap: '001036'
+    subname: TERALTA RESUB BLKS H & I
+    nucleus_zo: '30'
+    nucleus_us: '130'
+    situs_comm: SAN DIEGO
+    year_effec: '24'
+    total_lvg_field: 910
+    bedrooms: '003'
+    baths: '020'
+    addition_a: 0
+    garage_con: N
+    garage_sta: '000'
+    carport_st: '001'
+    pool: N
+    par_view: N
+    usable_sq_field: 03800
+    qual_class: D050C
+    nucleus_si: 3586
+    nucleus_1: 3588
+    nucleus_2: null
+    situs_zip: 92104-2228
+    x_coord: 6295341.92179654
+    y_coord: 1855057.77510551
+    overlay_ju: SD
+    sub_type: 1
+    multi: N
+    shape_star: 3795.4189555
+    shape_stle: 275.945382935
+    geom: SRID=4326;MULTIPOLYGON (((-117.116170729122 32.7534671880332, -117.116171393665
+      32.7533984598299, -117.116294789521 32.7533993143623, -117.116294131579 32.7534680425205,
+      -117.116293470411 32.7535367734499, -117.116292809215 32.7536055016311, -117.11629215127
+      32.7536742297895, -117.11616873874 32.7536733726205, -117.116169403286 32.7536046444171,
+      -117.116170064578 32.7535359162365, -117.116170729122 32.7534671880332)))
+- model: world.parcel
+  pk: 3670935
+  fields:
+    apn: '4151721900'
+    apn_8: '41517219'
+    parcelid: 404242
+    own_name1: COCKING LYLE A&LINDA L FAMILY TRUST 3 12-29-86
+    own_name2: null
+    own_name3: null
+    fractint: 1.0
+    own_addr1: 5154 TERRAZA QUINTANA
+    own_addr2: SAN DIEGO CA
+    own_addr3: null
+    own_addr4: null
+    own_zip: '92124'
+    situs_juri: SD
+    situs_stre: TURQUOISE
+    situs_suff: ST
+    situs_post: null
+    situs_pre_field: null
+    situs_addr: 926
+    situs_frac: null
+    situs_buil: null
+    situs_suit: null
+    legldesc: BLK 6*LOTS 29 THRU 32*
+    asr_land: 567969
+    asr_impr: 681563
+    asr_total: 1249532
+    doctype: '2'
+    docnmbr: '588187'
+    docdate: '121719'
+    acreage: 0.0
+    taxstat: T
+    ownerocc: null
+    tranum: 08001
+    asr_zone: 6
+    asr_landus: 21
+    unitqty: 0
+    submap: 000916
+    subname: PACIFIC BEACH VISTA TRACT
+    nucleus_zo: '60'
+    nucleus_us: '210'
+    situs_comm: SAN DIEGO
+    year_effec: '79'
+    total_lvg_field: 7350
+    bedrooms: '000'
+    baths: '000'
+    addition_a: 7350
+    garage_con: null
+    garage_sta: '103'
+    carport_st: 088
+    pool: Y
+    par_view: null
+    usable_sq_field: '13340'
+    qual_class: D065B
+    nucleus_si: 926
+    nucleus_1: 0
+    nucleus_2: null
+    situs_zip: 92109-1186
+    x_coord: 6252278.53511011
+    y_coord: 1875785.34445986
+    overlay_ju: SD
+    sub_type: 1
+    multi: N
+    shape_star: 13763.6994738
+    shape_stle: 478.920741308
+    geom: SRID=4326;MULTIPOLYGON (((-117.256942013688 32.8092044946995, -117.257026229711
+      32.809186596513, -117.257136484614 32.8095625398306, -117.257138440489 32.8095692089993,
+      -117.257051269101 32.8095882692584, -117.256979493095 32.8096039633712, -117.256898493433
+      32.809621673129, -117.256843473139 32.8096337041446, -117.256831801546 32.8096362537647,
+      -117.256728805985 32.8092504985053, -117.25673093582 32.8092500386248, -117.256785999768
+      32.8092381447283, -117.256867063258 32.8092206379129, -117.256928474516 32.8092073783904,
+      -117.256929003727 32.8092072641331, -117.256942013688 32.8092044946995)))
+- model: world.parcel
+  pk: 3634410
+  fields:
+    apn: '4453701400'
+    apn_8: '44537014'
+    parcelid: 340157
+    own_name1: SAINT JOHN THE EVANGELIST CATHOLIC PARISH SAN DIEG
+    own_name2: null
+    own_name3: null
+    fractint: 1.0
+    own_addr1: 1638 POLK AVE
+    own_addr2: SAN DIEGO CA
+    own_addr3: null
+    own_addr4: null
+    own_zip: '92103'
+    situs_juri: SD
+    situs_stre: PARK
+    situs_suff: BLVD
+    situs_post: null
+    situs_pre_field: null
+    situs_addr: 4124
+    situs_frac: null
+    situs_buil: null
+    situs_suit: null
+    legldesc: BLK 141*LOTS 12 13 19 & 20*POR*
+    asr_land: 33913
+    asr_impr: 4450
+    asr_total: 38363
+    doctype: '1'
+    docnmbr: '572087'
+    docdate: '120919'
+    acreage: 0.0
+    taxstat: T
+    ownerocc: null
+    tranum: 08001
+    asr_zone: 6
+    asr_landus: 11
+    unitqty: 1
+    submap: LP0008PG036
+    subname: UNIVERSITY HTS D'HEMECOURT MAP,AMENDED
+    nucleus_zo: '60'
+    nucleus_us: '110'
+    situs_comm: SAN DIEGO
+    year_effec: '12'
+    total_lvg_field: 928
+    bedrooms: '002'
+    baths: '010'
+    addition_a: 0
+    garage_con: N
+    garage_sta: null
+    carport_st: null
+    pool: N
+    par_view: null
+    usable_sq_field: null
+    qual_class: D050A
+    nucleus_si: 4124
+    nucleus_1: 0
+    nucleus_2: null
+    situs_zip: 92103-2511
+    x_coord: 6285966.15954938
+    y_coord: 1854931.53404355
+    overlay_ju: SD
+    sub_type: 1
+    multi: N
+    shape_star: 2700.6681965
+    shape_stle: 229.654573313
+    geom: SRID=4326;MULTIPOLYGON (((-117.146591440196 32.7529023831025, -117.146591132615
+      32.7528721517467, -117.146796078617 32.7529418546276, -117.146852243633 32.7529609554284,
+      -117.146838589724 32.7529881686779, -117.146807892981 32.7530493371509, -117.146752909807
+      32.7530293949447, -117.146592139245 32.7529710907296, -117.146591440196 32.7529023831025)))

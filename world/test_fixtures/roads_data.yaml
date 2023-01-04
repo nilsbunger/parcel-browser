@@ -1,0 +1,66 @@
+- model: world.roads
+  pk: 51958
+  fields:
+    fnode: 86423
+    tnode: 85835
+    length: 645.96699999
+    postid: fjessie
+    postdate: 2019-07-30
+    roadid: 12777
+    rightway: 0
+    addsegdt: 1980-04-01
+    segstat: M
+    dedstat: D
+    funclass: '4'
+    oneway: B
+    subdivid: 0
+    segclass: '3'
+    ljurisdic: SD
+    llowaddr: 4100
+    lhighaddr: 4198
+    rjurisdic: SD
+    rlowaddr: 4101
+    rhighaddr: 4199
+    lmixaddr: N
+    rmixaddr: N
+    pending: N
+    abloaddr: 4100
+    abhiaddr: 4199
+    nad83n: 1854664.033
+    nad83e: 6286081.0
+    speed: 35
+    l_zip: 92103
+    r_zip: 92103
+    lpsjur: SD
+    rpsjur: SD
+    carto: '3'
+    obmh: N
+    firedriv: Y
+    l_block: 3000
+    r_block: 6013
+    l_tract: 600
+    r_tract: 900
+    l_beat: 624
+    r_beat: 624
+    frxcoord: 6286081.0
+    frycoord: 1854664.033
+    midxcoord: 6286081.0
+    midycoord: 1854987.033
+    toxcoord: 6286081.0
+    toycoord: 1855310.0
+    f_level: 1
+    t_level: 1
+    l_psblock: 30000
+    r_psblock: 60130
+    rd20pred: null
+    rd20name: PARK
+    rd20sfx: BL
+    rd20full: PARK BL
+    rd30pred: null
+    rd30name: PARK
+    rd30sfx: BLVD
+    rd30postd: null
+    rd30full: PARK BLVD
+    shape_stle: 645.967
+    geom: SRID=4326;MULTILINESTRING ((-117.146340749879 32.7522391556935, -117.146346517976
+      32.7528062464693, -117.146358807528 32.754014470125))

@@ -1,6 +1,7 @@
 import logging
 import warnings
 
+from django.core.management import call_command
 import pytest
 from django.db import connections
 
@@ -29,44 +30,15 @@ def _run_sql(sql):
 #         logging.warning(f"WARNING2: Test class {item.name} has a constructor and will be skipped")
 #         warnings.warn(f"WARNING3: Test class {item.name} has a constructor and will be skipped")
 
-## TODO: I originally created this setup function, but it prevents migrations from being applied, so i'm removing it
-##  for now. It was used by the lib/test_* scripts.
-# @pytest.fixture(scope="session")
-def IGNORE_django_db_setup():
-    # Unique DB configuration code. I *think* the only thing that's different is that we're using TWO databases,
-    # and we specify the default DB to be pytest_db.
+
+@pytest.fixture(scope="session")
+def django_db_setup(django_db_setup, django_db_blocker):
+    # including django_db_setup as an argument ensures that the base django_db_setup fixture is executed
+    # See https://pytest-django.readthedocs.io/en/latest/database.html#django-db-setup for more info
     from django.conf import settings
 
-    settings.DATABASES["default"]["NAME"] = "pytest_db"
-    logging.info("Creating database")
-    _run_sql("DROP DATABASE IF EXISTS pytest_db")
-    _run_sql("CREATE DATABASE pytest_db")
-    logging.info("Done creating database")
-    # Run actual tests
-    yield
-
-    # Teardown
-    for connection in connections.all():
-        connection.close()
-
-    _run_sql("DROP DATABASE pytest_db")
-
-
-# @pytest.fixture(scope='session')
-# def django_db_setup():
-#     from django.conf import settings
-#     # Setup
-#     settings.DATABASES['default']['NAME'] = 'pytest_db'
-#     logging.info("Creating database")
-#     run_sql('DROP DATABASE IF EXISTS pytest_db')
-#     run_sql('CREATE DATABASE pytest_db TEMPLATE geodjango')
-#     logging.info("Done creating database")
-#
-#     # Run actual tests
-#     yield
-#
-#     # Teardown
-#     for connection in connections.all():
-#         connection.close()
-#
-#     run_sql('DROP DATABASE pytest_db')
+    with django_db_blocker.unblock():
+        call_command("loaddata", "world/test_fixtures/parcel_data.yaml")
+        call_command("loaddata", "world/test_fixtures/roads_data.yaml")
+        call_command("loaddata", "world/test_fixtures/analyzed_road_data.yaml")
+        call_command("loaddata", "world/test_fixtures/zoning_base_data.yaml")

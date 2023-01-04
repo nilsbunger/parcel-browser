@@ -1,0 +1,9 @@
+- model: world.analyzedroad
+  pk: 51958
+  fields:
+    status: 0
+    low_width: 41.71
+    avg_width: 44.11
+    high_width: 45.7
+    stdev_width: 1.95
+    all_widths: '["45.7", "45.7", "41.58", "41.71", "45.7", "41.73", "45.7"]'
