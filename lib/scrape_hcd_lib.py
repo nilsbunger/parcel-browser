@@ -142,7 +142,7 @@ def scrape_element_statuses():
         tableRows.append(row)
         counter += 1
         nameCounter += 1
-        return tableRows
+    return tableRows
 
 
 ################################################################################################
@@ -226,10 +226,10 @@ def scrape_elements_under_review():
         }
         reviewTableRows.append(row)
         counter += 1
-        return reviewTableRows
+    return reviewTableRows
 
 
-def run_scrape_hcd():
+def run_scrape_hcd(dry_run=False):
     # Scrape the HCD website
     tableRows = scrape_element_statuses()
     reviewTableRows = scrape_elements_under_review()
@@ -261,7 +261,10 @@ def run_scrape_hcd():
             )[0]
             oldStatus = oldItem["fields"]["6thCycle"]
             statusDiff.append(x["jurisdiction"] + " | From *" + oldStatus + "* to *" + x["6thCycle"] + "*")
-            elementStatusTable.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
+            if not dry_run:
+                elementStatusTable.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
+            else:
+                print("Dry run: elementStatus" + oldItem["id"] + " to " + x["6thCycle"])
 
     # under review: find jurisdictions that came in OR left review
 
