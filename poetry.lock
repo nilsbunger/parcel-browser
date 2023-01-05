@@ -2215,6 +2215,21 @@ files = [
 ]
 
 [[package]]
+name = "pyairtable"
+version = "1.4.0"
+description = "Python Client for the Airtable API"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyairtable-1.4.0-py2.py3-none-any.whl", hash = "sha256:f127af0796bfe40d349937b4c1a0ff81b7740fc3c8ebd0e6d0e559f42026be4b"},
+    {file = "pyairtable-1.4.0.tar.gz", hash = "sha256:e2e9cf7b14afcf5bac69f79f6a61e61bb8c8ff94656e9c7ebeef406c0fbfbb8c"},
+]
+
+[package.dependencies]
+requests = ">=2"
+
+[[package]]
 name = "pyasn1"
 version = "0.4.8"
 description = "ASN.1 types and codecs"
@@ -3375,4 +3390,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6ea048dbae25d4747af30b541c07906204a0ed6ff7b9673d900c2e68db8b440e"
+content-hash = "d1f136ab7659eb4b69770116c204a6b911bdd24ffaf274261a2a6c9e470201aa"

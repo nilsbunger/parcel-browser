@@ -1,0 +1,111 @@
+{
+    "version": "1.0.0",
+    "queries": [
+        {
+            "Query": {
+                "Commands": [
+                    {
+                        "SemanticQueryDataShapeCommand": {
+                            "Query": {
+                                "Version": 2,
+                                "From": [
+                                    {
+                                        "Name": "h",
+                                        "Entity": "HE_Compliance",
+                                        "Type": 0
+                                    }
+                                ],
+                                "Select": [
+                                    {
+                                        "Column": {
+                                            "Expression": {
+                                                "SourceRef": {
+                                                    "Source": "h"
+                                                }
+                                            },
+                                            "Property": "5th Cycle"
+                                        },
+                                        "Name": "HE_Compliance.5th Cycle"
+                                    },
+                                    {
+                                        "Column": {
+                                            "Expression": {
+                                                "SourceRef": {
+                                                    "Source": "h"
+                                                }
+                                            },
+                                            "Property": "6th Cycle"
+                                        },
+                                        "Name": "HE_Compliance.6th Cycle"
+                                    },
+                                    {
+                                        "Column": {
+                                            "Expression": {
+                                                "SourceRef": {
+                                                    "Source": "h"
+                                                }
+                                            },
+                                            "Property": "Jurisdiction"
+                                        },
+                                        "Name": "HE_Compliance.JURISDICTION"
+                                    }
+                                ],
+                                "OrderBy": [
+                                    {
+                                        "Direction": 1,
+                                        "Expression": {
+                                            "Column": {
+                                                "Expression": {
+                                                    "SourceRef": {
+                                                        "Source": "h"
+                                                    }
+                                                },
+                                                "Property": "Jurisdiction"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "Binding": {
+                                "Primary": {
+                                    "Groupings": [
+                                        {
+                                            "Projections": [
+                                                0,
+                                                1,
+                                                2
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "DataReduction": {
+                                    "DataVolume": 3,
+                                    "Primary": {
+                                        "Window": {
+                                            "Count": 500
+                                        }
+                                    }
+                                },
+                                "Version": 1
+                            },
+                            "ExecutionMetricsKind": 1
+                        }
+                    }
+                ]
+            },
+            "CacheKey": "{\"Commands\":[{\"SemanticQueryDataShapeCommand\":{\"Query\":{\"Version\":2,\"From\":[{\"Name\":\"h\",\"Entity\":\"HE_Compliance\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"h\"}},\"Property\":\"5th Cycle\"},\"Name\":\"HE_Compliance.5th Cycle\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"h\"}},\"Property\":\"6th Cycle\"},\"Name\":\"HE_Compliance.6th Cycle\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"h\"}},\"Property\":\"Jurisdiction\"},\"Name\":\"HE_Compliance.JURISDICTION\"}],\"OrderBy\":[{\"Direction\":1,\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"h\"}},\"Property\":\"Jurisdiction\"}}}]},\"Binding\":{\"Primary\":{\"Groupings\":[{\"Projections\":[0,1,2]}]},\"DataReduction\":{\"DataVolume\":3,\"Primary\":{\"Window\":{\"Count\":500}}},\"Version\":1},\"ExecutionMetricsKind\":1}}]}",
+            "QueryId": "",
+            "ApplicationContext": {
+                "DatasetId": "eb8bc57b-10ae-4d13-a87f-767bb752760b",
+                "Sources": [
+                    {
+                        "ReportId": "f9d2399d-4ddb-4d9d-aed6-8dc859aeae43",
+                        "VisualId": "ea2abebb9dc8294c6b87"
+                    }
+                ]
+            }
+        }
+    ],
+    "cancelQueries": [],
+    "modelId": 445823
+}
