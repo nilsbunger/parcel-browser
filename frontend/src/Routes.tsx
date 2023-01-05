@@ -8,6 +8,7 @@ import { NewListingPage } from './pages/NewListingPage';
 import WideLayout from "./layouts/WideLayout";
 import { RentalRatesPage } from "./pages/RentalRatesPage";
 import { CoMapPage } from "./pages/CoMapPage";
+import { LoginPage } from "./pages/LoginPage";
 
 export function MyRoutes() {
   return (
@@ -20,6 +21,7 @@ export function MyRoutes() {
             </Route>
           </Route>
           <Route path="/" element={<HomeLayout/>}>
+            <Route path="login" element={<LoginPage/>}/>
             <Route index element={<Navigate replace to='/listings' />} />
             {/*<Route index element={<HomePage/>}/>*/}
             <Route path="analysis">

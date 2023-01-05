@@ -29,7 +29,7 @@ export function NewListingPage() {
     if ("apn" in data) {
       setLoading(true)
       const fetchResponse = AnalysisPostRespSchema.parse(
-        await post_csrf(`/api/analysis/`, { apn: data.apn })
+        await post_csrf(`/api/analysis/`, {params:{ apn: data.apn }})
       )
       await mutate(`/api/address-search/${addressSearch}`)
       setLoading(false)

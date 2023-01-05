@@ -5,13 +5,17 @@ export const axiosPostInstance = axios.create({
   // baseURL: 'https://some-domain.com/api/',
   timeout: 5000,
   method: 'post',
+  headers: {
+    'Accept': 'application/json',
+  },
   xsrfHeaderName: 'X-CSRFTOKEN',   // django csrf header and cookie
   xsrfCookieName: 'csrftoken'
 });
 
-export async function post_csrf (url, params = {}, body = "") {
+export async function post_csrf (url, {params = {}, body = {}}) {
+  // Note: Axios automatically sets content-type to application/json
   return axiosPostInstance
-    .request({ url: url, params: params, data: body , timeout:15000})
+    .post(url, body, { params: params, timeout:15000})
     .then((res) => res.data)
 }
 

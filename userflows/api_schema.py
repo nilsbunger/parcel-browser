@@ -1,6 +1,6 @@
 from ninja import ModelSchema
 
-from userflows.models import Profile
+# from userflows.models import Profile
 
 #
 # class ProfileSchema(ModelSchema):

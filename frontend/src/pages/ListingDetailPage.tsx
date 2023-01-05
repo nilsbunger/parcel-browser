@@ -9,7 +9,7 @@ import { AnalysisGetResp, AnalysisPostRespSchema } from "../types";
 
 async function redoAnalysis(e, analysisId: number) {
   const fetchResponse = AnalysisPostRespSchema.parse(
-    await post_csrf(`/api/analysis/`, { al_id: analysisId })
+    await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
   )
   return fetchResponse
 }

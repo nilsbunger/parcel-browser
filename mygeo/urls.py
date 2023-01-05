@@ -7,6 +7,7 @@ from django.urls import path, include, re_path
 from django.views.defaults import page_not_found
 
 from mygeo import settings
+from userflows.api import userflows_api
 from world.infra_views import frontend_proxy_view
 from world.api import world_api
 from co.co_api import api as co_api
@@ -35,6 +36,7 @@ from two_factor.urls import urlpatterns as tf_urls
 urlpatterns = [
     path("sentry-debug/", trigger_error, name="sentry-debug"),
     #### ---- Django-rendered routes
+    # TODO: make admin require two-factor auth - https://django-two-factor-auth.readthedocs.io/en/1.14.0/class-reference.html
     path("dj/admin/", admin.site.urls),
     # django-two-factor-auth URLS
     path("", include(tf_urls), name="two-factor-urls"),
@@ -46,7 +48,7 @@ urlpatterns = [
     # path("dj/userflows/", include("userflows.urls")),
     # Django-ninja API routes, per app
     path("api/co/", co_api.urls),
-    # path("api/userflows", userflows_api.urls),
+    path("api/userflows/", userflows_api.urls),
     path("api/", world_api.urls),  # generic / fallback APIs
     # Old-school django routes (including dj/api/ stuff, which should transition to django-ninja)
     path("dj/", include("world.urls")),
