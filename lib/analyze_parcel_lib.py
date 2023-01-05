@@ -23,7 +23,7 @@ from lib.build_lib import DevScenario
 from lib.finance_lib import Financials
 from lib.re_params import ReParams, get_build_specs
 from lib.rent_lib import RentService
-from mygeo.settings import TEST_ENV, env
+from mygeo.settings import CLOUDFLARE_R2_ENABLED, env
 from mygeo.util import eprint
 
 from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
@@ -42,13 +42,15 @@ log = logging.getLogger(__name__)
 
 # Connector to Cloudflare R2 for storing images. Ironically the instructions say to use the S3 API client!
 cloudflare_r2 = None
-if not TEST_ENV:
+if CLOUDFLARE_R2_ENABLED:
     cloudflare_r2 = boto3.resource(
         "s3",
         endpoint_url=env("R2_ENDPOINT_URL"),
         aws_access_key_id=env("R2_EDIT_ACCESS_KEY"),
         aws_secret_access_key=env("R2_EDIT_SECRET_KEY"),
     )
+else:
+    print("Cloudflare R2 is disabled")
 R2_BUCKET_NAME = "parsnip-images"
 
 MIN_BUILDING_AREA = 11  # ~150sqft

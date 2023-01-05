@@ -35,6 +35,7 @@ env = environ.Env(
     DJANGO_LOG_LEVEL=(str, "INFO"),
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
+    CLOUDFLARE_R2_ENABLED=(bool, True),
 )
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")
@@ -45,6 +46,7 @@ eprint("Django Log Level", DJANGO_LOG_LEVEL)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
+CLOUDFLARE_R2_ENABLED = env("CLOUDFLARE_R2_ENABLED") and not TEST_ENV
 
 # DEBUG variable - controls display of error messages, static file handling, etc. Never use it in production!
 DEBUG = DEV_ENV and not TEST_ENV
