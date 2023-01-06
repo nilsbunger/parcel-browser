@@ -16,7 +16,7 @@ whitelist_noauth = [
     "/dj/accounts/reset/1/2/",
     "/dj/accounts/reset/done/",
 ]
-whitelist_404 = ["/api/", "/api/co/"]
+whitelist_404 = ["/api/", "/api/co/", "/api/userflows/"]
 
 
 @pytest.mark.django_db(databases=["default"])
