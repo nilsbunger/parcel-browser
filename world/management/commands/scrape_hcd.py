@@ -1,4 +1,5 @@
 import django
+from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
 
 from lib.scrape_hcd_lib import run_scrape_hcd
@@ -24,3 +25,14 @@ class Command(BaseCommand):
         if try_exception:
             raise Exception("This is a test exception in scrape_hcd.py")
         run_scrape_hcd(dry_run)
+
+        ## Dummy email message sending example... adjust to your needs
+        email = EmailMessage(
+            subject="Mail sent from Django",
+            body="Sent this email from Django, using Mailersend under the hood!",
+            from_email="nils@home3.co",
+            to=["founders@home3.co"],
+            cc=[],
+            bcc=[],
+        )
+        # email.send()      ## uncomment to make the email actually send
