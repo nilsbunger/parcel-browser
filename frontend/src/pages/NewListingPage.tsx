@@ -2,36 +2,39 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
-import { fetcher, post_csrf } from '../utils/fetcher';
+import { fetcher, api_post } from '../utils/fetcher';
 import { ErrorBoundary } from "react-error-boundary";
-import { AddressSearchGetResp, AnalysisPostRespSchema } from "../types";
+import { AddressSearchGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types";
 
 
 export function NewListingPage() {
 
-  const [addressSearch, setAddressSearch] = useState('');
+  const [address, setAddress] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false)
 
   const { mutate } = useSWRConfig()
 // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
-  const { data, error } = useSWR<AddressSearchGetResp, string>(
-    `/api/address-search/${addressSearch}`,
+  const { data:addrSearchData, error } = useSWR<AddressSearchGetResp, string>(
+    `/api/address-search/${address}`,
     fetcher
   );
   const handleAddressSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAddressSearch(e.target.value);
+    setAddress(e.target.value);
   };
 
   const handleAnalyzeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if ("apn" in data) {
+    if ("apn" in addrSearchData) {
       setLoading(true)
-      const fetchResponse = AnalysisPostRespSchema.parse(
-        await post_csrf(`/api/analysis/`, {params:{ apn: data.apn }})
-      )
-      await mutate(`/api/address-search/${addressSearch}`)
+      const { data, success, message } = await api_post<AnalysisPostResp>(`/api/analysis/`, {
+        RespSchema: AnalysisPostRespSchema,
+        params: { apn: addrSearchData.apn }
+      })
+      if (success) {
+        await mutate(`/api/address-search/${address}`)
+      }
       setLoading(false)
     }
     return
@@ -44,23 +47,23 @@ export function NewListingPage() {
           <input
             className="border border-gray-700"
             type="text"
-            value={addressSearch}
+            value={address}
             onChange={handleAddressSearch}
           />{'  '}
-          {data && ("apn" in data) && !data.analyzed_listing &&
+          {addrSearchData && ("apn" in addrSearchData) && !addrSearchData.analyzed_listing &&
               <button className={'btn btn-sm btn-primary' + (loading ? ' loading' : '')}
-                      type="submit">Analyze...</button> }
+                      type="submit">Analyze...</button>}
         </form>
-        {data && ("apn" in data) && (
+        {addrSearchData && ("apn" in addrSearchData) && (
           <>
-            <p>FOUND: {data.apn} {data.address}.</p>
-            {data.analyzed_listing && <p>
-                Analysis={data.analyzed_listing}. {'  '}
-                <Link className="link link-primary" to={`/analysis/${data.analyzed_listing}`}>Go to detail page</Link>
+            <p>FOUND: {addrSearchData.apn} {addrSearchData.address}.</p>
+            {addrSearchData.analyzed_listing && <p>
+                Analysis={addrSearchData.analyzed_listing}. {'  '}
+                <Link className="link link-primary" to={`/analysis/${addrSearchData.analyzed_listing}`}>Go to detail page</Link>
             </p>}
           </>
         )}
-        {data && ("error" in data) && <p>{data.error}</p>}
+        {addrSearchData && ("error" in addrSearchData) && <p>{addrSearchData.error}</p>}
       </ErrorBoundary>
       <p>{err}</p>
     </>

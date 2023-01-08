@@ -80,7 +80,7 @@ AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     "django.contrib.auth.backends.ModelBackend",
     # `allauth` specific authentication methods, such as login by e-mail
-    "allauth.account.auth_backends.AuthenticationBackend",
+    # "allauth.account.auth_backends.AuthenticationBackend",
 ]
 # Application definition
 
@@ -106,8 +106,8 @@ INSTALLED_APPS = [
     # "two_factor.plugins.yubikey",  # <- for yubikey capability.
     ## END for django-two-factor-auth package
     ## For django-allauth package:
-    "allauth",
-    "allauth.account",
+    # "allauth",
+    # "allauth.account",
     # "allauth.socialaccount",
     # "allauth.socialaccount.providers.amazon_cognito",
     #   'allauth.socialaccount.providers.google',   ## many more social auth providers available
@@ -288,7 +288,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Authentication config
 # LOGIN_URL = "/dj/all-auth/accounts/login/"
 # LOGIN_REDIRECT_URL = "/listings/"
-LOGIN_URL = "two_factor:login"
+# LOGIN_URL = "two_factor:login"
+LOGIN_URL = "/login"
 LOGIN_REDIRECT_URL = "two_factor:profile"
 
 LOGOUT_REDIRECT_URL = "/"
@@ -305,7 +306,13 @@ ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # # Authentication -- django-two-factor-auth config
 TWO_FACTOR_PATCH_ADMIN = True
-
+TWO_FACTOR_REMEMBER_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+TWO_FACTOR_REMEMBER_COOKIE_SECURE = True
+# TWO_FACTOR_REMEMBER_COOKIE_SAMESITE = "Strict"
+TWO_FACTOR_SMS_GATEWAY = (
+    "two_factor.gateways.fake.Fake" if DEV_ENV else "two_factor.gateways.twilio.gateway.Twilio"
+)
+PHONENUMBER_DEFAULT_REGION = "US"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
@@ -403,6 +410,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": DJANGO_LOG_LEVEL,
             "propagate": False,
+        },
+        "two_factor": {
+            "handlers": ["console"],
+            "level": "INFO",
         },
         "parsnip.commands": {
             "handlers": ["console", "file"],

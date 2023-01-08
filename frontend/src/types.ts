@@ -232,6 +232,8 @@ export type AnalysisGetResp = z.infer<typeof AnalysisGetRespSchema>
 export const AnalysisPostRespSchema = z.object({
   analysisId: z.number()
 })
+export type AnalysisPostResp = z.infer<typeof AnalysisPostRespSchema>;
+
 export const AnalysisPostReqSchema = z.object({
   // APN id
   apn: z.string().optional(),
@@ -251,3 +253,23 @@ export const AddressSearchGetRespSchema = z.union([
   })
 ])
 export type AddressSearchGetResp = z.infer<typeof AddressSearchGetRespSchema>
+
+export const UserSchema = z.object({
+  first_name: z.string(),
+  last_name: z.string(),
+  email: z.string(),
+})
+export type User = z.infer<typeof UserSchema>
+
+export const LoginResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().nullable(),
+  user: UserSchema.nullable()
+})
+export type LoginResponse = z.infer<typeof LoginResponseSchema>
+
+export const LogoutResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().nullable(),
+})
+export type LogoutResponse = z.infer<typeof LogoutResponseSchema>

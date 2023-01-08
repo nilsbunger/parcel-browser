@@ -1,16 +1,27 @@
-import React from 'react';
+import * as React from 'react';
 import { useForm } from "react-hook-form";
-import { post_csrf } from "../utils/fetcher";
+import { api_post } from "../../utils/fetcher";
+import { useAuth } from "../../hooks/Auth";
+import { showNotification } from "@mantine/notifications";
+import { useNavigate } from "react-router-dom";
 
 // Originally from Flowbite free: https://flowbite.com/blocks/marketing/login/#}
 
 export function LoginPage() {
   const { register, formState: { errors }, handleSubmit } = useForm();
+  const navigate = useNavigate();
+
+  const { logIn } = useAuth();
   // const onSubmit = data => console.log(data);
-  const onSubmit = async (data) => {
-    const fetchResponse = await post_csrf(`/api/userflows/login`, {body: data})
-    console.log("finished login call..")
-    console.log(fetchResponse)
+  const onSubmit = async (loginData) => {
+    const { data, error, message } = await logIn(loginData);
+    if (error) {
+      showNotification({ title: "Network failure", message, color: "red" });
+    } else if (!data.success) {
+      showNotification({ title: "Login failure", message: data.message, color: "red" });
+    } else {
+      navigate("/listings")
+    }
   }
 
   return (

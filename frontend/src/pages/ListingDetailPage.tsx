@@ -2,16 +2,25 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
-import { fetcher, post_csrf } from '../utils/fetcher';
+import { api_post, fetcher } from '../utils/fetcher';
 import { ListingHistory } from "../components/ListingHistory";
 import { DevScenarios } from "../components/DevScenarios";
-import { AnalysisGetResp, AnalysisPostRespSchema } from "../types";
+import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types";
+import { AxiosError } from "axios";
+import { IconX } from "@tabler/icons";
+import { hideNotification, showNotification } from "@mantine/notifications";
 
-async function redoAnalysis(e, analysisId: number) {
-  const fetchResponse = AnalysisPostRespSchema.parse(
-    await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
-  )
-  return fetchResponse
+
+async function doAnalysis(analysisId: number): Promise<{ data: AnalysisPostResp, error: boolean, message: string }> {
+  // const fetchResponse = AnalysisPostRespSchema.parse(
+  //   await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
+  // )
+  const { data, error, message } = await api_post<AnalysisPostResp>(`/api/analysis/`, {
+    RespSchema: AnalysisPostRespSchema,
+    params: { al_id: analysisId }
+  })
+  console.log("Got API analysis response in Listing Detail page", error, message, data)
+  return { data, error, message }
 }
 
 const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
@@ -42,7 +51,7 @@ export function ListingDetailPage() {
   const params = useParams<{ analysisId: string }>();
   // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
-  const { data, error } = useSWR<AnalysisGetResp, string>(
+  const { data, error } = useSWR<AnalysisGetResp, AxiosError>(
     `/api/analysis/${params.analysisId}`,
     fetcher
   );
@@ -52,14 +61,28 @@ export function ListingDetailPage() {
       document.title = data.details.address
     }
   }, [data]);
-  if (error) return <div>ListingDetailPage failed its AJAX call. {error}</div>;
+  if (error) return <div>ListingDetailPage failed its AJAX call. {error.message}</div>;
   if (!data) return <div>loading...</div>;
 
   async function onRedoAnalysis(e) {
-    setLoading(true)
-    const res = await redoAnalysis(e, Number(params.analysisId));
-    setLoading(false)
-    return mutate(`/api/analysis/${res.analysisId}`)
+    showNotification({
+      id: 'analysis-loading',
+      disallowClose: true,
+      title: "Re-running analysis",
+      message: "HI",
+      color: 'blue',
+      icon: <IconX/>,
+      loading: true,
+    });
+    const { data, error , message } = await doAnalysis(Number(params.analysisId));
+    hideNotification('analysis-loading')
+    if (!error) {
+      console.log("GOT DATA on redo analysis", data)
+      return mutate(`/api/analysis/${data.analysisId}`)
+    } else {
+      console.log("Failed to redo analysis")
+      showNotification({title: "Failed to re-run analysis", message: message, color: 'red'})
+    }
 
     // navigate('/analysis/' + res.analysisId, { replace: true });
   }

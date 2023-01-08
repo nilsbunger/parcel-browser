@@ -1,10 +1,11 @@
-import React from 'react';
+import * as React from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { Fragment } from 'react';
 import { IoPersonCircleOutline } from 'react-icons/io5';
 import { Link, NavLink } from 'react-router-dom';
 import Home3Logo from './Home3Logo';
+import { useAuth } from "../../hooks/Auth";
 
 const user = {
   name: 'Tom Cook',
@@ -17,8 +18,8 @@ function classNames(...classes) {
 }
 
 export default function Navbar(_props) {
-  // const { logIn, logOut, isAuthenticated, currentUser } = useAuth()
-  const isAuthenticated = false;
+  const { user, logIn, logOut } = useAuth()
+  const isAuthenticated = !!user;
   const navigation = [
     { name: 'Map', href: '/map', current: false },
     { name: 'Listings', href: '/listings', current: false },
@@ -33,7 +34,7 @@ export default function Navbar(_props) {
   const userNavigation = [
     { name: 'Profile', href: '#' },
     // { name: 'Settings', href: '#' },
-    { name: 'Sign out', href: '#' },
+    { name: 'Sign out', href: '/logout' },
   ];
 
   return (
