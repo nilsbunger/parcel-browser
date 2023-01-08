@@ -1,3 +1,4 @@
+import * as React from 'react';
 import Home3Footer from "../components/layout/Home3Footer";
 import Navbar from "../components/layout/Navbar";
 import {Outlet} from "react-router-dom";

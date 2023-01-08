@@ -1,4 +1,5 @@
 module.exports = {
+  darkMode: 'unusedDarkModeClass',  // disable dark mode for now. Remove to fallback to listening to prefer-media-scheme
   content: ["./src/**/*.{html,js,ts,tsx}"],
   theme: {
     extend: {
