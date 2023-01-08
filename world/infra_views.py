@@ -33,7 +33,6 @@ frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name="index.html")
 # DEVELOPMENT SERVING: Proxy requests to frontend server
 
 
-@login_required
 def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     upstream_url = upstream + "/" + path
 
