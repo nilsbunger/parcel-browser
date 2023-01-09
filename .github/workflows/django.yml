@@ -49,8 +49,8 @@ jobs:
 
       - name: Install apt dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install --no-install-recommends -y gdal-bin=3.0.4+dfsg-1build3 libgdal-dev=3.0.4+dfsg-1build3
-        # sudo apt-get update --no-install-recommends
 #          sudo apt-get install -y --no-install-recommends \
 #             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}=${{ matrix.postgis-version }} \
 #             postgresql-${{ matrix.pg-major }}-postgis-${{ matrix.postgis-major }}-scripts
