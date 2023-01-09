@@ -6,6 +6,8 @@
 # jammy = Ubuntu 22.04 LTS - was released April 2022
 FROM ubuntu:20.04
 
+### INSTALL SYSTEM PACKAGES ##############################################################
+
 # Deadsnakes repo needed for python 3.9
 RUN apt update && apt install -y \
     software-properties-common \
@@ -27,39 +29,51 @@ RUN apt-get update && apt-get install -y \
     python3.9-distutils \
     python3.9-venv \
     python3.9-dev \
-    openssh-client \
-    postgresql-client=12+214ubuntu0.1
+    openssh-client 
+    # postgresql-client=12+214ubuntu0.1
+
+RUN chsh -s /usr/bin/bash
+ENV PATH="/root/.local/bin:$PATH"
+WORKDIR /app
+
+### INSTALL NODE AND PYTHON PKG MANAGERS #################################################
 
 RUN npm install --location=global yarn
 
-RUN chsh -s /usr/bin/bash
-
-# RUN pip install "poetry==$POETRY_VERSION"
 RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.2.2
-ENV PATH="/root/.local/bin:$PATH"
 
+### INSTALL SUPERCRONIC CRON MANAGER #####################################################
 
-WORKDIR /app
+# Supercronic setup, as per fly.io: https://fly.io/docs/app-guides/supercronic/
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.1/supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=d7f4c0886eb85249ad05ed592902fa6865bb9d70
 
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+ && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+ && chmod +x "$SUPERCRONIC" \
+ && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+ && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
+
+COPY crontab crontab
+
+### PYTHON DEPENDENCIES ##################################################################
 # Set up a python virtual env for all subsequent commands
-# ENV VIRTUAL_ENV=/app/venv
-# RUN python3.9 -m venv $VIRTUAL_ENV
-# ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
 
 # Do package installations first, so that they're cached in most cases
-# RUN pip install wheel
-# COPY requirements.txt .
-# RUN pip install -r requirements.txt
 COPY pyproject.toml .
 COPY poetry.lock .
 RUN poetry install --only main --no-root --no-interaction --no-ansi
 
+# Copy source code - put as late as possible in file, since it's fast-changing.
 COPY . .
 RUN mkdir -p dist/static
 RUN poetry run python manage.py collectstatic --noinput
 
+
+### FRONT-END INSTALL AND BUILD ##########################################################
 WORKDIR /app/frontend
 RUN yarn install && yarn cache clean
 RUN yarn build
@@ -67,5 +81,9 @@ RUN yarn build
 WORKDIR /app
 EXPOSE 8080
 
+### EXECUTE THE APP SERVER ###############################################################
+
 CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
 # CMD ["sleep", "999999"]
+
+### THE END ##############################################################################
