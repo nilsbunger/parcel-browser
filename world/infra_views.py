@@ -22,7 +22,7 @@ from mygeo import settings
 # the frontend/ directory.
 
 
-class FrontEndProxyView(LoginRequiredMixin, TemplateView):
+class FrontEndProxyView(TemplateView):
     pass
 
 
