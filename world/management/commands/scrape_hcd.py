@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: django.core.management.base.CommandParser) -> None:
         parser.add_argument(
-            "--dry_run",
+            "--dry-run",
             action="store_true",
             help="Get all the data but print it to the console instead of updating Airtable.",
         )
@@ -22,6 +22,8 @@ class Command(BaseCommand):
         super().add_arguments(parser)
 
     def handle(self, dry_run, try_exception, *args, **kwargs) -> None:
+        if dry_run:
+            print("Dry run: not updating Airtable.")
         if try_exception:
             raise Exception("This is a test exception in scrape_hcd.py")
         run_scrape_hcd(dry_run)

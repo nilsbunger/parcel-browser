@@ -281,7 +281,10 @@ def run_scrape_hcd(dry_run=False):
                 + x["finalDueDate"]
             )
             oldItem = list(filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], reviewRecords))[0]
-            reviewTable.delete(oldItem["id"])
+            if not dry_run:
+                reviewTable.delete(oldItem["id"])
+            else:
+                print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
 
     newReviews = []
     for x in reviewTableRows:
@@ -295,14 +298,16 @@ def run_scrape_hcd(dry_run=False):
                 + " | final due date: "
                 + x["finalDueDate"]
             )
-            reviewTable.create(
-                {
-                    "jurisdiction": x["jurisdiction"],
-                    "type": x["type"],
-                    "receivedDate": x["receivedDate"],
-                    "finalDueDate": x["finalDueDate"],
-                }
-            )
+            new_entry = {
+                "jurisdiction": x["jurisdiction"],
+                "type": x["type"],
+                "receivedDate": x["receivedDate"],
+                "finalDueDate": x["finalDueDate"],
+            }
+            if not dry_run:
+                reviewTable.create(new_entry)
+            else:
+                print("Dry run: reviewTable.create(" + new_entry + ")")
 
     ############
     # store changes in runLog
@@ -330,7 +335,10 @@ def run_scrape_hcd(dry_run=False):
     # print(changeSummary)
 
     runTime = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
-    logTable.create({"runTime": runTime, "differences": changeSummary})
+    if not dry_run:
+        logTable.create({"runTime": runTime, "differences": changeSummary})
+    else:
+        print("Dry run: logTable.create(" + runTime + ", " + changeSummary + ")")
 
     # TODO: broadcast changes to Slack or TBD
     # TODO: run daily at 1am PST
