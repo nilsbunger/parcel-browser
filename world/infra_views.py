@@ -65,4 +65,4 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     )
 
 
-frontend_proxy_view = frontend_proxy_dev_view if settings.DEBUG else frontend_proxy_prod_view
+frontend_proxy_view = frontend_proxy_dev_view if settings.DEBUG or settings.TEST_ENV else frontend_proxy_prod_view
