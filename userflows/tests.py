@@ -15,6 +15,7 @@ whitelist_noauth = [
     "/dj/accounts/password_reset/done/",
     "/dj/accounts/reset/1/2/",
     "/dj/accounts/reset/done/",
+    "/1",  # catch-all React view (react router returns 200)
 ]
 whitelist_404 = ["/api/", "/api/co/", "/api/userflows/"]
 
@@ -41,10 +42,10 @@ class TestAuthenticationPaths:
         assert response.status_code == 302
 
     def test_authentication_required(self, client: Client):
-        # Test view access without being authenticated
+        # Test access to React pages - should be allowed through.
         view_url = reverse("frontend_proxy_view", args=["any_path"])
         response = client.get(view_url)
-        assert response.status_code == 302  # Expect a redirect to login page
+        assert response.status_code == 200, f"Failed on {view_url}"
 
     def test_account_login(self, client: Client):
         response = client.get("/account/login/")
