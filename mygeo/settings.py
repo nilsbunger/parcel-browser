@@ -44,14 +44,14 @@ TEST_ENV = env("TEST_ENV")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 eprint("Django Log Level", DJANGO_LOG_LEVEL)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
-TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
+PROD_ENV = DJANGO_ENV == "production"  # running on production server
 TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
+TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 CLOUDFLARE_R2_ENABLED = env("CLOUDFLARE_R2_ENABLED") and not TEST_ENV
 
 # DEBUG variable - controls display of error messages, static file handling, etc. Never use it in production!
 DEBUG = DEV_ENV and not TEST_ENV
 # NOTE: DEBUG is set to false within tests regardless of the value of DEBUG here.
-
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
@@ -145,11 +145,18 @@ SOCIALACCOUNT_PROVIDERS = {
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # Keep Whitenoise above all middleware except SecurityMiddleware
+    ## Keep Whitenoise above all middleware except SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # ----------------------------------------------------------------------------
+    ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
+    ##    GzipMiddleware, LocaleMiddleware, etc.
+    ## Note: cache middleware shouldn't be needed unless you're doing site-level caching
+    # 'django.middleware.cache.UpdateCacheMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    ## FetchFromCacheMiddleware needs to appear BELOW anything else that adds to the Vary header.
+    ## Note: cache middleware shouldn't be needed unless you're doing site-level caching
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     ## For django-two-factor-auth package: - must be after AuthenticationMiddleware
@@ -421,4 +428,13 @@ LOGGING = {
             "propagate": False,
         },
     },
+}
+
+# Set up caching to cache the tile views which contain high-cost SQL queries
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": "/root/django-cache" if PROD_ENV else BASE_DIR / ".django-cache",
+        "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries
+    }
 }

@@ -1,6 +1,7 @@
 *.pyc
 .idea/
 .env*
+.django-cache/
 *.swp
 deploy/data-files/
 public-app/
