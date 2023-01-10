@@ -1,12 +1,10 @@
-from django.test import TestCase
+from django.apps import apps as django_apps
 from django.test import Client
 from django.urls import get_resolver, reverse
-from django.apps import apps as django_apps
 import pytest
 
 import mygeo
-from mygeo import urls
-from mygeo import settings
+from mygeo import settings, urls
 
 whitelist_noauth = [
     "/account/login/",
@@ -59,7 +57,7 @@ class TestAuthenticationPaths:
         # Test all URLs that require auth, actually require auth
 
         url_patterns = urls.urlpatterns
-        failures = 0
+        failures = []
         tests = 0
         for url in mygeo.util.each_url_with_placeholder(url_patterns):
             # print (f"Testing URL: {url}")
@@ -76,10 +74,10 @@ class TestAuthenticationPaths:
                         if response.status_code == 404:
                             if url in whitelist_404:
                                 continue
-                        print(
-                            f"Problem: Url {url} returned code {response.status_code}, expected 302, 401, or 405"
-                        )
-                        failures += 1
+                        problem = f"{url} returned code {response.status_code}, expected 302, 401, or 405"
+                        print(f"Problem: {problem}")
+                        failures.append(problem)
                     # assert response.status_code == 302
         print(f"Finished testing {tests} URLs")
-        assert failures == 0, f"Failed {failures} URLs above"
+        failure_str = "\n  -->".join(failures)
+        assert len(failures) == 0, f"Failed URLs: {failure_str}"

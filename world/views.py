@@ -113,7 +113,7 @@ class RoadTileData(LoginRequiredMixin, MVTView, ListView):
 
 
 @method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
-class Ab2011TileData(MVTView, ListView):
+class Ab2011TileData(LoginRequiredMixin, MVTView, ListView):
     model = AnalyzedParcel
     vector_tile_fields = ("apn__geom",)
     vector_tile_geom_name = "apn__geom"
