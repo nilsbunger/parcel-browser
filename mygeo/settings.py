@@ -150,7 +150,8 @@ MIDDLEWARE = [
     # ----------------------------------------------------------------------------
     ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
     ##    GzipMiddleware, LocaleMiddleware, etc.
-    ## Note: cache middleware shouldn't be needed unless you're doing site-level caching
+    ## Note: cache middleware shouldn't be needed unless you're doing site-level caching.
+    ## Note: if we use this, we should use our H3CacheMiddleware instead, so we cache empty results.
     # 'django.middleware.cache.UpdateCacheMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

@@ -9,8 +9,7 @@ from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.views.decorators.cache import cache_page
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView
 import geopandas as geopandas
 
 from mygeo import settings
@@ -22,6 +21,7 @@ from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
 from lib.types import CheckResultEnum
+from world.django_cache import h3_cache_page
 from world.models import (
     AnalyzedParcel,
     BuildingOutlines,
@@ -41,7 +41,7 @@ pp = pprint.PrettyPrinter(indent=2)
 
 
 # ajax call for parcel tiles for big map
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
     model = Parcel
     vector_tile_layer_name = "parcel"
@@ -51,7 +51,7 @@ class ParcelTileData(LoginRequiredMixin, MVTView, ListView):
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class ZoningLabelTile(LoginRequiredMixin, MVTView, ListView):
     model = ZoningMapLabel
     vector_tile_fields = ("text",)
@@ -61,7 +61,7 @@ class ZoningLabelTile(LoginRequiredMixin, MVTView, ListView):
 
 
 # ajax call for zoning tiles for big map
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class ZoningTileData(LoginRequiredMixin, MVTView, ListView):
     model = ZoningBase
     vector_tile_layer_name = "zone_name"
@@ -79,20 +79,20 @@ class ZoningTileData(LoginRequiredMixin, MVTView, ListView):
 
 
 # ajax call for topo tiles for big map
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class TopoTileData(LoginRequiredMixin, MVTView, ListView):
     model = Topography
     vector_tile_layer_name = "topography"
 
 
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class CompCommTileData(LoginRequiredMixin, MVTView, ListView):
     model = HousingSolutionArea
     vector_tile_layer_name = "compcomm"
     vector_tile_fields = ("tier", "allowance")
 
 
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class TpaTileData(LoginRequiredMixin, MVTView, ListView):
     model = TransitPriorityArea
     vector_tile_layer_name = "tpa"
@@ -102,7 +102,7 @@ class TpaTileData(LoginRequiredMixin, MVTView, ListView):
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class RoadTileData(LoginRequiredMixin, MVTView, ListView):
     model = Roads
     vector_tile_layer_name = "road"
@@ -112,7 +112,7 @@ class RoadTileData(LoginRequiredMixin, MVTView, ListView):
         return self.vector_tile_queryset if self.vector_tile_queryset is not None else self.get_queryset()
 
 
-@method_decorator(cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+@method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
 class Ab2011TileData(MVTView, ListView):
     model = AnalyzedParcel
     vector_tile_fields = ("apn__geom",)
