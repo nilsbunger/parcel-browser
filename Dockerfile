@@ -83,6 +83,7 @@ EXPOSE 8080
 
 ### EXECUTE THE APP SERVER ###############################################################
 
+# NOTE: I believe this is overridden by fly.toml's processes list
 CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
 # CMD ["sleep", "999999"]
 

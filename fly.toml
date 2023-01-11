@@ -3,7 +3,6 @@
 app = "parsnip"
 kill_signal = "SIGINT"
 kill_timeout = 5
-processes = []
 
 # [build]
 #   dockerfile = "Dockerfile"
@@ -21,7 +20,8 @@ processes = []
 [[services]]
   http_checks = []
   internal_port = 8080
-  processes = ["app"]
+  # expose web service to the internet (cron is not listed here because it's internal)
+  processes = ["web"]
   protocol = "tcp"
   script_checks = []
   [services.concurrency]
@@ -47,3 +47,8 @@ processes = []
 # [[statics]]
 #   guest_path = "/app/public"
 #   url_prefix = "/static/"
+
+[processes]
+  # Specify our web service and supercronic (crontab) process groups
+  web = "poetry run gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
+  cron = "supercronic /app/crontab"
