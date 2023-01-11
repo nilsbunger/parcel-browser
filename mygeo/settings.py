@@ -67,7 +67,12 @@ eprint(f"**** DEBUG == {DEBUG} ****")
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
+if PROD_ENV:
+    SECRET_KEY = env("DJANGO_SECRET_KEY")
+else:
+    eprint(f"**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
+    SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
+
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
