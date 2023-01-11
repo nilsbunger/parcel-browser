@@ -29,7 +29,6 @@ class Command(BaseCommand):
             raise Exception("This is a test exception in scrape_hcd.py")
         changeSummary = run_scrape_hcd(dry_run)
 
-        ## Dummy email message sending example... adjust to your needs
         email_subs_raw = env("HCD_EMAIL_SUBS")
         email_subs = email_subs_raw.split(",")
 
@@ -53,4 +52,4 @@ class Command(BaseCommand):
             cc=[],
             bcc=[],
         )
-        email.send()  ## uncomment to make the email actually send
+        email.send()
