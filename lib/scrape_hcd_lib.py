@@ -340,5 +340,4 @@ def run_scrape_hcd(dry_run=False):
     else:
         print("Dry run: logTable.create(" + runTime + ", " + changeSummary + ")")
 
-    
-    # TODO: run daily at 1am PST
+    return changeSummary
