@@ -260,7 +260,7 @@ def run_scrape_hcd(dry_run=False):
                 filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], elementStatusRecords)
             )[0]
             oldStatus = oldItem["fields"]["6thCycle"]
-            statusDiff.append(x["jurisdiction"] + " | From *" + oldStatus + "* to *" + x["6thCycle"] + "*")
+            statusDiff.append(x["jurisdiction"] + " | From **" + oldStatus + "** to **" + x["6thCycle"] + "**")
             if not dry_run:
                 elementStatusTable.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
             else:
@@ -307,7 +307,7 @@ def run_scrape_hcd(dry_run=False):
             if not dry_run:
                 reviewTable.create(new_entry)
             else:
-                print("Dry run: reviewTable.create(" + new_entry + ")")
+                print("Dry run: reviewTable.create(" + str(new_entry) + ")")
 
     ############
     # store changes in runLog
@@ -315,17 +315,17 @@ def run_scrape_hcd(dry_run=False):
     changeSummary = ""
 
     if statusDiff:
-        changeSummary = "**Jurisdiction(s) with new 6th Cycle status:**\n"
+        changeSummary = "\n*Jurisdiction(s) with new 6th Cycle status:*\n"
         for x in statusDiff:
             changeSummary = changeSummary + x + "\n"
 
     if newReviews:
-        changeSummary = changeSummary + "**Jurisdiction(s) newly IN review:**\n"
+        changeSummary = changeSummary + "\n*Jurisdiction(s) newly IN review:*\n"
         for x in newReviews:
             changeSummary = changeSummary + x + "\n"
 
     if exitedReviews:
-        changeSummary = changeSummary + "**Jurisdiction(s) OUT of review:**\n"
+        changeSummary = changeSummary + "\n*Jurisdiction(s) OUT of review:*\n"
         for x in exitedReviews:
             changeSummary = changeSummary + x + "\n"
 
@@ -340,5 +340,5 @@ def run_scrape_hcd(dry_run=False):
     else:
         print("Dry run: logTable.create(" + runTime + ", " + changeSummary + ")")
 
-    # TODO: broadcast changes to Slack or TBD
+    
     # TODO: run daily at 1am PST
