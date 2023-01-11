@@ -44,12 +44,13 @@ class Command(BaseCommand):
             email.send()
         else:
             print("DRY RUN: NOT SENDING TO LIST:" + ",".join(email_subs))
-            email = EmailMessage(
-                subject="HCD daily update summary (admin)" + (" (dry run)" if dry_run else ""),
-                body="Sent to " + ",".join(email_subs) + "\n\n" + changeSummary,
-                from_email="marcio@home3.co",
-                to=["marcio@home3.co"] if dry_run else "founders@home3.co",
-                cc=[],
-                bcc=[],
-            )
-            email.send() 
+            
+        email = EmailMessage(
+            subject="HCD daily update summary (admin)" + (" (dry run)" if dry_run else ""),
+            body="Sent to " + ",".join(email_subs) + "\n\n" + changeSummary,
+            from_email="marcio@home3.co",
+            to=["marcio@home3.co"] if dry_run else "founders@home3.co",
+            cc=[],
+            bcc=[],
+        )
+        email.send() 
