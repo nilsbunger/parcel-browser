@@ -441,7 +441,7 @@ LOGGING = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": "/root/django-cache" if (PROD_ENV and not TEST_ENV) else BASE_DIR / ".django-cache",
+        "LOCATION": "/parsnip_data/django-cache" if (PROD_ENV and not TEST_ENV) else BASE_DIR / ".django-cache",
         "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries
     }
 }
