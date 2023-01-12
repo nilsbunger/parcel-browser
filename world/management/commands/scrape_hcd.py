@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 subject="HCD daily update summary",
                 body=changeSummary,
                 from_email="marcio@home3.co",
-                to=[email_subs],
+                to=email_subs,
                 cc=[],
                 bcc=[],
             )
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 subject="HCD daily update summary (admin)" + (" (dry run)" if dry_run else ""),
                 body="Sent to " + ",".join(email_subs) + "\n\n" + changeSummary,
                 from_email="marcio@home3.co",
-                to=["marcio@home3.co"] if dry_run else "founders@home3.co",
+                to=["marcio@home3.co"] if dry_run else ["founders@home3.co"],
                 cc=[],
                 bcc=[],
             )
