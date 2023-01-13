@@ -25,6 +25,8 @@ function useAuthProvider() {
   const { data: user, error, isValidating, mutate } = useSWR(
     '/api/userflows/user', fetcher, { shouldRetryOnError: false }
   )
+  const isLoading = isValidating
+  console.log ("IsLoading=", isLoading)
 
   if (error) {
     console.log("useAuthProvider error on call to userflows/user", error)
@@ -89,6 +91,7 @@ function useAuthProvider() {
     logIn,
     logOut,
     signUp,
+    isLoading,
     sendPasswordResetEmail,
     confirmPasswordReset,
   };

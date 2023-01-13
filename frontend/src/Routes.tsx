@@ -11,6 +11,7 @@ import { CoMapPage } from "./pages/CoMapPage";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { UserFlowLayout } from "./layouts/UserFlowLayout";
 import { useAuth } from "./hooks/Auth";
+import { Loader } from "@mantine/core";
 
 export function MyRoutes() {
   return (
@@ -52,8 +53,18 @@ export function MyRoutes() {
 }
 
 const ProtectedRoute = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
+        <Loader variant={"dots"}/>
+        {/*<h1>Loading...</h1>*/}
+      </div>
+    )
+  }
   if (!user) {
+    console.log("Protected route, didn't find user, redirecting to login")
     return <Navigate to="/login" replace/>;
   }
   return <Outlet/>;
