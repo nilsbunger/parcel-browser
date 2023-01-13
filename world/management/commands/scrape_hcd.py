@@ -43,9 +43,9 @@ class Command(BaseCommand):
                 subject="HCD daily update summary",
                 body=changeSummary,
                 from_email="marcio@home3.co",
-                to=[email_subs],
+                to="marcio@home3.co",
                 cc=[],
-                bcc=[],
+                bcc=[email_subs],
             )
             email.send()
         else:
