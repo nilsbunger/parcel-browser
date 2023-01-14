@@ -1,10 +1,7 @@
 import urllib
 from urllib.error import HTTPError, URLError
 
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
 from django.template import engines
 from django.views.generic import TemplateView
 

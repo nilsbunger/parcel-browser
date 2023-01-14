@@ -8,7 +8,7 @@ from django.views.defaults import page_not_found
 
 from mygeo import settings
 from userflows.api import userflows_api
-from world.infra_views import frontend_proxy_view
+from world.infra import frontend_proxy_view
 from world.api import world_api
 from co.co_api import api as co_api
 

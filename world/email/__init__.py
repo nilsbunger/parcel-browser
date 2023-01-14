@@ -1,1 +1,0 @@
-from .mailersend_backend import MailerSendBackend

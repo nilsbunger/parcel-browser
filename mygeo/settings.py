@@ -18,6 +18,8 @@ import sys
 import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from whitenoise import WhiteNoise
+
 from mygeo.util import eprint
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -152,7 +154,7 @@ SOCIALACCOUNT_PROVIDERS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "world.infra.MyWhiteNoiseMiddleware",
     # ----------------------------------------------------------------------------
     ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
     ##    GzipMiddleware, LocaleMiddleware, etc.
@@ -277,7 +279,7 @@ CONN_MAX_AGE = None  # allow persistent DB connection forever
 if DEV_ENV:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
-    EMAIL_BACKEND = "world.email.MailerSendBackend"
+    EMAIL_BACKEND = "world.infra.MailerSendBackend"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -361,6 +363,11 @@ else:
 # Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL
 WHITENOISE_ROOT = BASE_DIR / "dist/static"
 
+# Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
+# detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
+# by the parcel build process, so we need to set it explicitly. A
+WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -441,7 +448,9 @@ LOGGING = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": "/parsnip_data/django-cache" if (PROD_ENV and not TEST_ENV) else BASE_DIR / ".django-cache",
+        "LOCATION": "/parsnip_data/django-cache"
+        if (PROD_ENV and not TEST_ENV and not LOCAL_DB)
+        else BASE_DIR / ".django-cache",
         "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries
     }
 }

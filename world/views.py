@@ -1,11 +1,10 @@
-from collections import defaultdict
 from itertools import chain
 import json
 import pprint
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.serializers import serialize
-from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -21,7 +20,7 @@ from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
 from lib.types import CheckResultEnum
-from world.django_cache import h3_cache_page
+from world.infra.django_cache import h3_cache_page
 from world.models import (
     AnalyzedParcel,
     BuildingOutlines,
@@ -34,6 +33,7 @@ from world.models import (
 from world.models.base_models import HousingSolutionArea, ZoningMapLabel
 
 if settings.ENABLE_SILK:
+    # noinspection PyUnresolvedReferences
     from silk.profiling.profiler import silk_profile
 
 
