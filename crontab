@@ -1,12 +1,14 @@
-
-# Test every 4 hours with dry run and skip emails
-0 */4 * * * poetry run python manage.py scrape_hcd --dry-run --no-emails
-
-# Test exception reporting, generate one every day! (to remove later)
-10 22 * * * poetry run python manage.py scrape_hcd --try-exception
-
 # Actual production run
 10 11 * * * poetry run python manage.py scrape_hcd
 
-# Silly print statement to confirm we can see output
-0 * * * * echo "Hello from crontab!"
+#### TEST ENTRIES, not used:
+
+## Test every 4 hours with dry run and skip emails
+# 0 */4 * * * poetry run python manage.py scrape_hcd --dry-run --no-emails
+
+## Silly print statement to confirm we can see output
+# 0 * * * * echo "Hello from crontab!"
+
+## Test exception reporting, generate one every day! (to remove later)
+# 10 22 * * * poetry run python manage.py scrape_hcd --try-exception
+
