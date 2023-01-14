@@ -31,12 +31,19 @@ frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name="index.html")
 
 
 def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
-    upstream_url = upstream + "/" + path
-
+    full_path = request.get_full_path()  # includes query string
+    upstream_url = upstream + full_path
     try:
         response = urllib.request.urlopen(upstream_url)
+        print("Proxying to", upstream_url)
+        headers = {}
+        if "Accept" in request.headers:
+            headers["Accept"] = request.headers["Accept"]
+        req = urllib.request.Request(upstream_url, headers=headers, data=request.body, method=request.method)
+        response = urllib.request.urlopen(req)
     except HTTPError as e:
         if e.code == 404:
+            print(f"Got 404 from upstream... url={upstream_url}")
             raise Http404
         elif e.code == 500:
             return HttpResponse("Frontend Server Error", status=500)
