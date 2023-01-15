@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
@@ -47,7 +47,7 @@ function showAssumptions(assumptions: object) {
 }
 
 
-export function ListingDetailPage() {
+export default function ListingDetailPage() {
   const params = useParams<{ analysisId: string }>();
   // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)

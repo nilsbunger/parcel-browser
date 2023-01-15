@@ -1,8 +1,13 @@
 {
   "strict":true,
   "compilerOptions": {
-    "jsx": "react",
-    "lib": ["es2019", "DOM"]
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "strict": true,
+    "target": "ESNext",
+    "moduleResolution": "node",
+    "module": "esnext",
+    "allowSyntheticDefaultImports": true
   }
 }
 

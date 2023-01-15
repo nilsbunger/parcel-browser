@@ -4,5 +4,16 @@
     "jsx:*.svg": ["...", "@parcel/transformer-svg-react"],
     "jsx:*": ["..."]
   },
-  "reporters":  ["...", "parcel-reporter-static-files-copy"]
+  "compressors": {
+    "*.{html,css,js,svg,map}": [
+      "...",
+      "@parcel/compressor-gzip"
+    ]
+  },
+
+  "reporters":  [
+    "...",
+    "parcel-reporter-static-files-copy",
+    "@parcel/reporter-bundle-analyzer"
+  ]
 }

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { ErrorBoundary } from "react-error-boundary";
-import DeckGL from '@deck.gl/react';
-import { BitmapLayer, PathLayer } from '@deck.gl/layers';
+import DeckGL from '@deck.gl/react/typed';
+import { BitmapLayer, PathLayer } from '@deck.gl/layers/typed';
 
-import { MapView } from '@deck.gl/core';
-import { TileLayer } from '@deck.gl/geo-layers';
+import { MapView } from '@deck.gl/core/typed';
+import { TileLayer } from '@deck.gl/geo-layers/typed';
 import { MVTLayer } from "@deck.gl/geo-layers/typed";
 import { Button, Menu } from "@mantine/core";
 import { useImmer } from "use-immer";
@@ -311,7 +311,7 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
 }
 
 
-export function CoMapPage({ onTilesLoad = null }) {
+export default function CoMapPage({ onTilesLoad = null }) {
   const showTileBoundaries = false;
   const [hoverInfo, setHoverInfo] = useState();
   const [selection, setSelection] = useState<{ selType: string, objId: number, info: object }>(null);

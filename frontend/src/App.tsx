@@ -2,7 +2,7 @@ import { MantineProvider } from '@mantine/core';
 import { MyRoutes } from "./Routes";
 import { AuthProvider } from "./hooks/Auth";
 import { NotificationsProvider } from "@mantine/notifications";
-import React = require('react');
+import React from "react"
 
 export function App() {
   return (

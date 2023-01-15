@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 // Originally from Flowbite free: https://flowbite.com/blocks/marketing/login/#}
 
-export function LoginPage() {
+export default function LoginPage() {
   const { register, formState: { errors }, handleSubmit } = useForm();
   const navigate = useNavigate();
 

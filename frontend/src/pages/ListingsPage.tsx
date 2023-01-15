@@ -234,7 +234,7 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
   return query;
 }
 
-export function ListingsPage() {
+export default function ListingsPage() {
   const [pageSize, setPageSize] = useState<number>(undefined);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [sorting, setSorting] = React.useState<SortingState>([]);

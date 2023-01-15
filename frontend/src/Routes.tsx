@@ -1,52 +1,55 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import HomeLayout from './layouts/HomeLayout';
 import * as React from 'react';
-import { useEffect } from 'react';
-import { ListingsPage } from './pages/ListingsPage';
-import { ListingDetailPage } from './pages/ListingDetailPage';
-import { NewListingPage } from './pages/NewListingPage';
+import { lazy, Suspense, useEffect } from 'react';
 import WideLayout from "./layouts/WideLayout";
-import { RentalRatesPage } from "./pages/RentalRatesPage";
-import { CoMapPage } from "./pages/CoMapPage";
-import { LoginPage } from "./pages/auth/LoginPage";
 import { UserFlowLayout } from "./layouts/UserFlowLayout";
 import { useAuth } from "./hooks/Auth";
 import { Loader } from "@mantine/core";
+
+const ListingsPage = lazy(() => import('./pages/ListingsPage'));
+const ListingDetailPage = lazy(() => import('./pages/ListingDetailPage'));
+const NewListingPage = lazy(() => import('./pages/NewListingPage'));
+const RentalRatesPage = lazy(() => import('./pages/RentalRatesPage'));
+const CoMapPage = lazy(() => import('./pages/CoMapPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 
 export function MyRoutes() {
   return (
     <BrowserRouter>
       <React.StrictMode>
-        <Routes>
-          {/* Pages that don't require login */}
-          <Route path="login" element={<UserFlowLayout/>}>
-            <Route index element={<LoginPage/>}/>
-          </Route>
-
-          {/* Rest of pages require login... */}
-          <Route element={<ProtectedRoute/>}>
-            <Route element={<WideLayout/>}>
-              <Route path="listings">
-                <Route index element={<ListingsPage/>}/>
-              </Route>
+        <Suspense fallback={<LoadingScreen/>}>
+          <Routes>
+            {/* Pages that don't require login */}
+            <Route path="login" element={<UserFlowLayout/>}>
+              <Route index element={<LoginPage/>}/>
             </Route>
-            <Route path="logout" element={<LogoutHelper/>}/>
 
-            <Route element={<HomeLayout/>}>
-              {/*<Route path="login" element={<LoginPage/>}/>*/}
-              <Route index element={<Navigate replace to='/listings'/>}/>
-              {/*<Route index element={<HomePage/>}/>*/}
-              <Route path="analysis">
-                <Route path=":analysisId" element={<ListingDetailPage/>}/>
+            {/* Rest of pages require login... */}
+            <Route element={<ProtectedRoute/>}>
+              <Route element={<WideLayout/>}>
+                <Route path="listings">
+                  <Route index element={<ListingsPage/>}/>
+                </Route>
               </Route>
-              <Route path="search" element={<NewListingPage/>}/>
-              <Route path="rental-rates" element={<RentalRatesPage/>}/>
-              <Route path="map" element={<CoMapPage/>}/>
+              <Route path="logout" element={<LogoutHelper/>}/>
+
+              <Route element={<HomeLayout/>}>
+                {/*<Route path="login" element={<LoginPage/>}/>*/}
+                <Route index element={<Navigate replace to='/listings'/>}/>
+                {/*<Route index element={<HomePage/>}/>*/}
+                <Route path="analysis">
+                  <Route path=":analysisId" element={<ListingDetailPage/>}/>
+                </Route>
+                <Route path="search" element={<NewListingPage/>}/>
+                <Route path="rental-rates" element={<RentalRatesPage/>}/>
+                <Route path="map" element={<CoMapPage/>}/>
+              </Route>
+              {/* Catch-all element below */}
+              <Route path="*" element={<PageNotFound/>}/>
             </Route>
-            {/* Catch-all element below */}
-            <Route path="*" element={<PageNotFound/>}/>
-          </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
       </React.StrictMode>
     </BrowserRouter>
   );
@@ -69,6 +72,16 @@ const ProtectedRoute = () => {
   }
   return <Outlet/>;
 };
+
+
+const LoadingScreen = () => {
+  return (
+    <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
+      <Loader variant={"dots"}/>
+      {/*<h1>Loading...</h1>*/}
+    </div>
+  )
+}
 
 function LogoutHelper() {
   const { logOut } = useAuth();

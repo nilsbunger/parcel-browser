@@ -7,7 +7,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { AddressSearchGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types";
 
 
-export function NewListingPage() {
+export default function NewListingPage() {
 
   const [address, setAddress] = useState('');
   const [err, setErr] = useState('');

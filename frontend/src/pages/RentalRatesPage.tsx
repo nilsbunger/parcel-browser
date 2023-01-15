@@ -3,7 +3,7 @@ import * as React from 'react';
 import { fetcher, swrLaggy } from '../utils/fetcher';
 import RentalRatesMap from "../components/layout/RentalRatesMap";
 
-export function RentalRatesPage() {
+export default function RentalRatesPage() {
   const {data, error, isValidating} = useSWR(
     [
       '/api/rentalrates',
