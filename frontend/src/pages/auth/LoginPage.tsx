@@ -1,24 +1,35 @@
-import * as React from 'react';
-import { useForm } from "react-hook-form";
-import { api_post } from "../../utils/fetcher";
-import { useAuth } from "../../hooks/Auth";
-import { showNotification } from "@mantine/notifications";
-import { useNavigate } from "react-router-dom";
+import * as React from "react"
+import { AuthContextType, useAuth } from "../../hooks/Auth"
+import { showNotification } from "@mantine/notifications"
+import { useNavigate } from "react-router-dom"
+import { type LoginRequest, LoginRequestSchema } from "../../types"
+import { useForm, zodResolver } from "@mantine/form"
+import { Button, Checkbox, PasswordInput, TextInput } from "@mantine/core"
 
 // Originally from Flowbite free: https://flowbite.com/blocks/marketing/login/#}
 
 export default function LoginPage() {
-  const { register, formState: { errors }, handleSubmit } = useForm();
-  const navigate = useNavigate();
+  const form = useForm({
+    validate: zodResolver(LoginRequestSchema),
+    initialValues: {
+      email: "foo@bar.com",
+      password: "asdfasdfsa",
+      rememberMe: false,
+    },
+  })
+  const navigate = useNavigate()
+  // console.log("Client form errors:", errors)
 
-  const { logIn } = useAuth();
+  const { logIn } = useAuth() as AuthContextType
   // const onSubmit = data => console.log(data);
-  const onSubmit = async (loginData) => {
-    const { data, error, message } = await logIn(loginData);
-    if (error) {
-      showNotification({ title: "Network failure", message, color: "red" });
-    } else if (!data.success) {
-      showNotification({ title: "Login failure", message: data.message, color: "red" });
+  const onSubmit = async (loginData: LoginRequest) => {
+    console.log("on submit", loginData)
+    const { success, message, formErrors } = await logIn(loginData)
+    if (!success) {
+      showNotification({ title: "Login failure", message, color: "red" })
+      if (formErrors) {
+        form.setErrors(formErrors) // note: this can also take a previous->next mapping function
+      }
     } else {
       navigate("/listings")
     }
@@ -28,58 +39,56 @@ export default function LoginPage() {
     <>
       <section className="dark:bg-gray-900">
         <div className="flex flex-col items-center justify-center md:px-6 py-8 mx-auto lg:py-0">
-          {/*<a href="#" className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white">*/}
-          {/*  <img className="w-8 h-8 mr-2" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg" alt="logo" />*/}
-          {/*    Flowbite*/}
-          {/*</a>*/}
-          <div
-            className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+          <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
                 Sign in to your account
               </h1>
-              <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              <form className="space-y-4 md:space-y-6" onSubmit={form.onSubmit(onSubmit)}>
                 <div>
-                  <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Your email</label>
-                  <input type="email" placeholder="name@company.com"
-                         {...register("email", { required: true, maxLength: 80 })}
-                         className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  <TextInput
+                    withAsterisk
+                    label="Your email"
+                    placeholder="example@mail.com"
+                    {...form.getInputProps("email")}
                   />
                 </div>
                 <div>
-                  <label htmlFor="password"
-                         className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                  <input type="password" placeholder="••••••••" {...register("password", {
-                    required: true,
-                    minLength: 8
-                  })}
-                         className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  <PasswordInput
+                    withAsterisk
+                    label="Your password"
+                    placeholder="********"
+                    {...form.getInputProps("password")}
                   />
-
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
-                      <input type="checkbox" {...register("rememberMe", {})}
-                             className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="rememberMe" className="text-gray-500 dark:text-gray-300">Remember me</label>
+                      <Checkbox label={"Remember me"} {...form.getInputProps("rememberMe")} />
                     </div>
                   </div>
-                  <a href="#" className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">Forgot
-                    password?</a>
+                  <a
+                    href="#"
+                    className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"
+                  >
+                    Forgot password?
+                  </a>
                 </div>
-                <button type="submit"
-                        className="w-full btn btn-primary text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                <Button type="submit">Mantine Submit</Button>
+                <button
+                  type="submit"
+                  className="w-full btn btn-primary text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                >
                   Sign in
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-                  Don’t have an account yet? <a href="#"
-                                                className="font-medium text-primary-600 hover:underline dark:text-primary-500">
-                  Sign up</a>
+                  Don’t have an account yet?{" "}
+                  <a
+                    href="#"
+                    className="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                  >
+                    Sign up
+                  </a>
                 </p>
               </form>
             </div>
@@ -87,5 +96,5 @@ export default function LoginPage() {
         </div>
       </section>
     </>
-  );
+  )
 }

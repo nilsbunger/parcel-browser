@@ -1,36 +1,35 @@
 // Slowly build this up with the types that we need for the frontend
-import { z } from "zod";
+import { z } from "zod"
 
 export type Listing = {
-  apn: string;
-  centroid_x: number;
-  centroid_y: number;
-  avail_geom_area: number;
-  potential_FAR: number;
-  metadata: object;
-  mlsid: string;
-  addr: string;
-  ba: string;
-  br: string;
-  founddate: string;
-  seendate: string;
-  neighborhood: string;
-  is_mf: boolean;
-  is_tpa: boolean;
-  [key: string]: string | number | boolean | object;
-};
+  apn: string
+  centroid_x: number
+  centroid_y: number
+  avail_geom_area: number
+  potential_FAR: number
+  metadata: object
+  mlsid: string
+  addr: string
+  ba: string
+  br: string
+  founddate: string
+  seendate: string
+  neighborhood: string
+  is_mf: boolean
+  is_tpa: boolean
+  [key: string]: string | number | boolean | object
+}
 
-export type UnitRentData = { rent_mean: number, rent_75_percentile: number, num_samples: number }
+export type UnitRentData = { rent_mean: number; rent_75_percentile: number; num_samples: number }
 
 // Record of single unit type (eg 3BR,2BA) to UnitRentData (mean, percentiles, etc)
 export type UnitRentRate = Record<string, UnitRentData>
 
-
 export type RentLocationRate = {
-  lat: number;
-  long: number;
-  pid: string;  // parcel ID
-  rents: UnitRentRate;
+  lat: number
+  long: number
+  pid: string // parcel ID
+  rents: UnitRentRate
 }
 
 // **** API schemas and types **** //
@@ -38,7 +37,7 @@ export type RentLocationRate = {
 
 // generic API error response
 export const ApiErrorSchema = z.object({
-  error: z.string()
+  error: z.string(),
 })
 
 export const PropertyListingSchema = z.object({
@@ -82,7 +81,7 @@ export const DevScenarioSchema = z.object({
     stories: z.number(),
     lotspace_required: z.number(),
   }),
-  finances: DevScenarioFinanceSchema
+  finances: DevScenarioFinanceSchema,
 })
 export type DevScenario = z.infer<typeof DevScenarioSchema>
 
@@ -96,25 +95,27 @@ export const RoadGetRespSchema = z.object({
 })
 
 interface EligibilityCheckSchema {
-  name?: string;
-  description?: string;
-  result?: string;
-  notes?: string[];
-  children?: EligibilityCheckSchema[];
+  name?: string
+  description?: string
+  result?: string
+  notes?: string[]
+  children?: EligibilityCheckSchema[]
 }
 
 // Eligibility test result
 export type EligibilityCheck = z.infer<typeof EligibilityCheckSchema>
-export const EligibilityCheckSchema: z.ZodType<EligibilityCheckSchema> = z.lazy( () =>  z.object({
+export const EligibilityCheckSchema: z.ZodType<EligibilityCheckSchema> = z.lazy(() =>
+  z.object({
     name: z.string(),
     description: z.string(),
     result: z.any(),
     notes: z.array(z.string()),
     children: z.array(EligibilityCheckSchema),
-}))
+  })
+)
 
 export type ParcelGetResp = z.infer<typeof ParcelGetRespSchema>
-export const ParcelGetRespSchema = z.object( {
+export const ParcelGetRespSchema = z.object({
   apn: z.string(),
   apn_8: z.string(),
   own_name1: z.string(),
@@ -188,51 +189,57 @@ export const AnalysisGetRespSchema = z.object({
   listing: PropertyListingSchema,
   apn: z.string(),
   dev_scenarios: z.array(DevScenarioSchema),
-  details: z.object({
-    address: z.string(),
-    parcel_size: z.number(),
-    garages: z.number(),
-    carports: z.number(),
-    existing_FAR: z.number(),
-    max_FAR: z.number(),
-    avail_area_by_FAR: z.number(),
-    avail_geom_area: z.number(),
-    existing_living_area: z.number(),
-    can_lot_split: z.boolean(),
-    existing_units_with_rent: z.array(z.array(z.object({
-      br: z.number(),
-      ba: z.number(),
-      sqft: z.number(),
-    }))),
-    re_params: z.object({
-      constr_costs: z.object({
-        soft_cost_rate: z.number(),
-        build_cost_two_story: z.number(),
-        build_cost_single_story: z.number(),
+  details: z
+    .object({
+      address: z.string(),
+      parcel_size: z.number(),
+      garages: z.number(),
+      carports: z.number(),
+      existing_FAR: z.number(),
+      max_FAR: z.number(),
+      avail_area_by_FAR: z.number(),
+      avail_geom_area: z.number(),
+      existing_living_area: z.number(),
+      can_lot_split: z.boolean(),
+      existing_units_with_rent: z.array(
+        z.array(
+          z.object({
+            br: z.number(),
+            ba: z.number(),
+            sqft: z.number(),
+          })
+        )
+      ),
+      re_params: z.object({
+        constr_costs: z.object({
+          soft_cost_rate: z.number(),
+          build_cost_two_story: z.number(),
+          build_cost_single_story: z.number(),
+        }),
+        vacancy_rate: z.number(),
+        prop_tax_rate: z.number(),
+        mgmt_cost_rate: z.number(),
+        repair_cost_rate: z.number(),
+        insurance_cost_rate: z.number(),
+        new_unit_rent_percentile: z.number(),
+        existing_unit_rent_percentile: z.number(),
       }),
-      vacancy_rate: z.number(),
-      prop_tax_rate: z.number(),
-      mgmt_cost_rate: z.number(),
-      repair_cost_rate: z.number(),
-      insurance_cost_rate: z.number(),
-      new_unit_rent_percentile: z.number(),
-      existing_unit_rent_percentile: z.number(),
-    }),
-    messages: z.object({
-      warning: z.array(z.string()),
-      info: z.array(z.string()),
-      note: z.array(z.string()),
-      error: z.array(z.string()),
-    }),
-  }).passthrough(), // 'passthrough' allows extra keys through
+      messages: z.object({
+        warning: z.array(z.string()),
+        info: z.array(z.string()),
+        note: z.array(z.string()),
+        error: z.array(z.string()),
+      }),
+    })
+    .passthrough(), // 'passthrough' allows extra keys through
 })
 export type AnalysisGetResp = z.infer<typeof AnalysisGetRespSchema>
 
 // /api/analysis
 export const AnalysisPostRespSchema = z.object({
-  analysisId: z.number()
+  analysisId: z.number(),
 })
-export type AnalysisPostResp = z.infer<typeof AnalysisPostRespSchema>;
+export type AnalysisPostResp = z.infer<typeof AnalysisPostRespSchema>
 
 export const AnalysisPostReqSchema = z.object({
   // APN id
@@ -249,8 +256,8 @@ export const AddressSearchGetRespSchema = z.union([
   z.object({
     address: z.string(),
     apn: z.string(),
-    analyzed_listing: z.number()
-  })
+    analyzed_listing: z.number(),
+  }),
 ])
 export type AddressSearchGetResp = z.infer<typeof AddressSearchGetRespSchema>
 
@@ -264,9 +271,17 @@ export type User = z.infer<typeof UserSchema>
 export const LoginResponseSchema = z.object({
   success: z.boolean(),
   message: z.string().nullable(),
-  user: UserSchema.nullable()
+  formErrors: z.object({}).nullable().optional(),
+  user: UserSchema.nullable(),
 })
 export type LoginResponse = z.infer<typeof LoginResponseSchema>
+
+export const LoginRequestSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(4).max(24),
+  rememberMe: z.boolean(),
+})
+export type LoginRequest = z.infer<typeof LoginRequestSchema>
 
 export const LogoutResponseSchema = z.object({
   success: z.boolean(),
