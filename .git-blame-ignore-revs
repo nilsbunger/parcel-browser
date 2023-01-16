@@ -1,4 +1,7 @@
 # Git SHAs to ignore in 'blame' and similar tools
 
 # Migrate code style to black
-95c661118e678da99cfb7535f4c44999d53005ec
+666a05834eae7eb6dcc5c13527b628ffe3f879b3
+
+# Apply prettier to frontend
+07281bba7b63a8490f471f04a37ad02675835cf9
