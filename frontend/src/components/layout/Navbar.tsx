@@ -1,41 +1,41 @@
-import * as React from 'react';
-import { Disclosure, Menu, Transition } from '@headlessui/react';
-import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
-import { Fragment } from 'react';
-import { IoPersonCircleOutline } from 'react-icons/io5';
-import { Link, NavLink } from 'react-router-dom';
-import Home3Logo from './Home3Logo';
-import { useAuth } from "../../hooks/Auth";
+import * as React from "react"
+import { Disclosure, Menu, Transition } from "@headlessui/react"
+import { BellIcon, MenuIcon, XIcon } from "@heroicons/react/outline"
+import { Fragment } from "react"
+import { IoPersonCircleOutline } from "react-icons/io5"
+import { Link, NavLink } from "react-router-dom"
+import Home3Logo from "./Home3Logo"
+import { useAuth } from "../../hooks/Auth"
 
 const user = {
-  name: 'Tom Cook',
-  email: 'tom@example.com',
+  name: "Tom Cook",
+  email: "tom@example.com",
   imageUrl:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-};
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+}
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ")
 }
 
 export default function Navbar(_props) {
   const { user, logIn, logOut } = useAuth()
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user
   const navigation = [
-    { name: 'Map', href: '/map', current: false },
-    { name: 'Listings', href: '/listings', current: false },
-    { name: 'Search', href: '/search', current: false },
-    { name: 'Rental Rates', href: '/rental-rates', current: false }
+    { name: "Map", href: "/map", current: false },
+    { name: "Listings", href: "/listings", current: false },
+    { name: "Search", href: "/search", current: false },
+    { name: "Rental Rates", href: "/rental-rates", current: false },
     // { name: 'Debug', href: routes.debug(), current: false },
     // { name: 'Team', href: '#', current: false },
     // { name: 'Projects', href: '#', current: false },
     // { name: 'Calendar', href: '#', current: false },
     // { name: 'Reports', href: '#', current: false },
-  ];
+  ]
   const userNavigation = [
-    { name: 'Profile', href: '#' },
+    { name: "Profile", href: "#" },
     // { name: 'Settings', href: '#' },
-    { name: 'Sign out', href: '/logout' },
-  ];
+    { name: "Sign out", href: "/logout" },
+  ]
 
   return (
     <>
@@ -59,8 +59,8 @@ export default function Navbar(_props) {
                             key={item.name}
                             to={item.href}
                             className={({ isActive }) =>
-                              (isActive ? 'bg-gray-100' : 'hover:bg-gray-300') +
-                              ' px-3 py-2 rounded-md text-sm font-medium'
+                              (isActive ? "bg-gray-100" : "hover:bg-gray-300") +
+                              " px-3 py-2 rounded-md text-sm font-medium"
                             }
                           >
                             {item.name}
@@ -84,10 +84,7 @@ export default function Navbar(_props) {
                       {!isAuthenticated && <span>No auth</span>}
                       {isAuthenticated && (
                         // this uses https://headlessui.dev/react/menu Menu
-                        <Menu
-                          as="div"
-                          className="ml-3 flex items-center flex-col justify-items-center"
-                        >
+                        <Menu as="div" className="ml-3 flex items-center flex-col justify-items-center">
                           <Menu.Button className="flex-none">
                             <span className="sr-only">Open user menu</span>
                             <IoPersonCircleOutline size="28px" />
@@ -108,8 +105,8 @@ export default function Navbar(_props) {
                                     <Link
                                       to={item.href}
                                       className={classNames(
-                                        active ? 'bg-gray-100' : '',
-                                        'block px-4 py-2 text-sm text-gray-700'
+                                        active ? "bg-gray-100" : "",
+                                        "block px-4 py-2 text-sm text-gray-700"
                                       )}
                                     >
                                       {item.name}
@@ -131,10 +128,7 @@ export default function Navbar(_props) {
                       {open ? (
                         <XIcon className="block h-6 w-6" aria-hidden="true" />
                       ) : (
-                        <MenuIcon
-                          className="block h-6 w-6"
-                          aria-hidden="true"
-                        />
+                        <MenuIcon className="block h-6 w-6" aria-hidden="true" />
                       )}
                     </Disclosure.Button>
                   </div>
@@ -152,11 +146,11 @@ export default function Navbar(_props) {
                       href={item.href}
                       className={classNames(
                         item.current
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                        'block px-3 py-2 rounded-md text-base font-medium'
+                          ? "bg-gray-900 text-white"
+                          : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                        "block px-3 py-2 rounded-md text-base font-medium"
                       )}
-                      aria-current={item.current ? 'page' : undefined}
+                      aria-current={item.current ? "page" : undefined}
                     >
                       {item.name}
                     </Disclosure.Button>
@@ -167,16 +161,10 @@ export default function Navbar(_props) {
                     // user name and profile pic
                     <div className="flex items-center px-5">
                       <div className="flex-shrink-0">
-                        <img
-                          className="h-10 w-10 rounded-full"
-                          src={user.imageUrl}
-                          alt=""
-                        />
+                        <img className="h-10 w-10 rounded-full" src={user.imageUrl} alt="" />
                       </div>
                       <div className="ml-3">
-                        <div className="text-base font-medium leading-none text-white">
-                          {user.name}
-                        </div>
+                        <div className="text-base font-medium leading-none text-white">{user.name}</div>
                         <div className="text-sm font-medium leading-none text-gray-400">
                           {user.email}
                         </div>
@@ -213,5 +201,5 @@ export default function Navbar(_props) {
         </Disclosure>
       </div>
     </>
-  );
+  )
 }

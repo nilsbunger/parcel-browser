@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Urbanist:400,600,700,800|Syne:400,700');
+@import url("https://fonts.googleapis.com/css?family=Urbanist:400,600,700,800|Syne:400,700");
 
 @tailwind base;
 @tailwind components;
@@ -46,7 +46,7 @@
 }
 @layer base {
   button {
-    color: theme('colors.gray.500');
+    color: theme("colors.gray.500");
   }
   h1 {
     @apply text-3xl;

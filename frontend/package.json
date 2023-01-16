@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "parcel serve src/index.html src/map.ts src/parcel-detail.ts",
     "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
+    "prettify": "prettier --write .",
     "___old___build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
   },
   "devDependencies": {

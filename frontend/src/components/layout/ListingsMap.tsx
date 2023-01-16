@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { FeatureGroup, LayersControl, MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import { Listing } from '../../types';
-import { ErrorBoundary } from 'react-error-boundary'
+import * as React from "react"
+import { FeatureGroup, LayersControl, MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
+import { Link } from "react-router-dom"
+import { Listing } from "../../types"
+import { ErrorBoundary } from "react-error-boundary"
 
-type Props = { listings: Listing[] };
+type Props = { listings: Listing[] }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28);
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28)
 
 function ListingsMap({ listings }: Props) {
   const center = [32.7157, -117.1611]
@@ -16,11 +16,12 @@ function ListingsMap({ listings }: Props) {
         center={center}
         zoom={13}
         scrollWheelZoom={true}
-        className={'!h-[80vh] !w-5/12'}
-        whenCreated={map => setInterval(() => {
-          map.invalidateSize()
-        }, 100)}
-
+        className={"!h-[80vh] !w-5/12"}
+        whenCreated={(map) =>
+          setInterval(() => {
+            map.invalidateSize()
+          }, 100)
+        }
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -31,7 +32,7 @@ function ListingsMap({ listings }: Props) {
           <LayersControl.Overlay name="Transit Priority Areas">
             <Marker position={center}>
               <Popup>
-                A pretty CSS3 popup. <br/> Easily customizable.
+                A pretty CSS3 popup. <br /> Easily customizable.
               </Popup>
             </Marker>
             {/*<TileLayer*/}
@@ -41,18 +42,21 @@ function ListingsMap({ listings }: Props) {
           <LayersControl.Overlay checked name="Layer group with circles">
             <Marker position={[5, 5]}>
               <Popup>
-                A pretty CSS3 popup. <br/> Easily customizable.
+                A pretty CSS3 popup. <br /> Easily customizable.
               </Popup>
             </Marker>
           </LayersControl.Overlay>
           <LayersControl.Overlay name="Feature group">
-            <FeatureGroup pathOptions={{ color: 'purple' }}>
+            <FeatureGroup pathOptions={{ color: "purple" }}>
               <Popup>Popup in FeatureGroup</Popup>
             </FeatureGroup>
           </LayersControl.Overlay>
         </LayersControl>
         {listings.map((listing) => (
-          <Marker key={"" + listing.mlsid + listing.founddate} position={[listing.centroid_y, listing.centroid_x]}>
+          <Marker
+            key={"" + listing.mlsid + listing.founddate}
+            position={[listing.centroid_y, listing.centroid_x]}
+          >
             <Popup>
               <p>
                 <Link
@@ -62,11 +66,16 @@ function ListingsMap({ listings }: Props) {
                   className="underline text-darkblue"
                 >
                   {listing.address}
-                </Link><br/>
-                Price: ${listing.price}<br/>
-                Zone: {listing.zone}<br/>
-                Parcel size: {asSqFt(listing.parcel_size)}<br/>
-                Avail building area: {asSqFt(listing.avail_geom_area)}sqft<br/>
+                </Link>
+                <br />
+                Price: ${listing.price}
+                <br />
+                Zone: {listing.zone}
+                <br />
+                Parcel size: {asSqFt(listing.parcel_size)}
+                <br />
+                Avail building area: {asSqFt(listing.avail_geom_area)}sqft
+                <br />
                 FAR potential: {listing.potential_FAR.toPrecision(2)}
                 {/* Add any other information we want */}
               </p>
@@ -75,7 +84,7 @@ function ListingsMap({ listings }: Props) {
         ))}
       </MapContainer>
     </ErrorBoundary>
-  );
+  )
 }
 
-export default ListingsMap;
+export default ListingsMap

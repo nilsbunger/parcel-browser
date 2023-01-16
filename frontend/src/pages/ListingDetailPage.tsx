@@ -1,93 +1,104 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import useSWR, { useSWRConfig } from 'swr';
-import { api_post, fetcher } from '../utils/fetcher';
-import { ListingHistory } from "../components/ListingHistory";
-import { DevScenarios } from "../components/DevScenarios";
-import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types";
-import { AxiosError } from "axios";
-import { IconX } from "@tabler/icons";
-import { hideNotification, showNotification } from "@mantine/notifications";
+import React from "react"
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
+import useSWR, { useSWRConfig } from "swr"
+import { api_post, fetcher } from "../utils/fetcher"
+import { ListingHistory } from "../components/ListingHistory"
+import { DevScenarios } from "../components/DevScenarios"
+import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types"
+import { AxiosError } from "axios"
+import { IconX } from "@tabler/icons"
+import { hideNotification, showNotification } from "@mantine/notifications"
 
-
-async function doAnalysis(analysisId: number): Promise<{ data: AnalysisPostResp, error: boolean, message: string }> {
+async function doAnalysis(
+  analysisId: number
+): Promise<{ data: AnalysisPostResp; error: boolean; message: string }> {
   // const fetchResponse = AnalysisPostRespSchema.parse(
   //   await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
   // )
   const { data, error, message } = await api_post<AnalysisPostResp>(`/api/analysis/`, {
     RespSchema: AnalysisPostRespSchema,
-    params: { al_id: analysisId }
+    params: { al_id: analysisId },
   })
   console.log("Got API analysis response in Listing Detail page", error, message, data)
   return { data, error, message }
 }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString();
-const asFt = (m) => Math.round(m * 3.28).toLocaleString();
-const oneDay = 1000 * 60 * 60 * 24; // in ms (time units)
+const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString()
+const asFt = (m) => Math.round(m * 3.28).toLocaleString()
+const oneDay = 1000 * 60 * 60 * 24 // in ms (time units)
 
 function daysAtPrice(date: string | Date) {
-  const foundtime = (new Date(date)).getTime()
+  const foundtime = new Date(date).getTime()
   const nowtime = Date.now()
-  return Math.round((nowtime - foundtime) / oneDay);
+  return Math.round((nowtime - foundtime) / oneDay)
 }
 
 function showAssumptions(assumptions: object) {
   console.log(assumptions)
-  return (<ul className="pl-5">{Object.keys(assumptions).map((assumption, idx) => {
-    const as: unknown = assumptions[assumption]
-    if (typeof as === 'object') {
-      return <li key={idx}>{assumption}: {showAssumptions(as)}</li>
-    } else {
-      return <li key={idx}>{assumption}:{assumptions[assumption]}</li>
-    }
-  })
-  }</ul>)
+  return (
+    <ul className="pl-5">
+      {Object.keys(assumptions).map((assumption, idx) => {
+        const as: unknown = assumptions[assumption]
+        if (typeof as === "object") {
+          return (
+            <li key={idx}>
+              {assumption}: {showAssumptions(as)}
+            </li>
+          )
+        } else {
+          return (
+            <li key={idx}>
+              {assumption}:{assumptions[assumption]}
+            </li>
+          )
+        }
+      })}
+    </ul>
+  )
 }
 
-
 export default function ListingDetailPage() {
-  const params = useParams<{ analysisId: string }>();
+  const params = useParams<{ analysisId: string }>()
   // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
   const { data, error } = useSWR<AnalysisGetResp, AxiosError>(
     `/api/analysis/${params.analysisId}`,
     fetcher
-  );
+  )
   const { mutate } = useSWRConfig()
   useEffect(() => {
     if (data) {
       document.title = data.details.address
     }
-  }, [data]);
-  if (error) return <div>ListingDetailPage failed its AJAX call. {error.message}</div>;
-  if (!data) return <div>loading...</div>;
+  }, [data])
+  if (error) return <div>ListingDetailPage failed its AJAX call. {error.message}</div>
+  if (!data) return <div>loading...</div>
 
   async function onRedoAnalysis(e) {
     showNotification({
-      id: 'analysis-loading',
+      id: "analysis-loading",
       disallowClose: true,
       title: "Re-running analysis",
       message: "HI",
-      color: 'blue',
-      icon: <IconX/>,
+      color: "blue",
+      icon: <IconX />,
       loading: true,
-    });
-    const { data, error , message } = await doAnalysis(Number(params.analysisId));
-    hideNotification('analysis-loading')
+    })
+    const { data, error, message } = await doAnalysis(Number(params.analysisId))
+    hideNotification("analysis-loading")
     if (!error) {
       console.log("GOT DATA on redo analysis", data)
       return mutate(`/api/analysis/${data.analysisId}`)
     } else {
       console.log("Failed to redo analysis")
-      showNotification({title: "Failed to re-run analysis", message: message, color: 'red'})
+      showNotification({ title: "Failed to re-run analysis", message: message, color: "red" })
     }
 
     // navigate('/analysis/' + res.analysisId, { replace: true });
   }
 
-  console.log(data);
+  console.log(data)
   return (
     <>
       {data.details.messages &&
@@ -114,11 +125,13 @@ export default function ListingDetailPage() {
       {/*Show building and land plots */}
       <div className="flex flex-row w-full justify-between items-top mt-5">
         <div>
-          <h1 className={'hidden print:block'}><a className='link text-darkblue'
-                                                  href={window.location.href}>
-            {data.details.address}</a></h1>
-          <h1 className={'print:hidden'}>
-            {loading && <progress className="progress w-36"/>}
+          <h1 className={"hidden print:block"}>
+            <a className="link text-darkblue" href={window.location.href}>
+              {data.details.address}
+            </a>
+          </h1>
+          <h1 className={"print:hidden"}>
+            {loading && <progress className="progress w-36" />}
             {!loading && data.details.address}
           </h1>
           {data.is_tpa && <div className="badge badge-primary">TPA</div>}
@@ -129,19 +142,19 @@ export default function ListingDetailPage() {
           {/*<p>Sq Ft open area: {asSqFt(data.avail_geom_area)}</p>*/}
           <p>Zone: {data.zone}</p>
           <p>Walk score: XX</p>
-          <div className='divider'></div>
+          <div className="divider"></div>
           <h2>Units and Rents</h2>
           <p>Existing unit count: {data.details.existing_units_with_rent?.length}</p>
           <p>Assumed units and rents:</p>
           <ul>
             {data.details.existing_units_with_rent?.map((unit, idx) => (
-                <li key={idx}>{unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}</li>
-              )
-            )}
+              <li key={idx}>
+                {unit[0].br} BR, {unit[0].ba} BA: ${unit[1].toLocaleString()}
+              </li>
+            ))}
             <li></li>
           </ul>
           <p>({data.details.re_params?.existing_unit_rent_percentile}th percentile rents)</p>
-
         </div>
         <div>
           <h1>${data.listing.price ? data.listing.price.toLocaleString() : "-- off-market"}</h1>
@@ -151,12 +164,9 @@ export default function ListingDetailPage() {
           <p>{data.listing.ba} BA</p>
           <p>{data.details.garages + data.details.carports} garage</p>
         </div>
-        <div className={'justify-end'}>
-          <img src={data.listing.thumbnail} className="w-72"/>
-          <button
-            className="btn btn-secondary btn-xs mt-3"
-            onClick={onRedoAnalysis}
-          >
+        <div className={"justify-end"}>
+          <img src={data.listing.thumbnail} className="w-72" />
+          <button className="btn btn-secondary btn-xs mt-3" onClick={onRedoAnalysis}>
             Re-analyze
           </button>
         </div>
@@ -164,20 +174,20 @@ export default function ListingDetailPage() {
       <div className="flex flex-row mt-6">
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Plot analysis</h2>
-          <img src={`https://r2-image-worker.upzone.workers.dev/buildings-${data.apn}-${data.salt}`}/>
+          <img src={`https://r2-image-worker.upzone.workers.dev/buildings-${data.apn}-${data.salt}`} />
         </div>
         <div className="flex-auto">
           <h2 className="font-semibold text-center">Usable land analysis</h2>
-          <img src={`https://r2-image-worker.upzone.workers.dev/cant_build-${data.apn}-${data.salt}`}/>
+          <img src={`https://r2-image-worker.upzone.workers.dev/cant_build-${data.apn}-${data.salt}`} />
           <div
             tabIndex={0}
             className="collapse collapse-arrow w-60 border border-base-300 bg-base-100 min-h-0 object-right float-right"
           >
-            <input type="checkbox" style={{ minHeight: 0 }}/>
-            <div className={'collapse-title min-h-0 p-2 after:!top-3 '}>
+            <input type="checkbox" style={{ minHeight: 0 }} />
+            <div className={"collapse-title min-h-0 p-2 after:!top-3 "}>
               <p>Legend</p>
             </div>
-            <div className={'collapse-content'}>
+            <div className={"collapse-content"}>
               <p>Red: Too steep</p>
               <p>Cyan: Buffered buildings</p>
               <p>Orange: Setbacks</p>
@@ -201,7 +211,7 @@ export default function ListingDetailPage() {
         {false && data.details.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
-            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`}/>
+            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`} />
           </div>
         )}
       </div>
@@ -214,9 +224,7 @@ export default function ListingDetailPage() {
             <p>Current FAR: {data.details.existing_FAR.toFixed(2)}</p>
             <p>Max FAR: {data.details.max_FAR.toFixed(2)}</p>
             <p>Parcel size: {asSqFt(data.details.parcel_size)}</p>
-            <p>
-              Buildable sq ft based on FAR: {asSqFt(data.details.avail_area_by_FAR)}
-            </p>
+            <p>Buildable sq ft based on FAR: {asSqFt(data.details.avail_area_by_FAR)}</p>
             {/*<div className="card-actions justify-end">*/}
             {/*  <button className="btn btn-primary">Buy Now</button>*/}
             {/*</div>*/}
@@ -231,7 +239,7 @@ export default function ListingDetailPage() {
         <div className="card bg-base-100 shadow-md">
           <div className="card-body">
             <h2 className="card-title">Listing history</h2>
-            <ListingHistory mlsid={data.listing.mlsid}/>
+            <ListingHistory mlsid={data.listing.mlsid} />
           </div>
         </div>
       </div>
@@ -239,22 +247,23 @@ export default function ListingDetailPage() {
       <DevScenarios scenarios={data.dev_scenarios}></DevScenarios>
       <div className="divider"></div>
 
-
       <h1>Assumptions</h1>
       {data.details.re_params && showAssumptions(data.details.re_params)}
 
-      <h1 className='mt-5'>Details</h1>
-      <p> These are present primarily for debugging. Anything useful should be sent up above this section.</p>
+      <h1 className="mt-5">Details</h1>
+      <p>
+        {" "}
+        These are present primarily for debugging. Anything useful should be sent up above this section.
+      </p>
       <pre>
-      {Object.keys(data).map((key) => {
-        return (
-          <p key={key}>
-            {key}:{' '}
-            {JSON.stringify(data[key], null, 2).replace(/^"|"$/g, '')}
-          </p>
-        );
-      })}
+        {Object.keys(data).map((key) => {
+          return (
+            <p key={key}>
+              {key}: {JSON.stringify(data[key], null, 2).replace(/^"|"$/g, "")}
+            </p>
+          )
+        })}
       </pre>
     </>
-  );
+  )
 }

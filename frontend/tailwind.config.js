@@ -1,13 +1,13 @@
 module.exports = {
-  darkMode: 'unusedDarkModeClass',  // disable dark mode for now. Remove to fallback to listening to prefer-media-scheme
+  darkMode: "unusedDarkModeClass", // disable dark mode for now. Remove to fallback to listening to prefer-media-scheme
   content: ["./src/**/*.{html,js,ts,tsx}"],
   theme: {
     extend: {
-      opacity: ['disabled'],
+      opacity: ["disabled"],
     },
     fontFamily: {
-      sans: ['Syne', 'sans-serif'],
-      heading: ['Urbanist'],
+      sans: ["Syne", "sans-serif"],
+      heading: ["Urbanist"],
     },
     container: {
       center: true,
@@ -18,21 +18,21 @@ module.exports = {
       transparent: colors.transparent,
       black: colors.green[600],
       white: colors.white,
-      whitish: '#f9f9f9',
+      whitish: "#f9f9f9",
       gray: colors.slate, // palette from 100 to 900
-      darkpurple: '#4a00a0', // eg on mint with card button
-      darkblue: '#000094', // eg on mint with matic button
-      primary: { 500: '#7B13F5' }, // purple, o button
-      primarylight: '#b558ff', // hover state on primary
-      pinkpop: '#FF33CE', // eg highlighted text
-      pinkfade: '#F8F3FF', // eg on footer
+      darkpurple: "#4a00a0", // eg on mint with card button
+      darkblue: "#000094", // eg on mint with matic button
+      primary: { 500: "#7B13F5" }, // purple, o button
+      primarylight: "#b558ff", // hover state on primary
+      pinkpop: "#FF33CE", // eg highlighted text
+      pinkfade: "#F8F3FF", // eg on footer
       // midgray: '#979797', // eg on "Forum: Whatsapp"
       // darkgray: '#202020',
       // blackish: '#101010',
-      info: { 200: '#abe2fb', 500: '#00a0f2' },
-      success: { 200: '#ddfcbd', 500: '#36ca00' },
-      warning: { 200: '#fff8c3', 500: '#f9a621' }, // yellowish background (light), foreground (dark)
-      error: { 200: '#ffbaca', 500: '#fc004f' },
+      info: { 200: "#abe2fb", 500: "#00a0f2" },
+      success: { 200: "#ddfcbd", 500: "#36ca00" },
+      warning: { 200: "#fff8c3", 500: "#f9a621" }, // yellowish background (light), foreground (dark)
+      error: { 200: "#ffbaca", 500: "#fc004f" },
 
       // default colors that we don't use:
 
@@ -61,12 +61,8 @@ module.exports = {
     }),
   },
   variants: {},
-  plugins: [
-      require("daisyui"),
-  ],
+  plugins: [require("daisyui")],
   daisyui: {
-        themes: ["light"],
-
-  }
-};
-
+    themes: ["light"],
+  },
+}

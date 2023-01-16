@@ -1,5 +1,5 @@
-import * as React from 'react';
-import Home3Logo from "./Home3Logo";
+import * as React from "react"
+import Home3Logo from "./Home3Logo"
 
 export default function Splashscreen({ msg }) {
   return (
@@ -9,5 +9,5 @@ export default function Splashscreen({ msg }) {
         <p className="text-sm py-3">{msg}</p>
       </div>
     </div>
-  );
+  )
 }

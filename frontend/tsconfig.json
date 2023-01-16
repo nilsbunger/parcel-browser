@@ -1,5 +1,5 @@
 {
-  "strict":true,
+  "strict": true,
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
@@ -10,4 +10,3 @@
     "allowSyntheticDefaultImports": true
   }
 }
-
