@@ -33,27 +33,38 @@ class Command(BaseCommand):
         if try_exception:
             raise Exception("This is a test exception in scrape_hcd.py")
         changeSummary = run_scrape_hcd(dry_run)
+        # change line endings to crlf to comply with email standards -- some email clients don't show
+        # linebreaks otherwise.
         changeSummaryCrLf = "\r\n".join(changeSummary.splitlines(False))
         email_subs_raw = env("HCD_EMAIL_SUBS")
         email_subs = email_subs_raw.split(",")
 
         send_emails = not no_emails
+        mail_exc = ""
         if not dry_run and send_emails:
-            email = EmailMessage(
-                subject="HCD daily update summary",
-                body=changeSummaryCrLf,
-                from_email="marcio@home3.co",
-                to=["marcio@home3.co"],
-                cc=[],
-                bcc=email_subs,
-            )
-            email.send()
+            try:
+                email = EmailMessage(
+                    subject="HCD daily update summary",
+                    body=changeSummaryCrLf,
+                    from_email="marcio@home3.co",
+                    to=["marcio@home3.co"],
+                    cc=[],
+                    bcc=email_subs,
+                )
+                email.send()
+            except Exception as e:
+                print("Exception sending email: " + str(e))
+                mail_exc = str(e)
+                # change line breaks on exception
+                mail_exc = "\r\n\r\n*EXCEPTION DURING SEND*:\r\n" + "\r\n".join(mail_exc.splitlines(False))
         else:
             print("SKIPPING EMAILS: NOT SENDING TO LIST:" + ",".join(email_subs))
         if send_emails:
             email = EmailMessage(
-                subject="HCD daily update summary (admin)" + (" (dry run)" if dry_run else ""),
-                body="Sent to " + ",".join(email_subs) + "\r\n\r\n" + changeSummaryCrLf,
+                subject="HCD daily update summary (admin)"
+                + (" (dry run)" if dry_run else "")
+                + (" (FAILED)" if mail_exc else ""),
+                body="Sent to " + ",".join(email_subs) + "\r\n\r\n" + changeSummaryCrLf + mail_exc,
                 from_email="marcio@home3.co",
                 to=["marcio@home3.co"] if dry_run else ["founders@home3.co"],
                 cc=[],
