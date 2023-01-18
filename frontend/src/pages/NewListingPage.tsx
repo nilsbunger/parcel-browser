@@ -15,7 +15,7 @@ export default function NewListingPage() {
   // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
   const { data: addrSearchData, error } = useSWR<AddressSearchGetResp, string>(
-    `/api/address-search/${address}`,
+    address.length >= 3 ? `/api/address-search/${address}` : null,
     fetcher
   )
   const handleAddressSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
