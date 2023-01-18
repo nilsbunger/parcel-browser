@@ -233,7 +233,8 @@ export const AnalysisGetRespSchema = z.object({
     })
     .passthrough(), // 'passthrough' allows extra keys through
 })
-export type AnalysisGetResp = z.infer<typeof AnalysisGetRespSchema>
+export type _analysis_get_resp = z.infer<typeof AnalysisGetRespSchema>
+export type AnalysisGetResp = _analysis_get_resp & Record<string, any>
 
 // /api/analysis
 export const AnalysisPostRespSchema = z.object({

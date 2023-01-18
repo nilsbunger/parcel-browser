@@ -340,7 +340,7 @@ export default function CoMapPage({ onTilesLoad = null }) {
   const LATITUDE_RANGE = [32.5, 33.25] // south, north constraint
 
   const zoneColorFn = (zone, extra) => {
-    console.log("ZONE COLOR on", zone)
+    // console.log("ZONE COLOR on", zone)
     if (["CVPD", "CCPD", "CUPD"].includes(zone.properties.zone_name.slice(0, 4)))
       return visibleLayers["pd-vis-layer"] ? LAYER_COLORS["pd-vis-layer"] : [0, 0, 0, 0]
     if (["CC", "CR", "CO", "CP", "CN", "CV"].includes(zone.properties.zone_name.slice(0, 2)))

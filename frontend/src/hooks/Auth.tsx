@@ -27,7 +27,7 @@ function useAuthProvider() {
   })
   const user = data === undefined ? null : data
   const isLoading = isValidating
-  console.log("IsLoading=", isLoading)
+  // console.log("IsLoading=", isLoading)
 
   if (error) {
     console.log("useAuthProvider error on call to userflows/user", error)

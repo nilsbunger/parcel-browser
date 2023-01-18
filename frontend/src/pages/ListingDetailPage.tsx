@@ -2,7 +2,7 @@ import React from "react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import useSWR, { useSWRConfig } from "swr"
-import { api_post, fetcher } from "../utils/fetcher"
+import { apiRequest, fetcher } from "../utils/fetcher"
 import { ListingHistory } from "../components/ListingHistory"
 import { DevScenarios } from "../components/DevScenarios"
 import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types"
@@ -12,20 +12,22 @@ import { hideNotification, showNotification } from "@mantine/notifications"
 
 async function doAnalysis(
   analysisId: number
-): Promise<{ data: AnalysisPostResp; error: boolean; message: string }> {
+): Promise<{ data: AnalysisPostResp; error: boolean; message: string | null }> {
   // const fetchResponse = AnalysisPostRespSchema.parse(
   //   await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
   // )
-  const { data, error, message } = await api_post<AnalysisPostResp>(`/api/analysis/`, {
-    RespSchema: AnalysisPostRespSchema,
+  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/analysis/`, {
+    respSchema: AnalysisPostRespSchema,
     params: { al_id: analysisId },
+    isPost: false,
   })
-  console.log("Got API analysis response in Listing Detail page", error, message, data)
+  console.log("Got API analysis response in Listing Detail page", errors, message, data)
+  const error: boolean = !!errors
   return { data, error, message }
 }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28).toLocaleString()
-const asFt = (m) => Math.round(m * 3.28).toLocaleString()
+const asSqFt = (m: number) => Math.round(m * 3.28 * 3.28).toLocaleString()
+const asFt = (m: number) => Math.round(m * 3.28).toLocaleString()
 const oneDay = 1000 * 60 * 60 * 24 // in ms (time units)
 
 function daysAtPrice(date: string | Date) {
@@ -34,7 +36,7 @@ function daysAtPrice(date: string | Date) {
   return Math.round((nowtime - foundtime) / oneDay)
 }
 
-function showAssumptions(assumptions: object) {
+function showAssumptions(assumptions: Record<string, any>) {
   console.log(assumptions)
   return (
     <ul className="pl-5">
@@ -43,7 +45,7 @@ function showAssumptions(assumptions: object) {
         if (typeof as === "object") {
           return (
             <li key={idx}>
-              {assumption}: {showAssumptions(as)}
+              {assumption}: {showAssumptions(as!)}
             </li>
           )
         } else {
@@ -75,7 +77,7 @@ export default function ListingDetailPage() {
   if (error) return <div>ListingDetailPage failed its AJAX call. {error.message}</div>
   if (!data) return <div>loading...</div>
 
-  async function onRedoAnalysis(e) {
+  async function onRedoAnalysis(e: React.MouseEvent<HTMLButtonElement>) {
     showNotification({
       id: "analysis-loading",
       disallowClose: true,
@@ -159,7 +161,7 @@ export default function ListingDetailPage() {
         <div>
           <h1>${data.listing.price ? data.listing.price.toLocaleString() : "-- off-market"}</h1>
           <h2>{daysAtPrice(data.listing.founddate)} days at this price</h2>
-          <p>{asSqFt(data.details.existing_living_area.toLocaleString())} sq ft</p>
+          <p>{asSqFt(parseFloat(data.details.existing_living_area.toLocaleString()))} sq ft</p>
           <p>{data.listing.br} BR</p>
           <p>{data.listing.ba} BA</p>
           <p>{data.details.garages + data.details.carports} garage</p>
@@ -208,10 +210,10 @@ export default function ListingDetailPage() {
         ></iframe>
 
         {/* Lot split overview */}
-        {false && data.details.can_lot_split && (
+        {false && data?.details.can_lot_split && (
           <div>
             <h2 className="font-semibold text-center">Lot Split:</h2>
-            <img src={`/temp_computed_imgs/lot-splits/${data.apn}.jpg`} />
+            <img src={`/temp_computed_imgs/lot-splits/${data?.apn}.jpg`} />
           </div>
         )}
       </div>

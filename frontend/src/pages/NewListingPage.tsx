@@ -2,9 +2,9 @@ import * as React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import useSWR, { useSWRConfig } from "swr"
-import { fetcher, api_post } from "../utils/fetcher"
+import { apiRequest, fetcher } from "../utils/fetcher"
 import { ErrorBoundary } from "react-error-boundary"
-import { AddressSearchGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../types"
+import { AddressSearchGetResp, AnalysisPostRespSchema } from "../types"
 
 export default function NewListingPage() {
   const [address, setAddress] = useState("")
@@ -24,13 +24,18 @@ export default function NewListingPage() {
 
   const handleAnalyzeSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    // @ts-ignore  -- fix this later
     if ("apn" in addrSearchData) {
       setLoading(true)
-      const { data, success, message } = await api_post<AnalysisPostResp>(`/api/analysis/`, {
-        RespSchema: AnalysisPostRespSchema,
-        params: { apn: addrSearchData.apn },
-      })
-      if (success) {
+      const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(
+        `/api/analysis/`,
+        {
+          respSchema: AnalysisPostRespSchema,
+          isPost: false,
+          params: { apn: addrSearchData.apn },
+        }
+      )
+      if (!errors) {
         await mutate(`/api/address-search/${address}`)
       }
       setLoading(false)
