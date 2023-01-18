@@ -1,10 +1,10 @@
-from zoneinfo import ZoneInfo
-
 import requests
 import json
 import datetime
+import os
 from pyairtable import Table
 from datetime import timedelta
+from datetime import timezone
 from mygeo.settings import env
 
 # Scrape HCD data from HCD website, and dump it into this AirTable:
@@ -334,12 +334,10 @@ def run_scrape_hcd(dry_run=False):
 
     # print(changeSummary)
 
-    runTime = (
-        datetime.datetime.now(ZoneInfo("America/Los_Angeles")).strftime("%m/%d/%y %-I:%M %p") + " Pacific Time"
-    )
+    runTime = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
     if not dry_run:
         logTable.create({"runTime": runTime, "differences": changeSummary})
     else:
-        print("Dry run: logTable.create(" + str({"runTime": runTime, "differences": changeSummary}) + ")")
+        print("Dry run: logTable.create(" + runTime + ", " + changeSummary + ")")
 
     return changeSummary
