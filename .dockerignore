@@ -13,6 +13,7 @@ venv/
 frontend/dist/
 frontend/dist-dev/
 frontend/static/
+frontend/parcel-bundle-reports/
 notebooks/
 deploy/
 **/*.log
