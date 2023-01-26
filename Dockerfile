@@ -9,9 +9,11 @@ FROM ubuntu:20.04
 ### INSTALL SYSTEM PACKAGES ##############################################################
 
 # Deadsnakes repo needed for python 3.9
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
     software-properties-common \
-    curl
+    curl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
+
 RUN add-apt-repository ppa:deadsnakes/ppa
 
 # Get Node 16.x - EOL Sept 2023
@@ -29,7 +31,9 @@ RUN apt-get update && apt-get install -y \
     python3.9-distutils \
     python3.9-venv \
     python3.9-dev \
-    openssh-client 
+    openssh-client \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
+
     # postgresql-client=12+214ubuntu0.1
 
 RUN chsh -s /usr/bin/bash
@@ -62,12 +66,20 @@ COPY crontab crontab
 ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
 
-# Do package installations first, so that they're cached in most cases
+# Do python package installations first, so that they're cached in most cases
 COPY pyproject.toml .
 COPY poetry.lock .
 RUN poetry install --only main --no-root --no-interaction --no-ansi
 
+# Do frontend package installations before copying files too, so they're cached.
+RUN mkdir frontend
+WORKDIR /app/frontend
+COPY frontend/package.json .
+COPY frontend/yarn.lock .
+RUN yarn install && yarn cache clean
+
 # Copy source code - put as late as possible in file, since it's fast-changing.
+WORKDIR /app
 COPY . .
 RUN mkdir -p dist/static
 RUN poetry run python manage.py collectstatic --noinput
@@ -75,7 +87,6 @@ RUN poetry run python manage.py collectstatic --noinput
 
 ### FRONT-END INSTALL AND BUILD ##########################################################
 WORKDIR /app/frontend
-RUN yarn install && yarn cache clean
 RUN yarn build
 
 WORKDIR /app
