@@ -3,6 +3,8 @@ from urllib.error import HTTPError, URLError
 
 from django.http import Http404, HttpResponse
 from django.template import engines
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView
 
 from mygeo import settings
@@ -19,6 +21,7 @@ from mygeo import settings
 # the frontend/ directory.
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class FrontEndProxyView(TemplateView):
     pass
 
@@ -30,6 +33,7 @@ frontend_proxy_prod_view = FrontEndProxyView.as_view(template_name="index.html")
 # DEVELOPMENT SERVING: Proxy requests to frontend server
 
 
+@ensure_csrf_cookie
 def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     full_path = request.get_full_path()  # includes query string
     upstream_url = upstream + full_path
