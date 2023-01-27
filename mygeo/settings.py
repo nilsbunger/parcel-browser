@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import sys
 
+from django.core.exceptions import ImproperlyConfigured
 import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -201,8 +202,10 @@ WSGI_APPLICATION = "mygeo.wsgi.application"
 
 try:
     GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH")
+    eprint("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH)
     GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH")
-except:
+    eprint("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH)
+except ImproperlyConfigured as e:
     pass
 
 # We get X-Forwarded-Proto from the web hosting proxy (eg fly.io); tell Django
