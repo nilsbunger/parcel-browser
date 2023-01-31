@@ -105,13 +105,13 @@ INSTALLED_APPS = [
     "django_extensions",
     "django.contrib.gis",
     ## For django-two-factor-auth package:
-    "django_otp",
-    "django_otp.plugins.otp_static",
-    "django_otp.plugins.otp_totp",
-    # 'django_otp.plugins.otp_email',  # <- if you want email as a second factor (kinda weird)
-    "two_factor",
-    "two_factor.plugins.phonenumber",  # <- if you want phone number capability.
-    # 'two_factor.plugins.email',  # <- if you want email as a second factor (kinda weird).
+    # "django_otp",
+    # "django_otp.plugins.otp_static",
+    # "django_otp.plugins.otp_totp",
+    # # 'django_otp.plugins.otp_email',  # <- if you want email as a second factor (kinda weird)
+    # "two_factor",
+    # "two_factor.plugins.phonenumber",  # <- if you want phone number capability.
+    # # 'two_factor.plugins.email',  # <- if you want email as a second factor (kinda weird).
     # "two_factor.plugins.yubikey",  # <- for yubikey capability.
     ## END for django-two-factor-auth package
     ## For django-allauth package:
@@ -170,7 +170,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     ## For django-two-factor-auth package: - must be after AuthenticationMiddleware
-    "django_otp.middleware.OTPMiddleware",
+    # "django_otp.middleware.OTPMiddleware",
     ## END for django-two-factor-auth package
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -318,20 +318,20 @@ LOGOUT_REDIRECT_URL = "/"
 # ACCOUNT_MAX_EMAIL_ADDRESSES = 2
 
 # Authentication -- set up django-allauth to use email as username:
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # using email as username
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 # # Authentication -- django-two-factor-auth config
-TWO_FACTOR_PATCH_ADMIN = True
-TWO_FACTOR_REMEMBER_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
-TWO_FACTOR_REMEMBER_COOKIE_SECURE = True
+# TWO_FACTOR_PATCH_ADMIN = True
+# TWO_FACTOR_REMEMBER_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+# TWO_FACTOR_REMEMBER_COOKIE_SECURE = True
 # TWO_FACTOR_REMEMBER_COOKIE_SAMESITE = "Strict"
-TWO_FACTOR_SMS_GATEWAY = (
-    "two_factor.gateways.fake.Fake" if DEV_ENV else "two_factor.gateways.twilio.gateway.Twilio"
-)
-PHONENUMBER_DEFAULT_REGION = "US"
+# TWO_FACTOR_SMS_GATEWAY = (
+#     "two_factor.gateways.fake.Fake" if DEV_ENV else "two_factor.gateways.twilio.gateway.Twilio"
+# )
+# PHONENUMBER_DEFAULT_REGION = "US"
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
@@ -429,6 +429,10 @@ LOGGING = {
             "handlers": ["console"],
             "level": DJANGO_LOG_LEVEL,
             "propagate": False,
+        },
+        "django.utils.autoreload": {"level": "INFO"},
+        "django.db.backends": {
+            "level": "INFO",
         },
         "django.server": {
             "handlers": ["console"],
