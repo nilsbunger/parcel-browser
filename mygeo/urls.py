@@ -31,21 +31,21 @@ def check_if_superuser(user):
 superuser_login_required = user_passes_test(check_if_superuser)
 
 # admin.site.login = superuser_login_required(admin.site.login)
-from two_factor.urls import urlpatterns as tf_urls
+# from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
     path("sentry-debug/", trigger_error, name="sentry-debug"),
     #### ---- Django-rendered routes
     # TODO: make admin require two-factor auth - https://django-two-factor-auth.readthedocs.io/en/1.14.0/class-reference.html
     path("dj/admin/", admin.site.urls),
-    # django-two-factor-auth URLS
-    path("", include(tf_urls), name="two-factor-urls"),
+    # # django-two-factor-auth URLS
+    # path("", include(tf_urls), name="two-factor-urls"),
     # # django-allauth routes
     # path("dj/allauth/accounts/", include("allauth.urls")),
     # # Original django-auth.... not sure what to do with it yet
     path("dj/accounts/", include("django.contrib.auth.urls")),
     path("dj/co/", include("co.urls")),
-    # path("dj/userflows/", include("userflows.urls")),
+    path("dj/userflows/", include("userflows.urls")),
     # Django-ninja API routes, per app
     path("api/co/", co_api.urls),
     path("api/userflows/", userflows_api.urls),
