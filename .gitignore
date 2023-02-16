@@ -12,6 +12,7 @@ logfile
 dist-dev/
 dist/
 node_modules/
+elt/migrations/archive
 
 
 # Byte-compiled / optimized / DLL files

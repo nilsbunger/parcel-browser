@@ -1,2 +1,6 @@
 [installer]
 no-binary = ["shapely"]
+
+[virtualenvs]
+create = false
+in-project = true

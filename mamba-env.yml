@@ -1,0 +1,14 @@
+name: mamba-parsnip
+channels:
+  - conda-forge
+dependencies:
+  - poetry
+  - ca-certificates
+  - openssl
+  - python=3.9.15
+  - certifi
+  - gdal
+  - libpq
+variables:
+  PIP_REQUIRE_VIRTUALENV: ''
+# prefix: /Users/nils/mambaforge/envs/mamba-parsnip

@@ -124,6 +124,7 @@ INSTALLED_APPS = [
     "world",
     "co",
     "userflows",
+    "elt",
 ]
 
 # silk profiler
@@ -225,7 +226,7 @@ dbHost = None
 dbPassword = None
 if LOCAL_DB:
     eprint("**** LOCAL DATABASE ****")
-    (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "geodjango", env("USER"), "")
+    (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "parsnip", "postgres", "password")
 elif BUILD_PHASE:
     eprint("**** NO DB - BUILD PHASE ****")
 else:
@@ -352,7 +353,7 @@ STATIC_URL = "/static/"
 # Where static files are collected to (eg by "python manage.py collectstatic")
 STATIC_ROOT = BASE_DIR / "dist/static/"
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Static files storage.
 if TEST_ENV:
