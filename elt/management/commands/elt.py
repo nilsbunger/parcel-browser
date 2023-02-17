@@ -122,6 +122,8 @@ class Command(BaseCommand):
             oppzone = extract_from_shapefile(geo, gis_data_type)
         elif geo == GeoEnum.scag and gis_data_type == GisDataTypeEnum.tpa:
             tpa = extract_from_shapefile(geo, gis_data_type)
+        elif geo == GeoEnum.orange_county and gis_data_type == GisDataTypeEnum.road:
+            road = extract_from_shapefile(geo, gis_data_type)
 
         else:
             raise NotImplementedError("This combination of geo and gis_data_type is not implemented yet.")
