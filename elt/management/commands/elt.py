@@ -1,10 +1,9 @@
 from django.core.management.base import BaseCommand
 from requests import Request
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
 
 from lib.extract.arcgis.extract_from_api import extract_from_arcgis_api
 from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
+from lib.extract.shapefile.extract_from_shapefile import extract_from_shapefile
 
 
 def ____get_santa_ana_parcels(object_ids):
@@ -99,19 +98,26 @@ class Command(BaseCommand):
     help = "Load data from external data sources, and run it through stages of data pipeline."
 
     def add_arguments(self, parser):
-        # parser.add_argument('sample', nargs='+')
-        pass
-
-    def handle(self, *args, **options):
-        # object_ids = get_santa_ana_object_ids()
-        # object_ids = {"objectIds": [218485310, 218485612, 218504272]}
-
-        object_id_file = extract_from_arcgis_api(
-            GeoEnum.santa_ana, GisDataTypeEnum.parcel, 0, always_use_existing=False
+        parser.add_argument(
+            "geo",
+            action="store",
+            choices=GeoEnum,
+            type=GeoEnum,
+            help="Region (sta, sd, sf) to load data for",
         )
-        parcels = extract_from_arcgis_api(
-            GeoEnum.santa_ana, GisDataTypeEnum.parcel, 1, thru_data={"object_id_file": object_id_file}
+        parser.add_argument(
+            "gis_data_type",
+            choices=GisDataTypeEnum,
+            type=GisDataTypeEnum,
+            help="Data type to load (parcel, zoning, etc.)",
         )
 
-        # get_santa_ana_parcels(object_ids)
+    def handle(self, geo: GeoEnum, gis_data_type: GisDataTypeEnum, *args, **options):
+        if geo == GeoEnum.santa_ana and gis_data_type == GisDataTypeEnum.parcel:
+            object_id_file = extract_from_arcgis_api(geo, gis_data_type, 0)
+            parcels = extract_from_arcgis_api(geo, gis_data_type, 1, thru_data={"object_id_file": object_id_file})
+        elif geo == GeoEnum.santa_ana and gis_data_type == GisDataTypeEnum.zoning:
+            zoning = extract_from_shapefile(geo, gis_data_type)
+        else:
+            raise NotImplementedError("This combination of geo and gis_data_type is not implemented yet.")
         print("DONE")

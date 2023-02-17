@@ -17,6 +17,7 @@ ARCGIS_DATA_SOURCES = {
                     "outFields": "AssessmentNo",
                     "f": "pjson",
                 },
+                "has_file_output": True,
                 "is_incremental": False,
                 "fetcher_fn": extract_from_api.object_id_fetcher,
             },
@@ -30,6 +31,7 @@ ARCGIS_DATA_SOURCES = {
                     "returnGeometry": "true",
                     "objectIds": "",  # this gets overwritten by the fetcher to get groups of objects
                 },
+                "has_file_output": False,
                 "is_incremental": True,  # can be loaded incrementally
                 "fetcher_fn": extract_from_api.parcel_data_fetcher,
             },

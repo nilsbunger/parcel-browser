@@ -9,6 +9,7 @@ from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
 import geopandas
 
+from lib.extract.arcgis.types import GeoEnum
 from mygeo.util import eprint
 from world.models import (
     BuildingOutlines,
@@ -31,24 +32,9 @@ from world.models.base_models_mapping import (
 )
 
 
-class LoadModel(Enum):
-    Parcel = 1
-    Zoning = 2
-    Buildings = 3
-    Topography = 4
-    Roads = 5
-    TPA = 6
-    HousingSolutionArea = 7
-
-
 class Cmd(Enum):
     db = 1
     tiles = 2
-
-
-class Region(Enum):
-    sd = 1
-    sf = 2
 
 
 sf_schemas = {
@@ -83,7 +69,7 @@ sf_schemas = {
     },
 }
 schemas = {
-    "sf": sf_schemas,
+    "san_franciwsco": sf_schemas,
 }
 
 
@@ -96,7 +82,11 @@ class Command(BaseCommand):
             choices=Cmd.__members__,
             help="Command to run: db=load model into DB; tiles=generate + upload static tiles",
         )
-        parser.add_argument("region", choices=Region.__members__, help="Region (sd, sf) to load data for")
+        parser.add_argument(
+            "geo",
+            choices=GeoEnum.__members__,
+            help="Region (santa_ana, san_diego, san_francisco) to load data for",
+        )
         # parser.add_argument("model", choices=LoadModel.__members__)
         parser.add_argument("fname", nargs="?")
         parser.add_argument(
@@ -106,18 +96,18 @@ class Command(BaseCommand):
             "blank=True null=True in the model).",
         )
 
-    def handle(self, cmd, region, fname, check_nulls, model=None, *args, **options):
+    def handle(self, cmd, geo, fname, check_nulls, model=None, *args, **options):
         if cmd == "db":
-            self.db_cmd(region, model, fname, check_nulls)
+            self.db_cmd(geo, model, fname, check_nulls)
         elif cmd == "tiles":
-            self.tiles_cmd(region, model, fname)
+            self.tiles_cmd(geo, model, fname)
         else:
             eprint("Unknown command!")
 
-    def tiles_cmd(self, region, model, fname):
+    def tiles_cmd(self, geo, model, fname):
         from mygeo import settings
 
-        dir = settings.BASE_DIR / "deploy" / "data-files" / region
+        dir = settings.BASE_DIR / "deploy" / "data-files" / geo
         shapefiles = sorted(Path(dir).rglob("*.shp"))
         # Turn shape-file into line-delimited GeoJSON (ldgeojson) w/ translation to lat/long. Convert the shapefiles
         # 1:1 into GeoJSON files. Consolidation happens in later step
@@ -139,7 +129,7 @@ class Command(BaseCommand):
             process_result = subprocess.run(ogr2ogr_cmd, check=True, shell=True)
             assert process_result.returncode == 0, f"ogr2ogr failed with return code {process_result.returncode}"
 
-        for layername, layercfg in schemas[region]["tilelayers"].items():
+        for layername, layercfg in schemas[geo]["tilelayers"].items():
             eprint(f"Building tile layer: {layername}")
             shapefiles = [str(dir / "out" / f"{shape}.geojson.ld") for shape in layercfg["shapes"]]
 
@@ -155,7 +145,7 @@ class Command(BaseCommand):
                 process_result2.returncode == 0
             ), f"tippecanoe failed with return code {process_result2.returncode}"
             print(process_result)
-            # schema = self.schemas[region][shape_name]
+            # schema = self.schemas[geo][shape_name]
             # with fiona.open(shapefile) as src:
             #     dest = tempfile.TemporaryFile()
             #     with fiona.open(dir / "out" / (shape_name + ".ldgeojson"), "w", driver="GeoJSON", crs="EPSG:4326",
@@ -167,7 +157,7 @@ class Command(BaseCommand):
         print(dir)
         pass
 
-    def db_cmd(self, region, model=None, fname=None, *args, **options):
+    def db_cmd(self, geo, model=None, fname=None, *args, **options):
         assert False, "Update for regions, new paths, and automating file discovery"
         print(model)
         data_dir = Path(__file__).resolve().parent.parent.parent / "data"
