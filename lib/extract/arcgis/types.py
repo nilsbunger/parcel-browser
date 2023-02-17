@@ -9,9 +9,11 @@ class GeoEnum(Enum):
     santa_ana = "sta"
     san_diego = "sd"
     california = "cali"
+    scag = "scag"
 
 
 class GisDataTypeEnum(Enum):
     parcel = "parcel"
     zoning = "zoning"
     oppzone = "oppzone"
+    tpa = "tpa"

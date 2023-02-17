@@ -120,6 +120,9 @@ class Command(BaseCommand):
             zoning = extract_from_shapefile(geo, gis_data_type)
         elif geo == GeoEnum.california and gis_data_type == GisDataTypeEnum.oppzone:
             oppzone = extract_from_shapefile(geo, gis_data_type)
+        elif geo == GeoEnum.scag and gis_data_type == GisDataTypeEnum.tpa:
+            tpa = extract_from_shapefile(geo, gis_data_type)
+
         else:
             raise NotImplementedError("This combination of geo and gis_data_type is not implemented yet.")
         print("DONE")
