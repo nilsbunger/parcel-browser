@@ -1,2 +1,3 @@
 from .raw_santa_ana_parcel import RawSantaAnaParcel
 from .raw_santa_ana_zoning import RawSantaAnaZoning, raw_santa_ana_zoning_mapping
+from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping

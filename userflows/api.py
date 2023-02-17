@@ -55,7 +55,7 @@ def _login(request, payload: LoginSchema):
 
 
 @userflows_api.post("/logout", auth=None, response=LogoutResponseSchema)
-def _logout(request: django.core.handlers.wsgi.WSGIRequest) -> LogoutResponseSchema:
+def _logout(request) -> LogoutResponseSchema:
     logout(request)
     return LogoutResponseSchema(success=True, message="Logout successful")
 

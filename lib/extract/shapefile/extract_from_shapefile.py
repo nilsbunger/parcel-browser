@@ -18,7 +18,9 @@ def extract_from_shapefile(geo: GeoEnum, datatype: GisDataTypeEnum, thru_data=No
     db_model = None
     print(f"Extract from shapefile: geo={geo}, gis_data_type={datatype}")
     pipestage_dirname = f"0.shapefile"
-    existing_files, _ = get_elt_pipe_filenames(geo, datatype, pipestage_dirname, extension=None)
+    existing_files, _ = get_elt_pipe_filenames(
+        geo, datatype, pipestage_dirname, extension="zip", expect_existing=True
+    )
     latest_file = existing_files[0]
     print(" Using latest shapefile: ", latest_file)
     zf = zipfile.ZipFile(latest_file)

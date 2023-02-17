@@ -8,8 +8,10 @@ if sys.version_info >= (3, 11):
 class GeoEnum(Enum):
     santa_ana = "sta"
     san_diego = "sd"
+    california = "cali"
 
 
 class GisDataTypeEnum(Enum):
     parcel = "parcel"
     zoning = "zoning"
+    oppzone = "oppzone"
