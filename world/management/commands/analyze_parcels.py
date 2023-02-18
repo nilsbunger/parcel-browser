@@ -31,7 +31,6 @@ class Command(BaseCommand):
             self.stderr.write(self.style.FAIL("Unknown command %s" % cmd))
 
     def histo(self):
-
         histo_buckets = [0, 1, 5000, 6000, 7000, 8000, 10000, 15000, 22000, 40000, 100000, 300000]
         values = list()
         for bucket in histo_buckets:

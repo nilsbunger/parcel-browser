@@ -45,7 +45,6 @@ def plot_new_buildings(
     street_edges: MultiLineString,
     flag_poly: Union[Polygon, None],
 ):
-
     fig = plt.figure(f"new_buildings-{parcel.model.apn}")
     ax = fig.add_subplot()
     plt.title(parcel.model.apn + ":" + parcel.model.address)

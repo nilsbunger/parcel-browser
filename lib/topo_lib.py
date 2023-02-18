@@ -174,7 +174,6 @@ def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, 
 
 
 def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int, use_cache=True):
-
     cached_slopes = ParcelSlope.objects.filter(parcel=parcel.model)
     if use_cache and len(cached_slopes) > 0:
         polys = models_to_utm_gdf(
@@ -260,7 +259,7 @@ def create_slopes_for_parcel(
 
     # Scan over parcel with horizontal and vertical lines, grabbing intersections with topos. We currently scan
     # horizontally every 1 meter, and vertically every 1 meter.
-    for (bucket, line) in _yield_grade_lines(parcel_df, topos_df):
+    for bucket, line in _yield_grade_lines(parcel_df, topos_df):
         grade_buckets[bucket].append(line)
 
     # We have a bunch of lines in grade buckets. Iterate through the buckets, turning lines into

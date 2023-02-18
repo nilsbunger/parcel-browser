@@ -24,7 +24,6 @@ class Command(dumpdata.Command):
         )
 
     def handle(self, *app_labels: str, **options) -> None:
-
         # Create --apns argument on dumpdata, to allow us to select data by APN
         apns: str = options["apns"]
         if apns and len(app_labels) != 1:

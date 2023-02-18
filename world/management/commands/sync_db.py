@@ -46,7 +46,6 @@ class Command(BaseCommand):
         logging.info("DONE migrating data")
 
     def handle_cloud2local(self, *args, **options):
-
         # Remove auto_now and auto_now_add so that dates move over correctly.
         logging.info(f"Eliminating pre-save hooks on dates")
 

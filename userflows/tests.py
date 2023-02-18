@@ -20,7 +20,6 @@ whitelist_404 = ["/api/", "/api/co/", "/api/userflows/"]
 
 @pytest.mark.django_db(databases=["default"])
 class TestAuthenticationPaths:
-
     # WARNING: don't include an __init__ method, or pytest will skip the tests
     # def __init__(self):
     #     pass

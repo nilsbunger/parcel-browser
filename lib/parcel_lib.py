@@ -483,7 +483,6 @@ def maximal_rectangles(matrix):
     bigrects = []
     dictrects = {}
     for i in range(m):
-
         cur_left, cur_right = 0, n
         # update height
         for j in range(n):

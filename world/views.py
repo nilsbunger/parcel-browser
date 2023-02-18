@@ -130,6 +130,7 @@ class Ab2011TileData(LoginRequiredMixin, MVTView, ListView):
 # Parcel detail viewer at /dj/parcel/<apn>
 # ------------------------------------------------------
 
+
 # main detail page
 class ParcelDetailView(LoginRequiredMixin, View):
     template_name = "parcel-detail.html"

@@ -106,7 +106,6 @@ def object_id_fetcher(url, arc_custom_params, *, outfile, skip_stage=False):
 # Fetch parcels specified by object IDs and write or append the results  into the database.
 # This does multiple batched calls to the ArcGIS server. Returns the number of items fetched.
 def parcel_data_fetcher(url, arc_custom_params, *, do_incremental, thru_data, skip_stage=False):
-
     # If we are using existing data, no fetching, just return how many entries exist.
     if skip_stage:
         count = RawSantaAnaParcel.objects.all().count()

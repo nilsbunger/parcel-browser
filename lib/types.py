@@ -6,6 +6,8 @@ from world.models import Parcel
 
 
 """ CheckResultEnum represents the result of an analysis check """
+
+
 # Note: Inheriting Enum from str allows JSON serialization.
 # See https://stackoverflow.com/questions/24481852/serialising-an-enum-member-to-json
 class CheckResultEnum(str, Enum):

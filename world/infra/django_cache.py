@@ -1,6 +1,7 @@
 from django.middleware.cache import CacheMiddleware
 from django.utils.decorators import decorator_from_middleware_with_args
 
+
 ## Create our own thin layer around Django caching middleware so we can cache empty responses.
 class H3CacheMiddleware(CacheMiddleware):
     def process_response(self, request, response):
