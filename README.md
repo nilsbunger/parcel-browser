@@ -1,70 +1,29 @@
 # Parsnip
 Home3 application for evaluating parcels for upzoning.
 
-# Setup steps
-This is currently working on a Mac with M1 processor. It may need tweaks for other environments. Note 
-that we also have a Dockerfile which you can build an image from or look at for commands
-to create a working environment.
+# Setup
 
-`brew install gdal geos` - geospatial libraries. 
-Check [supported versions](https://docs.djangoproject.com/en/4.1/ref/contrib/gis/install/geolibs/) 
-in Django docs if you have problems.
+Setup Django, Postgres, and frontend using these steps:
 
-~~`brew install python3` - use python 3.9 or newer~~ - replaced by pyenv below.
-
-`pip3 install geopandas` - adds support for geographic data to pandas objects
-
-`brew install pipx` - pipx is a tool for installing and running Python applications in isolated environments
-
-`brew pin gdal geos pipx geos ` - pin gdal and pipx so they don't get upgraded
-
-`pipx ensurepath` - makes sure pipx is in your path  
-
-From the project directory:
-`cp .env.example .env` -- create your .env file.
-
-
-Depending on your setup, you might need to add library paths as follows to your .zshrc or other shell init file (adjusting version numbers as required):
-* `export GEOS_LIBRARY_PATH=/opt/homebrew/lib/libgeos_c.1.17.0.dylib`
-* `export GDAL_LIBRARY_PATH=/opt/homebrew/lib/libgdal.31.dylib`
-
-# Install or update dependencies
-
-`poetry install` -- install python package dependencies
-
-`cd frontend && yarn install` -- install dependencies for frontned
-
-Note: You'll periodically need to update dependencies as the code changes.
-
-# Set up a local database
-
-You'll need a local DB or access to a cloud DB to run the service. A local DB is best for dev, because the latencies from app server to DB make things very slow. It's easy to switch between them, so you might as well set up one locally. 
-
-* `brew install postgresql@14`
-
-* `brew install postgis` - PostgreSQL extension for geometry types and geospatial functions. Installs it with the protobuf support compiled in.
-
-* `brew pin postgresql@14 postgis ` - pin packages so they don't get upgraded
-
-* `brew services start postgres` -- Run the Postgres server as a service in the background
-
-* `createdb geodjango` -- postgres command to create the database
-
-* `./manage.py migrate` -- apply django migrations to the local DB
-
-* `./manage.py createsuperuser` -- give yourself a superadmin account on django
-
-The above is mostly a one-time setup. 
+* [Setup steps](docs/setup.md)
+* [Old brew-based (deprecated) setup steps](docs/archived-brew-setup.md)
 
 # Running in dev
-You'll need to run frontend and backend servers:
+When you've completed setup, you're ready to run. You need to run frontend and backend servers:
 
-`cd frontend && yarn dev` -- start frontend (parcel) dev server
+1. Make sure the Mamba environment is activated:
 
-Now start the Django server (remember to start the virtual env if you didn't already):
-`poetry run ./manage.py runserver`
+   `mamba activate mamba-parsnip`
 
-Browse to http://localhost:8000/map or http://localhost:8000/admin . 
+0. Start the frontend server:
+   
+   `cd frontend && yarn dev` -- start frontend dev server. This will watch for changes and rebuild the JS bundle.
+
+0. Start the Django server:
+    
+   `./manage.py runserver`
+
+Browse to http://localhost:8000/map or http://localhost:8000/admin and see if things work.
 
 If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
 
@@ -144,8 +103,6 @@ It is possible to go even higher fidelity, by running in a docker container.
 We use poetry as our python package manager. It installs packages and manages your virtual environment.
 
 A few useful commands:
-* `poetry shell` : start a shell in the virtual environment. That shell will give you
-the right python version and all the packages installed.
 * `poetry run <command>` : run a single command in the virtual environment
 (alternative to `poetry shell` for a single command) 
 * `poetry add <package>` : add a package to the project (and update pyproject.toml and poetry.lock)
@@ -153,6 +110,8 @@ the right python version and all the packages installed.
 * `poetry env info` : show info about the virtual environment
 * `poetry show --tree`: show the dependency tree
 * `poetry install`: install dependencies based on pyproject.toml and poetry.lock into a venv.
+* `poetry shell` : start a shell in the virtual environment. That shell will give you
+the right python version and all the packages installed. NOTE: I think this is not necessary with the mamba-based environment.
 
 # System architecture
 
