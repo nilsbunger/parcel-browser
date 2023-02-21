@@ -224,11 +224,14 @@ SILKY_PYTHON_PROFILER = True
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 dbHost = None
 dbPassword = None
+local_db_settings = ("127.0.0.1", "parsnip", "postgres", "password")
 if LOCAL_DB:
     eprint("**** LOCAL DATABASE ****")
-    (dbHost, dbName, dbUserName, dbPassword) = ("localhost", "parsnip", "postgres", "password")
+    (dbHost, dbName, dbUserName, dbPassword) = local_db_settings
+
 elif BUILD_PHASE:
     eprint("**** NO DB - BUILD PHASE ****")
+    (dbHost, dbName, dbUserName, dbPassword) = ("", "", "", "")
 else:
     eprint("**** CLOUD DATABASE ****")
     (dbHost, dbName, dbUserName, dbPassword) = (
@@ -245,33 +248,33 @@ else:
     # Additionally define the 'topo' DB where the topo model lives, since it is very large.
     # The 'topo' DB is set up as a local DB, which is useful if we're running our scraping locally on a computer,
     # but with the cloud DB.
+    ...
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
             "HOST": dbHost,
             "NAME": dbName,
             "USER": dbUserName,
+            "PASSWORD": dbPassword,
+            "PORT": 5432,
         },
     }
-    if dbPassword:
-        eprint("**** SETTING DB PASSWORD ****")
-        DATABASES["default"]["PASSWORD"] = dbPassword
+
     DATABASES["basedata"] = DATABASES["default"].copy()
     DATABASES["basedata"]["TEST"] = {"MIRROR": "default"}
 
     if DEV_ENV:
-        # Running locally, base data can come from local machine
+        # Running locally, base data can come from local machine, even if we're using cloud DB for other data
         DATABASES["basedata"] = {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "HOST": "localhost",
-            "NAME": "geodjango",
-            "USER": env("USER"),
+            "HOST": local_db_settings[0],
+            "NAME": local_db_settings[1],
+            "USER": local_db_settings[2],
+            "PASSWORD": local_db_settings[3],
             "TEST": {
                 "MIRROR": "default",
             },
         }
-        if dbPassword:
-            DATABASES["basedata"]["PASSWORD"] = dbPassword
         DATABASES["local_db"] = DATABASES["basedata"].copy()
 
         # Add in explicit reference to cloud_db, used by some scripts that should only run in one environment
@@ -377,7 +380,6 @@ WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
 # Sentry error monitoring (don't use on localhost)
 if not DEV_ENV and not TEST_ENV:
     sentry_sdk.init(
@@ -393,7 +395,6 @@ if not DEV_ENV and not TEST_ENV:
         # django.contrib.auth) you may enable sending PII data.
         send_default_pii=True,
     )
-
 
 LOGGING_CONFIG = "logging.config.dictConfig"
 
