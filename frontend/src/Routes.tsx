@@ -6,6 +6,7 @@ import WideLayout from "./layouts/WideLayout"
 import { UserFlowLayout } from "./layouts/UserFlowLayout"
 import { useAuth } from "./hooks/Auth"
 import { Loader } from "@mantine/core"
+import BackyardPage from "./pages/deals/BackyardPage";
 
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
@@ -18,35 +19,39 @@ export function MyRoutes() {
   return (
     <BrowserRouter>
       <React.StrictMode>
-        <Suspense fallback={<LoadingScreen />}>
+        <Suspense fallback={<LoadingScreen/>}>
           <Routes>
             {/* Pages that don't require login */}
-            <Route path="login" element={<UserFlowLayout />}>
-              <Route index element={<LoginPage />} />
+            <Route path="login" element={<UserFlowLayout/>}>
+              <Route index element={<LoginPage/>}/>
+            </Route>
+
+            <Route path="deals" element={<HomeLayout/>}>
+              <Route path="backyard" element={<BackyardPage/>}/>
             </Route>
 
             {/* Rest of pages require login... */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<WideLayout />}>
+            <Route element={<ProtectedRoute/>}>
+              <Route element={<WideLayout/>}>
                 <Route path="listings">
-                  <Route index element={<ListingsPage />} />
+                  <Route index element={<ListingsPage/>}/>
                 </Route>
               </Route>
-              <Route path="logout" element={<LogoutHelper />} />
+              <Route path="logout" element={<LogoutHelper/>}/>
 
-              <Route element={<HomeLayout />}>
+              <Route element={<HomeLayout/>}>
                 {/*<Route path="login" element={<LoginPage/>}/>*/}
-                <Route index element={<Navigate replace to="/listings" />} />
+                <Route index element={<Navigate replace to="/listings"/>}/>
                 {/*<Route index element={<HomePage/>}/>*/}
                 <Route path="analysis">
-                  <Route path=":analysisId" element={<ListingDetailPage />} />
+                  <Route path=":analysisId" element={<ListingDetailPage/>}/>
                 </Route>
-                <Route path="search" element={<NewListingPage />} />
-                <Route path="rental-rates" element={<RentalRatesPage />} />
-                <Route path="map" element={<CoMapPage />} />
+                <Route path="search" element={<NewListingPage/>}/>
+                <Route path="rental-rates" element={<RentalRatesPage/>}/>
+                <Route path="map" element={<CoMapPage/>}/>
               </Route>
               {/* Catch-all element below */}
-              <Route path="*" element={<PageNotFound />} />
+              <Route path="*" element={<PageNotFound/>}/>
             </Route>
           </Routes>
         </Suspense>
@@ -61,22 +66,22 @@ const ProtectedRoute = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
-        <Loader variant={"dots"} />
+        <Loader variant={"dots"}/>
         {/*<h1>Loading...</h1>*/}
       </div>
     )
   }
   if (!user) {
     console.log("Protected route, didn't find user, redirecting to login")
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace/>
   }
-  return <Outlet />
+  return <Outlet/>
 }
 
 const LoadingScreen = () => {
   return (
     <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
-      <Loader variant={"dots"} />
+      <Loader variant={"dots"}/>
       {/*<h1>Loading...</h1>*/}
     </div>
   )
