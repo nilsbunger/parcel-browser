@@ -1,4 +1,4 @@
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin, UserManager
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
@@ -7,12 +7,42 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-# Create your models here.
+class MyUserManager(BaseUserManager):
+    # Adapted from UserManager in auth/models.py to allow email as username.
+    use_in_migrations = True
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_email_based_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+
+        return self._create_email_based_user(email, password, **extra_fields)
+
+    def _create_email_based_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError("The given email must be set")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     # This was originally a copy of AbstractUser in Django source code (django/contrib/auth/base_user.py),
     # to allow us to transition to a custom user model,
     # following the recipe in comment 18 of https://code.djangoproject.com/ticket/25313#comment:18
     # Note that we copied AbstractBaseUser, since we need to change the primary-key username field
+
     class Meta:
         swappable = "AUTH_USER_MODEL"
         # Use the default table name for the user model during migration to a custom user model
@@ -40,7 +70,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
     email_verified_ts = models.DateTimeField(_("email verified date"), default=None, null=True)
 
-    objects = UserManager()
+    objects = MyUserManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
