@@ -460,6 +460,7 @@ CACHES = {
         "LOCATION": "/parsnip_data/django-cache"
         if (PROD_ENV and not TEST_ENV and not LOCAL_DB)
         else BASE_DIR / ".django-cache",
+        "TIMEOUT": 3600 * 24 * 365,  # default timeout of 1 year
         "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries
     }
 }

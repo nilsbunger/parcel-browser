@@ -1,10 +1,12 @@
-import requests
-import json
 import datetime
-import os
-from pyairtable import Table
-from datetime import timedelta
 from datetime import timezone
+from pprint import pprint
+import string
+
+from pyairtable import Table
+from pydantic import BaseModel
+
+from lib.power_bi import BITable, PowerBIScraper, WhereCondition
 from mygeo.settings import env
 
 # Scrape HCD data from HCD website, and dump it into this AirTable:
@@ -19,325 +21,249 @@ tableID = "app9boMvblYpDS3Du"
 tableName = "dashboardSync"
 AIRTABLE_API_KEY = env("AIRTABLE_API_KEY")
 
-elementStatusTable = Table(AIRTABLE_API_KEY, tableID, tableName)
+airtable_element_status_table = Table(AIRTABLE_API_KEY, tableID, tableName)
 
 reviewTableName = "underReview"
-reviewTable = Table(AIRTABLE_API_KEY, tableID, reviewTableName)
+airtable_review_table = Table(AIRTABLE_API_KEY, tableID, reviewTableName)
 
 logTableName = "scrapeLog"
-logTable = Table(AIRTABLE_API_KEY, tableID, logTableName)
-
-HCD_PAGE_URL = "https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata"
-
-headers = {
-    "Content-Type": "application/json",
-    "User-Agent": "PostmanRuntime/7.29.2",
-    "Accept-Encoding": "gzip, deflate, br",
-    "X-PowerBI-ResourceKey": "c9d87f18-b7ff-4364-b42d-4dde27c888ce",
-    "ActivityID": "327a7347-3b78-458c-aa09-27f1425b89bd",
-    "RequestID": "e3b9c2aa-b228-305a-ce0a-ed8f22734393",
-}
-params = {"synchronous": "true"}
+airtable_log_table = Table(AIRTABLE_API_KEY, tableID, logTableName)
 
 
-################################################################################################
-# scrape section 1: element statuses
-################################################################################################
+def diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run) -> list[str]:
+    hcd_jurisdictions = set([string.capwords(x[0]) for x in hcd_status_table.rows])
+    airtable_jurisdictions = set([string.capwords(x["fields"]["jurisdiction"]) for x in airtable_status_raw])
+    # ensure no jurisdiction is listed twice (eg the set didn't remove any dupes)
+    assert len(hcd_jurisdictions) == len(hcd_status_table.rows)
+    assert len(airtable_jurisdictions) == len(airtable_status_raw)
+    juris_in_both_sets = hcd_jurisdictions & airtable_jurisdictions
+    juris_in_airtable_only = airtable_jurisdictions - hcd_jurisdictions
+    juris_in_hcd_only = hcd_jurisdictions - airtable_jurisdictions
+
+    # didn't build out adding new jurisdictions to Airtable yet... but this should be v rare!
+    assert len(juris_in_airtable_only) == 0
+    assert len(juris_in_hcd_only) == 0
+    assert hcd_status_table.column_names == ["Jurisdiction", "5th Cycle", "6th Cycle"]
+
+    status_diff = []
+    for juri in juris_in_both_sets:
+        hcd_row = next((row for row in hcd_status_table.rows if string.capwords(row[0]) == juri))
+        airtable_row = next(
+            (row for row in airtable_status_raw if string.capwords(row["fields"]["jurisdiction"]) == juri)
+        )
+        old_status = airtable_row["fields"]["6thCycle"]
+        new_status = hcd_row[2]
+        if old_status != new_status:
+            status_diff.append(juri + " | From **" + old_status + "** to **" + new_status + "**")
+            if not dry_run:
+                airtable_element_status_table.update(airtable_row["id"], {"6thCycle": new_status})
+            else:
+                print("Dry run: elementStatus " + airtable_row["id"] + " to " + new_status)
+    pprint(status_diff)
+    return status_diff
+    # # 6th cycle status: any record difference means a status update for that jurisdiction
+    # for x in tableRows:
+    #     if x not in airtableStatusRecords:
+    #         # find list element with dict key/value
+    #         oldItem = list(
+    #             filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], airtable_status_raw)
+    #         )[0]
+    #         oldStatus = oldItem["fields"]["6thCycle"]
+    #         statusDiff.append(x["jurisdiction"] + " | From **" + oldStatus + "** to **" + x["6thCycle"] + "**")
+    #         if not dry_run:
+    #             airtable_element_status_table.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
+    #         else:
+    #             print("Dry run: elementStatus" + oldItem["id"] + " to " + x["6thCycle"])
+
+    # under review: find jurisdictions that came in OR left review
 
 
-def scrape_element_statuses():
-    # load and format request payload, borrowing how HCD's web dashboard requests data
-    with open("lib/scrape_hcd/request_body.json", "r") as f:
-        data = json.dumps(json.load(f), indent=4, sort_keys=True)
+class HEReviewDiffs(BaseModel):
+    new_reviews: list[str]
+    exited_reviews: list[str]
 
-    # request page 1
-    response = requests.post(HCD_PAGE_URL, data=data, headers=headers, params=params)
-    jsonResp = json.loads(response.content)
 
-    if response.status_code != 200:
-        raise Exception("HCD request did not return data")
+def latest_received_review(hcd_review_table, cycle_name, min_date):
+    # get the latest received review for each jurisdiction from the data pulled from HCD
+    hcd_6th_cycle_table = sorted(
+        [row for row in hcd_review_table.rows if row[1] == cycle_name and row[3] >= min_date],
+        key=lambda x: x[3],  # sort by received date (index 3 in row)
+        reverse=True,  # most recent first
+    )
+    hcd_6th_cycle_latest = []
+    seen_juris = set()
+    for row in hcd_6th_cycle_table:
+        if row[0] not in seen_juris:
+            hcd_6th_cycle_latest.append(row)
+            seen_juris.add(row[0])
+    return hcd_6th_cycle_latest
 
-    # store response for debugging
-    # with open('HCD_response.json', 'w') as json_file:
-    #  json.dump(jsonResp, json_file)
 
-    # load mappings
-    first100CityNames = jsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D2"]
-    fifthCycleCodes = jsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D0"]
-    sixthCycleCodes = jsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D1"]
+def diff_he_reviews(hcd_review_table: BITable, airtable_review_raw, dry_run) -> HEReviewDiffs:
+    airtableReviewRecords = [x["fields"] for x in airtable_review_raw]
 
-    # set up transform loop
-    tableRows = []
-    counter = 0
+    jan_1_2023 = datetime.datetime(2023, 1, 1, tzinfo=datetime.timezone.utc)
+    hcd_latest_6th_cycle_reviews = latest_received_review(hcd_review_table, "6th Cycle", jan_1_2023)
 
-    respList = jsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
+    hcd_jurisdictions = set([string.capwords(x[0]) for x in hcd_latest_6th_cycle_reviews])
+    airtable_jurisdictions = set([string.capwords(x["fields"]["jurisdiction"]) for x in airtable_review_raw])
+    # ensure no jurisdiction is listed twice (eg the set didn't remove any dupes)
+    assert len(hcd_jurisdictions) == len(hcd_latest_6th_cycle_reviews)
+    assert len(airtable_jurisdictions) == len(airtable_review_raw)
+    juris_in_both_sets = hcd_jurisdictions & airtable_jurisdictions
+    juris_in_airtable_only = airtable_jurisdictions - hcd_jurisdictions
+    juris_in_hcd_only = hcd_jurisdictions - airtable_jurisdictions
 
-    for x in respList[0:-1]:  # ignore the last element because it shows up in 2nd page
-        if counter < 100:
-            x["CityName"] = first100CityNames[counter]
+    # Remove items only found in airtable - they have exited review
+    exited_reviews = []
+    for juri in juris_in_airtable_only:
+        oldItem = next(
+            (row for row in airtable_review_raw if string.capwords(row["fields"]["jurisdiction"]) == juri)
+        )
+        of = oldItem["fields"]
+        exited_reviews.append(
+            f'{juri} | type: {of["type"]} | received date: {of["receivedDate"]} '
+            f'| final due date: {of["finalDueDate"]}'
+        )
+        if not dry_run:
+            airtable_review_table.delete(oldItem["id"])
         else:
-            x["CityName"] = x["C"][-1]
+            print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
+    #  Marcio's original implementation:
+    # for x in airtableReviewRecords:
+    #     if x not in reviewTableRows:
+    #         exited_reviews.append(
+    #             x["jurisdiction"]
+    #             + " | type: "
+    #             + x["type"]
+    #             + " | received date: "
+    #             + x["receivedDate"]
+    #             + " | final due date: "
+    #             + x["finalDueDate"]
+    #         )
+    #         oldItem = list(filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], airtable_review_raw))[0]
+    #         if not dry_run:
+    #             airtable_review_table.delete(oldItem["id"])
+    #         else:
+    #             print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
 
-        if "R" in x:  # R is a compression trick when row N is similar to row N-1.
-            if x["R"] == 1:
-                x["FifthCycleStatus"] = tableRows[counter - 1]["5thCycle"]
-                x["SixthCycleStatus"] = sixthCycleCodes[x["C"][0]]
-            elif x["R"] == 2:
-                x["FifthCycleStatus"] = fifthCycleCodes[x["C"][0]]
-                x["SixthCycleStatus"] = tableRows[counter - 1]["6thCycle"]
-            elif x["R"] == 3:
-                x["FifthCycleStatus"] = tableRows[counter - 1]["5thCycle"]
-                x["SixthCycleStatus"] = tableRows[counter - 1]["6thCycle"]
-        else:  # R is blank, so no borrowing from row N-1.
-            x["FifthCycleStatus"] = fifthCycleCodes[x["C"][0]]
-            x["SixthCycleStatus"] = sixthCycleCodes[x["C"][1]]
-
-        # print(row.CityName + ': ' + row['5thCycle'] + ' | ' + row['6thCycle'])
-        # elementStatusTable.create({'jurisdiction':row.CityName, '5thCycle':row['5thCycle'], '6thCycle':row['6thCycle']})
-        row = {"jurisdiction": x["CityName"], "5thCycle": x["FifthCycleStatus"], "6thCycle": x["SixthCycleStatus"]}
-        tableRows.append(row)
-        counter += 1
-
-    # request page 2
-    with open("lib/scrape_hcd/request_body_paginate.json", "r") as f:
-        dataPaginate = json.dumps(json.load(f), indent=4, sort_keys=True)
-
-    responsePaginate = requests.post(HCD_PAGE_URL, data=dataPaginate, headers=headers, params=params)
-    jsonRespPaginate = json.loads(responsePaginate.content)
-
-    if responsePaginate.status_code != 200:
-        raise Exception("HCD pagination request did not return data")
-
-    # with open('HCD_response_paginate.json', 'w') as json_file:
-    #   json.dump(jsonRespPaginate, json_file)
-
-    # paginated map - the mapping is different!!!
-    respListPaginate = jsonRespPaginate["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
-    fifthCycleCodesPaginated = jsonRespPaginate["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D0"]
-    sixthCycleCodesPaginated = jsonRespPaginate["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D1"]
-    first100CityNamesPaginate = jsonRespPaginate["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"][
-        "D2"
-    ]
-
-    nameCounter = 0
-    for x in respListPaginate:
-        x["CityName"] = first100CityNamesPaginate[nameCounter]
-        if "R" in x:
-            if x["R"] == 1:
-                x["FifthCycleStatus"] = tableRows[counter - 1]["5thCycle"]
-                x["SixthCycleStatus"] = sixthCycleCodesPaginated[x["C"][0]]
-            elif x["R"] == 2:
-                x["FifthCycleStatus"] = fifthCycleCodesPaginated[x["C"][0]]
-                x["SixthCycleStatus"] = tableRows[counter - 1]["6thCycle"]
-            elif x["R"] == 3:
-                x["FifthCycleStatus"] = tableRows[counter - 1]["5thCycle"]
-                x["SixthCycleStatus"] = tableRows[counter - 1]["6thCycle"]
-        else:  # R is blank
-            x["FifthCycleStatus"] = fifthCycleCodesPaginated[x["C"][0]]
-            x["SixthCycleStatus"] = sixthCycleCodesPaginated[x["C"][1]]
-
-        row = {"jurisdiction": x["CityName"], "5thCycle": x["FifthCycleStatus"], "6thCycle": x["SixthCycleStatus"]}
-        # print(row.CityName + ': ' + row['5thCycle'] + ' | ' + row['6thCycle'])
-        # elementStatusTable.create({'jurisdiction':row.CityName, '5thCycle':row['5thCycle'], '6thCycle':row['6thCycle']})
-        tableRows.append(row)
-        counter += 1
-        nameCounter += 1
-    return tableRows
-
-
-################################################################################################
-# scrape section 2: elements under review
-################################################################################################
-
-
-def scrape_elements_under_review():
-    with open("lib/scrape_hcd/review_request_body.json", "r") as f:
-        reviewData = json.dumps(json.load(f), indent=4, sort_keys=True)
-
-    reviewResponse = requests.post(HCD_PAGE_URL, data=reviewData, headers=headers, params=params)
-    reviewJsonResp = json.loads(reviewResponse.content)
-
-    # store response for debugging
-    # with open('HCD_review_response.json', 'w') as json_file:
-    #  json.dump(reviewJsonResp, json_file)
-
-    reviewCityNames = reviewJsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D0"]
-    reviewStatus = reviewJsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D2"]
-    reviewCycle = reviewJsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["ValueDicts"]["D1"]
-    reviewRespList = reviewJsonResp["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]
-    reviewTableRows = []
-    counter = 0
-
-    # date fields are encoded as msecs since epoch
-    epoch = datetime.datetime.utcfromtimestamp(0)  # TODO: use record's time stamp directly?
-
-    for x in reviewRespList:
-        x["cityName"] = reviewCityNames[counter]
-        if "R" in x:  # R means run-length-encoding, when row N is similar to row N-1
-            if x["R"] == 4:  # no borrowing, but different spacing from 1st item (?)
-                x["type"] = reviewStatus[x["C"][2]]
-                rdate = timedelta(seconds=x["C"][1] / 1000) + epoch
-                x["receivedDate"] = rdate.strftime("%Y-%m-%d")
-                fdate = timedelta(seconds=x["C"][3] / 1000) + epoch
-                x["finalDueDate"] = fdate.strftime("%Y-%m-%d")
-            elif x["R"] == 6:  # change final date date
-                x["type"] = reviewStatus[x["C"][1]]
-                fdate = timedelta(seconds=x["C"][2] / 1000) + epoch
-                x["finalDueDate"] = fdate.strftime("%Y-%m-%d")
-                x["receivedDate"] = reviewTableRows[counter - 1]["receivedDate"]
-            elif x["R"] == 12:  # change both dates
-                x["type"] = reviewTableRows[counter - 1]["type"]
-                rdate = timedelta(seconds=x["C"][1] / 1000) + epoch
-                x["receivedDate"] = rdate.strftime("%Y-%m-%d")
-                fdate = timedelta(seconds=x["C"][2] / 1000) + epoch
-                x["finalDueDate"] = fdate.strftime("%Y-%m-%d")
-            elif x["R"] == 20:  # change received date and status
-                x["type"] = reviewStatus[x["C"][2]]
-                rdate = timedelta(seconds=x["C"][1] / 1000) + epoch
-                x["receivedDate"] = rdate.strftime("%Y-%m-%d")
-                x["finalDueDate"] = reviewTableRows[counter - 1]["finalDueDate"]
-            elif x["R"] == 22:  # change status
-                x["type"] = reviewStatus[x["C"][1]]
-                x["finalDueDate"] = reviewTableRows[counter - 1]["finalDueDate"]
-                x["receivedDate"] = reviewTableRows[counter - 1]["receivedDate"]
-            elif x["R"] == 28:  # change received date
-                rdate = timedelta(seconds=x["C"][1] / 1000) + epoch
-                x["receivedDate"] = rdate.strftime("%Y-%m-%d")
-                x["type"] = reviewTableRows[counter - 1]["type"]
-                x["finalDueDate"] = reviewTableRows[counter - 1]["finalDueDate"]
-            elif x["R"] == 30:  # no changes
-                x["type"] = reviewTableRows[counter - 1]["type"]
-                x["receivedDate"] = reviewTableRows[counter - 1]["receivedDate"]
-                x["finalDueDate"] = reviewTableRows[counter - 1]["finalDueDate"]
-        else:
-            x["type"] = reviewStatus[x["C"][2]]
-            rdate = timedelta(seconds=x["C"][1] / 1000) + epoch
-            x["receivedDate"] = rdate.strftime("%Y-%m-%d")
-            fdate = timedelta(seconds=x["C"][4] / 1000) + epoch
-            x["finalDueDate"] = fdate.strftime("%Y-%m-%d")
-
-        # print(row.cityName + ': ' + row.reviewStatus  + ' | ' + row['receivedDate']+ ' | ' + row.finalDueDate)
-        # reviewTable.create({'jurisdiction':row.cityName, 'type':row.reviewStatus, 'receivedDate':row['receivedDate'], 'finalDueDate':row.finalDueDate})
-        row = {
-            "jurisdiction": x["cityName"],
-            "type": x["type"],
-            "receivedDate": x["receivedDate"],
-            "finalDueDate": x["finalDueDate"],
+    # Add new items being added to review
+    new_reviews = []
+    for juri in juris_in_hcd_only:
+        hcd_row = next((row for row in hcd_latest_6th_cycle_reviews if string.capwords(row[0]) == juri))
+        new_reviews.append(
+            f"{juri} | type: {hcd_row[2]} | received date: {hcd_row[3]} " f"| final due date: {hcd_row[4]}"
+        )
+        new_entry = {
+            "jurisdiction": juri,
+            "type": hcd_row[2],
+            "receivedDate": hcd_row[3],
+            "finalDueDate": hcd_row[4],
         }
-        reviewTableRows.append(row)
-        counter += 1
-    return reviewTableRows
+        if not dry_run:
+            airtable_review_table.create(new_entry)
+        else:
+            print("Dry run: reviewTable.create(" + str(new_entry) + ")")
+
+    # TODO: handle case of an updated entry (eg juris_in_both_sets list)
+
+    #  Marcio's original implementation:
+    # TODO: QUESTION --> in an updated review, does this create a new entry with the same jurisdiction in airtable?
+    # newReviews = []
+    # for x in reviewTableRows:
+    #     if x not in airtableReviewRecords:
+    #         newReviews.append(
+    #             x["jurisdiction"]
+    #             + " | type: "
+    #             + x["type"]
+    #             + " | received date: "
+    #             + x["receivedDate"]
+    #             + " | final due date: "
+    #             + x["finalDueDate"]
+    #         )
+    #         new_entry = {
+    #             "jurisdiction": x["jurisdiction"],
+    #             "type": x["type"],
+    #             "receivedDate": x["receivedDate"],
+    #             "finalDueDate": x["finalDueDate"],
+    #         }
+    #         if not dry_run:
+    #             airtable_review_table.create(new_entry)
+    #         else:
+    #             print("Dry run: reviewTable.create(" + str(new_entry) + ")")
+    return HEReviewDiffs(new_reviews=new_reviews, exited_reviews=exited_reviews)
 
 
 def run_scrape_hcd(dry_run=False):
     # Scrape the HCD website
-    tableRows = scrape_element_statuses()
-    reviewTableRows = scrape_elements_under_review()
+    # tableRows = scrape_element_statuses()
+    # reviewTableRows = scrape_elements_under_review()
+
+    # big 12-page BI dashboard
+    page_url = "https://www.hcd.ca.gov/planning-and-community-development/housing-open-data-tools/housing-element-implementation-and-apr-dashboard"
+    # smaller 3-page BI dashboard with similar data (but not exactly the same formatting):
+    # page_url = "https://www.hcd.ca.gov/planning-and-community-development/housing-open-data-tools/housing-element-review-and-compliance-report"
+
+    hcd_page_scraper = PowerBIScraper(page_url)
+
+    # Useful information fetched from the server: list of sections, tables, and columns:
+    sections = hcd_page_scraper.list_sections()
+    tables = hcd_page_scraper.list_tables()
+    review_table_cols = hcd_page_scraper.list_columns("Under Review")
+    status_table_cols = hcd_page_scraper.list_columns("HE_Compliance")
+
+    # Fetch "Under Review" table:
+    select_columns = ["JURISDICTION", "CYCLE", "TYPE", "RECEIVED_DATE", "FINAL_DUE_DATE"]
+    # Each condition in the list must be true (AND). Inside a condition, any one of the values will match (OR)
+    conditions = [
+        WhereCondition(column_name="CYCLE", values=["5th Cycle", "6th Cycle"]),
+        WhereCondition(column_name="TYPE", values=["ADOPTED", "SUBSEQUENT DRAFT", "DRAFT", "INITIAL DRAFT"]),
+    ]
+    hcd_review_table = hcd_page_scraper.fetch_table("Under Review", columns=select_columns, conditions=conditions)
+
+    # Fetch "HE Compliance" status table. The column naming isn't consistent between tables, likely due to
+    #  inconsistency at HCD.
+    select_columns = ["Jurisdiction", "5th Cycle", "6th Cycle"]
+    hcd_status_table = hcd_page_scraper.fetch_table("HE_Compliance", columns=select_columns, conditions=[])
 
     # fetch Airtables
-    elementStatusRecords = elementStatusTable.all()
-    reviewRecords = reviewTable.all()
-
-    # drop extraneous fields from Airtables to easily diff old and new records
-    airtableStatusRecords = []
-    for x in elementStatusRecords:
-        airtableStatusRecords.append(x["fields"])
-
-    airtableReviewRecords = []
-    for x in reviewRecords:
-        airtableReviewRecords.append(x["fields"])
+    airtable_status_raw = airtable_element_status_table.all()
+    airtable_review_raw = airtable_review_table.all()
 
     ############
     # diff Airtables and scraped data
     ############
 
-    # 6th cycle status: any record difference means a status update for that jurisdiction
-    statusDiff = []
-    for x in tableRows:
-        if x not in airtableStatusRecords:
-            # find list element with dict key/value
-            oldItem = list(
-                filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], elementStatusRecords)
-            )[0]
-            oldStatus = oldItem["fields"]["6thCycle"]
-            statusDiff.append(x["jurisdiction"] + " | From **" + oldStatus + "** to **" + x["6thCycle"] + "**")
-            if not dry_run:
-                elementStatusTable.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
-            else:
-                print("Dry run: elementStatus" + oldItem["id"] + " to " + x["6thCycle"])
+    status_diff = diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run)
 
-    # under review: find jurisdictions that came in OR left review
-
-    exitedReviews = []
-    for x in airtableReviewRecords:
-        if x not in reviewTableRows:
-            exitedReviews.append(
-                x["jurisdiction"]
-                + " | type: "
-                + x["type"]
-                + " | received date: "
-                + x["receivedDate"]
-                + " | final due date: "
-                + x["finalDueDate"]
-            )
-            oldItem = list(filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], reviewRecords))[0]
-            if not dry_run:
-                reviewTable.delete(oldItem["id"])
-            else:
-                print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
-
-    newReviews = []
-    for x in reviewTableRows:
-        if x not in airtableReviewRecords:
-            newReviews.append(
-                x["jurisdiction"]
-                + " | type: "
-                + x["type"]
-                + " | received date: "
-                + x["receivedDate"]
-                + " | final due date: "
-                + x["finalDueDate"]
-            )
-            new_entry = {
-                "jurisdiction": x["jurisdiction"],
-                "type": x["type"],
-                "receivedDate": x["receivedDate"],
-                "finalDueDate": x["finalDueDate"],
-            }
-            if not dry_run:
-                reviewTable.create(new_entry)
-            else:
-                print("Dry run: reviewTable.create(" + str(new_entry) + ")")
+    review_diff = diff_he_reviews(hcd_review_table, airtable_review_raw, dry_run)
 
     ############
     # store changes in runLog
     ############
-    changeSummary = ""
+    change_summary = ""
+    if status_diff:
+        change_summary = "\n*Jurisdiction(s) with new 6th Cycle status:*\n"
+        for x in status_diff:
+            change_summary = change_summary + x + "\n"
 
-    if statusDiff:
-        changeSummary = "\n*Jurisdiction(s) with new 6th Cycle status:*\n"
-        for x in statusDiff:
-            changeSummary = changeSummary + x + "\n"
+    if review_diff.new_reviews:
+        change_summary = change_summary + "\n*Jurisdiction(s) newly IN review:*\n"
+        for x in review_diff.new_reviews:
+            change_summary = change_summary + x + "\n"
 
-    if newReviews:
-        changeSummary = changeSummary + "\n*Jurisdiction(s) newly IN review:*\n"
-        for x in newReviews:
-            changeSummary = changeSummary + x + "\n"
+    if review_diff.exited_reviews:
+        change_summary = change_summary + "\n*Jurisdiction(s) OUT of review:*\n"
+        for x in review_diff.exited_reviews:
+            change_summary = change_summary + x + "\n"
 
-    if exitedReviews:
-        changeSummary = changeSummary + "\n*Jurisdiction(s) OUT of review:*\n"
-        for x in exitedReviews:
-            changeSummary = changeSummary + x + "\n"
-
-    if changeSummary == "":
-        changeSummary = "No changes detected."
-
-    # print(changeSummary)
+    if change_summary == "":
+        change_summary = "No changes detected."
 
     runTime = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
     if not dry_run:
-        logTable.create({"runTime": runTime, "differences": changeSummary})
+        airtable_log_table.create({"runTime": runTime, "differences": change_summary})
     else:
-        print("Dry run: logTable.create(" + runTime + ", " + changeSummary + ")")
+        print("Dry run: logTable.create(" + runTime + ", " + change_summary + ")")
 
-    return changeSummary
+    return change_summary
