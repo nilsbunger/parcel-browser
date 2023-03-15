@@ -61,21 +61,6 @@ def diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run) -> list[str
                 print("Dry run: elementStatus " + airtable_row["id"] + " to " + new_status)
     pprint(status_diff)
     return status_diff
-    # # 6th cycle status: any record difference means a status update for that jurisdiction
-    # for x in tableRows:
-    #     if x not in airtableStatusRecords:
-    #         # find list element with dict key/value
-    #         oldItem = list(
-    #             filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], airtable_status_raw)
-    #         )[0]
-    #         oldStatus = oldItem["fields"]["6thCycle"]
-    #         statusDiff.append(x["jurisdiction"] + " | From **" + oldStatus + "** to **" + x["6thCycle"] + "**")
-    #         if not dry_run:
-    #             airtable_element_status_table.update(oldItem["id"], {"6thCycle": x["6thCycle"]})
-    #         else:
-    #             print("Dry run: elementStatus" + oldItem["id"] + " to " + x["6thCycle"])
-
-    # under review: find jurisdictions that came in OR left review
 
 
 class HEReviewDiffs(BaseModel):
@@ -129,25 +114,7 @@ def diff_he_reviews(hcd_review_table: BITable, airtable_review_raw, dry_run) -> 
             airtable_review_table.delete(oldItem["id"])
         else:
             print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
-    #  Marcio's original implementation:
-    # for x in airtableReviewRecords:
-    #     if x not in reviewTableRows:
-    #         exited_reviews.append(
-    #             x["jurisdiction"]
-    #             + " | type: "
-    #             + x["type"]
-    #             + " | received date: "
-    #             + x["receivedDate"]
-    #             + " | final due date: "
-    #             + x["finalDueDate"]
-    #         )
-    #         oldItem = list(filter(lambda y: y["fields"]["jurisdiction"] == x["jurisdiction"], airtable_review_raw))[0]
-    #         if not dry_run:
-    #             airtable_review_table.delete(oldItem["id"])
-    #         else:
-    #             print("Dry run: reviewTable.delete(" + oldItem["id"] + ")")
-
-    # Add new items being added to review
+    # Add new items being added to review (ones only found in HCD dashboard)
     new_reviews = []
     for juri in juris_in_hcd_only:
         hcd_row = next((row for row in hcd_latest_6th_cycle_reviews if string.capwords(row[0]) == juri))
