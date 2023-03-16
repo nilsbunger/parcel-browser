@@ -41,6 +41,7 @@ env = environ.Env(
     CLOUDFLARE_R2_ENABLED=(bool, True),
     AIRTABLE_API_KEY=(str, None),
     AIRTABLE_YIMBY_LAW_HE_API_KEY=(str, None),
+    HCD_EMAIL_SUBS=(str, "nils+test@home3.co"),
 )
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")

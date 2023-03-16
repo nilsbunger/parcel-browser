@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import datetime
 from datetime import timezone
+import json
 from pprint import pprint
 import re
 import string
@@ -176,13 +177,13 @@ def diff_he_reviews(hcd_review_table: BITable, airtable_review_raw, dry_run) -> 
         new_entry = {
             "jurisdiction": juri,
             "type": hcd_row[2],
-            "receivedDate": hcd_row[3],
-            "finalDueDate": hcd_row[4],
+            "receivedDate": date_to_iso_str(hcd_row[3]),
+            "finalDueDate": date_to_iso_str(hcd_row[4]),
         }
         if not dry_run:
             airtable_review_table.create(new_entry)
         else:
-            print("Dry run: reviewTable.create(" + str(new_entry) + ")")
+            print("Dry run: reviewTable.create(" + json.dumps(new_entry) + ")")
 
     # Handle an update that exists in both sets. We don't expect any changes but we detect and report them.
     for juri in juris_in_both_sets:
@@ -302,10 +303,12 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table:
         hcd_row = next((row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri))
         airtable_row = yl_airtable_by_juri[juri.upper()]
         # Assumption: Airtable's "HE Compliance" field is always referring to 6th cycle.
-        airtable_6cycle_status = airtable_row["fields"].get("HE Compliance Home3", "N/A").upper()
-        hcd_6cycle_status = str(hcd_row[2]).upper()
+        airtable_6cycle_status = [x.upper() for x in airtable_row["fields"].get("HE Compliance Home3", "N/A")]
+        hcd_6cycle_status = re.split(r",\s*", str(hcd_row[2]).upper())
         if hcd_6cycle_status != airtable_6cycle_status:
-            changes.append(juri + " | From **" + airtable_6cycle_status + "** to **" + hcd_6cycle_status + "**")
+            changes.append(
+                juri + " | From **" + ",".join(airtable_6cycle_status) + "** to **" + hcd_6cycle_status + "**"
+            )
             if dry_run:
                 print(
                     f"Dry run: Change YIMBY Law HE Airtable 6th cycle compliance for juri {juri}"
@@ -314,7 +317,7 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table:
             else:
                 airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].update(
                     airtable_row["id"],
-                    {"HE Compliance Home3": re.split(r",\s*", hcd_6cycle_status)},
+                    {"HE Compliance Home3": hcd_6cycle_status},
                 )
     return changes
 
