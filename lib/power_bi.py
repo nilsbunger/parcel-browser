@@ -5,14 +5,28 @@ import re
 
 from bs4 import BeautifulSoup
 from django.core.cache import cache
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 import requests
 
 
 class BITable(BaseModel):
     table_name: str
     column_names: list[str]
+    index_col: int
     rows: list[list[object]]
+    _row_dict: dict[str, list[object]] = PrivateAttr()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._row_dict = None
+
+    @property
+    def row_dict(self) -> dict[str, list[object]]:
+        if self._row_dict is not None:
+            return self._row_dict
+        else:
+            self._row_dict = {row[self.index_col]: row for row in self.rows}
+            return self._row_dict
 
 
 class WhereCondition(BaseModel):
@@ -90,7 +104,7 @@ class PowerBIScraper:
         table = self._table_from_table_name(table_name)
         return self._columns_from_table(table)
 
-    def fetch_table(self, table_name, columns, conditions: list[WhereCondition]) -> BITable:
+    def fetch_table(self, table_name, columns, index_col=0, conditions: list[WhereCondition] = []) -> BITable:
         # fetch table from HCD with optional conditions (WHERE clauses) for filtering
         query_limit = 5000
         table = self._table_from_table_name(table_name)
@@ -116,7 +130,8 @@ class PowerBIScraper:
             len(raw_table_data["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]) < query_limit
         ), f"This query needs pagination or a higher query limit, which isn't implemented"
 
-        table_data = self._decompress_table(raw_table_data, table_name)
+        table_data = self._decompress_table(raw_table_data, table_name, index_col)
+
         return table_data
 
     def _table_from_table_name(self, table_name):
@@ -134,14 +149,23 @@ class PowerBIScraper:
         #   'T': column type -- 1 means indexed integer (index into value_dict); 7 means timestamp.
         #   'DN': column name -- exists if T=1, and is the key into value_dict
         # return a function that takes an encoded value for this column and returns the decoded value
+        def try_timestamping(x):
+            try:
+                ts = datetime.fromtimestamp(x / 1000, tz=timezone.utc) if x else None
+            except TypeError:
+                print("Note: Type error in datetime conversion of " + str(x))
+                ts = None
+            return ts
+
         if col_def["T"] == 1:
             return lambda x: (value_dict[col_def["DN"]][x] if isinstance(x, int) else x)
         elif col_def["T"] == 7:
-            return lambda x: datetime.fromtimestamp(x / 1000, tz=timezone.utc) if x else None
+            return try_timestamping
+            # return lambda x: datetime.fromtimestamp(x / 1000, tz=timezone.utc) if x else None
         else:
             raise Exception("Unknown column type: " + str(col_def["T"]))
 
-    def _decompress_table(self, table_data, table_name) -> BITable:
+    def _decompress_table(self, table_data, table_name, index_col) -> BITable:
         # Convert a table from a GET response, decoding the compression
         # and the mappings from indices to actual values.
         section_root = table_data["results"][0]["result"]["data"]
@@ -149,7 +173,7 @@ class PowerBIScraper:
             key["Source"]["Property"]
             for key in section_root["descriptor"]["Expressions"]["Primary"]["Groupings"][0]["Keys"]
         ]
-        table = BITable(table_name=table_name, column_names=col_names, rows=[])
+        table = BITable(table_name=table_name, column_names=col_names, index_col=index_col, rows=[])
 
         # decompress results, putting them into 'XC' field
         decompressible_array = section_root["dsr"]["DS"][0]["PH"][0]["DM0"]

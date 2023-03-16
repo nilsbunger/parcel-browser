@@ -39,6 +39,8 @@ env = environ.Env(
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
     CLOUDFLARE_R2_ENABLED=(bool, True),
+    AIRTABLE_API_KEY=(str, None),
+    AIRTABLE_YIMBY_LAW_HE_API_KEY=(str, None),
 )
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")
