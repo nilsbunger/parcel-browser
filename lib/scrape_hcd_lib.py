@@ -2,10 +2,12 @@ from dataclasses import dataclass, field
 import datetime
 from datetime import timezone
 from pprint import pprint
+import re
 import string
 from typing import Optional, cast
 
 from pyairtable import Table
+from pyairtable.utils import date_to_iso_str
 from pydantic import BaseModel
 
 from lib.power_bi import BITable, PowerBIScraper, WhereCondition
@@ -69,7 +71,7 @@ airtable_bases = AirtableBases(
     yimby_law_housing_elements=AirtableBase(
         base_id="appRD2z3VXs78iq80",
         api_key=env("AIRTABLE_YIMBY_LAW_HE_API_KEY"),
-        table_names=["HCD Cities"],
+        table_names=["HCD Cities", "HCD HE Status Sync"],
         tables=dict(),
         view_name="Website View HE Status",
     ),
@@ -201,22 +203,88 @@ def diff_he_reviews(hcd_review_table: BITable, airtable_review_raw, dry_run) -> 
     return HEReviewDiffs(new_reviews=new_reviews, exited_reviews=exited_reviews, messages=messages)
 
 
-def diff_yimby_law_housing_elements(hcd_status_table: BITable, dry_run):
-    # Compare fetched HCD data with Yimby Law Airtable data. Update Airtable's HE Compliance field if needed.
-    yimby_law_airtable = airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].all()
-    yl_airtable_by_juri = dict()
+def airtable_by_juri(airtable_raw):
+    # create a dict of jurisdiction to airtable row
+    airtable_by_juri = dict()
     error_count = 0
-    for row in yimby_law_airtable:
+    for row in airtable_raw:
         juri = row["fields"].get("Jurisdiction", None)
         if juri:
-            yl_airtable_by_juri[juri] = row
+            airtable_by_juri[juri] = row
         else:
-            print("No Jurisdiction for row", row)
+            print("No Jurisdiction for row in airtable:", row)
             error_count += 1
     assert (
-        len(yl_airtable_by_juri) == len(yimby_law_airtable) - error_count
+        len(airtable_by_juri) == len(airtable_raw) - error_count
     ), "Duplicate jurisdictions in Yimby Law Airtable"
 
+    return airtable_by_juri
+
+
+def upper_strings(l: list):
+    return [x.upper() if isinstance(x, str) else x for x in l]
+
+
+def prepare_he_status_sync_airtable_record(hcd_status_table, hcd_review_table, juri):
+    hcd_status_row = hcd_status_table.row_dict[string.capwords(juri)]
+    new_record = dict(zip(hcd_status_table.column_names, upper_strings(hcd_status_row)))
+    if juri.upper() in hcd_review_table.row_dict:
+        hcd_review_row = hcd_review_table.row_dict[juri.upper()]
+        # change column names underscores to spaces and replace with title case
+        review_col_names = [string.capwords(x.replace("_", " ")) for x in hcd_review_table.column_names]
+        new_record_pt2 = dict(zip(review_col_names, upper_strings(hcd_review_row)))
+        new_record |= new_record_pt2
+    # Iterate over this record's fields, adjusting their format for writing to Airtable.
+    for k, v in new_record.items():
+        # Convert datetimes to string
+        if isinstance(v, datetime.datetime):
+            new_record[k] = v.isoformat()
+        # Create lists for multi-select fields (e.g. 6th Cycle)
+        if k in ["6th Cycle"]:
+            new_record[k] = re.split(r",\s*", v)
+    return new_record
+
+
+def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_table: BITable, dry_run):
+    # Sync data from HCD (both status table and review table) to a Yimby Law Airtable table that we control.
+
+    # table that WE control and directly write into:
+    yimby_law_he_status_sync_airtable = airtable_bases.yimby_law_housing_elements.tables["HCD HE Status Sync"]
+
+    airtable_records = yimby_law_he_status_sync_airtable.all()
+    # ids = [r["id"] for r in airtable_records]
+    # print("Deleting", len(ids), "records from HCD HE Status Sync table")
+    # yimby_law_he_status_sync_airtable.batch_delete(ids)
+    print("Syncing HCD tableso YIMBY Law Housing Elements 'HCD HE Status Sync' table")
+    # Update airtable entries that already exist with new HCD data.
+    processed_juris = set()
+    for idx, record in enumerate(airtable_records):
+        juri = record["fields"]["Jurisdiction"]
+        if idx % 20 == 0:
+            print(f"Updating {idx} of {len(airtable_records)} entries (currently on {juri})")
+        if string.capwords(juri) in hcd_status_table.row_dict:
+            new_record = prepare_he_status_sync_airtable_record(hcd_status_table, hcd_review_table, juri)
+            yimby_law_he_status_sync_airtable.update(record["id"], new_record, replace=True)
+            processed_juris.add(juri)
+        else:
+            print(f"No HCD status row for {juri}; deleting airtable record")
+            yimby_law_he_status_sync_airtable.delete(record["id"])
+    # Add new jurisdictions we found from HCD that don't exist in airtable yet.
+    for juri in hcd_status_table.row_dict:
+        if juri.upper() in processed_juris:
+            continue
+        print(f"Adding new record for {juri} to Airtable... was missing before")
+        new_record = prepare_he_status_sync_airtable_record(hcd_status_table, hcd_review_table, juri)
+        yimby_law_he_status_sync_airtable.create(new_record)
+
+
+def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table: BITable, dry_run):
+    # Compare fetched HCD data with Yimby Law Airtable data. Update Airtable's HE Compliance field if needed.
+
+    # Yimby Law's table that is used to update fairhousingelements.org and other places.
+    yimby_law_airtable = airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].all()
+
+    yl_airtable_by_juri = airtable_by_juri(yimby_law_airtable)
     hcd_jurisdictions = set([string.capwords(cast(str, x[0])) for x in hcd_status_table.rows])
     airtable_jurisdictions = set([string.capwords(x) for x in yl_airtable_by_juri.keys()])
 
@@ -234,19 +302,19 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, dry_run):
         hcd_row = next((row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri))
         airtable_row = yl_airtable_by_juri[juri.upper()]
         # Assumption: Airtable's "HE Compliance" field is always referring to 6th cycle.
-        airtable_6cycle_status = airtable_row["fields"]["HE Compliance"].upper()
+        airtable_6cycle_status = airtable_row["fields"].get("HE Compliance Home3", "N/A").upper()
         hcd_6cycle_status = str(hcd_row[2]).upper()
         if hcd_6cycle_status != airtable_6cycle_status:
             changes.append(juri + " | From **" + airtable_6cycle_status + "** to **" + hcd_6cycle_status + "**")
             if dry_run:
                 print(
-                    f"Dry run: Change YIMBY Law HE Airtable compliance for juri {juri}"
+                    f"Dry run: Change YIMBY Law HE Airtable 6th cycle compliance for juri {juri}"
                     f" from {airtable_6cycle_status} to {hcd_6cycle_status}"
                 )
             else:
                 airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].update(
                     airtable_row["id"],
-                    {"HE Compliance": hcd_6cycle_status},
+                    {"HE Compliance Home3": re.split(r",\s*", hcd_6cycle_status)},
                 )
     return changes
 
@@ -267,19 +335,31 @@ def run_scrape_hcd(dry_run=False) -> str:
     status_table_cols = hcd_page_scraper.list_columns("HE_Compliance")
 
     # Fetch "Under Review" table:
-    select_columns = ["JURISDICTION", "CYCLE", "TYPE", "RECEIVED_DATE", "FINAL_DUE_DATE"]
+    select_columns = [
+        "JURISDICTION",
+        "CYCLE",
+        "TYPE",
+        "RECEIVED_DATE",
+        "FINAL_DUE_DATE",
+        "ADOPTED_DATE",
+        "COMPLIANCE_STATUS",
+    ]
     # Query filter: Each WhereCondition must be true (AND). Inside a WhereCondition, any one of the values will
     # match (OR)
     conditions = [
         WhereCondition(column_name="CYCLE", values=["5th Cycle", "6th Cycle"]),
         WhereCondition(column_name="TYPE", values=["ADOPTED", "SUBSEQUENT DRAFT", "DRAFT", "INITIAL DRAFT"]),
     ]
-    hcd_review_table = hcd_page_scraper.fetch_table("Under Review", columns=select_columns, conditions=conditions)
+    hcd_review_table = hcd_page_scraper.fetch_table(
+        "Under Review", columns=select_columns, index_col=0, conditions=conditions
+    )
 
     # Fetch "HE Compliance" status table. The column naming isn't consistent between tables, likely due to
     #  inconsistency at HCD.
     select_columns = ["Jurisdiction", "5th Cycle", "6th Cycle"]
-    hcd_status_table = hcd_page_scraper.fetch_table("HE_Compliance", columns=select_columns, conditions=[])
+    hcd_status_table = hcd_page_scraper.fetch_table(
+        "HE_Compliance", columns=select_columns, index_col=0, conditions=[]
+    )
 
     # fetch he_status_bot Airtables
     airtable_status_raw = airtable_bases.he_status_bot.tables["dashboardSync"].all()
@@ -291,7 +371,10 @@ def run_scrape_hcd(dry_run=False) -> str:
 
     status_diff = diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run)
     review_diff = diff_he_reviews(hcd_review_table, airtable_review_raw, dry_run)
-    yl_he_diff = diff_yimby_law_housing_elements(hcd_status_table, dry_run)
+    yl_he_diff = diff_yimby_law_housing_elements(hcd_status_table, hcd_review_table, dry_run)
+
+    # Sync HCD status to Yimby Law's airtable
+    sync_he_status_to_yimby_law_table(hcd_status_table, hcd_review_table, dry_run)
 
     ############
     # store changes in runLog
