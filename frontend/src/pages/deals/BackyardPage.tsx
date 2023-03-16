@@ -7,7 +7,7 @@ export default function BackyardPage() {
         <div className="hero-content text-center">
           <div className="max-w-xl2">
             <h1 className="text-5xl font-bold">The Backyard-Home3 SPV</h1>
-            <p className="py-6">Local development team <b>Backyard</b> is building 19 "missing middle" residential units across three lots in San Diego's hip North Park and Normal Heights neighborhoods. The project is underwritten to a 6.3% UYOC and investor IRR of 16% to 18%, with an exit timeline of 6 to 10 years. <b>Home3</b> secured a $1M equity allocation offered to our network of investors.</p>
+            <p className="py-6">Local development team <b>Backyard</b> is building 19 "missing middle" residential units across three lots in San Diego's hip North Park and Normal Heights neighborhoods. The project is underwritten to a 6.3% UYOC and investor IRR of 16% to 18%, with an exit timeline of 6 to 10 years. <b>Home3</b> secured a $1M equity allocation, exclusively offered to our network of investors.</p>
             <form action="https://forms.gle/o4uhhDWYWZAzzMSc6" method="get" target="_blank">
               <button className="btn btn-primary">Apply to invest</button>
             </form>            
@@ -15,9 +15,16 @@ export default function BackyardPage() {
         </div>
         </div>
         
-        <article className='prose max-w-full'>                  
+        <article className='prose max-w-full'>  
+          <h1>Why we like this deal</h1>          
+          <ul>
+              <li><strong>Location, x3</strong>. The sites are well positioned in and around North Park, one of the strongest submarkets in San Diego. The city has a diverse economy and has arguably the strongest post-pandemic recovery in the country.</li>
+              <li><strong>Promising team.&nbsp;</strong>Roee, Coby and Gabe amassed considerable real estate experience working with their families and professional firms, have a deep understanding of their market and target tenants, and are in a city that&apos;s hungry for their style of development. They are strongly committed to rewarding their investors as a necessary ingredient to continue their career growth.</li>
+              <li><strong>Margin of safety.&nbsp;</strong>The project is utilizing reasonable leverage (64% LTV), the GPs have skin in the game (family equity is ~10% of total project cost), and secured construction financing for 2 of 3 projects at low rates (8%). All three project sites were acquired before a recent 28% increase in prices, and they are being developed sequentially, creating the option to hold or sell the last site if appropriate. These items provides an exit path in case of a bear-case scenario.</li>
+          </ul>
+          <p>We encourage all investors to perform their own dilligence. As always, Real Estate investments are inherently risky and can go to zero due to a variety of factors within and outside the GP's control.</p>
           <h1>Locations</h1>
-          <p>The sites are short walks to vibrant commercial corridors and frequent transit (WalkScores of 92), sub-15 minutes drive to downtown San Diego, and sub-30 minutes drive to <a target="blank" href="https://appleinsider.com/articles/22/07/27/apple-buys-new-campus-for-445-million-for-vast-san-diego-expansion">Apple’s planned 5,000 employee Rancho Bernardo engineering campus</a>. Backyard chose the sites because they’re in walkable neighborhoods close to desirable amenities like restaurants, cafes, parks, boutique shops, and cultural institutions. These locations command a higher premium because demand to live in walkable, mixed-use neighborhoods considerably outpaces supply.</p>
+          <p>The sites are short walks to vibrant commercial corridors and frequent transit, sub-15 minutes drive to downtown San Diego, and sub-30 minutes drive to <a target="blank" href="https://appleinsider.com/articles/22/07/27/apple-buys-new-campus-for-445-million-for-vast-san-diego-expansion">Apple’s planned 5,000 employee Rancho Bernardo engineering campus</a>. Backyard chose the sites because they’re in walkable neighborhoods close to desirable amenities like restaurants, cafes, parks, boutique shops, and cultural institutions. These locations command a higher premium because demand to live in walkable, mixed-use neighborhoods considerably outpaces supply.</p>
           <img src="/images/SD_property_map.jpeg"/>
           <p>The project benefits from <a href='https://www.zumper.com/rent-research/san-diego-ca/north-park'>17% annual rent growth</a> in its submarket, drawing on San Diego’s <a  href='https://www.sandiegouniontribune.com/news/politics/story/2023-02-10/san-diego-tax-revenue-fully-recovered-from-pandemic-plunge'>nation-leading pandemic recovery</a></p>
           <p>The New York Times <a target='_blank' href='https://www.nytimes.com/interactive/2023/03/09/realestate/san-diego-houses-homes.html'>just recognized</a> North Park as "one of San Diego’s trendiest neighborhoods". They called Normal Heights, which is adjacent to the east, "a colorful, walkable neighborhood with craft-beer pubs, pizzerias and vegetarian restaurants". Both neighborhoods are emerging as prime destinations for urban-minded professionals. Their ecletic, upscale vibe and proximity to a major park reminds us of Dolores Heights in San Francisco.</p>
@@ -155,6 +162,8 @@ export default function BackyardPage() {
           </div>       
           <p><i>Roee and Gabe at 4777 35th St, on Dec. 2022, during the Home3 dilligence trip</i></p>                          
           <img src="/images/RoeeAndGabe2.jpg" alt="Roee and Gabe from Backyard" />
+          <p><i>As of March 16th, 4777 35th St is weeks aways from tenants.</i></p>                          
+          <img src="/images/35th_complete_1.jpg" alt="35th st almost ready for tenants" />          
         </article>                 
         <article className="prose max-w-full"> 
           <h1>Deal Documents</h1>                          
@@ -164,9 +173,7 @@ export default function BackyardPage() {
             <li><a className="link link-hover" href="#">📄 Backyard-Home3 SPV Operating Agreement</a></li>
             <li><a className="link link-hover" href="#">📄 Backyard-Home3 SPV Side Letter</a></li>
             </ul>
-          </p>
-          <h1>A note on the macro environment</h1>
-          <p>As of March 2023, financing rates are up significantly due to the Fed's attempts to rein in inflation. Increased rates are generally a headwind for new developments like Backyard, as they increase financing costs. We believe this project can thrive in a higher rate environment, for the following reasons: (i) The US Treasury Yield Curve is currently inverted, meaning the market expects rates will be lower when the project refinances post-stabilization; (ii) The project UYOC is still 180 bps higher than the fed funds rate, providing some financing margin; (iv) two of the three construction loans were locked in before the rise in rates; (v) as weaker projects are delayed or cancelled, the supply shortage and inflationary pressures will contribute to continued rent growth; (vi) the project has the option, in a downturn scenario, of delaying or selling the final (and largest) site; (vii) the project is conservatively financed with an overall LTV of 64%.</p>
+          </p>          
           <h2>Next Steps</h2>
           <p>Reach out to marcio@home3.co with any questions about this deal.</p>
           <form action="https://forms.gle/o4uhhDWYWZAzzMSc6" method="get" target="_blank">
