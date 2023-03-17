@@ -52,7 +52,7 @@ class AirtableBase:
             for table_name in self.table_names
         }
         if not self.api_key:
-            print("No API key for Airtable base " + self.base_id + ", skipping")
+            print("** WARNING: No API key for Airtable base " + self.base_id + ", skipping **")
 
 
 @dataclass
@@ -328,6 +328,10 @@ def run_scrape_hcd(dry_run=False) -> str:
     page_url = "https://www.hcd.ca.gov/planning-and-community-development/housing-open-data-tools/housing-element-implementation-and-apr-dashboard"
     # smaller 3-page BI dashboard with similar data (but not exactly the same formatting):
     # page_url = "https://www.hcd.ca.gov/planning-and-community-development/housing-open-data-tools/housing-element-review-and-compliance-report"
+
+    # Check that we have API keys for the HCD BI dashboard
+    assert airtable_bases.he_status_bot.api_key is not None
+    assert airtable_bases.yimby_law_housing_elements.api_key is not None
 
     hcd_page_scraper = PowerBIScraper(page_url)
 
