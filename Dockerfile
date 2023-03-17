@@ -7,44 +7,20 @@
 FROM ubuntu:20.04
 
 ### INSTALL SYSTEM PACKAGES ##############################################################
-
-# Deadsnakes repo needed for python 3.9
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    curl \
+RUN apt-get update \
+    && apt-get install -y wget curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
 
-RUN add-apt-repository ppa:deadsnakes/ppa
+### CONDA / MAMBA SETUP #################################################################
+# Install Miniconda + Mamba and setup path
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -b -p /opt/conda \
+    && rm /tmp/miniconda.sh
 
-# Get Node 16.x - EOL Sept 2023
-# NODEJS distributions from nodesource.com
-# https://github.com/nodesource/distributions/blob/master/README.md
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-
-# openssh-client -- for ssh and scp to work
-# postgresql-client -- for psql
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    gdal-bin=3.0.4+dfsg-1build3 \
-    libgdal-dev=3.0.4+dfsg-1build3 \
-    python3.9 \
-    python3.9-distutils \
-    python3.9-venv \
-    python3.9-dev \
-    openssh-client \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
-
-    # postgresql-client=12+214ubuntu0.1
-
-RUN chsh -s /usr/bin/bash
-ENV PATH="/root/.local/bin:$PATH"
+ENV PATH /opt/conda/bin:$PATH
 WORKDIR /app
 
-### INSTALL NODE AND PYTHON PKG MANAGERS #################################################
-
-RUN npm install --location=global yarn
-
-RUN curl -sSL https://install.python-poetry.org | python3.9 - --version 1.2.2
+RUN conda install -y -c conda-forge mamba
 
 ### INSTALL SUPERCRONIC CRON MANAGER #####################################################
 
@@ -59,7 +35,20 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
 
-COPY crontab crontab
+
+### INSTALL AND ACTIVATE MAMBA ENVIRONMENT #####################################################
+COPY mamba-env.yml .
+RUN mamba env create -f mamba-env.yml \
+# Install gcc for compiling psycopg2 (it's recommended to build from source for
+# production)
+  && mamba install -n mamba-parsnip gcc_linux-64 \
+  && mamba clean -all -y
+
+# Activate environment:
+SHELL ["conda", "run", "-n", "mamba-parsnip", "/bin/bash", "-c"]
+
+### INSTALL YARN (requires conda env) ####################################################
+RUN npm install --location=global yarn
 
 ### PYTHON DEPENDENCIES ##################################################################
 # Set up a python virtual env for all subsequent commands
@@ -67,10 +56,13 @@ ENV BUILD_PHASE=True
 ENV DJANGO_ENV=production
 
 # Do python package installations first, so that they're cached in most cases
+COPY crontab crontab
 COPY pyproject.toml .
+COPY poetry.toml .
 COPY poetry.lock .
 RUN poetry install --only main --no-root --no-interaction --no-ansi
 
+### FRONTEND DEPENDENCIES ##################################################################
 # Do frontend package installations before copying files too, so they're cached.
 RUN mkdir frontend
 WORKDIR /app/frontend
@@ -78,14 +70,13 @@ COPY frontend/package.json .
 COPY frontend/yarn.lock .
 RUN yarn install && yarn cache clean
 
+### COPY FRONTEND AND BACKEND SOURCE CODE ##################################################
 # Copy source code - put as late as possible in file, since it's fast-changing.
 WORKDIR /app
 COPY . .
-RUN mkdir -p dist/static
-RUN poetry run python manage.py collectstatic --noinput
+RUN mkdir -p dist/static && python manage.py collectstatic --noinput
 
-
-### FRONT-END INSTALL AND BUILD ##########################################################
+### FRONT-END BUILD ##########################################################
 WORKDIR /app/frontend
 RUN yarn build
 
@@ -95,7 +86,5 @@ EXPOSE 8080
 ### EXECUTE THE APP SERVER ###############################################################
 
 # NOTE: I believe this is overridden by fly.toml's processes list
-CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
+# CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
 # CMD ["sleep", "999999"]
-
-### THE END ##############################################################################

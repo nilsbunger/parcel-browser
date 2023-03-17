@@ -8,7 +8,7 @@ kill_timeout = 5
 #   dockerfile = "Dockerfile"
 
 [deploy]
- release_command = "poetry run python manage.py migrate"
+ release_command = "mamba run -n mamba-parsnip python manage.py migrate"
 
 [env]
   PORT = "8080"
@@ -54,6 +54,6 @@ kill_timeout = 5
 #   url_prefix = "/static/"
 
 [processes]
-  # Specify our web service and supercronic (crontab) process groups
-  web = "poetry run gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
+# Specify our web service and supercronic (crontab) process groups
+  web = "mamba run -n mamba-parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
   cron = "supercronic /app/crontab"
