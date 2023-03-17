@@ -175,10 +175,12 @@ class PowerBIScraper:
         ]
         table = BITable(table_name=table_name, column_names=col_names, index_col=index_col, rows=[])
 
-        # decompress results, putting them into 'XC' field
+        # decompress results, putting them into 'XC' field for visibility / debuggability
         decompressible_array = section_root["dsr"]["DS"][0]["PH"][0]["DM0"]
         value_dict = section_root["dsr"]["DS"][0]["ValueDicts"]
-        num_fields = len(decompressible_array[0]["C"])
+        entry0 = decompressible_array[0]
+        # total number of fields includes '1's set in bitfields for R (repeate) and Ø (zero)
+        num_fields = len(entry0["C"]) + bin(entry0.get("R", 0)).count("1") + bin(entry0.get("Ø", 0)).count("1")
         col_mapper_fn = [self._decompress_col_mapper(x, value_dict) for x in decompressible_array[0]["S"]]
         prev_c = None
         for entry in decompressible_array:
