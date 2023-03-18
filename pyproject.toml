@@ -8,7 +8,7 @@ django_settings_module = "mygeo.settings"
 [tool.black]
 # See Black command line options here:
 # https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
-line-length = 115
+line-length = 118
 target-version = ["py39"]
 workers = 4
 verbose = false
