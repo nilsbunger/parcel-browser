@@ -1,18 +1,17 @@
-from collections import Counter
-from enum import Enum
 import logging
 import pprint
 import statistics
 import sys
+from collections import Counter
+from enum import Enum
 from time import perf_counter
 
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.geos import Polygon
-from django.core.management import BaseCommand
 import geopandas
-from geopandas import GeoSeries, GeoDataFrame
 import matplotlib.pyplot as plt
 import shapely
+from django.contrib.gis.db.models.functions import Distance
+from django.core.management import BaseCommand
+from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry import LineString
 
 from lib import mgmt_cmd_lib
@@ -58,9 +57,7 @@ def get_nearby_parcels_and_roads_df(model_obj, distance, crs):
         fields=["distance", "rd30full", "length", "rightway", "id", "geom"],
     )
     model_obj_df = models_to_utm_gdf([model_obj], crs)
-    model_obj_xlat, [roads_xlat, near_parcels_xlat] = normalize_geometries(
-        model_obj_df, [roads_df, near_parcels_df]
-    )
+    model_obj_xlat, [roads_xlat, near_parcels_xlat] = normalize_geometries(model_obj_df, [roads_df, near_parcels_df])
 
     return model_obj_xlat, roads_xlat, near_parcels_xlat
     # # near_parcels_xlat = near_parcels_df
@@ -84,20 +81,20 @@ class Command(BaseCommand):
         roads_qs = (
             Roads.objects.filter(lpsjur="SD").exclude(funclass__in=["1", "A", "B", "F", "W"]).order_by("roadsegid")
         )
-        start_idx = 23923 + 13743  # TODO: REMOVE INDEX
+        start_idx = 0
         stats = Counter({})
         stats["exception_list"] = []
         plot = False
         logging.info(f"Evaluating {roads_qs.count()} roads")
         for idx, road_under_test in enumerate(roads_qs[start_idx:]):
+            analyzed_road = AnalyzedRoad(road=road_under_test)
             try:
-                analyzed_road = AnalyzedRoad(road=road_under_test)
                 if plot:
                     plt.close()
                     fig = plt.figure("HI")
                     ax = fig.add_subplot()
                 # Get nearby parcels and roads as GeoDataFrames, and normalize them all to 0,0 base
-                if road_under_test.length < 20:  #  django object length is in feet
+                if road_under_test.length < 20:  # django object length is in feet
                     analyzed_road.status = AnalyzedRoad.Status.TOO_SHORT
                     analyzed_road.save()
                     stats["skip:too_short"] += 1
@@ -115,7 +112,7 @@ class Command(BaseCommand):
                 # Plot background items
                 logging.info(
                     f"Calculating idx={idx} road roadsegid={road_under_test.roadsegid} : {road_under_test.abloaddr}-{road_under_test.abhiaddr} {road_under_test.rd30full}"
-                    f". Length={round(road_under_test_df.length.values[0],1)} meters"
+                    f". Length={round(road_under_test_df.length.values[0], 1)} meters"
                 )
                 parcels_blob_df = parcels_df.dissolve()
                 if plot:
@@ -126,7 +123,7 @@ class Command(BaseCommand):
                     roads_df.plot(ax=ax, color="orange")
                     try:
                         road_under_test_df.boundary.plot(ax=ax, color="blue")
-                    except:
+                    except Exception:
                         # Some weird cases, like a segment that circles back on itself, have no boundary
                         logging.info("Couldn't plot road boundary")
                     road_under_test_df.plot(ax=ax, color="red")
@@ -140,7 +137,7 @@ class Command(BaseCommand):
                     .model_right.notna()
                     .any()
                 ):
-                    logging.info(f"Road segment is inside a parcel. Skipping")
+                    logging.info("Road segment is inside a parcel. Skipping")
                     stats["skip:inside_parcel"] += 1
                     analyzed_road.status = AnalyzedRoad.Status.INSIDE_PARCEL
                     analyzed_road.save()
@@ -209,7 +206,7 @@ class Command(BaseCommand):
                 good_widths = [x for x in road_widths if x >= 0]
                 good_widths.sort()
                 if len(good_widths) == 0:
-                    logging.info(f"  No good road widths found - skipping road")
+                    logging.info("  No good road widths found - skipping road")
                     stats["skip:no_good_widths"] += 1
                     analyzed_road.status = AnalyzedRoad.Status.NO_WIDTHS
                     analyzed_road.save()
@@ -221,7 +218,7 @@ class Command(BaseCommand):
                     analyzed_road.stdev_width = round(statistics.pstdev(good_widths, analyzed_road.avg_width), 2)
                     if analyzed_road.stdev_width / analyzed_road.avg_width > 0.1:
                         stats["skip:width_too_unstable"] += 1
-                        logging.info(f"  Road width stdev is too large - skipping road")
+                        logging.info("  Road width stdev is too large - skipping road")
                         analyzed_road.status = AnalyzedRoad.Status.UNSTABLE_WIDTHS
                         analyzed_road.save()
                         continue
@@ -229,7 +226,7 @@ class Command(BaseCommand):
                     analyzed_road.high_width = good_widths[-1]
                     analyzed_road.save()
                     stats["ok"] += 1
-            except Exception as e:
+            except Exception:
                 analyzed_road.status = AnalyzedRoad.Status.EXCEPTION
                 analyzed_road.save()
                 logging.exception(f"Error processing road {road_under_test}")
@@ -246,8 +243,8 @@ class Command(BaseCommand):
 
         # Roads table says width of Clairemont Mesa Blvd is 102 ft
         main_parcel = Parcel.objects.using("basedata").get(apn=apn)
-        main_parcel_df = models_to_utm_gdf([main_parcel], sd_utm_crs, fields=["apn", "address", "geom"])
-        roads_df, parcels_df = get_nearby_parcels_and_roads_df(main_parcel, distance=100, crs=sd_utm_crs)
+        models_to_utm_gdf([main_parcel], sd_utm_crs, fields=["apn", "address", "geom"])
+        _, roads_df, parcels_df = get_nearby_parcels_and_roads_df(main_parcel, distance=100, crs=sd_utm_crs)
 
         for idx, row in roads_df.iterrows():
             sys.stderr.write(f"{row['rd30full']} {row['length']}, dist={roads[idx].distance}\n")
@@ -255,7 +252,7 @@ class Command(BaseCommand):
             ### UPDATE THIS: ANGLE needs to be angle of ROAD relative to angle of
             ### this line... we want lines that are perpendicular to the road
 
-            assert False
+            raise AssertionError()
             angle = arctan2(points[1].y - points[0].y, points[1].x - points[0].x)
             angle = abs(degrees(angle))
             sys.stderr.write(f"angle={angle}\n")

@@ -1,7 +1,7 @@
+import pytest
 from django.apps import apps as django_apps
 from django.test import Client
 from django.urls import get_resolver, reverse
-import pytest
 
 import mygeo
 from mygeo import settings, urls

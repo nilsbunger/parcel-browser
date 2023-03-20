@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from ninja import ModelSchema, Schema
 from pydantic import Field
@@ -113,7 +113,7 @@ class ListingsFilters(Schema):
     is_mf: bool = False
     is_tpa: bool = False
     # neighborhood__contains: str = None
-    neighborhood__contains: List[str] = Field(None)
+    neighborhood__contains: list[str] = Field(None)
 
 
 class RentalRatesSchema(ModelSchema):
@@ -143,8 +143,8 @@ class AnalysisResponseSchema(Schema):
     is_mf: bool
     zone: str
     salt: str
-    dev_scenarios: List[Dict[str, Any]]
-    details: Dict[str, Any]
+    dev_scenarios: list[dict[str, Any]]
+    details: dict[str, Any]
     listing: PropertyListingSchema
     apn: str = Field(None, alias="parcel.apn")
     centroid: tuple = Field(None, alias="parcel.geom.centroid.coords")

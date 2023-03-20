@@ -1,6 +1,7 @@
-from copy import deepcopy
 import json
 import traceback
+from copy import deepcopy
+
 import requests
 
 from elt.models import RawSantaAnaParcel
@@ -17,9 +18,7 @@ def extract_from_arcgis_api(geo: GeoEnum, datatype: GisDataTypeEnum, pipestage: 
 
     stage_config = ARCGIS_DATA_SOURCES[geo][datatype][pipestage]
     geo_name = ARCGIS_DATA_SOURCES[geo]["geo_name"]
-    print(
-        f"Extract from Arc GIS API pipe stage: geo={geo}, datatype={datatype}, {pipestage}: {stage_config['name']}"
-    )
+    print(f"Extract from Arc GIS API pipe stage: geo={geo}, datatype={datatype}, {pipestage}: {stage_config['name']}")
     if stage_config["has_file_output"]:  # file-based output
         pipestage_dirname = f"{pipestage}.{stage_config['name']}"
         existing_files, new_file = get_elt_pipe_filenames(geo, datatype, pipestage_dirname)

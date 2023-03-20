@@ -23,7 +23,7 @@ placeholder_args = {"admin:app_list": ["world"]}
 
 def each_url_with_placeholder(url_patterns, namespace=""):
     # Generator to iterate over the URL patterns in the resolver, returning each URL with placeholder args
-    from django.urls import include, reverse
+    from django.urls import reverse
 
     # print (f"Called each_url_with_placeholder, ns={namespace}, url_patterns={url_patterns}")
     for url_pattern in url_patterns:
@@ -44,7 +44,7 @@ def each_url_with_placeholder(url_patterns, namespace=""):
             args = placeholder_args.get(viewname, range(1, url_pattern.pattern.regex.groups + 1))
             try:
                 url = reverse(viewname, args=args)
-            except NoReverseMatch as e:
+            except NoReverseMatch:
                 print(f"Can't test {viewname}")
                 continue
             # if not url_pattern.name:

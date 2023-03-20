@@ -1,5 +1,3 @@
-from typing import List
-
 from django.contrib.gis.db import models
 from pydantic import BaseModel
 
@@ -147,7 +145,7 @@ class Parcel(models.Model):
             return -1
 
     @property
-    def rental_units(self) -> List[RentalUnit]:
+    def rental_units(self) -> list[RentalUnit]:
         # Use parcel data to construct likely combination of units.
         # TODO: support overrides of this data
         if self.unitqty == 0:
@@ -171,7 +169,7 @@ class Parcel(models.Model):
             lot_str = "%s acres" % self.acreage
         else:
             lot_str = "%s lot" % self.usable_sq_field
-        base_str = "%s %s %s: %s living, " % (
+        base_str = "{} {} {}: {} living, ".format(
             self.apn,
             self.address,
             self.situs_zip,

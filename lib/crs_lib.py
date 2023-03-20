@@ -12,7 +12,7 @@ def get_utm_crs() -> pyproj.CRS:
     return sd_utm_crs
 
 
-from math import cos, sin, asin, sqrt, radians
+from math import asin, cos, radians, sin, sqrt
 
 
 def latlong_to_utm_crs(lat, long):

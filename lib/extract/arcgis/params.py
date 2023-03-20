@@ -1,4 +1,4 @@
-import lib.extract.arcgis.extract_from_api as extract_from_api
+from lib.extract.arcgis import extract_from_api
 from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
 from mygeo import settings
 

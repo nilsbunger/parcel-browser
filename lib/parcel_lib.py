@@ -1,40 +1,44 @@
+import json
 import re
-from typing import List, Union, Dict, Tuple
-from lib.shapely_lib import multi_line_string_split
+from math import sqrt
+from typing import Union
 
 import django.contrib.gis.geos
-from django.contrib.gis.measure import D
-from django.contrib.gis.db.models.functions import Distance
 import geopandas
 import pyproj
 import shapely
-from django.db.models import QuerySet
-from geopandas import GeoDataFrame, GeoSeries
-from lib.types import ParcelDC, Polygonal
-from shapely import wkt
-from shapely.validation import make_valid
-from shapely.ops import unary_union
-from shapely.geometry import Polygon, box, MultiPolygon, LineString, MultiPoint, GeometryCollection
-from django.core.serializers import serialize
-import json
-from shapely.geometry import MultiLineString, Point
-from math import sqrt
-
-from django.contrib.gis.geos import GEOSGeometry
-
-from rasterio import features, plot as rasterio_plot
 import shapely.ops
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import GEOSGeometry
+from django.core.serializers import serialize
+from django.db.models import QuerySet
+from geopandas import GeoDataFrame
+from numpy import argmax, argmin
+from rasterio import features
+from rasterio import plot as rasterio_plot
+from shapely import wkt
+from shapely.geometry import (
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+    box,
+)
+from shapely.ops import unary_union
+from shapely.validation import make_valid
 
+from lib.shapely_lib import multi_line_string_split
+from lib.types import ParcelDC, Polygonal
 from world.models import (
-    Parcel,
     BuildingOutlines,
+    Parcel,
     ParcelSlope,
     Roads,
-    ZoningBase,
     TransitPriorityArea,
+    ZoningBase,
 )
-
-from numpy import argmax, argmin
 
 
 def aspect_ratio(extents):
@@ -65,7 +69,7 @@ def get_parcel_by_apn(apn: str) -> Parcel:
     return Parcel.objects.get(apn=apn)
 
 
-def get_parcels_by_zip_codes(zip_codes: List) -> QuerySet:
+def get_parcels_by_zip_codes(zip_codes: list) -> QuerySet:
     # Returns a Queryset of parcels that are in the provided list of zip codes,
     # and are not marked as skip in our analyzed table (so they are residential and match our criteria).
     # Results are ordered by APN so there's a consistent analysis order (and can thus start midway if needed).
@@ -116,7 +120,7 @@ def get_buildings(parcel: Parcel) -> QuerySet:
     return BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
 
 
-def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> Tuple[str, bool, bool]:
+def get_parcel_zone(parcel: ParcelDC, utm_crs: pyproj.CRS) -> tuple[str, bool, bool]:
     """Gets the zone of a parcel.
 
     Args:
@@ -151,7 +155,7 @@ def models_to_utm_gdf(
     models: list[django.contrib.gis.db.models],
     utm_crs: pyproj.CRS,
     geometry_field: str = "geom",
-    fields=[],
+    fields=None,
 ) -> GeoDataFrame:
     """Converts a list of Django models into UTM projections, stored as a Dataframe.
     This is a flat projection where one unit is one meter.
@@ -165,6 +169,8 @@ def models_to_utm_gdf(
     Returns:
         GeoDataFrame: A GeoDataFrame representing the list of models
     """
+    if fields is None:
+        fields = []
     if len(models) == 0:
         return geopandas.GeoDataFrame(columns=["feature"], geometry="feature")
     fields = (geometry_field,) if not fields else fields
@@ -211,7 +217,7 @@ def normalize_geometries(gdf: GeoDataFrame, gdf_list: list[GeoDataFrame]):
     """Normalizes geometries to the main gdf (0,0). This is useful for plotting
 
     Args:
-        gdf1 (GeoDataFrame): The geometry that should represent 0,0, in a dataframe (often a parcel).
+        gdf (GeoDataFrame): The geometry that should represent 0,0, in a dataframe (often a parcel).
         gdf_list (GeoDataFrame): Other objects that should be normalized
 
     Returns:
@@ -255,7 +261,7 @@ def find_largest_rectangles_on_avail_geom(
     min_area: float = 0,
     max_total_area=float("inf"),
     max_area_per_building=float("inf"),
-) -> List[Polygon]:
+) -> list[Polygon]:
     """Finds a number of the largest rectangles we can place given the available geometry. If a minimum
     or maximum area are passed in, the rectangle sizes will be within that area. If not enough rectangles
     meet the minimum size, then only n < num_rects number of rectangles will be returned.
@@ -275,7 +281,7 @@ def find_largest_rectangles_on_avail_geom(
     placed_polys = []
 
     # Placement approach: Place single biggest unit, then rerun analysis
-    for i in range(num_rects):  # place 4 units
+    for _i in range(num_rects):  # place 4 units
         if max_total_area < min_area:
             break
         biggest_poly = biggest_poly_over_rotation(
@@ -329,8 +335,8 @@ def get_street_side_boundaries(parcel: ParcelDC, utm_crs: pyproj.CRS) -> dict:
 
     # Flag for Alley analysis. The is_alley_edge function is currently slow, but it works.
     # See the function for more details
-    ANALYZE_ALLEYS = False
-    if ANALYZE_ALLEYS:
+    analyze_alleys = False
+    if analyze_alleys:
         # If there's only one side, we can assume it's not alley facing.
         if isinstance(street_edges, LineString) or len(street_edges.geoms) == 1:
             d["front"] = street_edges
@@ -398,14 +404,14 @@ def identify_building_types(parcel_geom: Polygonal, buildings: GeoDataFrame) -> 
     """
     # The percent of a building's area that must be inside the parcel
     # to be not considered an encroachment
-    ENCROACHMENT_THRESHOLD = 0.4
+    encroachment_threshold = 0.4
 
     max_area = 0
     max_area_index = 0
 
     # Go through each building and label it's building_type appropriately
     for i, building in buildings.iterrows():
-        if building.geometry.intersection(parcel_geom).area / building.geometry.area < ENCROACHMENT_THRESHOLD:
+        if building.geometry.intersection(parcel_geom).area / building.geometry.area < encroachment_threshold:
             buildings.loc[i, "building_type"] = "ENCROACHMENT"
         else:
             buildings.loc[i, "building_type"] = "ACCESSORY"
@@ -418,7 +424,7 @@ def identify_building_types(parcel_geom: Polygonal, buildings: GeoDataFrame) -> 
     buildings.loc[max_area_index, "building_type"] = "MAIN"
 
 
-def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: float) -> float:
+def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_far: float) -> float:
     """Returns the available floor area of a parcel in square meters such that
     the FAR constraints aren't violated. Uses the floor area as calculated by summing
     the garages and total living area that are on the model object. However, if total_lvg_field
@@ -427,7 +433,7 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
     Args:
         parcel (ParcelDC): The parcel the building is on
         buildings (GeoDataFrame): The buildings on the parcel
-        max_FAR (float): The maximum floor area to return. < 1
+        max_far (float): The maximum floor area to return. < 1
 
     Returns:
         num: The available floor area to build in sqm. Must be > 0
@@ -448,10 +454,10 @@ def get_avail_floor_area(parcel: ParcelDC, buildings: GeoDataFrame, max_FAR: flo
             [bldg.geometry.area for i, bldg in buildings.iterrows() if bldg.building_type != "ENCROACHMENT"]
         )
 
-    return max(0, max_FAR * parcel.geometry.area - existing_floor_area)
+    return max(0, max_far * parcel.geometry.area - existing_floor_area)
 
 
-def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes: Dict) -> Polygonal:
+def get_buffered_building_geom(buildings: GeoDataFrame, buffer_sizes: dict) -> Polygonal:
     """Returns the geometry of buildings that's buffered by a certain width.
 
     Args:
@@ -701,7 +707,7 @@ def get_too_steep_polys(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int):
     """Gets the areas with a slope greater than the max_slope of a given parcel, returned as a multipolygon
 
     Args:
-        parcel_model (Parcel): A Django Parcel model object
+        parcel (Parcel): A Django Parcel model object
         utm_crs: (pyproj.CRS): Coordinate system to use for analysis.
         max_slope (int): The maximum slope to consider
 
@@ -745,10 +751,10 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
     lines = []
     for line in bb_lines:
         # First, scale it up by a lot
-        line = shapely.affinity.scale(line, 100, 100, 100)
+        line_lcl = shapely.affinity.scale(line, 100, 100, 100)
 
         # Then find the intersections between the line and parcel boundary
-        intersections = parcel_bounds.intersection(line)
+        intersections = parcel_bounds.intersection(line_lcl)
 
         # Skip if there's no intersections, which means the line is outside the parcel
         if intersections.is_empty:
@@ -757,12 +763,12 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
         # Should only intersect with 2 points. Draw a line using these intersections,
         # which effectively scales down our lines for easier drawing/debugging later on
         assert len(intersections.geoms) == 2
-        line = LineString(intersections.geoms)
-        line = shapely.affinity.scale(line, 1.1, 1.1, 1.1)
+        line_lcl = LineString(intersections.geoms)
+        line_lcl = shapely.affinity.scale(line_lcl, 1.1, 1.1, 1.1)
 
-        lines.append(line)
+        lines.append(line_lcl)
 
-        split = shapely.ops.split(parcel_geom, line)
+        split = shapely.ops.split(parcel_geom, line_lcl)
 
         # Sanity check: Splitting it should only result in 2 polygons
         assert len(split.geoms) == 2
@@ -789,7 +795,7 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
     start = 0
     stop = max([line_to_move.distance(Point(point)) for point in biggest_lot.exterior.coords])
 
-    for i in range(15):
+    for _i in range(15):
         mid = (start + stop) / 2
         new_div_line = line_to_move.parallel_offset(mid, side)
         new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
@@ -828,9 +834,9 @@ def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, Li
     # NOTE: This could change in the future with more info. Tweak this to be right.
     # A flag's street-facing edge should also just be a straight line, so if it's a multi-line
     # string or a curve, it's not a flag
-    MIN_STREET_FRONTAGE = 30 / 3.28
+    min_street_frontage = 30 / 3.28
     if (
-        front_street_edge.length > MIN_STREET_FRONTAGE
+        front_street_edge.length > min_street_frontage
         or isinstance(front_street_edge, MultiLineString)
         or len(front_street_edge.coords) > 2
     ):
@@ -848,7 +854,7 @@ def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, Li
     stop = max([seek_line.distance(Point(point)) for point in parcel.geometry.geoms[0].exterior.coords])
 
     # Use bianry search to seek until it gets to at least 1.3x the width, or until intersection turns into line
-    for i in range(15):
+    for _i in range(15):
         mid = (start + stop) / 2
         new_div_line = front_street_edge.parallel_offset(mid, side)
         new_div_line = shapely.affinity.scale(new_div_line, 100, 100, 100)
@@ -884,7 +890,7 @@ def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, Li
 
 def get_too_high_or_low(parcel: ParcelDC, buildings: GeoDataFrame, topos: GeoDataFrame, utm_crs):
     # Elevations are in feet
-    MAX_ELEV_DIFF = 20  # in feet
+    max_elev_diff = 20  # in feet
     # Ensure there are rows in the topos dataframe
     if topos.empty:
         return GeoDataFrame(), GeoDataFrame(), Polygon()
@@ -898,8 +904,8 @@ def get_too_high_or_low(parcel: ParcelDC, buildings: GeoDataFrame, topos: GeoDat
     main_building_elev = topos.model[main_building_topo_index].elev
     # print(main_building_elev)
 
-    max_elev = main_building_elev + MAX_ELEV_DIFF
-    min_elev = main_building_elev - MAX_ELEV_DIFF
+    max_elev = main_building_elev + max_elev_diff
+    min_elev = main_building_elev - max_elev_diff
 
     # Get range of the elevations
     elev_list = [t.elev for t in topos.model]

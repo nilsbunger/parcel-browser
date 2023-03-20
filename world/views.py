@@ -1,7 +1,8 @@
-from itertools import chain
 import json
 import pprint
+from itertools import chain
 
+import geopandas
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.serializers import serialize
 from django.http import HttpResponse, HttpResponseNotFound
@@ -9,10 +10,6 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import ListView
-import geopandas as geopandas
-
-from mygeo import settings
-
 from vectortiles.mixins import BaseVectorTileView
 
 # Create your views here.
@@ -20,21 +17,23 @@ from vectortiles.postgis.views import MVTView
 
 from lib.crs_lib import get_utm_crs
 from lib.types import CheckResultEnum
+from mygeo import settings
 from world.infra.django_cache import h3_cache_page
 from world.models import (
-    AnalyzedParcel,
     BuildingOutlines,
+    HousingSolutionArea,
     Parcel,
     Roads,
     Topography,
     TransitPriorityArea,
     ZoningBase,
+    ZoningMapLabel,
 )
-from world.models.base_models import HousingSolutionArea, ZoningMapLabel
+from world.models.models import AnalyzedParcel
 
 if settings.ENABLE_SILK:
     # noinspection PyUnresolvedReferences
-    from silk.profiling.profiler import silk_profile
+    pass
 
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -69,9 +68,7 @@ class ZoningTileData(LoginRequiredMixin, MVTView, ListView):
 
     def get(self, request, *args, **kwargs):
         """This is the same as the default get method, but I keep it here to show how it works"""
-        return BaseVectorTileView.get(
-            self, request=request, z=kwargs.get("z"), x=kwargs.get("x"), y=kwargs.get("y")
-        )
+        return BaseVectorTileView.get(self, request=request, z=kwargs.get("z"), x=kwargs.get("x"), y=kwargs.get("y"))
 
     def get_vector_tile_queryset(self):
         return self.model.objects.all()
@@ -141,7 +138,7 @@ class ParcelDetailView(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         try:
             parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist as e:
+        except Parcel.DoesNotExist:
             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
         # Example of how to combine two objects into one geojson serialization:
@@ -193,7 +190,7 @@ class ParcelDetailView(LoginRequiredMixin, View):
 def listing_prev_values(listing):
     """Return dict of relevant values that changed in the listing since the previously
     linked listing."""
-    retval = dict()
+    retval = {}
     if not listing.prev_listing:
         return retval
     for field in ["price", "status", "br", "ba", "size", "addr", "soldprice"]:
@@ -204,14 +201,14 @@ def listing_prev_values(listing):
 
 class AnalysisDetailData(LoginRequiredMixin, View):
     def get(self, request, id, *args, **kwargs):
-        assert False, "This route should no longer be used"
+        raise AssertionError("This route should no longer be used")
 
 
 class ParcelDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         try:
             parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist as e:
+        except Parcel.DoesNotExist:
             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
         serialized = serialize(
@@ -227,18 +224,18 @@ class IsolatedNeighborDetailData(LoginRequiredMixin, View):
     def get(self, request, apn, *args, **kwargs):
         try:
             parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist as e:
+        except Parcel.DoesNotExist:
             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
 
         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
-        serializedBuildings = serialize("geojson", buildings, geometry_field="geom")
+        serialized_buildings = serialize("geojson", buildings, geometry_field="geom")
 
-        return HttpResponse(serializedBuildings, content_type="application/json")
+        return HttpResponse(serialized_buildings, content_type="application/json")
 
 
 class AddressToLatLong(LoginRequiredMixin, View):
     def get(self, request, address):
-        suffixDict = {
+        suffix_dict = {
             "Alley": "ALY",
             "Avenue": "AVE",
             "Boulevard": "BLVD",
@@ -280,7 +277,7 @@ class AddressToLatLong(LoginRequiredMixin, View):
             return self.search(addr)
 
         elif len(addr) == 3:
-            suff = self.isStreetSuffix(addr[2], suffixDict)
+            suff = self.is_street_suffix(addr[2], suffix_dict)
             if bool(suff):
                 addr[2] = suff
                 return self.search(addr)
@@ -289,7 +286,7 @@ class AddressToLatLong(LoginRequiredMixin, View):
                 return self.search(addr)
 
         elif len(addr) == 4:
-            suff = self.isStreetSuffix(addr.pop(3), suffixDict)
+            suff = self.is_street_suffix(addr.pop(3), suffix_dict)
             addr[1] = addr[1] + " " + addr.pop(2)
             addr.append(suff)
             return self.search(addr)
@@ -297,11 +294,11 @@ class AddressToLatLong(LoginRequiredMixin, View):
         else:
             return HttpResponse("404")
 
-    def isStreetSuffix(self, string, suffixDict):
-        if string.upper() in list(suffixDict.values()):
+    def is_street_suffix(self, string, suffix_dict):
+        if string.upper() in list(suffix_dict.values()):
             return string.upper()
-        elif string.title() in list(suffixDict.keys()):
-            return suffixDict[string.title()]
+        elif string.title() in list(suffix_dict.keys()):
+            return suffix_dict[string.title()]
         else:
             return False
 
@@ -322,7 +319,7 @@ class AddressToLatLong(LoginRequiredMixin, View):
             except Parcel.DoesNotExist:
                 pass
 
-        if parcel != None:
+        if parcel is not None:
             coords = parcel.geom.centroid
             return HttpResponse(json.dumps({"x": coords.x, "y": coords.y}), content_type="application/json")
         return HttpResponse("404")

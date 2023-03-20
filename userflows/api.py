@@ -1,4 +1,3 @@
-import django
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from ninja import ModelSchema, NinjaAPI, Schema

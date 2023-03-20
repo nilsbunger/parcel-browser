@@ -1,8 +1,8 @@
 import logging
+from typing import TYPE_CHECKING
+
 import django
 import pyproj
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from world.models import Parcel, PropertyListing

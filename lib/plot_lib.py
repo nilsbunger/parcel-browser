@@ -1,11 +1,14 @@
 # Helper functions to plot geographical data
+from typing import Union
 
-import pyproj
-from lib.types import ParcelDC
-import matplotlib.pyplot as plt
-from lib.parcel_lib import *
 import geopandas
-import matplotlib
+import matplotlib.pyplot as plt
+import pyproj
+from geopandas import GeoDataFrame
+from shapely.geometry import LineString, MultiLineString, Polygon
+from shapely.ops import unary_union
+
+from lib.types import ParcelDC, Polygonal
 
 # matplotlib.use('Agg')
 
@@ -31,7 +34,7 @@ def plot_parcel_boundary_lengths(parcel: ParcelDC, axes):
             # Only plot side lengths if they're not super short (like if they're parts)
             # of a curve.
             if line.length > 2.5:
-                axes.annotate(text="{:.0f}m".format(line.length), xy=line.centroid.coords[:][0], ha="center")
+                axes.annotate(text=f"{line.length:.0f}m", xy=line.centroid.coords[:][0], ha="center")
 
 
 def plot_new_buildings(

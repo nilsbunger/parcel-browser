@@ -1,5 +1,3 @@
-from ninja import ModelSchema
-
 # from userflows.models import Profile
 
 #

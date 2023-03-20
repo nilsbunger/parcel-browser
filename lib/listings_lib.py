@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import re
 import traceback
-from typing import List
 
 from django.db.models.expressions import RawSQL
 
-from world.models import PropertyListing, Parcel
-
+from world.models import Parcel
 
 street_suffixes = [
     "dr",
@@ -79,14 +77,14 @@ normalize_prefix = {"north": "n", "south": "s", "east": "e", "west": "w"}
 
 
 # TODO: THIS IS NOT COMPLETE - MEANT TO BE AN ADDRESS MATCHER
-def address_to_parcels_loose(addr: str) -> List[Parcel]:
+def address_to_parcels_loose(addr: str) -> list[Parcel]:
     """Take a street address, and return any that loosely match, best match on top. For typeahead matching"""
     addr_normalized = re.sub(r"\.", "", addr.lower())
     addr_parts = addr_normalized.split()
     pquery = Parcel.objects.annotate(str_situs_addr=RawSQL("select cast(situs_addr as VARCHAR)", ()))
     if addr_parts[0].isnumeric():
         pquery = pquery.filter(str_situs_addr__regex=r"%s" % addr_parts[0])
-        x = addr_parts.pop()
+        addr_parts.pop()
     # pquery = pquery.filter(str_situs_str)
     # Concatenating address in postgres:
     # select apn, concat_ws(
@@ -125,7 +123,7 @@ def address_to_parcel(
             rest = rest[1:]
     # Check for a postfix and remove if present
     if rest[-1] in ["n", "s", "w", "e"]:
-        postfix = rest[-1]
+        rest[-1]
         rest = rest[:-1]
     # Separate the street suffix if it exists
     if rest and (rest[-1] in street_suffixes):
@@ -159,7 +157,6 @@ def address_to_parcel(
         return None, "dberror"
     # repeat loop twice, looking at exact match first.
     for parcels in [parcels_exact, parcels_inexact]:
-        matched_parcel = None
         if len(parcels) == 1:
             # exact match but check jurisdiction
             if parcels[0].situs_juri == jurisdiction:
@@ -173,8 +170,8 @@ def address_to_parcel(
         # more than one match -- see if the street suffix ('way', 'rd', ...), prefix ('e', 'w', ...)
         # or jurisdiction ('SD') disambiguates it
         # We track jurisdition because if we DO match in another jurisdiction, we know we didn't miss anything.
-        matched_parcel_candidates = list()
-        matched_jurisdiction_candidates = list()
+        matched_parcel_candidates = []
+        matched_jurisdiction_candidates = []
         jurisdictions = set()
         for p in parcels:
             if not p.situs_pre_field or (p.situs_pre_field and (p.situs_pre_field.lower() == street_prefix)):

@@ -1,10 +1,9 @@
 import logging
 from statistics import NormalDist
-from typing import List
 
+import requests
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
-import requests
 from requests import HTTPError
 
 from mygeo.settings import env
@@ -25,7 +24,7 @@ class RentService:
         percentile: int,
         interpolate_distance: int,
         is_adu=False,
-    ) -> List[int]:
+    ) -> list[int]:
         """Get the forecast rent for actual units or a hypothetical ADU at a location, and cache it.
 
         :param PropertyListing listing: MLS property listing to get rents for
@@ -43,7 +42,7 @@ class RentService:
         # check for exact match in DB in case we've already done this parcel
         if not is_adu and (listing.parcel.br < 1 or listing.parcel.ba < 1):
             log.info(f"Skipping {listing.addr}, APN={listing.parcel.apn} because there's no info on # of BR or BA")
-            messages["warning"].append(f"Missing rent: No info on # of BR or BA")
+            messages["warning"].append("Missing rent: No info on # of BR or BA")
 
             return []
         rd_list_for_parcel = list(RentalData.objects.filter(parcel=listing.parcel))
@@ -125,7 +124,7 @@ class RentService:
             )
             return -1
         if rd.details.get("status_code", 200) != 200:
-            messages["warning"].append(f"Missing rent: Rental data (live or from DB) has non-200 error code")
+            messages["warning"].append("Missing rent: Rental data (live or from DB) has non-200 error code")
             return -1
 
         # Ridiculous patch-up required -- 75th percentile is sometimes higher than max from rentometer??
@@ -146,8 +145,7 @@ class RentService:
                 )
             else:
                 rent = (
-                    rd.details["mean"]
-                    + ((percentile - 50) * (rd.details["percentile_75"] - rd.details["mean"])) / 25
+                    rd.details["mean"] + ((percentile - 50) * (rd.details["percentile_75"] - rd.details["mean"])) / 25
                 )
         assert rent < rd.details["max"]
         return rent

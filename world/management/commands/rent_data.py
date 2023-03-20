@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 
 from django.core.management import BaseCommand
 from django.db.models import Count
@@ -24,9 +23,7 @@ class Command(BaseCommand):
             l.delete()
         elif options["cmd_name"] == "dedup":
             rd_dupes = (
-                RentalData.objects.values("parcel_id", "br", "ba")
-                .annotate(cnt=Count("parcel_id"))
-                .filter(cnt__gt=1)
+                RentalData.objects.values("parcel_id", "br", "ba").annotate(cnt=Count("parcel_id")).filter(cnt__gt=1)
             )
             log.info(f"Found {len(rd_dupes)} duplicates. Removing:")
             for rd in rd_dupes:

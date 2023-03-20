@@ -5,6 +5,57 @@ plugins = ["mypy_django_plugin.main"]
 [tool.django-stubs]
 django_settings_module = "mygeo.settings"
 
+[tool.ruff]
+# Ruff linter
+line-length = 120
+target-version = "py39"
+ignore-init-module-imports = true
+
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "N", # pep8-naming
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "ANN",  # flake8-annotations
+    "UP",  # pyupgrade
+    "DTZ",  # flake8-datetimez
+    "PL",  # pylint
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "PLR0912", # too many branches
+    "PLR0913", # too many arguments
+    "ANN101", # missing type annotation for self in method
+    "ANN102", # Missing type annotation for `cls` in classmethod
+    "ANN002", # missing type annotation for *argsx
+    "ANN003", # missing type annotation for **kwargs
+
+    # Temporarily ignore (too much work to fix):
+    "ANN001", # missing type annotation for function argument
+    "ANN201", # Missing return type annotation for public function
+    "ANN202", # Missing return type annotation for private function
+    "ANN204", # Missing return type annotation for special method
+    "ANN205", # Missing return type annotation for staticmethod
+    "ANN206", # Missing return type annotation for classmethod
+    "PLR2004", # Magic value used in comparison, consider replacing 2 with a constant variable
+]
+
+exclude = [
+    "migrations",
+    "node_modules",
+    "archive",
+    "vendored",
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401", ]
+
+
 [tool.black]
 # See Black command line options here:
 # https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
@@ -66,6 +117,7 @@ locust = "^2.12.2"
 black = "~23"
 pytest-django = "^4.5.2"
 pyyaml = "^6.0"
+ruff = "^0.0.257"
 
 [build-system]
 requires = ["poetry-core"]

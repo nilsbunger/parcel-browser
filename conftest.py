@@ -1,13 +1,7 @@
-import logging
-import warnings
-
-from django.core.management import call_command
-import pytest
-from django.db import connections
-
 import psycopg2
+import pytest
+from django.core.management import call_command
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-
 
 # Define django_db_setup for pytest initialization. Originally we created a test DB based on template, though
 # I abandoned that approach and instead our tests use TWO databases (one with read-only geo data, and
@@ -35,7 +29,6 @@ def _run_sql(sql):
 def django_db_setup(django_db_setup, django_db_blocker):
     # including django_db_setup as an argument ensures that the base django_db_setup fixture is executed
     # See https://pytest-django.readthedocs.io/en/latest/database.html#django-db-setup for more info
-    from django.conf import settings
 
     with django_db_blocker.unblock():
         call_command("loaddata", "world/test_fixtures/parcel_data.yaml")

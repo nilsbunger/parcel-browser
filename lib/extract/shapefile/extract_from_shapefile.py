@@ -1,15 +1,14 @@
-from pathlib import Path
-from pprint import pformat, pprint
 import sys
 import tempfile
 import zipfile
+from pathlib import Path
+from pprint import pformat
 
-from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.utils import LayerMapping, mapping, ogrinspect
 
+import elt.models as elt_models
 from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
 from lib.extract.elt_utils import get_elt_pipe_filenames, pipestage_prompt
-import elt.models as elt_models
 
 
 # Extract data from shapefile, and update DB.
@@ -17,7 +16,7 @@ def extract_from_shapefile(geo: GeoEnum, datatype: GisDataTypeEnum, thru_data=No
     model_missing = False
     db_model = None
     print(f"Extract from shapefile: geo={geo}, gis_data_type={datatype}")
-    pipestage_dirname = f"0.shapefile"
+    pipestage_dirname = "0.shapefile"
     existing_files, _ = get_elt_pipe_filenames(
         geo, datatype, pipestage_dirname, extension="zip", expect_existing=True
     )
@@ -30,7 +29,7 @@ def extract_from_shapefile(geo: GeoEnum, datatype: GisDataTypeEnum, thru_data=No
     model_name_camel = "".join(x.capitalize() for x in model_name_underscored.split("_"))
     try:
         db_model = elt_models.__dict__[model_name_camel]
-    except KeyError as e:
+    except KeyError:
         model_missing = True
     if not model_missing:
         # Prompt user for intention - skip stage, incrementally update, or create new data?

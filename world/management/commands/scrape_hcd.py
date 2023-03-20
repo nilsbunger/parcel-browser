@@ -32,10 +32,10 @@ class Command(BaseCommand):
             print("Dry run: not updating Airtable.")
         if try_exception:
             raise Exception("This is a test exception in scrape_hcd.py")
-        changeSummary = run_scrape_hcd(dry_run)
+        change_summary = run_scrape_hcd(dry_run)
         # change line endings to crlf to comply with email standards -- some email clients don't show
         # linebreaks otherwise.
-        changeSummaryCrLf = "\r\n".join(changeSummary.splitlines(False))
+        change_summary_cr_lf = "\r\n".join(change_summary.splitlines(False))
         email_subs_raw = env("HCD_EMAIL_SUBS")
         email_subs = email_subs_raw.split(",")
 
@@ -45,7 +45,7 @@ class Command(BaseCommand):
             try:
                 email = EmailMessage(
                     subject="HCD daily update summary",
-                    body=changeSummaryCrLf,
+                    body=change_summary_cr_lf,
                     from_email="marcio@home3.co",
                     to=["marcio@home3.co"],
                     cc=[],
@@ -64,7 +64,7 @@ class Command(BaseCommand):
                 subject="HCD daily update summary (admin)"
                 + (" (dry run)" if dry_run else "")
                 + (" (FAILED)" if mail_exc else ""),
-                body="Sent to " + ",".join(email_subs) + "\r\n\r\n" + changeSummaryCrLf + mail_exc,
+                body="Sent to " + ",".join(email_subs) + "\r\n\r\n" + change_summary_cr_lf + mail_exc,
                 from_email="marcio@home3.co",
                 to=["marcio@home3.co"] if dry_run else ["founders@home3.co"],
                 cc=[],

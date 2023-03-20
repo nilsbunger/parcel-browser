@@ -1,6 +1,6 @@
-from enum import Enum
 import logging
 import sys
+from enum import Enum
 
 from django.core.management import BaseCommand
 from django.db.models import DateField, DateTimeField
@@ -16,7 +16,9 @@ class SyncCmd(Enum):
 
 
 class Command(BaseCommand):
-    help = "Sync tables from cloud to local to simplify local development: PropertyListing, AnalyzedListing, RentalData"
+    help = (
+        "Sync tables from cloud to local to simplify local development: PropertyListing, AnalyzedListing, RentalData"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("cmd", choices=SyncCmd.__members__)
@@ -47,17 +49,17 @@ class Command(BaseCommand):
 
     def handle_cloud2local(self, *args, **options):
         # Remove auto_now and auto_now_add so that dates move over correctly.
-        logging.info(f"Eliminating pre-save hooks on dates")
+        logging.info("Eliminating pre-save hooks on dates")
 
         def pre_save_datefield(self, model_instance, add):
             return super(DateField, self).pre_save(model_instance, add)
 
-        setattr(DateField, "pre_save", pre_save_datefield)
+        DateField.pre_save = pre_save_datefield
 
         def pre_save_datetimefield(self, model_instance, add):
             return super(DateTimeField, self).pre_save(model_instance, add)
 
-        setattr(DateTimeField, "pre_save", pre_save_datetimefield)
+        DateTimeField.pre_save = pre_save_datetimefield
 
         for model in [PropertyListing, RentalData, AnalyzedListing]:
             logging.info(f"{model}: Deleting all entries from LOCAL DB")

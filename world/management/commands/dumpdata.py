@@ -1,5 +1,7 @@
 import django
 from django.apps import apps
+from django.core.management.base import CommandError
+from django.core.management.commands import dumpdata
 
 # Create a django management command that can take a list of APNs, and then run
 # the dumpdata command on each of them. This will allow us to create a fixture.
@@ -9,8 +11,6 @@ from django.apps import apps
 Additional treatment for the dumpdata command.
 Location example: project/app/management/commands/loaddata.py
 """
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management.commands import dumpdata
 
 
 class Command(dumpdata.Command):

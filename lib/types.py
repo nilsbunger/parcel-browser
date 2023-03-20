@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Union
-from dataclasses import dataclass
-from shapely.geometry import Polygon, MultiPolygon
-from world.models import Parcel
 
+from shapely.geometry import MultiPolygon, Polygon
+
+from world.models import Parcel
 
 """ CheckResultEnum represents the result of an analysis check """
 

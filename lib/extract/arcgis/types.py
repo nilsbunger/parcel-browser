@@ -1,5 +1,5 @@
-from enum import Enum
 import sys
+from enum import Enum
 
 if sys.version_info >= (3, 11):
     raise ImportError("Update enums here to StrEnum when on 3.11")

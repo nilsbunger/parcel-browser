@@ -1,3 +1,3 @@
 from .mailersend_backend import MailerSendBackend
 from .frontend_proxy_view import frontend_proxy_view
-from .MyWhiteNoiseMiddleware import MyWhiteNoiseMiddleware
+from .my_white_noise_middleware import MyWhiteNoiseMiddleware

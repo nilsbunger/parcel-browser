@@ -1,7 +1,6 @@
-from collections import defaultdict
 import datetime
 import logging
-from typing import Dict
+from collections import defaultdict
 
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
@@ -112,7 +111,7 @@ class PropertyListing(models.Model):
     def get_latest_or_create(cls, parcel):
         try:
             property_listing = cls.objects.filter(parcel=parcel).order_by("-founddate")[0]
-        except IndexError as e:
+        except IndexError:
             # No property listing for this parcel. Create an off-market property listing
             property_listing = cls.objects.create(
                 mlsid=parcel.apn,
@@ -136,35 +135,33 @@ class PropertyListing(models.Model):
         return listings
 
     @classmethod
-    def mark_all_stale(cls, days_for_stale: int) -> Dict:
+    def mark_all_stale(cls, days_for_stale: int) -> dict:
         """Find all stale listings, meaning ones that haven't been seen in N days, and mark them as "MISSING".
         Returns a stats dictionary."""
         listings = cls.active_listings_queryset().prefetch_related("parcel")
         now = datetime.datetime.now(datetime.timezone.utc)
-        seen_recently = not_seen_recently = not_in_sd = stale_no_parcel = seen_recently_no_parcel = 0
         stale_listings = []
         stats = defaultdict(int)
         logging.info("Looking for stale listings:")
-        for l in listings:
-            days_since_seen = (now - l.seendate).days
+        for listing in listings:
+            days_since_seen = (now - listing.seendate).days
             if days_since_seen < days_for_stale:
-                if l.parcel:
+                if listing.parcel:
                     stats["seen_recently"] += 1
                 else:
                     stats["seen_recently_no_parcel"] += 1
+            elif not listing.parcel:
+                stats["stale_no_parcel"] += 1
             else:
-                if not l.parcel:
-                    stats["stale_no_parcel"] += 1
-                else:
-                    stats["stale"] += 1
-                    prev_listing_id = l.pk
-                    # Duplicate this entry and record it as 'missing'
-                    l.pk = None
-                    l.prev_listing_id = prev_listing_id
-                    l.status = cls.ListingStatus.MISSING
-                    l._state.adding = True
-                    l.save()
-                    stale_listings.append(l)
+                stats["stale"] += 1
+                prev_listing_id = listing.pk
+                # Duplicate this entry and record it as 'missing'
+                listing.pk = None
+                listing.prev_listing_id = prev_listing_id
+                listing.status = cls.ListingStatus.MISSING
+                listing._state.adding = True
+                listing.save()
+                stale_listings.append(listing)
         return stats
 
 

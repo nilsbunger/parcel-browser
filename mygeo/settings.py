@@ -11,13 +11,12 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 import datetime
 import os
-import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
 import environ
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 from whitenoise import WhiteNoise
 
@@ -61,7 +60,7 @@ DEBUG = DEV_ENV and not TEST_ENV
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
-    eprint(f"**** TEST ENVIRONMENT ****")
+    eprint("**** TEST ENVIRONMENT ****")
 eprint(f"**** DEBUG == {DEBUG} ****")
 # if not BUILD_PHASE:
 #     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
@@ -77,7 +76,7 @@ if PROD_ENV and not BUILD_PHASE and not TEST_ENV:
     SECRET_KEY = env("DJANGO_SECRET_KEY")
     INSECURE = False
 else:
-    eprint(f"**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
+    eprint("**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
     SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
     INSECURE = True
 CSRF_COOKIE_SECURE = True
@@ -159,7 +158,7 @@ SOCIALACCOUNT_PROVIDERS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
-    "world.infra.MyWhiteNoiseMiddleware",
+    "world.infra.my_white_noise_middleware.MyWhiteNoiseMiddleware",
     # ----------------------------------------------------------------------------
     ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
     ##    GzipMiddleware, LocaleMiddleware, etc.
@@ -209,7 +208,7 @@ try:
     eprint("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH)
     GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH")
     eprint("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH)
-except ImproperlyConfigured as e:
+except ImproperlyConfigured:
     pass
 
 # We get X-Forwarded-Proto from the web hosting proxy (eg fly.io); tell Django

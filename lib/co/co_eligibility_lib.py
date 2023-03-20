@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
 import re
-from typing import Any, List, Optional
+from abc import ABC, abstractmethod
+from typing import Any
 
 from django.contrib.gis.db.models.functions import Distance
 from pydantic import BaseModel
@@ -18,14 +18,14 @@ class EligibilityCheck(BaseModel):
     notes: list[str] = []
     children: list["EligibilityCheck"] = []
 
-    def __init__(self, name: str, description: str, **data: Any):
+    def __init__(self, name: str, description: str, **data: Any) -> None:
         super().__init__(name=name, description=description, **data)
         # noinspection PyTypeChecker
 
     # noinspection PyTypeChecker
     @abstractmethod
     def run(self, *args, **kwargs) -> CheckResultEnum:
-        assert False, "run() needs to be implemented in child class"
+        raise AssertionError("run() needs to be implemented in child class")
 
     def __str__(self):
         return self.name
@@ -35,13 +35,13 @@ class EligibilityCheck(BaseModel):
 
 
 class LogicCheck(EligibilityCheck, ABC):
-    def __init__(self, name: str, description: str, checks: List[EligibilityCheck]):
+    def __init__(self, name: str, description: str, checks: list[EligibilityCheck]) -> None:
         super().__init__(name, description)
         self.children = checks
 
 
 class AndCheck(LogicCheck):
-    def __init__(self, checks: List[EligibilityCheck]):
+    def __init__(self, checks: list[EligibilityCheck]) -> None:
         super().__init__("And", "All checks must pass", checks)
 
     def run(self, parcel: Parcel) -> CheckResultEnum:
@@ -55,11 +55,11 @@ class AndCheck(LogicCheck):
 
 
 class OrCheck(LogicCheck):
-    def __init__(self, checks: List[EligibilityCheck]):
+    def __init__(self, checks: list[EligibilityCheck]) -> None:
         super().__init__("Or", "At least one check must pass", checks)
 
     def run(self, parcel: Parcel):
-        assert False, "Finish implementation, see AndCheck"
+        raise AssertionError("Finish implementation, see AndCheck")
         return any(check.run(parcel) for check in self.checks)
 
 
@@ -67,7 +67,7 @@ class OrCheck(LogicCheck):
 # Office, retail or parking is a Principally Permitted use (no Conditional User Permit or Discretionary Review required)
 # Anything w/ CC, CN, CO, CR, CP, or CV is eligible
 class PrincipallyPermittedUseCheck(EligibilityCheck):
-    def __init__(self):
+    def __init__(self) -> None:
         description = "Office, retail or parking is a Principally Permitted use (no Conditional User Permit or Discretionary Review required)"
         super().__init__("Principally Permitted Use", description)
 
@@ -96,7 +96,7 @@ class PrincipallyPermittedUseCheck(EligibilityCheck):
 
 
 class UrbanizedAreaCheck(EligibilityCheck):
-    def __init__(self):
+    def __init__(self) -> None:
         description = "Located within a city with an urbanized area or urban use area"
         super().__init__("Urbanized Area", description)
 
@@ -142,9 +142,7 @@ class CommercialCorridorCheck(EligibilityCheck):
             if road.status != road.Status.OK:
                 # noinspection PyTypeChecker
                 self.result = CheckResultEnum.error
-                self.notes.append(
-                    f"Found road for {parcel_addr}, but road analysis failed with error: {road.status}"
-                )
+                self.notes.append(f"Found road for {parcel_addr}, but road analysis failed with error: {road.status}")
                 return self.result
             min_width_meters = 70 / 3.28084
             max_width_meters = 150 / 3.28084
@@ -202,8 +200,8 @@ class NoHousingCheck(EligibilityCheck):
     #     - 1 to 4 dwelling units
     #     - vacant and zoned for housing but not multifamily
     def __init__(self) -> None:
-        description = f"There can't be any housing on the lot in the past N years (CHECK DETAILS)"
-        super().__init__(f"NoHousingInPast", description)
+        description = "There can't be any housing on the lot in the past N years (CHECK DETAILS)"
+        super().__init__("NoHousingInPast", description)
 
     def run(self, parcel: Parcel) -> CheckResultEnum:
         # noinspection PyTypeChecker
@@ -304,7 +302,7 @@ class NotNeighborhoodPlan(EligibilityCheck):
 
 
 class EligibilityCheckSuite:
-    def __init__(self, check, name, description):
+    def __init__(self, check, name, description) -> None:
         self.check = check
         self.name = name
         self.description = description
@@ -316,7 +314,7 @@ class EligibilityCheckSuite:
 
 
 class AB2011Eligible(EligibilityCheckSuite):
-    def __init__(self):
+    def __init__(self) -> None:
         name = "AB 2011 Eligible"
         description = "AB 2011 Eligible description"
         check = AndCheck(

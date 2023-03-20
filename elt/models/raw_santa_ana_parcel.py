@@ -67,7 +67,7 @@ class RawSantaAnaParcel(models.Model):
         parcel.shape_length = arcgis_data["properties"]["Shape__Length"]
         return parcel
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         # Note: Django recommends NOT overriding init on models. See
         # https://docs.djangoproject.com/en/4.1/ref/models/instances/#django.db.models.Model
         # Instead, added create() classmethod above.

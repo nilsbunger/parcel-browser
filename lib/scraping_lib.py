@@ -1,13 +1,13 @@
-from collections import defaultdict
 import logging
 import random
 import re
 import traceback
+from collections import defaultdict
 from urllib.parse import urljoin
 
+import scrapy
 from django.core.exceptions import MultipleObjectsReturned
 from scraper_api import ScraperAPIClient
-import scrapy
 from scrapy.crawler import CrawlerProcess
 from scrapy.exceptions import CloseSpider
 
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 # See also example in https://docs.scrapy.org/en/latest/topics/item-pipeline.html for more customization
 class MyItemPipeline:
-    def __init__(self, stats):
+    def __init__(self, stats) -> None:
         self.stats = stats
 
     @classmethod
@@ -36,7 +36,7 @@ class MyItemPipeline:
                 property, created = PropertyListing.objects.get_or_create(
                     **listing_fields, status=PropertyListing.ListingStatus.ACTIVE
                 )
-            except MultipleObjectsReturned as e:
+            except MultipleObjectsReturned:
                 # uniqueness constraint violated - price,addr,br,ba,mlsid,size,status should be a unique entry. fix it up
                 listings = PropertyListing.objects.filter(
                     **listing_fields, status=PropertyListing.ListingStatus.ACTIVE
@@ -63,9 +63,7 @@ class MyItemPipeline:
                 # object with same parameters (price / etc) not found, so record this instance and include a link to
                 # the most recent previous entry if it exists.
                 prev_listing = (
-                    PropertyListing.objects.filter(mlsid=property.mlsid)
-                    .exclude(id=property.id)
-                    .order_by("-seendate")
+                    PropertyListing.objects.filter(mlsid=property.mlsid).exclude(id=property.id).order_by("-seendate")
                 )
                 if len(prev_listing) > 0:
                     property.prev_listing = prev_listing[0]
@@ -86,7 +84,7 @@ class MyItemPipeline:
 class SanDiegoMlsSpider(scrapy.Spider):
     name = "mls"
 
-    def __init__(self, zip_groups, localhost_mode, **kwargs):
+    def __init__(self, zip_groups, localhost_mode, **kwargs) -> None:
         self.zip_groups = zip_groups
         self.localhost_mode = localhost_mode
         self.client = ScraperAPIClient(env("SCRAPER_API_KEY"))

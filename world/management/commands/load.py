@@ -1,13 +1,13 @@
+import subprocess
 from enum import Enum
 from pathlib import Path
-import subprocess
 
+import geopandas
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
-import geopandas
 
 from lib.extract.arcgis.types import GeoEnum
 from mygeo.util import eprint
@@ -44,9 +44,7 @@ sf_schemas = {
                 ("zoning", "zoning"),
             ]
         },
-        "ZoningHeightBulkDistricts": {
-            "field_name_mappings": [("height", "height_name"), ("gen_hght", "height_val")]
-        },
+        "ZoningHeightBulkDistricts": {"field_name_mappings": [("height", "height_name"), ("gen_hght", "height_val")]},
         "ZoningSpecialUseDistricts": {
             "field_name_mappings": [("name", "su_name"), ("url", "su_url")],
         },
@@ -114,17 +112,18 @@ class Command(BaseCommand):
         for shapefile in shapefiles:  # TODO: Temporarily just get one file (the zoning file)
             eprint(f"Processing {shapefile}")
             shape_name = shapefile.parts[-2]  # use leaf directory name (e.g. "ZoningDistrict") as the file name
-            layer_name = shapefile.stem  # filename w/o extension
             outfile = dir / "out" / f"{shape_name}.geojson.ld"
             shape_cfg = schemas["sf"]["shapefiles"][shape_name]
-            ogrsql = f"'SELECT " + ",".join(
+            ogrsql = "'SELECT " + ",".join(
                 [f"{mapping[0]} AS {mapping[1]}" for mapping in shape_cfg["field_name_mappings"]]
             )
             ogrsql += f' FROM "{shapefile.stem}"'
             if "group_by_field" in shape_cfg:
                 ogrsql += f' GROUP BY {shape_cfg["group_by_field"]}'
             ogrsql += "'"
-            ogr2ogr_cmd = f"ogr2ogr -dim 2 -t_srs 'EPSG:4326' -f 'GeoJSON' -dialect sqlite -sql {ogrsql} {outfile} {shapefile}"
+            ogr2ogr_cmd = (
+                f"ogr2ogr -dim 2 -t_srs 'EPSG:4326' -f 'GeoJSON' -dialect sqlite -sql {ogrsql} {outfile} {shapefile}"
+            )
             eprint(f"Running: {ogr2ogr_cmd}")
             process_result = subprocess.run(ogr2ogr_cmd, check=True, shell=True)
             assert process_result.returncode == 0, f"ogr2ogr failed with return code {process_result.returncode}"
@@ -141,9 +140,7 @@ class Command(BaseCommand):
                 check=True,
                 shell=True,
             )
-            assert (
-                process_result2.returncode == 0
-            ), f"tippecanoe failed with return code {process_result2.returncode}"
+            assert process_result2.returncode == 0, f"tippecanoe failed with return code {process_result2.returncode}"
             print(process_result)
             # schema = self.schemas[geo][shape_name]
             # with fiona.open(shapefile) as src:
@@ -158,7 +155,7 @@ class Command(BaseCommand):
         pass
 
     def db_cmd(self, geo, model=None, fname=None, *args, **options):
-        assert False, "Update for regions, new paths, and automating file discovery"
+        raise AssertionError("Update for regions, new paths, and automating file discovery")
         print(model)
         data_dir = Path(__file__).resolve().parent.parent.parent / "data"
         if model == "Parcel":

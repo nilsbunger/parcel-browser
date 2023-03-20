@@ -3,40 +3,60 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing financial models, and running
 scenarios in general.
 """
-from collections import Counter, OrderedDict
 import logging
 import pprint
 import secrets
+from collections import Counter, OrderedDict
 
 import boto3
-from botocore.exceptions import ClientError
 import django
+import pyproj
+from botocore.exceptions import ClientError
+from geopandas import GeoDataFrame
+from shapely.ops import unary_union
 
 from lib.neighborhoods import HIGH_PRIORITY_NEIGHBORHOODS
+from lib.parcel_lib import (
+    find_largest_rectangles_on_avail_geom,
+    get_avail_floor_area,
+    get_buffered_building_geom,
+    get_buildings,
+    get_parcel_zone,
+    get_setback_geoms,
+    get_street_side_boundaries,
+    get_too_high_or_low,
+    identify_building_types,
+    identify_flag,
+    models_to_utm_gdf,
+    parcel_model_to_utm_dc,
+    split_lot,
+)
+from lib.types import ParcelDC
+from world.models.base_models import Parcel
+from world.models.models import AnalyzedListing, PropertyListing
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
 if __name__ == "__main__":
     django.setup()
 
-from lib.build_lib import DevScenario
-from lib.finance_lib import Financials
-from lib.re_params import ReParams, get_build_specs
-from lib.rent_lib import RentService
-from mygeo.settings import CLOUDFLARE_R2_ENABLED, env
-from mygeo.util import eprint
-
-from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
-from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
-from world.models import AnalyzedListing, PropertyListing
-from datetime import date
-import os
 import datetime
+import os
+from datetime import date
+
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-from lib.parcel_lib import *
 from joblib import Parallel, delayed
+
+from lib.build_lib import DevScenario
+from lib.finance_lib import Financials
+from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
+from lib.re_params import ReParams, get_build_specs
+from lib.rent_lib import RentService
 from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
+from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
+from mygeo.settings import CLOUDFLARE_R2_ENABLED, env
+from mygeo.util import eprint
 
 log = logging.getLogger(__name__)
 
@@ -70,13 +90,13 @@ def save_and_upload_figures(
     new_buildings_fig,
     cant_build_fig,
     split_lot_fig,
-    salt,
-    save_dir,
-    apn,
-    addr,
-    messages,
-    save_to_cloud,
-):
+    salt: str,
+    save_dir: str,
+    apn: str,
+    addr: str,
+    messages: dict[str, list[str]],
+    save_to_cloud: bool,
+) -> None:
     # Save figures
     new_buildings_fname = os.path.join(save_dir, "buildings-" + apn + ".jpg")
     new_buildings_fig.savefig(new_buildings_fname)
@@ -88,12 +108,8 @@ def save_and_upload_figures(
     if save_to_cloud:
         print(f"**** SAVING images for address {addr} to Cloudflare R2 ****")
         try:
-            response = cloudflare_r2.meta.client.upload_file(
-                new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}"
-            )
-            response = cloudflare_r2.meta.client.upload_file(
-                cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}"
-            )
+            cloudflare_r2.meta.client.upload_file(new_buildings_fname, R2_BUCKET_NAME, f"buildings-{apn}-{salt}")
+            cloudflare_r2.meta.client.upload_file(cant_build_fname, R2_BUCKET_NAME, f"cant_build-{apn}-{salt}")
         except ClientError as e:
             eprint(f"ERROR uploading images for {addr} to R2. Error = {e}")
             messages["warning"].append(f"ERROR uploading images for {addr} to R2")
@@ -145,7 +161,7 @@ def _dev_potential_by_far(
     geom_area: int,
     re_params: ReParams,
     dry_run: bool,
-) -> List[DevScenario]:
+) -> list[DevScenario]:
     valid_scenarios = []
     existing_units_rent = sum(existing_units_rents)
     if is_mf:
@@ -194,15 +210,13 @@ def _dev_potential_by_far(
                     constr_adu_fees = 14000 + 10000 * adu_qty
                     if not property_listing.price:
                         # no price => can't model finances but can still record unit config
-                        valid_scenarios.append(
-                            DevScenario(adu_qty=adu_qty, unit_type=adu_unit_spec, finances=None)
-                        )
+                        valid_scenarios.append(DevScenario(adu_qty=adu_qty, unit_type=adu_unit_spec, finances=None))
                         continue
 
                     try:
                         finances.capital_flow["acquisition"] = [
-                            ("purchase", 0 - property_listing.price, f""),
-                            ("renovation", -50000, f""),
+                            ("purchase", 0 - property_listing.price, ""),
+                            ("renovation", -50000, ""),
                         ]
                     except Exception as e:
                         log.error(e, exc_info=True)
@@ -221,7 +235,7 @@ def _dev_potential_by_far(
                         (
                             "adu fees",
                             0 - constr_adu_fees,
-                            f"$14K base plus $10K per unit (total guess)",
+                            "$14K base plus $10K per unit (total guess)",
                         ),
                     ]
                     total_constr_cost = constr_hard_cost + constr_soft_cost + constr_adu_fees
@@ -264,9 +278,7 @@ def _dev_potential_by_far(
                         ],
                     ]
 
-                    valid_scenarios.append(
-                        DevScenario(adu_qty=adu_qty, unit_type=adu_unit_spec, finances=finances)
-                    )
+                    valid_scenarios.append(DevScenario(adu_qty=adu_qty, unit_type=adu_unit_spec, finances=finances))
                 # else:
                 #     print (f"Skipping putting {adu_qty} x {adu_scenario} units on lot, not enough room."
                 #            f"FAR avail={avail_far_sq_ft}, geom avail={avail_area_sq_ft}"
@@ -284,12 +296,12 @@ def analyze_one_parcel(
     parcel_model: Parcel,
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
-    dry_run,
+    dry_run: bool,
     save_dir: str,  # this used to have a default, but it shouldn't be used
-    show_plot=False,
-    try_garage_conversion=True,
-    try_split_lot=True,
-    force_uploads=False,
+    show_plot: bool = False,
+    try_garage_conversion: bool = True,
+    try_split_lot: bool = True,
+    force_uploads: bool = False,
 ) -> AnalyzedListing:
     """Runs analysis on a single parcel of land
 
@@ -367,7 +379,7 @@ def analyze_one_parcel(
         parcel_size,
         existing_living_area,
         existing_floor_area,
-        existing_FAR,
+        existing_far,
         main_building_area,
         accessory_buildings_area,
     ) = _get_existing_floor_area_stats(parcel, buildings)
@@ -399,7 +411,7 @@ def analyze_one_parcel(
 
     # *** 2b. See what we can build on the lot, FAR-centric.
     assert property_listing
-    dev_scenarios: List[DevScenario] = _dev_potential_by_far(
+    dev_scenarios: list[DevScenario] = _dev_potential_by_far(
         property_listing,
         existing_units_rents,
         messages,
@@ -429,7 +441,7 @@ def analyze_one_parcel(
     garage_con_area = num_garages * 23.2
 
     total_added_building_area = sum([poly.area for poly in new_building_polys])
-    new_FAR = (total_added_building_area + existing_floor_area) / parcel_size
+    new_far = (total_added_building_area + existing_floor_area) / parcel_size
 
     # Logic for lot splits
     second_lot, second_lot_area_ratio = None, None
@@ -437,7 +449,7 @@ def analyze_one_parcel(
         # noinspection PyBroadException
         try:
             second_lot, second_lot_area_ratio = split_lot(parcel.geometry, buildings)
-        except Exception as e:
+        except Exception:
             messages["note"].append("Lot split attempt failed with exception")
 
     # 3. *** Plot and/or save results
@@ -474,9 +486,7 @@ def analyze_one_parcel(
         cap_rates.append(0)  # in case there are no scenarios with finances
         max_cap_rate = max(cap_rates)
 
-    num_existing_buildings = (
-        len(buildings[buildings.building_type != "ENCROACHMENT"]) if buildings is not None else 0
-    )
+    num_existing_buildings = len(buildings[buildings.building_type != "ENCROACHMENT"]) if buildings is not None else 0
     # Create the data struct that represents the test that was run
     # The order in this dictionary is the order that the fields will be written to the csv
     details = OrderedDict(
@@ -492,9 +502,9 @@ def analyze_one_parcel(
             "parcel_size": parcel_size,
             "existing_living_area": existing_living_area,
             "existing_floor_area": existing_floor_area,
-            "existing_FAR": existing_FAR,
+            "existing_FAR": existing_far,
             "max_FAR": max_far,
-            "potential_FAR": max_far - existing_FAR,
+            "potential_FAR": max_far - existing_far,
             "avail_area_by_FAR": avail_area_by_far,
             "num_new_buildings": len(new_building_polys),
             "new_building_areas": ",".join([str(int(round(poly.area))) for poly in new_building_polys]),
@@ -503,7 +513,7 @@ def analyze_one_parcel(
             "garage_con_area": garage_con_area,
             "total_new_units": garage_con_units + len(new_building_polys),
             "total_added_area": garage_con_area + total_added_building_area,
-            "new_FAR": new_FAR,
+            "new_FAR": new_far,
             # "limiting_factor": limiting_factor,
             "is_flag_lot": flag_poly is not None,
             "is_alley_lot": parcel_edges["alley"] is not None,
@@ -580,13 +590,13 @@ def analyze_one_parcel(
 def analyze_batch(
     parcels: list[Parcel],
     utm_crs: pyproj.CRS,
-    property_listings: List[PropertyListing],
+    property_listings: list[PropertyListing],
     dry_run: bool,
     save_dir: str,
     limit: int = None,
-    try_split_lot=True,
-    single_process=False,
-):
+    try_split_lot: bool = True,
+    single_process: bool = False,
+) -> (list[AnalyzedListing], list[AnalyzedListing]):
     from lib.parallel_worker import analyze_one_parcel_worker
 
     """

@@ -1,5 +1,3 @@
-from typing import List
-
 import django
 from django.core.mail.backends.base import BaseEmailBackend
 from mailersend import emails
@@ -24,7 +22,7 @@ class MailerSendBackend(BaseEmailBackend):
         self.api_key = env("MAILERSEND_API_KEY")
         super().__init__(fail_silently, **kwargs)
 
-    def send_messages(self, email_messages: List[django.core.mail.message.EmailMessage]) -> str:
+    def send_messages(self, email_messages: list[django.core.mail.message.EmailMessage]) -> str:
         mailer = emails.NewEmail(mailersend_api_key=self.api_key)
         assert len(email_messages) == 1, "We only support sending one email at a time at the moment"
         email_message = email_messages[0]

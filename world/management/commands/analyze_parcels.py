@@ -2,10 +2,10 @@ import operator
 import pprint
 from enum import Enum
 
-from world.models import Parcel, AnalyzedParcel
 from django.core.management.base import BaseCommand
-
 from django.db import connection
+
+from world.models import AnalyzedParcel, Parcel
 
 
 class SubCommand(Enum):
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def histo(self):
         histo_buckets = [0, 1, 5000, 6000, 7000, 8000, 10000, 15000, 22000, 40000, 100000, 300000]
-        values = list()
+        values = []
         for bucket in histo_buckets:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 max = i[1]
         for k in values:
             scale = int(40 * k[1] / max)
-            print("{0:6d} {1:8d} : {2}".format(k[0], k[1], "+" * scale))
+            print("{:6d} {:8d} : {}".format(k[0], k[1], "+" * scale))
 
     # Rebuild analyzed_parcel table, which keeps track of which parcels we've ruled out for various reasons
     def rebuild(self):
@@ -80,9 +80,9 @@ class Command(BaseCommand):
 
         include_count = 0
         skip_count = dict({})
-        assert (
-            False
-        ), "This uses an old version of AnalyzedParcel schema... it's defunct and replaced by dataprep cmd"
+        raise AssertionError(
+            "This uses an old version of AnalyzedParcel schema... it's defunct and replaced by dataprep cmd"
+        )
         for idx, parcel in enumerate(parcels):
             if idx % 1000 == 0:
                 print("Processing # %d" % idx)

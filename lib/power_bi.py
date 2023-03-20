@@ -1,14 +1,14 @@
 import base64
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 import re
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Callable, NewType, Optional, Union
 
+import requests
 from bs4 import BeautifulSoup
 from django.core.cache import cache
 from pydantic import BaseModel, PrivateAttr
-import requests
 
 
 @dataclass
@@ -87,7 +87,7 @@ class PowerBIScraper:
         "(KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
     }
 
-    def __init__(self, page_url: str):
+    def __init__(self, page_url: str) -> None:
         # Initialize class, fetch page containing iframe and the contents of the iframe itself.
         self.url = page_url
         soup = BeautifulSoup(requests.get(page_url, verify=False, headers=self.page_headers).content, "html.parser")
@@ -172,7 +172,7 @@ class PowerBIScraper:
         raw_table_data = requests.post(self.query_url, json=payload, headers=self.api_headers).json()
         assert (
             len(raw_table_data["results"][0]["result"]["data"]["dsr"]["DS"][0]["PH"][0]["DM0"]) < query_limit
-        ), f"This query needs pagination or a higher query limit, which isn't implemented"
+        ), "This query needs pagination or a higher query limit, which isn't implemented"
 
         table_data = self._decompress_table(raw_table_data, table_name, index_col)
 

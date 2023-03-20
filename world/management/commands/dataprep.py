@@ -1,22 +1,19 @@
+import pprint
 from collections import Counter
 from enum import Enum
-import pprint
 
 import django
-from django.contrib.gis.db.models import Extent
+from django.contrib.gis.db.models import Extent, Union
 from django.contrib.gis.geos import MultiPolygon
-from django.db.models import Subquery
-from django.contrib.gis.db.models import Union
+from django.core.management.base import BaseCommand
 
-from lib.co.co_eligibility_lib import AB2011Eligible, CheckResultEnum
+from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.crs_lib import get_utm_crs
 from lib.topo_lib import (
     calculate_parcel_slopes,
     calculate_parcel_slopes_mp,
     check_topos_for_parcels,
 )
-from django.core.management.base import BaseCommand
-
 from world.models import AnalyzedParcel, Parcel, ZoningBase
 from world.models.base_models import ZoningMapLabel
 
@@ -27,7 +24,7 @@ class Neighborhood(Enum):
     MiramesaSmall = (-117.135284737197, 32.905422120627904, -117.13317320050437, 32.90428935023001)
 
     # Special "neighborhood" - compute full extents of all parcels
-    all = tuple()
+    all = ()
 
     # ... add more neighborhoods here
 
@@ -67,8 +64,6 @@ class Command(BaseCommand):
         comm_parcels = Parcel.objects.filter(geom__intersects=c_zones)
         stats = Counter({})
         print(comm_parcels)
-        ab2011_parcels = []
-        ab2011_maybe_parcels = []
         print(f"Checking {len(comm_parcels)} parcels for AB2011 eligibility")
         for idx, parcel in enumerate(comm_parcels):
             if idx % 50 == 0:
@@ -92,7 +87,7 @@ class Command(BaseCommand):
         # tracemalloc.start()
 
         if hood == "all":
-            print(f"Working with ALL parcels.")
+            print("Working with ALL parcels.")
             print("Finding bounding box...")
             bounding_box_tuple = Parcel.objects.aggregate(foobar=Extent("geom"))["foobar"]
             print(f"Bounding box is {bounding_box_tuple}")

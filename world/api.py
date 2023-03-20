@@ -1,6 +1,5 @@
 import tempfile
 import traceback
-from typing import List
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.gis.db.models.functions import Centroid
@@ -25,7 +24,6 @@ from world.api_gis_schema import (
 )
 from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, Roads
 
-
 # Require auth on all API routes (can be overriden if needed)
 world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", docs_decorator=staff_member_required)
 
@@ -34,14 +32,14 @@ world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", do
 ################################################################################################
 
 
-@world_api.get("/listinghistory", response=List[ListingHistorySchema])
+@world_api.get("/listinghistory", response=list[ListingHistorySchema])
 def get_listing_history(request, mlsid: str):
     listings = PropertyListing.objects.filter(mlsid=mlsid).order_by("-founddate")
     return listings
 
 
 @world_api.get("/rentalrates")  # response=List[RentalRatesSchema])
-def get_rental_rates(request) -> List[RentalRatesSchema]:
+def get_rental_rates(request) -> list[RentalRatesSchema]:
     rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by("parcel", "-details__mean")
     pid: str = ""
     retlist = []
@@ -68,7 +66,7 @@ def get_rental_rates(request) -> List[RentalRatesSchema]:
     return retlist
 
 
-@world_api.get("/listings", response=List[ListingSchema])
+@world_api.get("/listings", response=list[ListingSchema])
 @paginate
 def get_listings(request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)):
     # Strip away the filter params that are none
@@ -80,13 +78,13 @@ def get_listings(request, order_by: str = "founddate", asc: bool = False, filter
     }
 
     # TODO : Next line is a hack - we're sending neighborhood list as comma-separated string instead of array
-    if not filters.neighborhood__contains is None:
+    if filters.neighborhood__contains is not None:
         filters.neighborhood__contains = filters.neighborhood__contains[0].split(",")
 
     filter_params = {}
     for key in filters.dict():
         if filters.dict()[key] is not None:
-            if key in ["is_mf", "is_tpa"] and filters.dict()[key] == False:
+            if key in ["is_mf", "is_tpa"] and filters.dict()[key] is False:
                 # is_mf, or is_mf mean "only mf / only tpa". so if it's false, don't add a filter criteria
                 continue
             filter_params[filters_xlat.get(key, key)] = filters.dict()[key]
@@ -182,7 +180,7 @@ def address_search(request, addr: str):
         return {"error": f"An error occurred: {error}"}
     try:
         analyzed_listing = AnalyzedListing.objects.filter(parcel=parcel).order_by("-datetime_ran")[0]
-    except IndexError as e:
+    except IndexError:
         analyzed_listing = None
     except Exception as e:
         traceback.print_exc()

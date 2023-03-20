@@ -1,29 +1,28 @@
-from world.models import Topography, ParcelSlope, TopographyLoads, Parcel
-from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
-from lib.parcel_lib import (
-    get_parcels_by_neighborhood,
-    models_to_utm_gdf,
-    get_buildings,
-    polygon_to_utm,
-)
-from shapely.ops import unary_union
-from shapely.validation import make_valid
-from shapely.geometry import Polygon, Point, LineString
-from matplotlib import pyplot as plt
-import matplotlib as mpl
-import shapely
-import pyproj
-import geopandas
 import gc
 import re
-from typing import Dict
 
-from joblib import Parallel, delayed
-import pandas as pd
 import django
+import geopandas
+import matplotlib as mpl
+import pandas as pd
+import pyproj
+import shapely
+from joblib import Parallel, delayed
+from matplotlib import pyplot as plt
+from shapely.geometry import LineString, Point, Polygon
+from shapely.ops import unary_union
+from shapely.validation import make_valid
 
+from lib.parcel_lib import (
+    get_buildings,
+    get_parcels_by_neighborhood,
+    models_to_utm_gdf,
+    polygon_to_utm,
+)
+from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
 from lib.types import ParcelDC
 from mygeo.settings import TOPO_DB_ALIAS
+from world.models import Parcel, ParcelSlope, Topography, TopographyLoads
 
 # We need this to set up Django before any parallelization to work.
 # This is because when a new process is spawned, its memory isn't copied
@@ -88,9 +87,7 @@ def calculate_parcel_slope_worker(parcel: Parcel, utm_crs: pyproj.CRS, topo_area
     return parcel_stat
 
 
-def calculate_parcel_slopes_mp(
-    bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0
-):
+def calculate_parcel_slopes_mp(bounding_box: django.contrib.gis.geos.GEOSGeometry, utm_crs: pyproj.CRS, start_idx=0):
     topo_list = list(TopographyLoads.objects.using(TOPO_DB_ALIAS).values_list("extents", flat=True))
     topo_areas = django.contrib.gis.geos.MultiPolygon(topo_list)
     parcels = get_parcels_by_neighborhood(bounding_box)
@@ -176,9 +173,7 @@ def calculate_parcel_slopes(bounding_box: django.contrib.gis.geos.GEOSGeometry, 
 def calculate_slopes_for_parcel(parcel: ParcelDC, utm_crs: pyproj.CRS, max_slope: int, use_cache=True):
     cached_slopes = ParcelSlope.objects.filter(parcel=parcel.model)
     if use_cache and len(cached_slopes) > 0:
-        polys = models_to_utm_gdf(
-            cached_slopes.filter(grade__gt=max_slope), utm_crs, geometry_field="polys"
-        ).geometry
+        polys = models_to_utm_gdf(cached_slopes.filter(grade__gt=max_slope), utm_crs, geometry_field="polys").geometry
     else:
         cached_slopes.delete()
         # Rebuild parcel slopes
@@ -242,7 +237,7 @@ def check_topos_for_parcels(bounding_box: django.contrib.gis.geos.GEOSGeometry):
 
 
 def create_slopes_for_parcel(
-    parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geopandas.GeoDataFrame, bucket_stats: Dict = None
+    parcel: Parcel, utm_crs: pyproj.CRS, topos_df: geopandas.GeoDataFrame, bucket_stats: dict = None
 ):
     """Create slope polygons and store them in the database for a given parcel. Assumes that topo data is
     present for the parcel.
@@ -265,7 +260,7 @@ def create_slopes_for_parcel(
     # We have a bunch of lines in grade buckets. Iterate through the buckets, turning lines into
     # polygons (line.buffer(1) to create 1-meter wide polygons), filling holes, and ultimately creating
     # a list of polygons at each grade level that gets saved to the database.
-    grade_polys = dict()
+    grade_polys = {}
     for bucket in [25, 20, 15, 10, 5]:
         throwaways = []
         # Put together all the areas with the given grade into one polygon or multipolygon

@@ -1,5 +1,5 @@
-from datetime import datetime
 import sys
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from rich.prompt import Prompt
@@ -18,7 +18,7 @@ def log_and_print(logmsg, log):
 # Returns 'c', 'i', or 's' for create, incremental, or skip
 def pipestage_prompt(is_incremental, existing_filename):
     print("Stage options:")
-    print(f"C:Create new data")
+    print("C:Create new data")
     prompt_options = ["c", "s"]
     if is_incremental:
         print(f"I:Add to existing data incrementally: {existing_filename}")

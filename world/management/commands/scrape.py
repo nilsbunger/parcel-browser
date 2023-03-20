@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 import datetime
 import logging
 import os
@@ -8,7 +7,7 @@ import pprint
 import random
 import sys
 import tempfile
-from typing import List
+from collections import Counter, defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
@@ -89,9 +88,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("--skip-analysis", action="store_true", help="Don't run parcel analysis")
         parser.add_argument("--parcel", action="store", help="Run analysis only (no scrape) on a single parcel")
-        parser.add_argument(
-            "--single-process", action="store_true", help="Run analysis with only a single process"
-        )
+        parser.add_argument("--single-process", action="store_true", help="Run analysis with only a single process")
 
     def handle(self, *args, **options):
         mgmt_cmd_lib.init(verbose=options["verbose"])
@@ -142,20 +139,18 @@ class Command(BaseCommand):
         if options["skip_matching"] or options["parcel"]:
             logging.info("SKIPPING matching of listings to parcels")
         else:
-            logging.info(f"Running matching")
+            logging.info("Running matching")
 
-            prop_listings = PropertyListing.active_listings_queryset().prefetch_related(
-                "analyzedlisting", "parcel"
-            )
+            prop_listings = PropertyListing.active_listings_queryset().prefetch_related("analyzedlisting", "parcel")
             logging.info(f"Found {len(prop_listings)} properties to associate")
             for prop_listing in prop_listings:
                 try:
                     # If we're caching and the parcel, and analyzed listing exists, we can skip analysis and
                     # go to the next listing.
                     if not options["no_cache"] and prop_listing.parcel and prop_listing.analyzedlisting:
-                        stats[f"info_previously_matched"] += 1
+                        stats["info_previously_matched"] += 1
                         continue
-                except ObjectDoesNotExist as e:
+                except ObjectDoesNotExist:
                     # we're missing a relationship, so we need to analyze this parcel.
                     pass
                 matched_parcel, error = address_to_parcel(prop_listing.addr, jurisdiction="SD")
@@ -175,17 +170,16 @@ class Command(BaseCommand):
                             if int(zipcode[0:5]) not in AllSdCityZips:
                                 stats[f"error_city_zip_{zipcode[0:5]}_missing"] += 1
                         else:
-                            stats[f"info_sd_unknown_zip"] += 1
-                    else:
-                        if zipcode:
-                            if int(zipcode[0:5]) in AllSdCityZips:
-                                # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
-                                #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
-                                stats[
-                                    f"error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}"
-                                ] += 1
-                            else:
-                                stats[f"info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}"] += 1
+                            stats["info_sd_unknown_zip"] += 1
+                    elif zipcode:
+                        if int(zipcode[0:5]) in AllSdCityZips:
+                            # print(f"Skipping {matched_parcel.situs_addr} {matched_parcel.situs_stre}, {zip[0:5]}."
+                            #       f"It's in jurisdiction={matched_parcel.situs_juri}, NOT in SD City")
+                            stats[
+                                f"error_city_zip_with_non_city_jurisdiction_{zipcode[0:5]}_{matched_parcel.situs_juri}"
+                            ] += 1
+                        else:
+                            stats[f"info_skipping_non_city_zip{zipcode[0:5]}_{matched_parcel.situs_juri}"] += 1
                 # print("SAVED")
             logging.info("DONE. Final stats associating parcels with listings:")
             logging.info(pprint.pformat(dict(stats)))
@@ -199,13 +193,13 @@ class Command(BaseCommand):
             if options["parcel"]:
                 # Run on single parcel
                 parcels = [Parcel.objects.get(apn=options["parcel"])]
-                property_listings: List[PropertyListing] = [
+                property_listings: list[PropertyListing] = [
                     PropertyListing.active_listings_queryset().filter(parcel=parcels[0]).latest("seendate")
                 ]
             else:
                 # Run on batch
-                parcels: List[Parcel]
-                property_listings: List[PropertyListing]
+                parcels: list[Parcel]
+                property_listings: list[PropertyListing]
                 parcels, property_listings = zip(*parcels_to_analyze)
             logging.info(f"Running parcel analysis on {len(property_listings)} listings")
             sd_utm_crs = get_utm_crs()

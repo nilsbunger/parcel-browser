@@ -1,11 +1,11 @@
-from dataclasses import dataclass, field
 import datetime
-from datetime import timezone
 import json
-from pprint import pprint
 import re
 import string
-from typing import Any, Callable, Optional, TypeVar, cast
+from dataclasses import dataclass, field
+from datetime import timezone
+from pprint import pprint
+from typing import Any, Optional, TypeVar, cast
 
 from pyairtable import Table
 from pyairtable.utils import date_to_iso_str
@@ -14,7 +14,11 @@ from pydantic import BaseModel
 from lib.power_bi import BIRow, BITable, PowerBIScraper, SelectColumns, WhereCondition
 from mygeo.settings import env
 
-date_to_iso_str_safe: Callable[[datetime], Optional[str]] = lambda date: date_to_iso_str(date) if date else None
+
+def date_to_iso_str_safe(date: Optional[datetime]) -> Optional[str]:
+    return date_to_iso_str(date) if date else None
+
+
 JAN_1_2023 = datetime.datetime(2023, 1, 1, tzinfo=datetime.timezone.utc)
 
 
@@ -48,7 +52,7 @@ class AirtableBase:
     tables: dict = field(default_factory=lambda: {})
     view_name: Optional[str] = None
 
-    def __post_init__(self) -> None:
+    def __post_init__(self) -> None:  # noqa: ANN101
         # Add the Airtable Table objects for each listed table
         self.tables = {
             table_name: Table(self.api_key, self.base_id, table_name) if self.api_key else None
@@ -70,23 +74,24 @@ airtable_bases = AirtableBases(
         # TODO: Rename environnment var here, in settings.py, and in deployments to AIRTABLE_HE_STATUS_BOT_API_KEY
         api_key=env("AIRTABLE_API_KEY"),
         table_names=["dashboardSync", "underReview", "scrapeLog"],
-        tables=dict(),
+        tables={},
     ),
     yimby_law_housing_elements=AirtableBase(
         base_id="appRD2z3VXs78iq80",
         api_key=env("AIRTABLE_YIMBY_LAW_HE_API_KEY"),
         table_names=["HCD Cities", "HCD HE Status Sync"],
-        tables=dict(),
+        tables={},
         view_name="Website View HE Status",
     ),
 )
 
 
-def diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run) -> list[str]:
+def diff_he_statuses(hcd_status_table: BITable, airtable_status_raw: list, dry_run: bool) -> list[str]:
     # Determine the difference between the HCD status table and the Airtable "he_status_bot" base dashboardSync table.
 
-    hcd_jurisdictions = set([string.capwords(cast(str, x[0])) for x in hcd_status_table.rows])
-    airtable_jurisdictions = set([string.capwords(x["fields"]["jurisdiction"]) for x in airtable_status_raw])
+    # {} in lines below are 'set' comprehensions
+    hcd_jurisdictions = {string.capwords(cast(str, x[0])) for x in hcd_status_table.rows}
+    airtable_jurisdictions = {string.capwords(x["fields"]["jurisdiction"]) for x in airtable_status_raw}
     # ensure no jurisdiction is listed twice (eg the set didn't remove any dupes)
     assert len(hcd_jurisdictions) == len(hcd_status_table.rows)
     assert len(airtable_jurisdictions) == len(airtable_status_raw)
@@ -101,9 +106,9 @@ def diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run) -> list[str
 
     status_diff = []
     for juri in juris_in_both_sets:
-        hcd_row = next((row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri))
+        hcd_row = next(row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri)
         airtable_row = next(
-            (row for row in airtable_status_raw if string.capwords(row["fields"]["jurisdiction"]) == juri)
+            row for row in airtable_status_raw if string.capwords(row["fields"]["jurisdiction"]) == juri
         )
         old_status = airtable_row["fields"]["6thCycle"]
         new_status = str(hcd_row[2])
@@ -140,16 +145,14 @@ def latest_received_review(hcd_review_table: BITable, cycle_name: str, min_date:
     return hcd_6th_cycle_latest
 
 
-def diff_6th_cycle_he_reviews(hcd_review_table: BITable, airtable_review_raw, dry_run) -> HEReviewDiffs:
+def diff_6th_cycle_he_reviews(hcd_review_table: BITable, airtable_review_raw: list, dry_run: bool) -> HEReviewDiffs:
     airtable_review_table = airtable_bases.he_status_bot.tables["underReview"]
     messages = []
 
     hcd_latest_6th_reviews: BITable = latest_received_review(hcd_review_table, "6th Cycle", JAN_1_2023)
 
-    hcd_jurisdictions = set(
-        [string.capwords(cast(str, bi_row["JURISDICTION"])) for bi_row in hcd_latest_6th_reviews.rows]
-    )
-    airtable_jurisdictions = set([string.capwords(x["fields"]["jurisdiction"]) for x in airtable_review_raw])
+    hcd_jurisdictions = {string.capwords(cast(str, bi_row["JURISDICTION"])) for bi_row in hcd_latest_6th_reviews.rows}
+    airtable_jurisdictions = {string.capwords(x["fields"]["jurisdiction"]) for x in airtable_review_raw}
     # ensure no jurisdiction is listed twice (eg the set didn't remove any dupes)
     assert len(hcd_jurisdictions) == len(hcd_latest_6th_reviews.rows)
     assert len(airtable_jurisdictions) == len(airtable_review_raw)
@@ -161,15 +164,15 @@ def diff_6th_cycle_he_reviews(hcd_review_table: BITable, airtable_review_raw, dr
     new_reviews = []
     # Use IN REVIEW status to determine if a jurisdiction is in review or not
     for juri in hcd_jurisdictions:
-        hcd_row = next((row for row in hcd_latest_6th_reviews.rows if string.capwords(row["JURISDICTION"]) == juri))
+        hcd_row = next(row for row in hcd_latest_6th_reviews.rows if string.capwords(row["JURISDICTION"]) == juri)
         airtable_row = (
-            next((row for row in airtable_review_raw if string.capwords(row["fields"]["jurisdiction"]) == juri))
+            next(row for row in airtable_review_raw if string.capwords(row["fields"]["jurisdiction"]) == juri)
             if juri in airtable_jurisdictions
             else None
         )
         review_status = hcd_row["REVIEW_STATUS"]
         rx_date: str = date_to_iso_str_safe(hcd_row["RECEIVED_DATE"])
-        adopted_date: str = date_to_iso_str_safe(hcd_row["ADOPTED_DATE"])
+        adopted_date: str = date_to_iso_str_safe(hcd_row["ADOPTED_DATE"])  # noqa: F841
         due_date: str = date_to_iso_str_safe(hcd_row["FINAL_DUE_DATE"])
 
         if review_status == "IN REVIEW" and airtable_row:
@@ -238,9 +241,9 @@ def diff_6th_cycle_he_reviews(hcd_review_table: BITable, airtable_review_raw, dr
     return HEReviewDiffs(new_reviews=new_reviews, exited_reviews=exited_reviews, messages=messages)
 
 
-def airtable_by_juri(airtable_raw) -> dict[str, Any]:
+def airtable_by_juri(airtable_raw: list) -> dict[str, Any]:
     # create a dict of jurisdiction to airtable row
-    table_by_juri = dict()
+    table_by_juri = {}
     error_count = 0
     for row in airtable_raw:
         juri = row["fields"].get("Jurisdiction", None)
@@ -265,14 +268,14 @@ def prepare_he_status_sync_airtable_record(
     hcd_status_table: BITable, hcd_review_table: BITable, juri: str
 ) -> dict[str, list[str]]:
     hcd_status_row: BIRow = hcd_status_table.row_dict[string.capwords(juri)]
-    new_record = dict(zip(hcd_status_table.column_names, upper_strings(hcd_status_row.data)))
+    new_record = dict(zip(hcd_status_table.column_names, upper_strings(hcd_status_row.data), strict=True))
     hcd_latest_6th_reviews: BITable = latest_received_review(hcd_review_table, "6th Cycle", JAN_1_2023)
 
     if juri.upper() in hcd_latest_6th_reviews.row_dict:
         hcd_review_row: BIRow = hcd_latest_6th_reviews.row_dict[juri.upper()]
         # change column names underscores to spaces and replace with title case
         review_col_names = [string.capwords(x.replace("_", " ")) for x in hcd_review_table.column_names]
-        new_record_pt2 = dict(zip(review_col_names, upper_strings(hcd_review_row.data)))
+        new_record_pt2 = dict(zip(review_col_names, upper_strings(hcd_review_row.data), strict=True))
         new_record |= new_record_pt2
     # Iterate over this record's fields, adjusting their format for writing to Airtable.
     for k, v in new_record.items():
@@ -285,7 +288,7 @@ def prepare_he_status_sync_airtable_record(
     return new_record
 
 
-def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_table: BITable, dry_run):
+def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_table: BITable) -> None:
     # Sync data from HCD (both status table and review table) to a Yimby Law Airtable table that we control.
 
     # table that WE control and directly write into:
@@ -318,15 +321,15 @@ def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_tabl
         yimby_law_he_status_sync_airtable.create(new_record)
 
 
-def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table: BITable, dry_run):
+def diff_yimby_law_housing_elements(hcd_status_table: BITable, dry_run: bool) -> list[str]:
     # Compare fetched HCD data with Yimby Law Airtable data. Update Airtable's HE Compliance field if needed.
 
     # Yimby Law's table that is used to update fairhousingelements.org and other places.
     yimby_law_airtable = airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].all()
 
     yl_airtable_by_juri = airtable_by_juri(yimby_law_airtable)
-    hcd_jurisdictions = set([string.capwords(cast(str, x[0])) for x in hcd_status_table.rows])
-    airtable_jurisdictions = set([string.capwords(x) for x in yl_airtable_by_juri.keys()])
+    hcd_jurisdictions = {string.capwords(cast(str, x[0])) for x in hcd_status_table.rows}
+    airtable_jurisdictions = {string.capwords(x) for x in yl_airtable_by_juri.keys()}
 
     juris_in_both_sets = hcd_jurisdictions & airtable_jurisdictions
     juris_in_airtable_only = airtable_jurisdictions - hcd_jurisdictions
@@ -339,7 +342,7 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table:
     changes = []
     # Find changes in 6th cycle HE compliance status between HCD dashboard (the master) and Yimby Law Airtable.
     for juri in juris_in_both_sets:
-        hcd_row = next((row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri))
+        hcd_row = next(row for row in hcd_status_table.rows if string.capwords(cast(str, row[0])) == juri)
         airtable_row = yl_airtable_by_juri[juri.upper()]
         # Assumption: Airtable's "HE Compliance" field is always referring to 6th cycle.
         airtable_6cycle_status: list[str] = [
@@ -364,7 +367,7 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, hcd_review_table:
     return changes
 
 
-def run_scrape_hcd(dry_run=False) -> str:
+def run_scrape_hcd(dry_run: bool = False) -> str:
     # Scrape the HCD website
     # big 12-page BI dashboard
     page_url = (
@@ -382,10 +385,10 @@ def run_scrape_hcd(dry_run=False) -> str:
     hcd_page_scraper = PowerBIScraper(page_url)
 
     # Useful information fetched from the server: list of sections, tables, and columns:
-    sections = hcd_page_scraper.list_sections()
-    tables = hcd_page_scraper.list_tables()
-    review_table_cols = hcd_page_scraper.list_columns("Under Review")
-    status_table_cols = hcd_page_scraper.list_columns("HE_Compliance")
+    sections = hcd_page_scraper.list_sections()  # noqa: F841
+    tables = hcd_page_scraper.list_tables()  # noqa: F841
+    review_table_cols = hcd_page_scraper.list_columns("Under Review")  # noqa: F841
+    status_table_cols = hcd_page_scraper.list_columns("HE_Compliance")  # noqa: F841
 
     # Fetch "Under Review" table:
     select_columns = SelectColumns(
@@ -428,10 +431,10 @@ def run_scrape_hcd(dry_run=False) -> str:
 
     status_diff = diff_he_statuses(hcd_status_table, airtable_status_raw, dry_run)
     review_diff = diff_6th_cycle_he_reviews(hcd_review_table, airtable_review_raw, dry_run)
-    yl_he_diff = diff_yimby_law_housing_elements(hcd_status_table, hcd_review_table, dry_run)
+    yl_he_diff = diff_yimby_law_housing_elements(hcd_status_table, dry_run)
 
     # Sync HCD status to Yimby Law's airtable
-    sync_he_status_to_yimby_law_table(hcd_status_table, hcd_review_table, dry_run)
+    sync_he_status_to_yimby_law_table(hcd_status_table, hcd_review_table)
 
     ############
     # store changes in runLog
@@ -454,14 +457,14 @@ def run_scrape_hcd(dry_run=False) -> str:
             yl_he_diff
         )
 
-    if change_summary == "":
+    if not change_summary:
         change_summary = "No changes detected."
 
-    runTime = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
+    run_time = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
     if not dry_run:
         airtable_log_table = airtable_bases.he_status_bot.tables["scrapeLog"]
-        airtable_log_table.create({"runTime": runTime, "differences": change_summary})
+        airtable_log_table.create({"runTime": run_time, "differences": change_summary})
     else:
-        print("Dry run: logTable.create(" + runTime + ", " + change_summary)
+        print("Dry run: logTable.create(" + run_time + ", " + change_summary)
 
     return change_summary

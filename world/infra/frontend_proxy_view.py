@@ -9,7 +9,6 @@ from django.views.generic import TemplateView
 
 from mygeo import settings
 
-
 # ------------------------------------------------------
 # Proxy URL calls to frontend/ to the frontend server
 # ------------------------------------------------------

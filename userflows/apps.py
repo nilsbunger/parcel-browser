@@ -7,7 +7,7 @@ class UserflowsConfig(AppConfig):
 
     def ready(self):
         # Implicitly connect signal handlers decorated with @receiver.
-        from . import signals
+        pass
 
         # # We can also explicitly connect a signal handler....
         # request_finished.connect(signals.my_callback)

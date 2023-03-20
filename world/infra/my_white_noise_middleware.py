@@ -16,5 +16,5 @@ class MyWhiteNoiseMiddleware(WhiteNoiseMiddleware):
             # log.exception("Whitenoise error in get_static_url")
             return None
 
-    def __init__(self, app, **kwargs):
+    def __init__(self, app, **kwargs) -> None:
         super().__init__(app, **kwargs)

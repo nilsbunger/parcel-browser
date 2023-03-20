@@ -1,7 +1,8 @@
 """ Methods for manipulating Shapely objects (no dependencies on Django / etc)"""
 
-from shapely.geometry import MultiPolygon, MultiLineString
+from shapely.geometry import MultiLineString, MultiPolygon
 from shapely.ops import split
+
 from lib.types import Polygonal
 
 

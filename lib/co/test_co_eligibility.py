@@ -1,14 +1,11 @@
 import pytest
 
-
 from lib.co.co_eligibility_lib import (
     CheckResultEnum,
     CommercialCorridorCheck,
     PrincipallyPermittedUseCheck,
 )
-from lib.crs_lib import get_utm_crs, meters_to_latlong
-from lib.parcel_lib import models_to_utm_gdf, normalize_geometries
-from world.models import Parcel, Roads
+from world.models import Parcel
 
 
 @pytest.mark.django_db(databases=["basedata", "default"])  # TODO: REMOVE DEFAULT
