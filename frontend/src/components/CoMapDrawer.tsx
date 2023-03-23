@@ -14,6 +14,7 @@ import {
   XCircleIcon,
 } from "@heroicons/react/solid"
 import { MinusCircleIcon } from "@heroicons/react/outline"
+import { BACKEND_DOMAIN } from "../constants";
 
 export function CoMapDrawer({ selection, setSelection }) {
   const opened = selection !== null
@@ -94,7 +95,7 @@ const renderEligibilityTitleRow = (eligibility: EligibilityCheck) => {
         label={eligibility.description}
       >
         <span className={"leading-6"}>
-          {" " + rowname + " "}
+          {` ${rowname} `}
           <InformationCircleIcon className="inline align-text-bottom h-4 w-4 text-info" />
         </span>
       </Tooltip>
@@ -107,13 +108,13 @@ const EligibilityCheck = ({ eligibility, level }: { eligibility: EligibilityChec
     <>
       {renderEligibilityTitleRow(eligibility)}
 
-      {eligibility.notes.map((note, idx) => (
+      {eligibility?.notes?.map((note, idx) => (
         <p key={idx}>
           <DotsVerticalIcon className="inline-block align-middle h-6 w-6 text-slate-200" />
           {" " + note}
         </p>
       ))}
-      {eligibility.children.map((child, idx) => (
+      {eligibility?.children?.map((child, idx) => (
         <div className="ml-5" key={idx}>
           <EligibilityCheck eligibility={child} level={level + 1} />
         </div>
@@ -123,7 +124,7 @@ const EligibilityCheck = ({ eligibility, level }: { eligibility: EligibilityChec
 }
 
 const ParcelDetails = ({ apn }) => {
-  const { data, error } = useSWR<ParcelGetResp, string>(`/api/parcel/${apn}`, fetcher)
+  const { data, error } = useSWR<ParcelGetResp, string>(`${BACKEND_DOMAIN}/api/parcel/${apn}`, fetcher)
   if (error) return <div>failed to load parcel APN={apn}</div>
   if (!data) return <div>loading parcel APN={apn}</div>
   console.log("PARCEL DETAILS", data)
@@ -170,7 +171,7 @@ const ParcelDetails = ({ apn }) => {
 }
 
 const RoadDetails = ({ properties }) => {
-  const { data, error } = useSWR<RoadGetResp, string>(`/api/road/${properties.roadsegid}`, fetcher)
+  const { data, error } = useSWR<RoadGetResp, string>(`${BACKEND_DOMAIN}/api/road/${properties.roadsegid}`, fetcher)
   if (error) return <div>failed to load road segid={properties.roadsegid}</div>
   if (!data) return <div>loading road segid={properties.roadsegid}</div>
   console.log("ROAD:", properties)

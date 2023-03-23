@@ -7,6 +7,7 @@ import { fromLonLat } from "ol/proj"
 import VectorTileLayer from "ol/layer/VectorTile"
 import VectorTileSource from "ol/source/VectorTile"
 import { Fill, Stroke, Style } from "ol/style"
+import { BACKEND_DOMAIN } from "./constants";
 
 const form = document.getElementById("search")
 const log = document.getElementById("log")
@@ -36,7 +37,7 @@ let parcelVectorSource = new VectorTileSource({
   format: new MVT({
     idProperty: "iso_a3",
   }),
-  url: "/dj/api/parceltile/{z}/{x}/{y}",
+  url: `${BACKEND_DOMAIN}/dj/api/parceltile/{z}/{x}/{y}`,
   wrapX: false,
 })
 
@@ -58,7 +59,7 @@ let topoVectorSource = new VectorTileSource({
   format: new MVT({
     idProperty: "iso_a3",
   }),
-  url: "/dj/api/topotile/{z}/{x}/{y}",
+  url: `${BACKEND_DOMAIN}/dj/api/topotile/{z}/{x}/{y}`,
   wrapX: false,
 })
 

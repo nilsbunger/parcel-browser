@@ -10,6 +10,7 @@ import { MVTLayer } from "@deck.gl/geo-layers/typed"
 import { Button, Menu } from "@mantine/core"
 import { useImmer } from "use-immer"
 import { CoMapDrawer } from "../components/CoMapDrawer"
+import { BACKEND_DOMAIN } from "../constants";
 
 // Set your mapbox access token here
 const MAPBOX_ACCESS_TOKEN =
@@ -53,7 +54,7 @@ const LAYER_COLORS: Record<string, [number, number, number, number]> = {
 const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
   return {
     // 'road-tile-layer': {
-    //   data: '/dj/api/roadtile/{z}/{x}/{y}',
+    //   data: `${BACKEND_DOMAIN}/dj/api/roadtile/{z}/{x}/{y}`,
     //   getLineColor: [128, 128, 128],
     //   getFillColor: [0, 0, 0, 255],
     //   minZoom: 16,
@@ -64,7 +65,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
     //   visible: true,
     // },
     // 'parcel-tile-layer': {
-    //   data: '/dj/api/parceltile/{z}/{x}/{y}',
+    //   data: `${BACKEND_DOMAIN}/dj/api/parceltile/{z}/{x}/{y}`,
     //   getLineColor: [128, 128, 128],
     //   getFillColor: [0, 0, 0, 0],
     //   minZoom: 16,
@@ -88,7 +89,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
     },
 
     "tpa-tile-layer": {
-      data: "/dj/api/tpatile/{z}/{x}/{y}",
+      data: `${BACKEND_DOMAIN}/dj/api/tpatile/{z}/{x}/{y}`,
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS["tpa-vis-layer"],
       lineWidthMinPixels: 3,
@@ -99,7 +100,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       visible: true,
     },
     "compcomm-tile-layer": {
-      data: "/dj/api/compcommtile/{z}/{x}/{y}",
+      data: `${BACKEND_DOMAIN}/dj/api/compcommtile/{z}/{x}/{y}`,
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS["compcomm-vis-layer"],
       lineWidthMinPixels: 3,
@@ -110,7 +111,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       visible: true,
     },
     "zoning-tile-label-layer": {
-      data: "/dj/api/zoninglabeltile/{z}/{x}/{y}",
+      data: `${BACKEND_DOMAIN}/dj/api/zoninglabeltile/{z}/{x}/{y}`,
       getLineColor: [128, 128, 128],
       minZoom: 15,
       maxZoon: 15,
@@ -123,7 +124,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       // renderSubLayers: props => new GeoJsonLayer(props)
     },
     "zoning-tile-layer": {
-      data: "/dj/api/zoningtile/{z}/{x}/{y}",
+      data: `${BACKEND_DOMAIN}/dj/api/zoningtile/{z}/{x}/{y}`,
       getLineColor: [128, 128, 128],
       getFillColor: zoneColorFn,
       minZoom: 12,
@@ -137,7 +138,7 @@ const TILE_DEFS2 = (zoneColorFn, visibleLayers) => {
       },
     },
     "ab2011-tile-layer": {
-      data: "/dj/api/ab2011tile/{z}/{x}/{y}",
+      data: `${BACKEND_DOMAIN}/dj/api/ab2011tile/{z}/{x}/{y}`,
       getLineColor: [255, 255, 255],
       getFillColor: LAYER_COLORS["ab2011-vis-layer"],
       lineWidthMinPixels: 3,

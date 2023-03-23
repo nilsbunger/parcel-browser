@@ -9,14 +9,15 @@ import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../ty
 import { AxiosError } from "axios"
 import { IconX } from "@tabler/icons"
 import { hideNotification, showNotification } from "@mantine/notifications"
+import { BACKEND_DOMAIN } from "../constants";
 
 async function doAnalysis(
   analysisId: number
 ): Promise<{ data: AnalysisPostResp; error: boolean; message: string | null }> {
   // const fetchResponse = AnalysisPostRespSchema.parse(
-  //   await post_csrf(`/api/analysis/`, {params: { al_id: analysisId }})
+  //   await post_csrf(`${BACKEND_DOMAIN}/api/analysis/`, {params: { al_id: analysisId }})
   // )
-  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/analysis/`, {
+  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`${BACKEND_DOMAIN}/api/analysis/`, {
     respSchema: AnalysisPostRespSchema,
     params: { al_id: analysisId },
     isPost: false,
@@ -65,7 +66,7 @@ export default function ListingDetailPage() {
   // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
   const { data, error } = useSWR<AnalysisGetResp, AxiosError>(
-    `/api/analysis/${params.analysisId}`,
+    `${BACKEND_DOMAIN}/api/analysis/${params.analysisId}`,
     fetcher
   )
   const { mutate } = useSWRConfig()
@@ -91,7 +92,7 @@ export default function ListingDetailPage() {
     hideNotification("analysis-loading")
     if (!error) {
       console.log("GOT DATA on redo analysis", data)
-      return mutate(`/api/analysis/${data.analysisId}`)
+      return mutate(`${BACKEND_DOMAIN}/api/analysis/${data.analysisId}`)
     } else {
       console.log("Failed to redo analysis")
       showNotification({ title: "Failed to re-run analysis", message: message, color: "red" })

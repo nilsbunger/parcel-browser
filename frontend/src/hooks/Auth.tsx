@@ -3,8 +3,10 @@ import { createContext, useContext } from "react"
 import { apiRequest, fetcher } from "../utils/fetcher"
 import useSWR from "swr"
 import { LoginRequest, LoginResponse, LoginResponseSchema, LogoutResponseSchema, User } from "../types"
+import { BACKEND_DOMAIN } from "../constants";
 
 const authContext = createContext<AuthContextType | null>(null)
+
 
 // useAuth hook:
 export const useAuth = () => {
@@ -22,7 +24,7 @@ function useAuthProvider() {
   // const [user, setUser] = useState(null);
   // const navigate = useNavigate();
 
-  const { data, error, isValidating, mutate } = useSWR<User | null>("/api/userflows/user", fetcher, {
+  const { data, error, isValidating, mutate } = useSWR<User | null>(`${BACKEND_DOMAIN}/api/userflows/user`, fetcher, {
     shouldRetryOnError: false,
   })
   const user = data === undefined ? null : data
@@ -36,7 +38,7 @@ function useAuthProvider() {
   // console.log("Got user", user)
   const logIn = async (loginParameters: LoginRequest): Promise<LoginResponse> => {
     const { data, errors, message } = await apiRequest<typeof LoginResponseSchema>(
-      `/api/userflows/login`,
+      `${BACKEND_DOMAIN}/api/userflows/login`,
       {
         respSchema: LoginResponseSchema,
         isPost: true,
@@ -64,7 +66,7 @@ function useAuthProvider() {
     return Promise.resolve()
   }
   const logOut = async () => {
-    const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`/api/userflows/logout`, {
+    const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`${BACKEND_DOMAIN}/api/userflows/logout`, {
       respSchema: LogoutResponseSchema,
       isPost: true,
     })

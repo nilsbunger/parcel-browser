@@ -10,6 +10,7 @@ import { SimpleGeometry } from "ol/geom"
 import VectorTileSource from "ol/source/VectorTile"
 import VectorTileLayer from "ol/layer/VectorTile"
 import { Fill, Stroke, Style } from "ol/style"
+import { BACKEND_DOMAIN } from "./constants";
 
 // Initiate map with CRS => EPSG:3857
 const url = window.location.pathname
@@ -18,7 +19,7 @@ let topoVectorSource = new VectorTileSource({
   format: new MVT({
     idProperty: "iso_a3",
   }),
-  url: "/dj/api/topotile/{z}/{x}/{y}",
+  url: `${BACKEND_DOMAIN}/dj/api/topotile/{z}/{x}/{y}`,
   wrapX: false,
 })
 
