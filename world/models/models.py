@@ -6,7 +6,7 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Subquery
 
-from lib.types import CheckResultEnum
+from lib.parcel_analysis_2022.types import CheckResultEnum
 from world.models import Parcel, Roads
 
 

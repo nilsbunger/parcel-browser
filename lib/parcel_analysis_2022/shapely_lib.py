@@ -3,7 +3,7 @@
 from shapely.geometry import MultiLineString, MultiPolygon
 from shapely.ops import split
 
-from lib.types import Polygonal
+from .types import Polygonal
 
 
 def regularize_to_multipolygon(grade_poly):

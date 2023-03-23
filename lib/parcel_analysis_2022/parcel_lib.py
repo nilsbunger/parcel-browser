@@ -29,8 +29,8 @@ from shapely.geometry import (
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
-from lib.shapely_lib import multi_line_string_split
-from lib.types import ParcelDC, Polygonal
+from .shapely_lib import multi_line_string_split
+from .types import ParcelDC, Polygonal
 from world.models import (
     BuildingOutlines,
     Parcel,

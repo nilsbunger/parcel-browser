@@ -13,14 +13,14 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
-from lib.parcel_lib import (
+from .parcel_lib import (
     get_buildings,
     get_parcels_by_neighborhood,
     models_to_utm_gdf,
     polygon_to_utm,
 )
-from lib.shapely_lib import regularize_to_multipolygon, yield_interiors
-from lib.types import ParcelDC
+from .shapely_lib import regularize_to_multipolygon, yield_interiors
+from .types import ParcelDC
 from mygeo.settings import TOPO_DB_ALIAS
 from world.models import Parcel, ParcelSlope, Topography, TopographyLoads
 

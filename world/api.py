@@ -8,10 +8,10 @@ from ninja import NinjaAPI, Query
 from ninja.pagination import paginate
 from ninja.security import django_auth
 
-from lib.analyze_parcel_lib import analyze_one_parcel
+from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_one_parcel
 from lib.co.co_eligibility_lib import AB2011Eligible
-from lib.crs_lib import get_utm_crs
-from lib.listings_lib import address_to_parcel
+from lib.parcel_analysis_2022.crs_lib import get_utm_crs
+from lib.parcel_analysis_2022.listings_lib import address_to_parcel
 from mygeo.util import field_exists_on_model
 from world.api_gis_schema import (
     AnalysisResponseSchema,

@@ -3,6 +3,8 @@ This file contains implementation for functions relating to analyzing a parcel, 
 generation of new buildings/repurpose of old one, computing financial models, and running
 scenarios in general.
 """
+from __future__ import annotations
+
 import logging
 import pprint
 import secrets
@@ -13,10 +15,14 @@ import django
 import pyproj
 from botocore.exceptions import ClientError
 from geopandas import GeoDataFrame
+from pydantic import BaseModel
 from shapely.ops import unary_union
 
-from lib.neighborhoods import HIGH_PRIORITY_NEIGHBORHOODS
-from lib.parcel_lib import (
+from world.models.base_models import Parcel
+from world.models.models import AnalyzedListing, PropertyListing
+
+from .neighborhoods import HIGH_PRIORITY_NEIGHBORHOODS
+from .parcel_lib import (
     find_largest_rectangles_on_avail_geom,
     get_avail_floor_area,
     get_buffered_building_geom,
@@ -31,9 +37,7 @@ from lib.parcel_lib import (
     parcel_model_to_utm_dc,
     split_lot,
 )
-from lib.types import ParcelDC
-from world.models.base_models import Parcel
-from world.models.models import AnalyzedListing, PropertyListing
+from .types import ParcelDC
 
 # TODO: It seems any workers we spawn will need django.setup(), so let's move
 # all the workers to a separate file so we don't pollute this file.
@@ -48,15 +52,15 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 
-from lib.build_lib import DevScenario
-from lib.finance_lib import Financials
-from lib.plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
-from lib.re_params import ReParams, get_build_specs
-from lib.rent_lib import RentService
-from lib.topo_lib import calculate_slopes_for_parcel, get_topo_lines
-from lib.zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 from mygeo.settings import CLOUDFLARE_R2_ENABLED, env
 from mygeo.util import eprint
+
+from .finance_lib import Financials
+from .plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot
+from .re_params import BuildableUnit, ReParams, get_build_specs
+from .rent_lib import RentService
+from .topo_lib import calculate_slopes_for_parcel, get_topo_lines
+from .zoning_rules import ZONING_FRONT_SETBACKS_IN_FEET, get_far
 
 log = logging.getLogger(__name__)
 
@@ -145,7 +149,7 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
 
 
 def get_folder_name(neighborhood: str):
-    return f"{date.today()}-{neighborhood.lower()}"
+    return f"{date.today()}-{neighborhood.lower()}"  # noqa: DTZ011 (date.today() is ok)
 
 
 rent_data = RentService()
@@ -597,7 +601,7 @@ def analyze_batch(
     try_split_lot: bool = True,
     single_process: bool = False,
 ) -> (list[AnalyzedListing], list[AnalyzedListing]):
-    from lib.parallel_worker import analyze_one_parcel_worker
+    from .parallel_worker import analyze_one_parcel_worker
 
     """
     Notable arguments:
@@ -657,3 +661,12 @@ def analyze_batch(
     errors = [x[1] for x in results if x[1] is not None]
     log.info(f"Done analyzing {num_analyze} parcels. {len(errors)} errors")
     return analyzed, errors
+
+
+class DevScenario(BaseModel):
+    adu_qty: int
+    unit_type: BuildableUnit
+    finances: Financials = None
+
+    def __repr__(self):
+        return pprint.pformat({"adu_qty": self.adu_qty, "unit_type": self.unit_type})

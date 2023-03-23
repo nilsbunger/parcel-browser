@@ -1,3 +1,5 @@
+from math import asin, cos, radians, sin, sqrt
+
 import pyproj
 from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
@@ -10,9 +12,6 @@ def get_utm_crs() -> pyproj.CRS:
     # sd_utm_crs = pyproj.CRS.from_wkt(SAN_DIEGO_UTM_CRS_WKT)
     sd_utm_crs = pyproj.CRS(proj="utm", zone=11, ellps="WGS84")
     return sd_utm_crs
-
-
-from math import asin, cos, radians, sin, sqrt
 
 
 def latlong_to_utm_crs(lat, long):

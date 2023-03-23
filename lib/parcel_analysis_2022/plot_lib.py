@@ -8,7 +8,7 @@ from geopandas import GeoDataFrame
 from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.ops import unary_union
 
-from lib.types import ParcelDC, Polygonal
+from .types import ParcelDC, Polygonal
 
 # matplotlib.use('Agg')
 

@@ -15,8 +15,8 @@ from vectortiles.mixins import BaseVectorTileView
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
-from lib.crs_lib import get_utm_crs
-from lib.types import CheckResultEnum
+from lib.parcel_analysis_2022.crs_lib import get_utm_crs
+from lib.parcel_analysis_2022.types import CheckResultEnum
 from mygeo import settings
 from world.infra.django_cache import h3_cache_page
 from world.models import (

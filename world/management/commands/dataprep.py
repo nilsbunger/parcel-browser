@@ -8,8 +8,8 @@ from django.contrib.gis.geos import MultiPolygon
 from django.core.management.base import BaseCommand
 
 from lib.co.co_eligibility_lib import AB2011Eligible
-from lib.crs_lib import get_utm_crs
-from lib.topo_lib import (
+from lib.parcel_analysis_2022.crs_lib import get_utm_crs
+from lib.parcel_analysis_2022.topo_lib import (
     calculate_parcel_slopes,
     calculate_parcel_slopes_mp,
     check_topos_for_parcels,
