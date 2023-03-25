@@ -7,6 +7,9 @@ import { UserFlowLayout } from "./layouts/UserFlowLayout"
 import { useAuth } from "./hooks/Auth"
 import { Loader } from "@mantine/core"
 import BackyardPage from "./pages/deals/BackyardPage";
+import dataProvider from "@refinedev/simple-rest";
+import routerBindings from "@refinedev/react-router-v6";
+import { Refine } from "@refinedev/core";
 
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
@@ -19,42 +22,59 @@ export function MyRoutes() {
   return (
     <BrowserRouter>
       <React.StrictMode>
-        <Suspense fallback={<LoadingScreen/>}>
-          <Routes>
-            {/* Pages that don't require login */}
-            <Route path="login" element={<UserFlowLayout/>}>
-              <Route index element={<LoginPage/>}/>
-            </Route>
-
-            <Route path="deals" element={<HomeLayout/>}>
-              <Route path="backyard" element={<BackyardPage/>}/>
-            </Route>
-
-            {/* Rest of pages require login... */}
-            <Route element={<ProtectedRoute/>}>
-              <Route element={<WideLayout/>}>
-                <Route path="listings">
-                  <Route index element={<ListingsPage/>}/>
-                </Route>
+        <Refine
+          dataProvider={dataProvider("http://localhost:8000/api")}
+          // notificationProvider={notificationProvider} // seems to overlap with our notif provider
+          routerProvider={routerBindings}
+          // authProvider={authProvider}  // overlaps with our auth provider, maybe we can add this later?
+          resources={[
+            {
+              name: "blog_posts",
+              list: "/blog-posts",
+              create: "/blog-posts/create",
+              edit: "/blog-posts/edit/:id",
+              show: "/blog-posts/show/:id",
+              meta: {
+                canDelete: true,
+              },
+            },]}>
+          <Suspense fallback={<LoadingScreen/>}>
+            <Routes>
+              {/* Pages that don't require login */}
+              <Route path="login" element={<UserFlowLayout/>}>
+                <Route index element={<LoginPage/>}/>
               </Route>
-              <Route path="logout" element={<LogoutHelper/>}/>
 
-              <Route element={<HomeLayout/>}>
-                {/*<Route path="login" element={<LoginPage/>}/>*/}
-                <Route index element={<Navigate replace to="/listings"/>}/>
-                {/*<Route index element={<HomePage/>}/>*/}
-                <Route path="analysis">
-                  <Route path=":analysisId" element={<ListingDetailPage/>}/>
-                </Route>
-                <Route path="search" element={<NewListingPage/>}/>
-                <Route path="rental-rates" element={<RentalRatesPage/>}/>
-                <Route path="map" element={<CoMapPage/>}/>
+              <Route path="deals" element={<HomeLayout/>}>
+                <Route path="backyard" element={<BackyardPage/>}/>
               </Route>
-              {/* Catch-all element below */}
-              <Route path="*" element={<PageNotFound/>}/>
-            </Route>
-          </Routes>
-        </Suspense>
+
+              {/* Rest of pages require login... */}
+              <Route element={<ProtectedRoute/>}>
+                <Route element={<WideLayout/>}>
+                  <Route path="listings">
+                    <Route index element={<ListingsPage/>}/>
+                  </Route>
+                </Route>
+                <Route path="logout" element={<LogoutHelper/>}/>
+
+                <Route element={<HomeLayout/>}>
+                  {/*<Route path="login" element={<LoginPage/>}/>*/}
+                  <Route index element={<Navigate replace to="/listings"/>}/>
+                  {/*<Route index element={<HomePage/>}/>*/}
+                  <Route path="analysis">
+                    <Route path=":analysisId" element={<ListingDetailPage/>}/>
+                  </Route>
+                  <Route path="search" element={<NewListingPage/>}/>
+                  <Route path="rental-rates" element={<RentalRatesPage/>}/>
+                  <Route path="map" element={<CoMapPage/>}/>
+                </Route>
+                {/* Catch-all element below */}
+                <Route path="*" element={<PageNotFound/>}/>
+              </Route>
+            </Routes>
+          </Suspense>
+        </Refine>
       </React.StrictMode>
     </BrowserRouter>
   )
