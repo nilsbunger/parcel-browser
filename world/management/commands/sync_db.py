@@ -3,10 +3,21 @@ import sys
 from enum import Enum
 
 from django.core.management import BaseCommand
+from django.core.paginator import Paginator
 from django.db.models import DateField, DateTimeField
 
 from mygeo.settings import LOCAL_DB
-from world.models import AnalyzedListing, PropertyListing, RentalData
+from world.models import (
+    AnalyzedListing,
+    HousingSolutionArea,
+    Parcel,
+    PropertyListing,
+    RentalData,
+    TransitPriorityArea,
+    ZoningBase,
+    ZoningMapLabel,
+)
+from world.models.base_models import BuildingOutlines, TpaMapLabel
 from world.models.models import AnalyzedParcel, AnalyzedRoad
 
 
@@ -61,13 +72,30 @@ class Command(BaseCommand):
 
         DateTimeField.pre_save = pre_save_datetimefield
 
-        for model in [PropertyListing, RentalData, AnalyzedListing]:
+        for model in [
+            Parcel,
+            PropertyListing,
+            RentalData,
+            # Other models we might want to sync if we're recreating a local parcel DB:
+            # AnalyzedListing,
+            # ZoningBase,
+            # HousingSolutionArea,
+            # TransitPriorityArea,
+            # ZoningMapLabel,
+            # TpaMapLabel,
+            # BuildingOutlines,
+            # AnalyzedParcel
+        ]:
             logging.info(f"{model}: Deleting all entries from LOCAL DB")
             model.objects.using("local_db").all().delete()
 
             logging.info(f"{model}: Getting all entries from CLOUD DB and writing to Local DB")
-            items = model.objects.using("cloud_db").all()
-            model.objects.using("local_db").bulk_create(items)
+            items = model.objects.using("cloud_db").all().order_by("pk")
+            paged = Paginator(items, 1000)
+            for page in paged.page_range:
+                logging.info(f"{model}: Page {page} of {paged.num_pages}")
+                page_items = paged.page(page).object_list
+                model.objects.using("local_db").bulk_create(page_items)
 
             # # NOTE: many-to-many fields are NOT handled by bulk create; check for
             # # them and use the existing implicit through models to copy them
