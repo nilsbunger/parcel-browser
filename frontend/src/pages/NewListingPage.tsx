@@ -5,7 +5,6 @@ import useSWR, { useSWRConfig } from "swr"
 import { apiRequest, fetcher } from "../utils/fetcher"
 import { ErrorBoundary } from "react-error-boundary"
 import { AddressSearchGetResp, AnalysisPostRespSchema } from "../types"
-import { BACKEND_DOMAIN } from "../constants";
 
 export default function NewListingPage() {
   const [address, setAddress] = useState("")
@@ -16,7 +15,7 @@ export default function NewListingPage() {
   // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
   const { data: addrSearchData, error } = useSWR<AddressSearchGetResp, string>(
-    address.length >= 3 ? `${BACKEND_DOMAIN}/api/address-search/${address}` : null,
+    address.length >= 3 ? `api/world/address-search/${address}` : null,
     fetcher
   )
   const handleAddressSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,7 +28,7 @@ export default function NewListingPage() {
     if ("apn" in addrSearchData) {
       setLoading(true)
       const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(
-        `${BACKEND_DOMAIN}/api/analysis/`,
+        `api/world/analysis/`,
         {
           respSchema: AnalysisPostRespSchema,
           isPost: false,
@@ -37,7 +36,7 @@ export default function NewListingPage() {
         }
       )
       if (!errors) {
-        await mutate(`${BACKEND_DOMAIN}/api/address-search/${address}`)
+        await mutate(`api/world/address-search/${address}`)
       }
       setLoading(false)
     }

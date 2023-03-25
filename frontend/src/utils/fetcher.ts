@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance } from "axios"
 import { useCallback, useEffect, useRef } from "react"
 import { z } from "zod"
+import { BACKEND_DOMAIN } from "../constants";
 
 interface ApiRequestParams<RespSchema> {
   respSchema: RespSchema
@@ -42,6 +43,7 @@ export async function apiRequest<RespSchema extends z.ZodTypeAny>(
 ): Promise<ApiResponse<RespSchema>> {
   // Promise<{ data?:z.infer<typeof respSchema>, error: boolean, unauthenticated?: boolean, message?: string}> {
   // Note: Axios automatically sets content-type to application/json
+  url = `${BACKEND_DOMAIN}/${url}`
   const req = isPost
     ? _axiosPost.post<RespSchema>(url, body, { params: params, timeout: 5000 })
     : _axiosGet.get<RespSchema>(url, { params: params, timeout: 5000 })

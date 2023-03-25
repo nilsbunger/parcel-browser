@@ -124,7 +124,7 @@ const EligibilityCheck = ({ eligibility, level }: { eligibility: EligibilityChec
 }
 
 const ParcelDetails = ({ apn }) => {
-  const { data, error } = useSWR<ParcelGetResp, string>(`${BACKEND_DOMAIN}/api/parcel/${apn}`, fetcher)
+  const { data, error } = useSWR<ParcelGetResp, string>(`${BACKEND_DOMAIN}/api/world/parcel/${apn}`, fetcher)
   if (error) return <div>failed to load parcel APN={apn}</div>
   if (!data) return <div>loading parcel APN={apn}</div>
   console.log("PARCEL DETAILS", data)
@@ -171,7 +171,7 @@ const ParcelDetails = ({ apn }) => {
 }
 
 const RoadDetails = ({ properties }) => {
-  const { data, error } = useSWR<RoadGetResp, string>(`${BACKEND_DOMAIN}/api/road/${properties.roadsegid}`, fetcher)
+  const { data, error } = useSWR<RoadGetResp, string>(`${BACKEND_DOMAIN}/api/world/road/${properties.roadsegid}`, fetcher)
   if (error) return <div>failed to load road segid={properties.roadsegid}</div>
   if (!data) return <div>loading road segid={properties.roadsegid}</div>
   console.log("ROAD:", properties)

@@ -293,7 +293,7 @@ export default function ListingsPage() {
 
   const { data, error, isValidating } = useSWR(
     [
-      pageSize && `${BACKEND_DOMAIN}/api/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
+      pageSize && `${BACKEND_DOMAIN}/api/world/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
       {
         params: {
           limit: pageSize,

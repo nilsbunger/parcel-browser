@@ -7,7 +7,7 @@ import { BACKEND_DOMAIN } from "../constants";
 export default function RentalRatesPage() {
   const { data, error, isValidating } = useSWR(
     [
-      `${BACKEND_DOMAIN}/api/rentalrates`,
+      `${BACKEND_DOMAIN}/api/world/rentalrates`,
       {
         params: {},
       },

@@ -251,7 +251,7 @@ export const AnalysisPostReqSchema = z.object({
 export type AnalysisPostReq = z.infer<typeof AnalysisPostReqSchema>
 // type AnalysisPostResp = z.infer<typeof AnalysisPostRespSchema>
 
-// /api/address-search
+// /api/world/address-search
 export const AddressSearchGetRespSchema = z.union([
   ApiErrorSchema,
   z.object({

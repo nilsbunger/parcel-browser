@@ -38,7 +38,7 @@ function useAuthProvider() {
   // console.log("Got user", user)
   const logIn = async (loginParameters: LoginRequest): Promise<LoginResponse> => {
     const { data, errors, message } = await apiRequest<typeof LoginResponseSchema>(
-      `${BACKEND_DOMAIN}/api/userflows/login`,
+      `api/userflows/login`,
       {
         respSchema: LoginResponseSchema,
         isPost: true,
@@ -66,7 +66,7 @@ function useAuthProvider() {
     return Promise.resolve()
   }
   const logOut = async () => {
-    const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`${BACKEND_DOMAIN}/api/userflows/logout`, {
+    const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`api/userflows/logout`, {
       respSchema: LogoutResponseSchema,
       isPost: true,
     })

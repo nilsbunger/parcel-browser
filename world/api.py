@@ -32,13 +32,13 @@ world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", do
 ################################################################################################
 
 
-@world_api.get("/listinghistory", response=list[ListingHistorySchema])
+@world_api.get("/world/listinghistory", response=list[ListingHistorySchema])
 def get_listing_history(request, mlsid: str):
     listings = PropertyListing.objects.filter(mlsid=mlsid).order_by("-founddate")
     return listings
 
 
-@world_api.get("/rentalrates")  # response=List[RentalRatesSchema])
+@world_api.get("/world/rentalrates")  # response=List[RentalRatesSchema])
 def get_rental_rates(request) -> list[RentalRatesSchema]:
     rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by("parcel", "-details__mean")
     pid: str = ""
@@ -66,7 +66,7 @@ def get_rental_rates(request) -> list[RentalRatesSchema]:
     return retlist
 
 
-@world_api.get("/listings", response=list[ListingSchema])
+@world_api.get("/world/listings", response=list[ListingSchema])
 @paginate
 def get_listings(request, order_by: str = "founddate", asc: bool = False, filters: ListingsFilters = Query(...)):
     # Strip away the filter params that are none
@@ -112,7 +112,7 @@ def get_listings(request, order_by: str = "founddate", asc: bool = False, filter
     return listings
 
 
-@world_api.post("/analysis/")
+@world_api.post("/world/analysis/")
 def redo_analysis(request, apn: str = None, al_id: int = None):
     """Trigger a re-run of parcel analysis, used by /new-listing frontend"""
 
@@ -140,14 +140,14 @@ def redo_analysis(request, apn: str = None, al_id: int = None):
     return {"analysisId": analyzed_listing.id}
 
 
-@world_api.get("/analysis/{al_id}", response=AnalysisResponseSchema)
+@world_api.get("/world/analysis/{al_id}", response=AnalysisResponseSchema)
 def get_analysis(request, al_id: int):
     """Get analysis results for a given analysis id"""
     # al_json = AnalysisResponseSchema.from_orm(analyzed_listing).dict()
     return AnalyzedListing.objects.prefetch_related("listing").get(id=al_id)
 
 
-@world_api.get("/parcel/{apn}", response=ParcelSchema)
+@world_api.get("/world/parcel/{apn}", response=ParcelSchema)
 def get_parcel(request, apn: str):
     """Get parcel info for a given APN"""
     parcel = Parcel.objects.get(apn=apn)
@@ -158,13 +158,13 @@ def get_parcel(request, apn: str):
     return retval
 
 
-@world_api.get("/road/{road_segid}", response=RoadSchema)
+@world_api.get("/world/road/{road_segid}", response=RoadSchema)
 def get_road(request, road_segid: int):
     """Get road info for a given road segid"""
     return Roads.objects.get(roadsegid=road_segid)
 
 
-@world_api.get("/address-search/{addr}")
+@world_api.get("/world/address-search/{addr}")
 def address_search(request, addr: str):
     """Look up an address and return a parcel if there's a single match."""
     # Takes in an address. Returns a list of possible parcels/APNs
