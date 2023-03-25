@@ -129,68 +129,70 @@ class Ab2011TileData(LoginRequiredMixin, MVTView, ListView):
 
 
 # main detail page
-class ParcelDetailView(LoginRequiredMixin, View):
-    template_name = "parcel-detail.html"
-
-    def tuple_sub(self, t1, t2):
-        return tuple(map(lambda i, j: (i - j) * 1000, t1, t2))
-
-    def get(self, request, apn, *args, **kwargs):
-        try:
-            parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist:
-            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
-        # Example of how to combine two objects into one geojson serialization:
-        # serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
-
-        # Serializing the data into the template. There's unneeded duplication since we also get the
-        # data via JSON, but I haven't figured out how to get the mapping library to use this data.
-        serialized_parcel = serialize(
-            "geojson",
-            [parcel],
-            geometry_field="geom",
-            fields=(
-                "apn",
-                "geom",
-            ),
-        )
-        serialized_buildings = serialize(
-            "geojson",
-            buildings,
-            geometry_field="geom",
-            fields=(
-                "apn",
-                "geom",
-            ),
-        )
-
-        # https://photon.komoot.io/ -- address resolution
-        # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
-        utm_crs = get_utm_crs()
-        parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
-        parcel_in_utm = parcel_data_frame.to_crs(utm_crs)
-        lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
-        print(repr(parcel))
-        print(pp.pprint(parcel.__dict__))
-        print("Lot size:", lot_square_feet)
-        print("Lot location:", parcel_data_frame.centroid)
-        return render(
-            request,
-            self.template_name,
-            {
-                "parcel_data": serialized_parcel,
-                "building_data": serialized_buildings,
-                "latlong": str(list(parcel_data_frame.centroid[0].coords)[0]),
-                "lot_size": lot_square_feet,
-            },
-        )
+# class ParcelDetailView(LoginRequiredMixin, View):
+#     template_name = "parcel-detail.html"
+#
+#     def tuple_sub(self, t1, t2):
+#         return tuple(map(lambda i, j: (i - j) * 1000, t1, t2))
+#
+#     def get(self, request, apn, *args, **kwargs):
+#         try:
+#             parcel = Parcel.objects.get(apn=apn)
+#         except Parcel.DoesNotExist:
+#             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
+#         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+#         # Example of how to combine two objects into one geojson serialization:
+#         # serialized = serialize('geojson', chain([parcel], buildings), geometry_field='geom', fields=('apn', 'geom',))
+#
+#         # Serializing the data into the template. There's unneeded duplication since we also get the
+#         # data via JSON, but I haven't figured out how to get the mapping library to use this data.
+#         serialized_parcel = serialize(
+#             "geojson",
+#             [parcel],
+#             geometry_field="geom",
+#             fields=(
+#                 "apn",
+#                 "geom",
+#             ),
+#         )
+#         serialized_buildings = serialize(
+#             "geojson",
+#             buildings,
+#             geometry_field="geom",
+#             fields=(
+#                 "apn",
+#                 "geom",
+#             ),
+#         )
+#
+#         # https://photon.komoot.io/ -- address resolution
+#         # https://geopandas.org/en/stable/docs/reference/api/geopandas.tools.geocode.html
+#         utm_crs = get_utm_crs()
+#         parcel_data_frame = geopandas.GeoDataFrame.from_features(json.loads(serialized_parcel), crs="EPSG:4326")
+#         parcel_in_utm = parcel_data_frame.to_crs(utm_crs)
+#         lot_square_feet = int(parcel_in_utm.area * 3.28084 * 3.28084)
+#         print(repr(parcel))
+#         print(pp.pprint(parcel.__dict__))
+#         print("Lot size:", lot_square_feet)
+#         print("Lot location:", parcel_data_frame.centroid)
+#         return render(
+#             request,
+#             self.template_name,
+#             {
+#                 "parcel_data": serialized_parcel,
+#                 "building_data": serialized_buildings,
+#                 "latlong": str(list(parcel_data_frame.centroid[0].coords)[0]),
+#                 "lot_size": lot_square_feet,
+#             },
+#         )
+#
 
 
 def listing_prev_values(listing):
     """Return dict of relevant values that changed in the listing since the previously
     linked listing."""
     retval = {}
+    raise AssertionError("This route should no longer be used")
     if not listing.prev_listing:
         return retval
     for field in ["price", "status", "br", "ba", "size", "addr", "soldprice"]:
@@ -204,37 +206,40 @@ class AnalysisDetailData(LoginRequiredMixin, View):
         raise AssertionError("This route should no longer be used")
 
 
-class ParcelDetailData(LoginRequiredMixin, View):
-    def get(self, request, apn, *args, **kwargs):
-        try:
-            parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist:
-            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
-        serialized = serialize(
-            "geojson",
-            chain([parcel], buildings),
-            geometry_field="geom",
-        )  # fields=('apn', 'geom',))
-        return HttpResponse(serialized, content_type="application/json")
-
-
-# ajax call to get neighboring building data
-class IsolatedNeighborDetailData(LoginRequiredMixin, View):
-    def get(self, request, apn, *args, **kwargs):
-        try:
-            parcel = Parcel.objects.get(apn=apn)
-        except Parcel.DoesNotExist:
-            return HttpResponseNotFound(f"Parcel with apn={apn} not found")
-
-        buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
-        serialized_buildings = serialize("geojson", buildings, geometry_field="geom")
-
-        return HttpResponse(serialized_buildings, content_type="application/json")
+#
+# class ParcelDetailData(LoginRequiredMixin, View):
+#     def get(self, request, apn, *args, **kwargs):
+#         try:
+#             parcel = Parcel.objects.get(apn=apn)
+#         except Parcel.DoesNotExist:
+#             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
+#         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom)
+#         serialized = serialize(
+#             "geojson",
+#             chain([parcel], buildings),
+#             geometry_field="geom",
+#         )  # fields=('apn', 'geom',))
+#         return HttpResponse(serialized, content_type="application/json")
+#
+#
+# # ajax call to get neighboring building data
+# class IsolatedNeighborDetailData(LoginRequiredMixin, View):
+#     def get(self, request, apn, *args, **kwargs):
+#         try:
+#             parcel = Parcel.objects.get(apn=apn)
+#         except Parcel.DoesNotExist:
+#             return HttpResponseNotFound(f"Parcel with apn={apn} not found")
+#
+#         buildings = BuildingOutlines.objects.filter(geom__intersects=parcel.geom.buffer(0.001))
+#         serialized_buildings = serialize("geojson", buildings, geometry_field="geom")
+#
+#         return HttpResponse(serialized_buildings, content_type="application/json")
+#
 
 
 class AddressToLatLong(LoginRequiredMixin, View):
     def get(self, request, address):
+        raise AssertionError("This route should no longer be used")
         suffix_dict = {
             "Alley": "ALY",
             "Avenue": "AVE",
