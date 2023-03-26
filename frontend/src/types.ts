@@ -7,7 +7,7 @@ export type Listing = {
   centroid_y: number
   avail_geom_area: number
   potential_FAR: number
-  metadata: object
+  metadata: { [key: string]: any }
   mlsid: string
   addr: string
   ba: string

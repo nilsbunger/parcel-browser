@@ -1,6 +1,6 @@
-import useSWR from "swr"
+import useSWR, { Fetcher, Middleware } from "swr"
 import * as React from "react"
-import { ReactElement, useEffect, useState } from "react"
+import { ChangeEvent, ReactElement, useEffect, useState } from "react"
 import { z } from "zod"
 import {
   Cell,
@@ -65,11 +65,13 @@ const roundingAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => {
 }
 
 const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown> }): ReactElement | string => {
+  // @ts-ignore
   const prev_price = cell.row.getValue("metadata")["prev_values"][cell.column.id] as number
   if (prev_price) {
     return (
       <span>
-        ${cell.getValue().toLocaleString()} <s> {prev_price} </s>
+        ${// @ts-ignore
+          cell.getValue().toLocaleString()} <s> {prev_price} </s>
       </span>
     )
   } else {
@@ -78,7 +80,8 @@ const priceAccessor = ({ cell }: { cell: Cell<Listing, unknown> }): ReactElement
 }
 
 const statusAccessor = ({ row }: { row: Row<Listing> }) => {
-  return row.getValue("metadata")["category"] == "new" ? (
+  const metadata: { [key: string]: any } = row.getValue("metadata")
+  return metadata["category"] == "new" ? (
     <div className="badge badge-accent">NEW</div>
   ) : (
     ""
@@ -214,7 +217,7 @@ const columns = colState.map((i: MyColumn) =>
 
 // Create query parameters for filtering, depending on type of filter
 function columnFiltersToQuery(filters: ColumnFiltersState) {
-  const query = {}
+  const query: { [key: string]: string|number|undefined|boolean } = {}
   filters.forEach((item) => {
     if (Array.isArray(item.value) && item.value.length == 2) {
       // Then it's a min max filter
@@ -230,7 +233,7 @@ function columnFiltersToQuery(filters: ColumnFiltersState) {
 }
 
 export default function ListingsPage() {
-  const [pageSize, setPageSize] = useState<number>(undefined)
+  const [pageSize, setPageSize] = useState<number>(-1)
   const [pageIndex, setPageIndex] = useState<number>(0)
   const [sorting, setSorting] = React.useState<SortingState>([])
   // column filters
@@ -240,11 +243,16 @@ export default function ListingsPage() {
     { id: "neighborhood", value: "" },
   ])
 
-  const isMfChecked = columnFilters.find((columnFilter) => columnFilter.id === "is_mf").value as boolean
-  const isTpaChecked = columnFilters.find((columnFilter) => columnFilter.id === "is_tpa")
-    .value as boolean
+  const isMfChecked = columnFilters.find(
+    (columnFilter) => columnFilter.id === "is_mf"
+  )?.value as boolean
+  const isTpaChecked = columnFilters.find(
+    (columnFilter) => columnFilter.id === "is_tpa"
+  )?.value as boolean
   const isNeighborhoodChecked =
-    columnFilters.find((columnFilter) => columnFilter.id === "neighborhood").value !== ""
+    columnFilters.find(
+      (columnFilter) => columnFilter.id === "neighborhood"
+    )?.value !== ""
 
   const onTpaFilterCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
     setColumnFilters((draft) => {
@@ -252,15 +260,16 @@ export default function ListingsPage() {
       draft[index].value = e.target.checked
     })
   }
-  const onMfFilterCheck = (e) => {
+  const onMfFilterCheck = (e: ChangeEvent<HTMLInputElement>) => {
     // update is_mf column filter which holds the master state of whether the mf-filter is active
     setColumnFilters((draft) => {
       const isMfFilter = draft.find((columnFilter) => columnFilter.id === "is_mf")
-      isMfFilter.value = !isMfFilter.value
+      if (isMfFilter)
+        isMfFilter.value = !isMfFilter.value
     })
   }
 
-  const onNeighborhoodFilterCheck = (e) => {
+  const onNeighborhoodFilterCheck = (e: ChangeEvent<HTMLInputElement>) => {
     setColumnFilters((draft) => {
       const index = draft.findIndex((columnFilter) => columnFilter.id === "neighborhood")
       if (e.target.checked)
@@ -271,7 +280,7 @@ export default function ListingsPage() {
   // column visibility
   const initialVisibility = Object.fromEntries(columns.map((x) => [x.accessorKey, x.visible]))
   const [columnVisibility, setColumnVisibility] = useImmer<Record<string, boolean>>(initialVisibility)
-  const toggleVisibility = (event) => {
+  const toggleVisibility = (event: ChangeEvent<HTMLInputElement>) => {
     setColumnVisibility((draft) => {
       draft[event.target.id] = !draft[event.target.id]
     })
@@ -280,7 +289,7 @@ export default function ListingsPage() {
   useEffect(() => {
     document.title = "Listings"
     // load initial values of state from local storage
-    const jsonSettings = JSON.parse(window.localStorage.getItem("listings_page_settings")) as object
+    const jsonSettings = JSON.parse(window.localStorage.getItem("listings_page_settings") as string)
     if (jsonSettings) {
       const settings = ListingsPageLocalStorage.parse(jsonSettings)
       console.log("Setting local state to", settings)
@@ -293,10 +302,11 @@ export default function ListingsPage() {
 
   const { data, error, isValidating } = useSWR(
     [
-      pageSize && `${BACKEND_DOMAIN}/api/world/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
+      (pageSize > -1) && `${BACKEND_DOMAIN}/api/world/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
       {
         params: {
           limit: pageSize,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           offset: pageIndex * pageSize,
           order_by: sorting.length > 0 ? sorting[0].id : undefined,
           asc: sorting.length > 0 ? !sorting[0].desc : undefined,
@@ -321,7 +331,7 @@ export default function ListingsPage() {
   // flatten data model, removing 'analysis' subsection. Should really refactor this,
   // eg squash on server, or squash in fetcher?
   const listings = data
-    ? (data.items.map((item) => {
+    ? (data.items.map((item:any) => {
         const listing = {
           ...item,
           // This weird type casting helps squash errors. Only temporary
@@ -350,7 +360,8 @@ export default function ListingsPage() {
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,
     manualPagination: true,
-    pageCount: data ? Math.ceil(data.count / pageSize) : null,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    pageCount: data ? Math.ceil(data.count / pageSize) : undefined,
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFacetedRowModel: getFacetedRowModel(),

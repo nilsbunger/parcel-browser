@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from "axios"
 import { useCallback, useEffect, useRef } from "react"
 import { z } from "zod"
 import { BACKEND_DOMAIN } from "../constants";
+import { Middleware, SWRHook } from "swr";
 
 interface ApiRequestParams<RespSchema> {
   respSchema: RespSchema
@@ -81,14 +82,17 @@ export async function apiRequest<RespSchema extends z.ZodTypeAny>(
 }
 
 type Fetcher = (url: string, config: Record<string, unknown>) => Promise<any>
-export const fetcher: Fetcher = (url, config) => axios.get(url, config).then((res) => res.data)
+export const fetcher: Fetcher = (url, config) => {
+  // console.log ("FETCH " + url)
+  return axios.get(url, config).then((res) => res.data)
+}
 
 // This is a SWR middleware for keeping the data even if key changes.
 // From https://swr.vercel.app/docs/middleware#keep-previous-result
-export function swrLaggy(useSWRNext: any) {
-  return (key: any, fetcher: Fetcher, config: Record<string, unknown>) => {
+export const swrLaggy: Middleware = (useSWRNext: SWRHook) => {
+  return (key, fetcher, config) => {
     // Use a ref to store previous returned data.
-    const laggyDataRef = useRef()
+    const laggyDataRef:any = useRef()
 
     // Actual SWR hook.
     const swr = useSWRNext(key, fetcher, config)
