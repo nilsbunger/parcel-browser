@@ -83,15 +83,16 @@ export function MyRoutes() {
 const ProtectedRoute = () => {
   const { user, isLoading } = useAuth()
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
-        <Loader variant={"dots"}/>
-        {/*<h1>Loading...</h1>*/}
-      </div>
-    )
-  }
-  if (!user) {
+  // if (isLoading) {
+  //   console.log ("Protecte route check - loading, user=", user)
+  //   return (
+  //     <div className="min-h-screen w-full coolbg flex flex-col justify-center items-center">
+  //       <Loader variant={"dots"}/>
+  //       {/*<h1>Loading...</h1>*/}
+  //     </div>
+  //   )
+  // }
+  if (!user && !isLoading) {
     console.log("Protected route, didn't find user, redirecting to login")
     return <Navigate to="/login" replace/>
   }
@@ -111,9 +112,13 @@ function LogoutHelper() {
   const { logOut } = useAuth()
   const navigate = useNavigate()
   useEffect(() => {
-    logOut()
-    navigate("/login")
+    logOut().then(() => {
+      navigate("/login")
+    }).catch((err) => {
+      console.log("Error logging out: ", err)
+    })
   }, [])
+
   return <> </>
 }
 
