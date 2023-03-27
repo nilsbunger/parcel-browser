@@ -61,7 +61,7 @@ export default function ListingTable({ table, setColumnFilters }: Props) {
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
               {row.getVisibleCells().map((cell) => {
-                let foo = flexRender(cell.column.columnDef.cell, cell.getContext())
+                const foo = flexRender(cell.column.columnDef.cell, cell.getContext())
                 if (foo === null || (foo as any).props.renderValue() === null) {
                   return <td key={cell.id}>None </td>
                 }

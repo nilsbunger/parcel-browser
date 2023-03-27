@@ -7,29 +7,26 @@ import { Link, NavLink } from "react-router-dom"
 import Home3Logo from "./Home3Logo"
 import { useAuth } from "../../hooks/Auth"
 
-const user = {
+const mockUser = {
   name: "Tom Cook",
   email: "tom@example.com",
   imageUrl:
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
 }
-function classNames(...classes) {
+function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ")
 }
 
-export default function Navbar(_props) {
-  const { user, logIn, logOut } = useAuth()
+export default function Navbar() {
+  const { user, } = useAuth()
   const isAuthenticated = !!user
   const navigation = [
     { name: "Map", href: "/map", current: false },
+    { name: "Properties", href: "/properties", current: false },
     { name: "Listings", href: "/listings", current: false },
     { name: "Search", href: "/search", current: false },
     { name: "Rental Rates", href: "/rental-rates", current: false },
     // { name: 'Debug', href: routes.debug(), current: false },
-    // { name: 'Team', href: '#', current: false },
-    // { name: 'Projects', href: '#', current: false },
-    // { name: 'Calendar', href: '#', current: false },
-    // { name: 'Reports', href: '#', current: false },
   ]
   const userNavigation = [
     { name: "Profile", href: "#" },
@@ -161,10 +158,10 @@ export default function Navbar(_props) {
                     // user name and profile pic
                     <div className="flex items-center px-5">
                       <div className="flex-shrink-0">
-                        <img className="h-10 w-10 rounded-full" src={user.imageUrl} alt="" />
+                        <img className="h-10 w-10 rounded-full" src={mockUser.imageUrl} alt="" />
                       </div>
                       <div className="ml-3">
-                        <div className="text-base font-medium leading-none text-white">{user.name}</div>
+                        <div className="text-base font-medium leading-none text-white">{user.first_name}</div>
                         <div className="text-sm font-medium leading-none text-gray-400">
                           {user.email}
                         </div>

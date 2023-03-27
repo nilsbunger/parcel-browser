@@ -3,10 +3,12 @@ import { createContext, useContext } from "react"
 import { apiRequest, fetcher } from "../utils/fetcher"
 import useSWR from "swr"
 import { LoginRequest, LoginResponse, LoginResponseSchema, LogoutResponseSchema, User } from "../types"
-import { BACKEND_DOMAIN } from "../constants";
+import { BACKEND_DOMAIN } from "../constants"
 
-const authContext = createContext<AuthContextType | { user: null, isLoading: true }>({ user: null, isLoading: true })
-
+const authContext = createContext<AuthContextType | { user: null; isLoading: true }>({
+  user: null,
+  isLoading: true,
+})
 
 // useAuth hook:
 export const useAuth = () => {
@@ -24,11 +26,15 @@ function useAuthProvider() {
   // const [user, setUser] = useState(null);
   // const navigate = useNavigate();
 
-  const { data, error, isValidating, mutate } = useSWR<User | null>(`${BACKEND_DOMAIN}/api/userflows/user`, fetcher, {
-    // More SWR config options at https://swr.vercel.app/docs/api
-    shouldRetryOnError: false,  // disable error retry because it was hitting server over and over again.
-    revalidateOnFocus: false,
-  })
+  const { data, error, isValidating, mutate } = useSWR<User | null>(
+    `${BACKEND_DOMAIN}/api/userflows/user`,
+    fetcher,
+    {
+      // More SWR config options at https://swr.vercel.app/docs/api
+      shouldRetryOnError: false, // disable error retry because it was hitting server over and over again.
+      revalidateOnFocus: false,
+    }
+  )
   const user = data === undefined ? null : data
   const isLoading = isValidating
   // console.log("IsLoading=", isLoading)
