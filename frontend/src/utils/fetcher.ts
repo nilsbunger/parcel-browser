@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance } from "axios"
 import { useCallback, useEffect, useRef } from "react"
 import { z } from "zod"
-import { BACKEND_DOMAIN } from "../constants";
-import { Middleware, SWRHook } from "swr";
+import { BACKEND_DOMAIN } from "../constants"
+import { Middleware, SWRHook } from "swr"
 
 interface ApiRequestParams<RespSchema> {
   respSchema: RespSchema
@@ -92,7 +92,7 @@ export const fetcher: Fetcher = (url, config) => {
 export const swrLaggy: Middleware = (useSWRNext: SWRHook) => {
   return (key, fetcher, config) => {
     // Use a ref to store previous returned data.
-    const laggyDataRef:any = useRef()
+    const laggyDataRef: any = useRef()
 
     // Actual SWR hook.
     const swr = useSWRNext(key, fetcher, config)

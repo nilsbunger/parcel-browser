@@ -9,7 +9,7 @@ export function App() {
     <MantineProvider withGlobalStyles withNormalizeCSS>
       <NotificationsProvider position="top-right" zIndex={2077} limit={8}>
         <AuthProvider>
-            <MyRoutes/>
+          <MyRoutes />
         </AuthProvider>
       </NotificationsProvider>
     </MantineProvider>

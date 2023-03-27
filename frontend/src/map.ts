@@ -7,7 +7,7 @@ import { fromLonLat } from "ol/proj"
 import VectorTileLayer from "ol/layer/VectorTile"
 import VectorTileSource from "ol/source/VectorTile"
 import { Fill, Stroke, Style } from "ol/style"
-import { BACKEND_DOMAIN } from "./constants";
+import { BACKEND_DOMAIN } from "./constants"
 
 const form = document.getElementById("search")
 const log = document.getElementById("log")

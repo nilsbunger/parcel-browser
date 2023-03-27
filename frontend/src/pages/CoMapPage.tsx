@@ -10,7 +10,7 @@ import { MVTLayer } from "@deck.gl/geo-layers/typed"
 import { Button, Menu } from "@mantine/core"
 import { useImmer } from "use-immer"
 import { CoMapDrawer } from "../components/CoMapDrawer"
-import { BACKEND_DOMAIN } from "../constants";
+import { BACKEND_DOMAIN } from "../constants"
 
 // Set your mapbox access token here
 const MAPBOX_ACCESS_TOKEN =

@@ -2,7 +2,7 @@ import useSWR from "swr"
 import * as React from "react"
 import { fetcher, swrLaggy } from "../utils/fetcher"
 import RentalRatesMap from "../components/layout/RentalRatesMap"
-import { BACKEND_DOMAIN } from "../constants";
+import { BACKEND_DOMAIN } from "../constants"
 
 export default function RentalRatesPage() {
   const { data, error, isValidating } = useSWR(
