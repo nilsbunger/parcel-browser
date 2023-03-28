@@ -426,7 +426,7 @@ LOGGING = {
     },
     "root": {
         "handlers": ["console", "file"],
-        "level": "INFO",
+        "level": DJANGO_LOG_LEVEL,
     },
     "loggers": {
         "django": {
@@ -437,6 +437,36 @@ LOGGING = {
         "django.utils.autoreload": {"level": "INFO"},
         "django.db.backends": {
             "level": "INFO",
+        },
+        "silk": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "botocore": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "boto3": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "matplotlib": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "shapely": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "environ": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
         "django.server": {
             "handlers": ["console"],
