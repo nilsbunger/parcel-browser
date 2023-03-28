@@ -3,6 +3,16 @@
   "description": "Frontend for Parsnip by Home3",
   "private": true,
   "version": "0.0.1",
+  "//": [
+    "type:module means treat everything as an ES module (import / export syntax) without requiring .mjs files",
+    "exports in package.json is not supported in parcel yet (until 2.8.4): https://github.com/parcel-bundler/parcel/issues/4155",
+    "alias is added temporarily until parcel supports exports in package.json",
+    ""
+  ],
+  "alias": {
+    "@refinedev/inferencer/mantine": "./node_modules/@refinedev/inferencer/dist/mantine.js"
+  },
+  "type": "module",
   "scripts": {
     "dev": "parcel serve src/index.html src/map.ts src/parcel-detail.ts",
     "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
@@ -18,20 +28,20 @@
     "@types/leaflet": "^1.7.11",
     "@types/react": "^17",
     "@types/react-dom": "^17",
-    "@typescript-eslint/eslint-plugin": "^5.48.1",
-    "@typescript-eslint/parser": "^5.48.1",
+    "@typescript-eslint/eslint-plugin": "^5.56.0",
+    "@typescript-eslint/parser": "^5.56.0",
     "autoprefixer": "^10.4.8",
     "buffer": "^5.5.0",
-    "eslint": "8.22.0",
+    "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.5.0",
     "events": "^3.3.0",
-    "parcel": "^2.8.2",
+    "parcel": "^2.8.3",
     "parcel-reporter-static-files-copy": "^1.5.0",
     "postcss": "^8.4.14",
     "prettier": "^2.8.3",
     "process": "^0.11.10",
     "tailwindcss": "^3.1.7",
-    "typescript": "^4.9.4"
+    "typescript": "^5.0.2"
   },
   "dependencies": {
     "@deck.gl/geo-layers": "^8.8.11",
