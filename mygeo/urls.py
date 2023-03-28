@@ -10,6 +10,7 @@ from co.co_api import api as co_api
 from mygeo import settings
 from userflows.api import userflows_api
 from world.api import world_api
+from props.api import props_api
 from world.infra import frontend_proxy_view
 
 # from userflows.api import userflows_api
@@ -49,6 +50,7 @@ urlpatterns = [
     # Django-ninja API routes, per app
     path("api/co/", co_api.urls),
     path("api/userflows/", userflows_api.urls),
+    path("api/properties/", props_api.urls),
     path("api/", world_api.urls),  # generic / fallback APIs
     # Old-school django routes (including dj/api/ stuff, which should transition to django-ninja)
     path("dj/", include("world.urls")),

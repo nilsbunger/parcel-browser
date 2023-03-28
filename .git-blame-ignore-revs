@@ -3,5 +3,10 @@
 # Migrate code style to black
 666a05834eae7eb6dcc5c13527b628ffe3f879b3
 
-# Apply prettier to frontend
+# Black 2023 code style - 23/2/17
+0c9cd708092938928646899e48adc3dac46d2e6c
+
+# Prettier runs on frontend
 07281bba7b63a8490f471f04a37ad02675835cf9
+9876d8417b088508ea68890bf49d45a05bc83465
+6136f270f6f8c0d46f51ca1c736e983948d33a07

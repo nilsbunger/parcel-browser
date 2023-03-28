@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, timezone
 import tempfile
+import time
 import traceback
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -8,6 +10,7 @@ from ninja import NinjaAPI, Query
 from ninja.pagination import paginate
 from ninja.security import django_auth
 
+from lib.mapbox import get_temporary_mapbox_token
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_one_parcel
 from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
@@ -33,13 +36,29 @@ world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", do
 
 
 @world_api.get("/world/listinghistory", response=list[ListingHistorySchema])
-def get_listing_history(request, mlsid: str):
+def _get_listing_history(request, mlsid: str):
     listings = PropertyListing.objects.filter(mlsid=mlsid).order_by("-founddate")
     return listings
 
 
+# Get a token from mapbox to the frontend with limited scope and limited time. Cache the token for a user by attaching
+# it to the session for a period of up to 45 minutes (the token itself has a 60-minute lifetime).
+@world_api.get("/world/mapboxtoken", response=str)  # TODO: this should probably be a POST to mitigate CSRF
+def _get_mapbox_token(request):
+    token, expiry = request.session.get("mapbox_token", (None, 0))
+    if token and expiry > time.time():
+        # print(f"Using cached token {token}")
+        return token
+
+    token = get_temporary_mapbox_token()
+    request.session["mapbox_token"] = token
+    FORTY_FIVE_MINUTES = 60 * 45  # noqa: N806
+    request.session["mapbox_token"] = (token, round(time.time()) + FORTY_FIVE_MINUTES)
+    return token
+
+
 @world_api.get("/world/rentalrates")  # response=List[RentalRatesSchema])
-def get_rental_rates(request) -> list[RentalRatesSchema]:
+def _get_rental_rates(request) -> list[RentalRatesSchema]:
     rental_data = RentalData.objects.exclude(details__has_key="status_code").order_by("parcel", "-details__mean")
     pid: str = ""
     retlist = []

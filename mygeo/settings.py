@@ -41,6 +41,7 @@ env = environ.Env(
     AIRTABLE_API_KEY=(str, None),
     AIRTABLE_YIMBY_LAW_HE_API_KEY=(str, None),
     HCD_EMAIL_SUBS=(str, "nils+test@home3.co"),
+    MAPBOX_API_KEY=(str, None),
 )
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 DJANGO_ENV = env("DJANGO_ENV")
@@ -127,6 +128,8 @@ INSTALLED_APPS = [
     "co",
     "userflows",
     "elt",
+    "props",
+    "facts",
 ]
 
 # silk profiler
