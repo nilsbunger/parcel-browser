@@ -17,6 +17,8 @@ const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
 const NewListingPage = lazy(() => import("./pages/NewListingPage"))
 const RentalRatesPage = lazy(() => import("./pages/RentalRatesPage"))
 const CoMapPage = lazy(() => import("./pages/CoMapPage"))
+const PropertiesPage = lazy(() => import("./pages/PropertiesPage"))
+const NewPropertyPage = lazy(() => import("./pages/NewPropertyPage"))
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"))
 
 export function MyRoutes() {
@@ -28,17 +30,21 @@ export function MyRoutes() {
           // notificationProvider={notificationProvider} // seems to overlap with our notif provider
           routerProvider={routerBindings}
           // authProvider={authProvider}  // overlaps with our auth provider, maybe we can add this later?
-          resources={[
-            {
-              name: "blog_posts",
-              list: "/blog-posts",
-              create: "/blog-posts/create",
-              edit: "/blog-posts/edit/:id",
-              show: "/blog-posts/show/:id",
-              meta: {
-                canDelete: true,
-              },
-            },]}>
+          resources={
+            [
+              // {
+              //   name: "properties",
+              //   list: "/properties",
+              //   create: "/properties/create",
+              //   edit: "/properties/edit/:id",
+              //   show: "/properties/show/:id",
+              //   meta: {
+              //     canDelete: true,
+              //   },
+              // },
+            ]
+          }
+        >
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
               {/* Pages that don't require login */}
@@ -52,6 +58,8 @@ export function MyRoutes() {
 
               {/* Rest of pages require login... */}
               <Route element={<ProtectedRoute />}>
+                {/*<Route path="/properties" element={<MantineInferencer />} />*/}
+
                 <Route element={<WideLayout />}>
                   <Route path="listings">
                     <Route index element={<ListingsPage />} />
@@ -69,6 +77,9 @@ export function MyRoutes() {
                   <Route path="search" element={<NewListingPage />} />
                   <Route path="rental-rates" element={<RentalRatesPage />} />
                   <Route path="map" element={<CoMapPage />} />
+                  <Route path="properties" element={<PropertiesPage />} />
+                  <Route path="properties/new" element={<NewPropertyPage />} />
+                  <Route path="mapbox" element={<MapboxTestPage />} />
                 </Route>
                 {/* Catch-all element below */}
                 <Route path="*" element={<PageNotFound />} />
@@ -79,6 +90,10 @@ export function MyRoutes() {
       </React.StrictMode>
     </BrowserRouter>
   )
+}
+
+const MapboxTestPage = () => {
+  return <div></div>
 }
 
 const ProtectedRoute = () => {
