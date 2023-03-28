@@ -18,7 +18,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navbar() {
-  const { user, } = useAuth()
+  const { user } = useAuth()
   const isAuthenticated = !!user
   const navigation = [
     { name: "Map", href: "/map", current: false },
@@ -161,7 +161,9 @@ export default function Navbar() {
                         <img className="h-10 w-10 rounded-full" src={mockUser.imageUrl} alt="" />
                       </div>
                       <div className="ml-3">
-                        <div className="text-base font-medium leading-none text-white">{user.first_name}</div>
+                        <div className="text-base font-medium leading-none text-white">
+                          {user.first_name}
+                        </div>
                         <div className="text-sm font-medium leading-none text-gray-400">
                           {user.email}
                         </div>
