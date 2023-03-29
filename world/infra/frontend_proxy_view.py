@@ -1,3 +1,4 @@
+import logging
 import urllib
 from urllib.error import HTTPError, URLError
 
@@ -8,6 +9,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView
 
 from mygeo import settings
+
+log = logging.getLogger(__name__)
 
 # ------------------------------------------------------
 # Proxy URL calls to frontend/ to the frontend server
@@ -38,7 +41,7 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     upstream_url = upstream + full_path
     try:
         response = urllib.request.urlopen(upstream_url)
-        print("Proxying to", upstream_url)
+        log.debug(f"Proxying to {upstream_url}")
         headers = {}
         if "Accept" in request.headers:
             headers["Accept"] = request.headers["Accept"]
@@ -46,9 +49,10 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
         response = urllib.request.urlopen(req)
     except HTTPError as e:
         if e.code == 404:
-            print(f"Got 404 from upstream... url={upstream_url}")
+            log.error(f"Got 404 from upstream... url={upstream_url}")
             raise Http404
         elif e.code == 500:
+            log.error(f"Got 500 from upstream... url={upstream_url}")
             return HttpResponse("Frontend Server Error", status=500)
         else:
             raise e
