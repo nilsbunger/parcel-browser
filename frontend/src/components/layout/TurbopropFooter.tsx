@@ -4,7 +4,7 @@ import TurbopropLogo from "./TurbopropLogo"
 
 export default function TurbopropFooter() {
   return (
-    <footer className="py-3 md:py-6 bg-pinkfade w-full flex-none">
+    <footer className="py-3 md:py-6 bg-gray-200 w-full flex-none">
       <div className="md:container py-2 px-8 lg:px-16">
         <div className="flex flex-col gap-4">
           {/*center logo and LI/etc icons vertically and spread horizontally*/}
