@@ -9,7 +9,7 @@ from pydantic import BaseModel, Extra
 
 from facts.models import AddressFeatures, StdAddress
 from .models import PropertyProfile
-from .schema import PropertyProfileIn, PropertyProfileOut
+from .schema import PropertyProfileOut
 
 log = logging.getLogger(__name__)
 props_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="props", docs_decorator=staff_member_required)
@@ -63,7 +63,7 @@ def _get_property(request, prop_id: int):
 
 @props_api.get("/profiles", response=list[PropertyProfileOut])
 def _list_properties(request):
-    qs = PropertyProfile.objects.all()
+    qs = PropertyProfile.objects.select_related("legal_entity", "address")
     log.info(f"Found {qs.count()} properties")
     log.info("")
-    return qs
+    return list(qs)

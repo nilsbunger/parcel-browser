@@ -1,15 +1,17 @@
 from ninja import ModelSchema, Schema
 
 
-class PropertyProfileIn(ModelSchema):
+class StdAddressOut(ModelSchema):
     class Config:
-        from props.models import PropertyProfile
+        from facts.models import StdAddress
 
-        model = PropertyProfile
-        model_fields = ["id", "address"]
+        model = StdAddress
+        model_fields = ["id", "street_addr", "city", "state", "zip", "address_features"]
 
 
 class PropertyProfileOut(ModelSchema):
+    address: StdAddressOut
+
     class Config:
         from props.models import PropertyProfile
 
