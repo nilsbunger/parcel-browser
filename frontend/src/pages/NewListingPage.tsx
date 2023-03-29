@@ -27,14 +27,11 @@ export default function NewListingPage() {
     // @ts-ignore  -- fix this later
     if ("apn" in addrSearchData) {
       setLoading(true)
-      const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(
-        `api/world/analysis/`,
-        {
-          respSchema: AnalysisPostRespSchema,
-          isPost: false,
-          params: { apn: addrSearchData.apn },
-        }
-      )
+      const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`api/world/analysis/`, {
+        ResponseCls: AnalysisPostRespSchema,
+        isPost: false,
+        params: { apn: addrSearchData.apn },
+      })
       if (!errors) {
         await mutate(`api/world/address-search/${address}`)
       }

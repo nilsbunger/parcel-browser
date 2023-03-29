@@ -1,7 +1,7 @@
 import * as React from "react"
 import { AuthContextType, useAuth } from "../../hooks/Auth"
 import { showNotification } from "@mantine/notifications"
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router"
 import { type LoginRequest, LoginRequestSchema } from "../../types"
 import { useForm, zodResolver } from "@mantine/form"
 import { Button, Checkbox, PasswordInput, TextInput } from "@mantine/core"
@@ -12,26 +12,25 @@ export default function LoginPage() {
   const form = useForm({
     validate: zodResolver(LoginRequestSchema),
     initialValues: {
-      email: "foo@bar.com",
-      password: "asdfasdfsa",
+      email: "",
+      password: "",
       rememberMe: false,
     },
   })
   const navigate = useNavigate()
   // console.log("Client form errors:", errors)
-
   const { logIn } = useAuth() as AuthContextType
   // const onSubmit = data => console.log(data);
   const onSubmit = async (loginData: LoginRequest) => {
-    console.log("on submit", loginData)
-    const { success, message, formErrors } = await logIn(loginData)
-    if (!success) {
-      showNotification({ title: "Login failure", message, color: "red" })
-      if (formErrors) {
-        form.setErrors(formErrors) // note: this can also take a previous->next mapping function
-      }
+    // console.log("on submit", loginData)
+    const { errors, message, data } = await logIn(loginData)
+    if (errors) {
+      if (message) showNotification({ title: "Login failure", message, color: "red" })
+      if (typeof errors === "object") form.setErrors(errors)
     } else {
-      navigate("/listings")
+      // successful login
+      if (message) showNotification({ title: "Login success", message, color: "green" })
+      navigate("/properties")
     }
   }
 
@@ -82,10 +81,7 @@ export default function LoginPage() {
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
                   Don’t have an account yet?{" "}
-                  <a
-                    href="#"
-                    className="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                  >
+                  <a href="#" className="font-medium text-primary-600 hover:underline dark:text-primary-500">
                     Sign up
                   </a>
                 </p>

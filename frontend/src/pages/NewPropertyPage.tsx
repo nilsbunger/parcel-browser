@@ -5,9 +5,11 @@ import { apiRequest, fetcher } from "../utils/fetcher"
 import * as React from "react"
 import { useCallback, useState } from "react"
 import { AddressAutofill, AddressMinimap } from "@mapbox/search-js-react"
-import { TextInput } from "@mantine/core"
+import { Button, TextInput } from "@mantine/core"
 import { z } from "zod"
-import { LoginResponseSchema, UserSchema } from "../types"
+import { useNavigate } from "react-router-dom"
+import { showNotification } from "@mantine/notifications"
+import { ApiResponseSchema } from "../types"
 
 export const NewPropertyFormSchema = z.object({
   streetAddress: z.string(),
@@ -16,7 +18,7 @@ export const NewPropertyFormSchema = z.object({
 })
 export type NewPropertyForm = z.infer<typeof NewPropertyFormSchema>
 
-export const NewPropertyRespSchema = z.object({
+export const NewPropertyRespSchema = ApiResponseSchema.extend({
   success: z.boolean(),
   message: z.string().nullable(),
   formErrors: z.object({}).nullable().optional(),
@@ -35,13 +37,11 @@ export default function NewPropertyPage() {
       zip: "",
     },
   })
-  const { data: accessToken, error } = useSWR<string, string>(
-    `${BACKEND_DOMAIN}/api/world/mapboxtoken`,
-    fetcher
-  )
+  const { data: accessToken, error } = useSWR<string, string>(`${BACKEND_DOMAIN}/api/world/mapboxtoken`, fetcher)
 
   const [showMinimap, setShowMinimap] = useState(true)
   const [feature, setFeature] = useState()
+  const navigate = useNavigate()
 
   const handleRetrieve = useCallback(
     (res) => {
@@ -51,151 +51,60 @@ export default function NewPropertyPage() {
       setShowMinimap(true)
       // setShowFormExpanded(true);
     },
-    []
-    // [setFeature, setShowMinimap]
+    [setFeature, setShowMinimap]
   )
 
-  const tempFeature = {
-    type: "Feature",
-    properties: {
-      accuracy: "rooftop",
-      mapbox_id: "dXJuOm1ieGFkcjo0MDE3NTRlNi02NzNjLTQzMDQtYThhNS0wYTliZmI3NDc0Yzc=",
-      match_code: {
-        exact_match: false,
-        house_number: "matched",
-        street: "unmatched",
-        postcode: "unmatched",
-        place: "unmatched",
-        region: "unmatched",
-        locality: "not_applicable",
-        country: "inferred",
-        confidence: "low",
-      },
-      place_type: ["address"],
-      place_name: "555 College Avenue, Palo Alto, California 94306, United States",
-      address_number: "555",
-      street: "College Avenue",
-      context: [
-        {
-          id: "neighborhood.127036652",
-          mapbox_id: "dXJuOm1ieHBsYzpCNUpzN0E",
-          text_en: "College Terrace",
-          text: "College Terrace",
-        },
-        {
-          id: "postcode.313356012",
-          mapbox_id: "dXJuOm1ieHBsYzpFcTF1N0E",
-          text_en: "94306",
-          text: "94306",
-        },
-        {
-          id: "place.250554604",
-          wikidata: "Q47265",
-          mapbox_id: "dXJuOm1ieHBsYzpEdThvN0E",
-          text_en: "Palo Alto",
-          language_en: "en",
-          text: "Palo Alto",
-          language: "en",
-        },
-        {
-          id: "district.20686572",
-          wikidata: "Q110739",
-          mapbox_id: "dXJuOm1ieHBsYzpBVHVtN0E",
-          text_en: "Santa Clara County",
-          language_en: "en",
-          text: "Santa Clara County",
-          language: "en",
-        },
-        {
-          id: "region.419052",
-          short_code: "US-CA",
-          wikidata: "Q99",
-          mapbox_id: "dXJuOm1ieHBsYzpCbVRz",
-          text_en: "California",
-          language_en: "en",
-          text: "California",
-          language: "en",
-        },
-        {
-          id: "country.8940",
-          short_code: "us",
-          wikidata: "Q30",
-          mapbox_id: "dXJuOm1ieHBsYzpJdXc",
-          text_en: "United States",
-          language_en: "en",
-          text: "United States",
-          language: "en",
-        },
-      ],
-      id: "address.8098767896859408",
-      external_ids: {
-        carmen: "address.8098767896859408",
-        federated: "carmen.address.8098767896859408",
-      },
-      feature_name: "555 College Avenue",
-      matching_name: "555 College Avenue",
-      description: "Palo Alto, California 94306, United States",
-      metadata: {
-        iso_3166_2: "US-CA",
-        iso_3166_1: "us",
-      },
-      language: "en",
-      maki: "marker",
-      neighborhood: "College Terrace",
-      postcode: "94306",
-      place: "Palo Alto",
-      district: "Santa Clara County",
-      region: "California",
-      region_code: "CA",
-      country: "United States",
-      country_code: "us",
-      full_address: "555 College Avenue, Palo Alto, California 94306, United States",
-      address_line1: "555 College Avenue",
-      address_line2: "",
-      address_line3: "",
-      address_level1: "CA",
-      address_level2: "Palo Alto",
-      address_level3: "College Terrace",
-      postcode_plus: "1433",
-      is_deliverable: true,
-      missing_unit: false,
-    },
-    text_en: "College Avenue",
-    geometry: {
-      type: "Point",
-      coordinates: [-122.147775, 37.42552],
-    },
-  }
-  const tempNewProperty = {
-    streetAddress: "555 College Avenue",
-    city: "Palo Alto",
-    zip: "94306",
-  }
-
-  const onSubmit = useCallback(async (newProperty: NewPropertyForm) => {
-    console.log("on submit", newProperty)
-    const { data, errors, message } = await apiRequest<typeof NewPropertyRespSchema>(
-      `api/properties/profiles`,
-      {
-        respSchema: NewPropertyRespSchema,
-        isPost: true,
-        body: { formFields: tempNewProperty, features: tempFeature },
+  const handleChange = useCallback(
+    (e: React.FormEvent<HTMLInputElement>) => {
+      // remove autofill results when we see a change in the form.
+      if (e.nativeEvent instanceof InputEvent) {
+        console.log("User change detected, clearing feature")
+        setFeature(undefined)
       }
-    )
+    },
+    [setFeature]
+  )
 
-    // const { success, message, formErrors } = await logIn(loginData)
-    // if (!success) {
-    //   showNotification({ title: "Login failure", message, color: "red" })
-    //   if (formErrors) {
-    //     form.setErrors(formErrors) // note: this can also take a previous->next mapping function
-    //   }
-    // } else {
-    //   navigate("/listings")
-    // }
-  }, [])
+  const onSubmit = useCallback(
+    async (newProperty: NewPropertyForm) => {
+      const { data, errors, message } = await apiRequest<typeof NewPropertyRespSchema>(`api/properties/profiles`, {
+        ResponseCls: NewPropertyRespSchema,
+        isPost: true,
+        body: { formFields: newProperty, features: feature },
+      })
+      if (errors) {
+        if (typeof errors === "boolean") {
+          // page level errors, show as toast
+          showNotification({ title: "Submission failure", message, color: "red" })
+        } else {
+          // field-level validation errors.
+          if (errors.features) {
+            showNotification({
+              title: "Submission failure",
+              message: "Couldn't process address",
+              color: "red",
+            })
+          } else {
+            console.log("Setting field errors = ", errors)
+            form.setErrors(errors)
+          }
+        }
+        console.log("onSubmit Errors = ", errors)
+        console.log("onSubmit Message = ", message)
+        if (typeof errors !== "boolean") {
+          form.setErrors(errors)
+        }
+      } else {
+        navigate("/properties")
+      }
+    },
+    [feature]
+  )
 
   if (error) return <div>failed to load mapbox token</div>
   if (!accessToken) return <div>loading mapbox token...</div>
+
+  const disabledBtnClass = feature ? "" : " cursor-not-allowed opacity-30"
 
   return (
     <div>
@@ -207,10 +116,7 @@ export default function NewPropertyPage() {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
                 Add a property
               </h1>
-              <button className="btn btn-primary" onClick={() => onSubmit(null)}>
-                Test submit
-              </button>
-              <form className="space-y-4 md:space-y-6" onSubmit={form.onSubmit(onSubmit)}>
+              <form className="space-y-4 md:space-y-6" onSubmit={form.onSubmit(onSubmit)} onChange={handleChange}>
                 <div>
                   <AddressAutofill accessToken={accessToken} onRetrieve={handleRetrieve}>
                     <TextInput
@@ -225,6 +131,7 @@ export default function NewPropertyPage() {
                 <div>
                   <TextInput
                     withAsterisk
+                    readOnly
                     label="City"
                     placeholder="Los Angeles"
                     autoComplete="address-level2"
@@ -234,15 +141,22 @@ export default function NewPropertyPage() {
                 <div>
                   <TextInput
                     withAsterisk
+                    readOnly
                     label="Zip Code"
                     placeholder="90001"
                     autoComplete="postal-code"
                     {...form.getInputProps("zip")}
                   />
                 </div>
+                {/*TODO : adopt Mantine button. Need to figure out styling. Give button tooltip like https://mantine.dev/core/button/ when disabled*/}
                 <button
                   type="submit"
-                  className="w-full btn btn-primary text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                  className={
+                    "w-full btn btn-primary text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 " +
+                    "focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 " +
+                    "text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800" +
+                    disabledBtnClass
+                  }
                 >
                   Add property
                 </button>

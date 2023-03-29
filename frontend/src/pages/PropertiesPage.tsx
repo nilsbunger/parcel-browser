@@ -37,9 +37,6 @@ export default function PropertiesPage() {
   console.log("isValidating", isValidating)
   console.log("data", data)
 
-  if (error) return <div>failed to load properties list</div>
-  if (isValidating) return <div>loading...</div>
-
   // const data = [{ id: 1, address: "555 main st" }]
 
   // const { classes, theme } = useStyles();
@@ -54,6 +51,9 @@ export default function PropertiesPage() {
     // }
   }, [])
 
+  if (error) return <div>failed to load properties list</div>
+  if (isValidating) return <div>loading...</div>
+
   const rows = data.map((row) => {
     return (
       <tr
@@ -63,7 +63,10 @@ export default function PropertiesPage() {
         className="cursor-pointer border-primarylight hover:border-solid"
       >
         <td>{row.id}</td>
-        <td>{row.address}</td>
+        <td>
+          {row.address.street_addr}, {row.address.city}, {row.address.state} {row.address.zip}
+        </td>
+        <td>{row.legal_entity?.name}</td>
       </tr>
     )
   })
@@ -84,6 +87,7 @@ export default function PropertiesPage() {
           <tr>
             <th>ID</th>
             <th>Address</th>
+            <th>Entity</th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
@@ -91,55 +95,3 @@ export default function PropertiesPage() {
     </ScrollArea>
   )
 }
-
-// const table: Table<Listing> = useReactTable<Listing>({
-//   data: listings,
-//   columns,
-//   state: {
-//     columnVisibility,
-//     sorting,
-//     pagination: {
-//       pageIndex,
-//       pageSize,
-//     },
-//     columnFilters,
-//   },
-//   // onColumnVisibilityChange: setColumnVisibility,
-//   onSortingChange: setSorting,
-//   getCoreRowModel: getCoreRowModel(),
-//   getSortedRowModel: getSortedRowModel(),
-//   manualSorting: true,
-//   manualPagination: true,
-//   pageCount: data ? Math.ceil(data.count / pageSize) : null,
-//   getFilteredRowModel: getFilteredRowModel(),
-//   getPaginationRowModel: getPaginationRowModel(),
-//   getFacetedRowModel: getFacetedRowModel(),
-//   getFacetedUniqueValues: getFacetedUniqueValues(),
-//   getFacetedMinMaxValues: getFacetedMinMaxValues(),
-// })
-//
-// if (error)
-//   return (
-//     <div className="md:container px-8 lg:px-16 pt-2">
-//       <h2>Failed to load</h2>
-//     </div>
-//   )
-//
-// return (
-//   <div className={"flex flex-row"}>
-//     <ListingsMap listings={table.getRowModel().rows.map((row) => row.original)} />
-//     <div id="tablegrouper" className={"overflow-y-auto max-h-[80vh] grow px-5 overflow-x-auto"}>
-//       <p>{isValidating ? "Fetching..." : "Up to date"}</p>
-//       <TablePagination
-//         table={table}
-//         pageIndex={pageIndex}
-//         pageSize={pageSize}
-//         setPageIndex={setPageIndex}
-//         setPageSize={setPageSize}
-//       />
-//
-//       <ListingTable table={table} setColumnFilters={setColumnFilters} />
-//
-//     </div>
-//   </div>
-// )

@@ -1,21 +1,21 @@
-import axios, { type AxiosInstance } from "axios"
+import axios, { type AxiosInstance, AxiosResponse } from "axios"
 import { useCallback, useEffect, useRef } from "react"
-import { z } from "zod"
+import { z, ZodError } from "zod"
 import { BACKEND_DOMAIN } from "../constants"
 import { Middleware, SWRHook } from "swr"
 
-interface ApiRequestParams<RespSchema> {
-  respSchema: RespSchema
+interface ApiRequestParams<RespDataType extends z.ZodTypeAny> {
+  RespDataCls: z.ZodTypeAny
   params?: any
   body?: any
   isPost: boolean
 }
 
-interface ApiResponse<RespSchema extends z.ZodTypeAny> {
-  data: z.infer<RespSchema>
-  errors: Record<string, string> | boolean
+export interface ApiResponse<RespSchema extends z.ZodTypeAny> {
+  data: z.infer<RespSchema> | null
+  errors: Record<string, string> | boolean // form-level errors (if Record), or true/false
   unauthenticated?: boolean // request failed with 401, indicating user is not logged in
-  message: string | null
+  message: string | null // message to display in page-level toast. red if 'errors' field is truthy, green otherwise
 }
 
 // Pydantic validation errors - defined at https://docs.pydantic.dev/usage/models/#error-handling
@@ -35,47 +35,64 @@ interface PydanticValidationError {
  *
  * @param url - The first input number
  * @param options - The second input number
- * @returns a struct with error (boolean), data (RespType), and message for user
+ * @returns a struct with errors (boolean or a dict mapped to form data), data (RespType), and message toast for user
  *
  */
-export async function apiRequest<RespSchema extends z.ZodTypeAny>(
+export async function apiRequest<RespDataType extends z.ZodTypeAny>(
   url: string,
-  { respSchema, isPost = false, params = {}, body = {} }: ApiRequestParams<RespSchema>
-): Promise<ApiResponse<RespSchema>> {
+  { RespDataCls, isPost = false, params = {}, body = {} }: ApiRequestParams<RespDataType>
+): Promise<{ errors: boolean | Record<string, string>; data: any; message: string | null }> {
   // Promise<{ data?:z.infer<typeof respSchema>, error: boolean, unauthenticated?: boolean, message?: string}> {
   // Note: Axios automatically sets content-type to application/json
   url = `${BACKEND_DOMAIN}/${url}`
   const req = isPost
-    ? _axiosPost.post<RespSchema>(url, body, { params: params, timeout: 5000 })
-    : _axiosGet.get<RespSchema>(url, { params: params, timeout: 5000 })
+    ? _axiosPost.post(url, body, { params: params, timeout: 5000 })
+    : _axiosGet.get(url, { params: params, timeout: 5000 })
 
   const retval = req
-    .then((res) => {
+    .then((res: AxiosResponse<any>) => {
+      const ResponseCls = z.object({
+        errors: z.union([z.boolean(), z.record(z.string(), z.string())]),
+        data: RespDataCls,
+        message: z.string().nullable(),
+      })
       // console.log ("api_post success. Response = ", res)
-      const parsed: RespSchema = respSchema.parse(res.data)
-      return { errors: false, data: parsed, message: null }
+      const { errors, data, message } = ResponseCls.parse(res.data)
+      return { errors: errors, data: data, message: message }
     })
     .catch(function (error) {
-      // non-2xx response
-      console.log("Error in apiRequest", error)
-      // report unauthenticated (401) differently than insufficient permission
-      const unauthenticated = error.response?.status == 401
-      let validationErrors = {}
-      if (error.response?.status == 422) {
-        const validationErrorsRaw = error.response.data.detail
-        // convert validation errors into a dict of fieldname -> error message
-        validationErrors = Object.assign(
-          {},
-          // @ts-ignore
-          ...validationErrorsRaw.map((x) => ({ [x.loc.at(-1)]: x.msg }))
-        )
-        console.log("errors = ", validationErrors)
-      }
-      return {
-        unauthenticated,
-        message: error.message,
-        errors: validationErrors,
-        data: null,
+      console.log("Error in apiRequest request or response: ", error)
+      if (error instanceof ZodError) {
+        // error while parsing response a few lines above... schema returned by server is invalid?
+        return {
+          message: "Error parsing response",
+          errors: true,
+          data: null,
+        }
+      } else {
+        // error while sending request or receiving response over network... typically a non-2xx response
+        // eg: 401 (unauthenticated) or 422 (pydantic validation error).
+
+        // report unauthenticated (401) differently than insufficient permission
+        const unauthenticated = error.response?.status == 401
+        let validationErrors = {}
+        if (error.response?.status == 422) {
+          // pydantic / ninja validation error.
+          const validationErrorsRaw = error.response.data.detail
+          // convert pydantic server errors into a dict of fieldname -> error message. keep only the leaf fieldname.
+          validationErrors = Object.assign(
+            {},
+            // @ts-ignore
+            ...validationErrorsRaw.map((x) => ({ [x.loc.at(-1)]: x.msg }))
+          )
+          console.log("errors = ", validationErrors)
+        }
+        return {
+          unauthenticated,
+          message: error.message,
+          errors: validationErrors,
+          data: null,
+        }
       }
     })
   return retval

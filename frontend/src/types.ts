@@ -269,13 +269,13 @@ export const UserSchema = z.object({
 })
 export type User = z.infer<typeof UserSchema>
 
-export const LoginResponseSchema = z.object({
-  success: z.boolean(),
+export const ApiResponseSchema = z.object({
+  // TODO: I think we can remove this... follow pattern in LoginPage.
+  errors: z.union([z.boolean(), z.object({})]),
   message: z.string().nullable(),
-  formErrors: z.object({}).nullable().optional(),
-  user: UserSchema.nullable(),
 })
-export type LoginResponse = z.infer<typeof LoginResponseSchema>
+export const LoginRespDataCls = z.object({ user: UserSchema.nullable() })
+export type LoginResponse = z.infer<typeof LoginRespDataCls>
 
 export const LoginRequestSchema = z.object({
   email: z.string().email(),
@@ -284,8 +284,5 @@ export const LoginRequestSchema = z.object({
 })
 export type LoginRequest = z.infer<typeof LoginRequestSchema>
 
-export const LogoutResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string().nullable(),
-})
+export const LogoutResponseSchema = ApiResponseSchema.extend({})
 export type LogoutResponse = z.infer<typeof LogoutResponseSchema>

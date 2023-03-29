@@ -1,9 +1,10 @@
 import * as React from "react"
 import { createContext, useContext } from "react"
-import { apiRequest, fetcher } from "../utils/fetcher"
+import { apiRequest, ApiResponse, fetcher } from "../utils/fetcher"
 import useSWR from "swr"
-import { LoginRequest, LoginResponse, LoginResponseSchema, LogoutResponseSchema, User } from "../types"
+import { LoginRequest, LoginRespDataCls, User } from "../types"
 import { BACKEND_DOMAIN } from "../constants"
+import { z } from "zod"
 
 const authContext = createContext<AuthContextType | { user: null; isLoading: true }>({
   user: null,
@@ -40,49 +41,48 @@ function useAuthProvider() {
   // console.log("IsLoading=", isLoading)
 
   if (error) {
-    console.log("useAuthProvider error on call to userflows/user", error)
+    const err = error.response
+    console.log("useAuthProvider error on call to userflows/user:", err.status, " ", err.data)
     // navigate("/login")
   }
   // console.log("Got user", user)
-  const logIn = async (loginParameters: LoginRequest): Promise<LoginResponse> => {
-    const { data, errors, message } = await apiRequest<typeof LoginResponseSchema>(
-      `api/userflows/login`,
-      {
-        respSchema: LoginResponseSchema,
-        isPost: true,
-        body: loginParameters,
-      }
-    )
+  const logIn = async (
+    loginParameters: LoginRequest
+  ): Promise<{
+    errors: boolean | Record<string, string>
+    data: z.infer<typeof LoginRespDataCls>
+    message: string | null
+  }> => {
+    const { data, errors, message } = await apiRequest<typeof LoginRespDataCls>(`api/userflows/login`, {
+      RespDataCls: LoginRespDataCls,
+      isPost: true,
+      body: loginParameters,
+    })
     if (!errors) {
       await mutate(data?.user)
-      return data
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return { data, errors, message }
     } else {
-      // error (eg 401 (unauth'd), 422 (or 500)
+      // error (eg 401 (unauth'd), 422 (form validation errors), 500 (server error), xxx (network error)
       await mutate(null)
-      return { user: null, success: false, message: message, formErrors: errors }
+      return { data, errors, message }
     }
   }
   const signUp = async (/*email, password*/): Promise<void> => {
     console.error("Not implemented")
-    // return firebase
-    //   .auth()
-    //   .createUserWithEmailAndPassword(email, password)
-    //   .then((response) => {
-    //     setUser(response.user);
-    //     return response.user;
-    //   });
     return Promise.resolve()
   }
   const logOut = async () => {
-    const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`api/userflows/logout`, {
-      respSchema: LogoutResponseSchema,
-      isPost: true,
-    })
-    if (!fetchResponse.errors) {
-      await mutate(null)
-    } else {
-      console.log("Logout failed", fetchResponse)
-    }
+    console.error("Not implemented")
+    // const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`api/userflows/logout`, {
+    //   RespResponseCls: LogoutResponseSchema,
+    //   isPost: true,
+    // })
+    // if (!fetchResponse.errors) {
+    //   await mutate(null)
+    // } else {
+    //   console.log("Logout failed", fetchResponse)
+    // }
   }
   const sendPasswordResetEmail = (/*email*/): Promise<void> => {
     console.error("Not implemented")
@@ -92,18 +92,6 @@ function useAuthProvider() {
     console.error("Not implemented")
     return Promise.resolve()
   }
-  // // Subscribe to user on mount
-  // useEffect(() => {
-  //   const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-  //     if (user) {
-  //       setUser(user);
-  //     } else {
-  //       setUser(false);
-  //     }
-  //   });
-  //   // Cleanup subscription on unmount
-  //   return () => unsubscribe();
-  // }, []);
 
   // Return the user object and auth methods
   return {
@@ -122,7 +110,7 @@ export interface AuthContextType {
   user: User | null
   error: string | null
   isLoading: boolean
-  logIn: (x: LoginRequest) => Promise<LoginResponse>
+  logIn: (x: LoginRequest) => Promise<ApiResponse<typeof LoginRespDataCls>>
   logOut: () => Promise<void>
   signUp: (x: LoginRequest) => Promise<void>
   sendPasswordResetEmail: (x: string) => Promise<void>

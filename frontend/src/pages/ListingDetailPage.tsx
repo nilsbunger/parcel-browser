@@ -17,14 +17,11 @@ async function doAnalysis(
   // const fetchResponse = AnalysisPostRespSchema.parse(
   //   await post_csrf(`${BACKEND_DOMAIN}/api/world/analysis/`, {params: { al_id: analysisId }})
   // )
-  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(
-    `api/world/analysis/`,
-    {
-      respSchema: AnalysisPostRespSchema,
-      params: { al_id: analysisId },
-      isPost: false,
-    }
-  )
+  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`api/world/analysis/`, {
+    ResponseCls: AnalysisPostRespSchema,
+    params: { al_id: analysisId },
+    isPost: false,
+  })
   console.log("Got API analysis response in Listing Detail page", errors, message, data)
   const error: boolean = !!errors
   return { data, error, message }
