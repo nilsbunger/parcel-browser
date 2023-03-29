@@ -4,9 +4,11 @@ import * as React from "react"
 import { lazy, Suspense, useEffect } from "react"
 import WideLayout from "./layouts/WideLayout"
 import { UserFlowLayout } from "./layouts/UserFlowLayout"
+import { TurbopropLayout } from "./layouts/TurbopropLayout"
 import { useAuth } from "./hooks/Auth"
 import { Loader } from "@mantine/core"
 import BackyardPage from "./pages/deals/BackyardPage";
+import TurbopropPage from "./pages/TurbopropPage";
 
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
@@ -28,6 +30,10 @@ export function MyRoutes() {
 
             <Route path="deals" element={<HomeLayout/>}>
               <Route path="backyard" element={<BackyardPage/>}/>
+            </Route>
+            
+            <Route path="turboprop" element={<TurbopropLayout/>}>
+              <Route index element={<TurbopropPage/>}/>
             </Route>
 
             {/* Rest of pages require login... */}
