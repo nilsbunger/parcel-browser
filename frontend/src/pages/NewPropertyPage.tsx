@@ -5,11 +5,11 @@ import { apiRequest, fetcher } from "../utils/fetcher"
 import * as React from "react"
 import { useCallback, useState } from "react"
 import { AddressAutofill, AddressMinimap } from "@mapbox/search-js-react"
-import { Button, TextInput } from "@mantine/core"
+import { TextInput } from "@mantine/core"
 import { z } from "zod"
 import { useNavigate } from "react-router-dom"
 import { showNotification } from "@mantine/notifications"
-import { ApiResponseSchema } from "../types"
+import { ApiResponseSchema, NewPropertyRespDataCls } from "../types"
 
 export const NewPropertyFormSchema = z.object({
   streetAddress: z.string(),
@@ -55,7 +55,7 @@ export default function NewPropertyPage() {
   )
 
   const handleChange = useCallback(
-    (e: React.FormEvent<HTMLInputElement>) => {
+    (e: React.FormEvent<HTMLFormElement>) => {
       // remove autofill results when we see a change in the form.
       if (e.nativeEvent instanceof InputEvent) {
         console.log("User change detected, clearing feature")
@@ -67,11 +67,14 @@ export default function NewPropertyPage() {
 
   const onSubmit = useCallback(
     async (newProperty: NewPropertyForm) => {
-      const { data, errors, message } = await apiRequest<typeof NewPropertyRespSchema>(`api/properties/profiles`, {
-        ResponseCls: NewPropertyRespSchema,
-        isPost: true,
-        body: { formFields: newProperty, features: feature },
-      })
+      const { data, errors, message } = await apiRequest<typeof NewPropertyRespDataCls>(
+        `api/properties/profiles`,
+        {
+          RespDataCls: NewPropertyRespDataCls,
+          isPost: true,
+          body: { formFields: newProperty, features: feature },
+        }
+      )
       if (errors) {
         if (typeof errors === "boolean") {
           // page level errors, show as toast
@@ -79,6 +82,7 @@ export default function NewPropertyPage() {
         } else {
           // field-level validation errors.
           if (errors.features) {
+            // error in the maxpbox 'feature' field (unexpected)
             showNotification({
               title: "Submission failure",
               message: "Couldn't process address",
@@ -95,6 +99,7 @@ export default function NewPropertyPage() {
           form.setErrors(errors)
         }
       } else {
+        showNotification({ title: "Success", message, color: "green" })
         navigate("/properties")
       }
     },

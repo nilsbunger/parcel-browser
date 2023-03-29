@@ -57,21 +57,23 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
         message: z.string().nullable(),
       })
       // console.log ("api_post success. Response = ", res)
-      const { errors, data, message } = ResponseCls.parse(res.data)
-      return { errors: errors, data: data, message: message }
+      try {
+        const { errors, data, message } = ResponseCls.parse(res.data)
+        return { errors: errors, data: data, message: message }
+      } catch (e) {
+        console.error("apiRequest: Error parsing response: ", e)
+        return { errors: true, data: null, message: "Error parsing response" }
+      }
     })
-    .catch(function (error) {
-      console.log("Error in apiRequest request or response: ", error)
+    .catch((error) => {
       if (error instanceof ZodError) {
         // error while parsing response a few lines above... schema returned by server is invalid?
-        return {
-          message: "Error parsing response",
-          errors: true,
-          data: null,
-        }
+        console.error("UNEXPECTED BRANCH")
+        return { message: "Error parsing response", errors: true, data: null }
       } else {
         // error while sending request or receiving response over network... typically a non-2xx response
         // eg: 401 (unauthenticated) or 422 (pydantic validation error).
+        console.error("Error in apiRequest request or response: ", error)
 
         // report unauthenticated (401) differently than insufficient permission
         const unauthenticated = error.response?.status == 401

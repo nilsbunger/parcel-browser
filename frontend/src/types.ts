@@ -277,6 +277,11 @@ export const ApiResponseSchema = z.object({
 export const LoginRespDataCls = z.object({ user: UserSchema.nullable() })
 export type LoginResponse = z.infer<typeof LoginRespDataCls>
 
+export const NewPropertyRespDataCls = z.object({
+  id: z.number(),
+})
+export type NewPropertyResponse = z.infer<typeof NewPropertyRespDataCls>
+
 export const LoginRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(4).max(24),

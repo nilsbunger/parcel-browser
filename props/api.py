@@ -8,6 +8,7 @@ from ninja.security import django_auth
 from pydantic import BaseModel, Extra
 
 from facts.models import AddressFeatures, StdAddress
+from lib.ninja_api import ApiResponseSchema
 from .models import PropertyProfile
 from .schema import PropertyProfileOut
 
@@ -31,7 +32,14 @@ class CreatePropertySchema(Schema):
     features: AddressFeatures
 
 
-@props_api.post("/profiles")
+class NewPropertyRespDataSchema(Schema):
+    id: int
+
+
+NewPropertyResponseSchema = ApiResponseSchema[NewPropertyRespDataSchema]
+
+
+@props_api.post("/profiles", response=NewPropertyResponseSchema)
 def _create_property(request, data: CreatePropertySchema):
     std_address, _created = StdAddress.objects.get_or_create(
         street_addr=data.formFields.streetAddress,
@@ -52,7 +60,7 @@ def _create_property(request, data: CreatePropertySchema):
         log.info(f"Created new property profile id={prop.id}")
     else:
         log.info(f"Found existing property profile id={prop.id}")
-    return {"id": prop.id}
+    return NewPropertyResponseSchema(errors=False, message="Property created", data={"id": prop.id})
 
 
 @props_api.get("/profiles/{prop_id}", response=PropertyProfileOut)
