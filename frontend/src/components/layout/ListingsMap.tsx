@@ -53,10 +53,7 @@ function ListingsMap({ listings }: Props) {
           </LayersControl.Overlay>
         </LayersControl>
         {listings.map((listing) => (
-          <Marker
-            key={"" + listing.mlsid + listing.founddate}
-            position={[listing.centroid_y, listing.centroid_x]}
-          >
+          <Marker key={"" + listing.mlsid + listing.founddate} position={[listing.centroid_y, listing.centroid_x]}>
             <Popup>
               <p>
                 <Link

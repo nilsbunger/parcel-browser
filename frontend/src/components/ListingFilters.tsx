@@ -23,8 +23,7 @@ function Filter({
   let modifier = (x) => x
 
   const sortedUniqueValues = React.useMemo(
-    () =>
-      typeof firstValue === "number" ? [] : Array.from(column.getFacetedUniqueValues().keys()).sort(),
+    () => (typeof firstValue === "number" ? [] : Array.from(column.getFacetedUniqueValues().keys()).sort()),
     [column.getFacetedUniqueValues()]
   )
 
@@ -50,9 +49,7 @@ function Filter({
             })
           }}
           placeholder={`Min ${
-            column.getFacetedMinMaxValues()?.[0]
-              ? `(${modifier(column.getFacetedMinMaxValues()?.[0])})`
-              : ""
+            column.getFacetedMinMaxValues()?.[0] ? `(${modifier(column.getFacetedMinMaxValues()?.[0])})` : ""
           }`}
           className="w-24 border shadow rounded"
         />
@@ -75,9 +72,7 @@ function Filter({
             })
           }}
           placeholder={`Max ${
-            column.getFacetedMinMaxValues()?.[1]
-              ? `(${modifier(column.getFacetedMinMaxValues()?.[1])})`
-              : ""
+            column.getFacetedMinMaxValues()?.[1] ? `(${modifier(column.getFacetedMinMaxValues()?.[1])})` : ""
           }`}
           className="w-24 border shadow rounded"
         />

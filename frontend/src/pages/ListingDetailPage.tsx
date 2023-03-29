@@ -254,10 +254,7 @@ export default function ListingDetailPage() {
       {data.details.re_params && showAssumptions(data.details.re_params)}
 
       <h1 className="mt-5">Details</h1>
-      <p>
-        {" "}
-        These are present primarily for debugging. Anything useful should be sent up above this section.
-      </p>
+      <p> These are present primarily for debugging. Anything useful should be sent up above this section.</p>
       <pre>
         {Object.keys(data).map((key) => {
           return (

@@ -289,10 +289,7 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
           <Menu.Divider />
           <Menu.Label>Overlays</Menu.Label>
           <Menu.Item onClick={(e) => toggleLayer(e, "tpa-vis-layer")}>
-            <LayerSquare
-              enabled={visibleLayers["tpa-vis-layer"]}
-              color={LAYER_COLORS["tpa-vis-layer"]}
-            />
+            <LayerSquare enabled={visibleLayers["tpa-vis-layer"]} color={LAYER_COLORS["tpa-vis-layer"]} />
             TPA
           </Menu.Item>
           <Menu.Item onClick={(e) => toggleLayer(e, "compcomm-vis-layer")}>
@@ -303,10 +300,7 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
             Complete Communities
           </Menu.Item>
           <Menu.Item onClick={(e) => toggleLayer(e, "ab2011-vis-layer")}>
-            <LayerSquare
-              enabled={visibleLayers["ab2011-vis-layer"]}
-              color={LAYER_COLORS["ab2011-vis-layer"]}
-            />
+            <LayerSquare enabled={visibleLayers["ab2011-vis-layer"]} color={LAYER_COLORS["ab2011-vis-layer"]} />
             AB 2011 Eligible
           </Menu.Item>
         </Menu.Dropdown>
@@ -409,14 +403,8 @@ export default function CoMapPage({ onTilesLoad = null }) {
         onHover={onHover}
         onClick={onClick}
         onViewStateChange={({ viewState }) => {
-          viewState.longitude = Math.min(
-            LONGITUDE_RANGE[1],
-            Math.max(LONGITUDE_RANGE[0], viewState.longitude)
-          )
-          viewState.latitude = Math.min(
-            LATITUDE_RANGE[1],
-            Math.max(LATITUDE_RANGE[0], viewState.latitude)
-          )
+          viewState.longitude = Math.min(LONGITUDE_RANGE[1], Math.max(LONGITUDE_RANGE[0], viewState.longitude))
+          viewState.latitude = Math.min(LATITUDE_RANGE[1], Math.max(LATITUDE_RANGE[0], viewState.latitude))
           return viewState
         }}
       >

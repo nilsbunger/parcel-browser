@@ -32,24 +32,14 @@ const basicAccessor = (cell: Cell<Listing, unknown>) => {
 }
 
 const apnAccessor = ({ row }: { row: Row<Listing> }): ReactElement => (
-  <Link
-    to={{ pathname: `/analysis/${row.getValue("analysis_id")}` }}
-    className="underline text-darkblue"
-  >
+  <Link to={{ pathname: `/analysis/${row.getValue("analysis_id")}` }} className="underline text-darkblue">
     {row.getValue("apn")}
   </Link>
 )
 
 const addressAccessor = ({ row }: { row: Row<Listing> }) => (
-  <div
-    className={
-      "relative " + ((row.getValue("apn") as string).slice(8, 10) !== "00" ? "bg-gray-300" : "")
-    }
-  >
-    <Link
-      to={{ pathname: `/analysis/${row.getValue("analysis_id")}` }}
-      className="underline text-darkblue"
-    >
+  <div className={"relative " + ((row.getValue("apn") as string).slice(8, 10) !== "00" ? "bg-gray-300" : "")}>
+    <Link to={{ pathname: `/analysis/${row.getValue("analysis_id")}` }} className="underline text-darkblue">
       {(row.getValue("address") as string).slice(0, 20)}
     </Link>
     {row.original.is_tpa && <div className="mb-1 gap-2 badge badge-primary text-med">TPA</div>}{" "}
@@ -57,8 +47,7 @@ const addressAccessor = ({ row }: { row: Row<Listing> }) => (
   </div>
 )
 
-const asSqFtAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) =>
-  asSqFt(cell.getValue()).toLocaleString()
+const asSqFtAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => asSqFt(cell.getValue()).toLocaleString()
 
 const roundingAccessor = ({ cell }: { cell: Cell<Listing, unknown> }) => {
   return (cell.getValue() as number).toPrecision(2)
@@ -119,12 +108,7 @@ const ListingsPageLocalStorage = z.object({
   columnFilters: z.array(
     z.object({
       id: z.string(),
-      value: z.union([
-        z.string(),
-        z.boolean(),
-        z.number(),
-        z.array(z.string().optional(), z.string().optional()),
-      ]),
+      value: z.union([z.string(), z.boolean(), z.number(), z.array(z.string().optional(), z.string().optional())]),
     })
   ),
 })
@@ -244,8 +228,7 @@ export default function ListingsPage() {
   ])
 
   const isMfChecked = columnFilters.find((columnFilter) => columnFilter.id === "is_mf")?.value as boolean
-  const isTpaChecked = columnFilters.find((columnFilter) => columnFilter.id === "is_tpa")
-    ?.value as boolean
+  const isTpaChecked = columnFilters.find((columnFilter) => columnFilter.id === "is_tpa")?.value as boolean
   const isNeighborhoodChecked =
     columnFilters.find((columnFilter) => columnFilter.id === "neighborhood")?.value !== ""
 
@@ -266,8 +249,7 @@ export default function ListingsPage() {
   const onNeighborhoodFilterCheck = (e: ChangeEvent<HTMLInputElement>) => {
     setColumnFilters((draft) => {
       const index = draft.findIndex((columnFilter) => columnFilter.id === "neighborhood")
-      if (e.target.checked)
-        draft[index].value = "North Park,Normal Heights,Clairemont/Bay Park,City Heights"
+      if (e.target.checked) draft[index].value = "North Park,Normal Heights,Clairemont/Bay Park,City Heights"
       else draft[index].value = ""
     })
   }
@@ -416,9 +398,7 @@ export default function ListingsPage() {
                 className="checkbox checkbox-accent"
                 onChange={onNeighborhoodFilterCheck}
               />
-              <span className="label-text">
-                Clairemont/Bay Park/North Park/Normal Heights/City Heights only
-              </span>
+              <span className="label-text">Clairemont/Bay Park/North Park/Normal Heights/City Heights only</span>
             </label>
           </div>
         </div>

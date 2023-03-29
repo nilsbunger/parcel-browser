@@ -68,9 +68,7 @@ export function DevScenarios({ scenarios }: { scenarios: DevScenario[] }) {
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               ></path>
             </svg>
-            <span className={"text-slate-50"}>
-              We haven't run development scenarios on this listing.
-            </span>
+            <span className={"text-slate-50"}>We haven't run development scenarios on this listing.</span>
           </div>
         </div>
       )}
@@ -82,12 +80,10 @@ export function DevScenarios({ scenarios }: { scenarios: DevScenario[] }) {
               <React.Fragment key={idx}>
                 <div className="flex-auto">
                   <h3>
-                    Scenario: {scenario.adu_qty} {scenario.unit_type.br}BR, {scenario.unit_type.ba}BA
-                    ADUs
+                    Scenario: {scenario.adu_qty} {scenario.unit_type.br}BR, {scenario.unit_type.ba}BA ADUs
                   </h3>
                   <p>
-                    Each {scenario.unit_type.sqft.toLocaleString()} sqft, {scenario.unit_type.stories}{" "}
-                    stories
+                    Each {scenario.unit_type.sqft.toLocaleString()} sqft, {scenario.unit_type.stories} stories
                   </p>
                   <div className="stats shadow mb-3 mt-2">
                     <div className="stat">

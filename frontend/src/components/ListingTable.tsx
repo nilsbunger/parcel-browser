@@ -42,11 +42,7 @@ export default function ListingTable({ table, setColumnFilters }: Props) {
                         </div>
                         {header.column.getCanFilter() ? (
                           <div>
-                            <Filter
-                              column={header.column}
-                              table={table}
-                              setColumnFilters={setColumnFilters}
-                            />
+                            <Filter column={header.column} table={table} setColumnFilters={setColumnFilters} />
                           </div>
                         ) : null}
                       </>
@@ -66,10 +62,7 @@ export default function ListingTable({ table, setColumnFilters }: Props) {
                   return <td key={cell.id}>None </td>
                 }
                 if (typeof (foo as any).props.renderValue() === "object") {
-                  console.log(
-                    "WE have a problem in table cell rendering: ",
-                    (foo as any).props.renderValue()
-                  )
+                  console.log("WE have a problem in table cell rendering: ", (foo as any).props.renderValue())
                   return <td key={cell.id}>BAD</td>
                 } else {
                   return <td key={cell.id}> {foo} </td>

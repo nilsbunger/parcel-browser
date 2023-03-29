@@ -44,12 +44,7 @@ export default function NewListingPage() {
       <h1>Analyze an Address</h1>
       <ErrorBoundary fallback={<div>Error handling address search</div>}>
         <form onSubmit={handleAnalyzeSubmit}>
-          <input
-            className="border border-gray-700"
-            type="text"
-            value={address}
-            onChange={handleAddressSearch}
-          />
+          <input className="border border-gray-700" type="text" value={address} onChange={handleAddressSearch} />
           {"  "}
           {addrSearchData && "apn" in addrSearchData && !addrSearchData.analyzed_listing && (
             <button className={"btn btn-sm btn-primary" + (loading ? " loading" : "")} type="submit">

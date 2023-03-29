@@ -124,10 +124,7 @@ const EligibilityCheck = ({ eligibility, level }: { eligibility: EligibilityChec
 }
 
 const ParcelDetails = ({ apn }) => {
-  const { data, error } = useSWR<ParcelGetResp, string>(
-    `${BACKEND_DOMAIN}/api/world/parcel/${apn}`,
-    fetcher
-  )
+  const { data, error } = useSWR<ParcelGetResp, string>(`${BACKEND_DOMAIN}/api/world/parcel/${apn}`, fetcher)
   if (error) return <div>failed to load parcel APN={apn}</div>
   if (!data) return <div>loading parcel APN={apn}</div>
   console.log("PARCEL DETAILS", data)
@@ -137,8 +134,7 @@ const ParcelDetails = ({ apn }) => {
       <div>
         <p className="mt-5 font-bold">Address</p>
         {data.situs_addr || 0}
-        {data.situs_pre_field || ""} {data.situs_stre || ""} {data?.situs_post || ""}{" "}
-        {data?.situs_suff || ""}
+        {data.situs_pre_field || ""} {data.situs_stre || ""} {data?.situs_post || ""} {data?.situs_suff || ""}
         <br />
         {data.situs_juri} {data.situs_zip}
       </div>
