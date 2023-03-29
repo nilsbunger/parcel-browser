@@ -2,7 +2,9 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from ninja import ModelSchema, NinjaAPI, Schema
 from ninja.security import django_auth
+from pydantic import constr
 
+from lib.ninja_api import ApiResponseSchema
 from userflows.models import User
 
 # from .api_schema import ProfileSchema
@@ -19,7 +21,7 @@ userflows_api = NinjaAPI(
 
 class LoginSchema(Schema):
     email: str
-    password: str
+    password: constr(min_length=8, max_length=32)
     rememberMe: bool = False
 
 
@@ -29,15 +31,14 @@ class UserSchema(ModelSchema):
         model_fields = ["first_name", "last_name", "email"]
 
 
-class LoginResponseSchema(Schema):
-    success: bool
-    message: str
+class LoginResponseDataSchema(Schema):
     user: UserSchema = None
 
 
-class LogoutResponseSchema(Schema):
-    success: bool
-    message: str
+LoginResponseSchema = ApiResponseSchema[LoginResponseDataSchema]
+
+
+LogoutResponseSchema = ApiResponseSchema[None]
 
 
 # Login endpoint: allow unauthenticated access
@@ -45,12 +46,13 @@ class LogoutResponseSchema(Schema):
 def _login(request, payload: LoginSchema):
     ...
     # TODO: better validation and rate-limiting here to prevent bad login attempts. See what django-allauth did?
+    # TODO: support returning form errors (should be part of LoginResponseSchema, see LoginPage.tsx)
     # TODO: implement "remember me"
     user = authenticate(username=payload.email, password=payload.password)
     if user is None:
-        return LoginResponseSchema(success=False, message="Invalid username or password")
+        return LoginResponseSchema(errors=True, message="Invalid username or password", data=None)
     login(request, user)
-    return LoginResponseSchema(success=True, message="Login successful", user=user)
+    return LoginResponseSchema(errors=False, message="Login successful", data={"user": user})
 
 
 @userflows_api.post("/logout", auth=None, response=LogoutResponseSchema)
