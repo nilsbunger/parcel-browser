@@ -39,7 +39,7 @@ class NewPropertyRespDataSchema(Schema):
 NewPropertyResponseSchema = ApiResponseSchema[NewPropertyRespDataSchema]
 
 
-@props_api.post("/profiles", response=NewPropertyResponseSchema)
+@props_api.post("/profiles", response=NewPropertyResponseSchema, url_name="_create_property")
 def _create_property(request, data: CreatePropertySchema):
     std_address, _created = StdAddress.objects.get_or_create(
         street_addr=data.formFields.streetAddress,
@@ -69,7 +69,7 @@ def _get_property(request, prop_id: int):
     return prop
 
 
-@props_api.get("/profiles", response=list[PropertyProfileOut])
+@props_api.get("/profiles", response=list[PropertyProfileOut], url_name="_list_properties")
 def _list_properties(request):
     qs = PropertyProfile.objects.select_related("legal_entity", "address")
     log.info(f"Found {qs.count()} properties")

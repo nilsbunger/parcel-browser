@@ -1,19 +1,18 @@
-import psycopg2
 import pytest
 from django.core.management import call_command
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# Define django_db_setup for pytest initialization. Originally we created a test DB based on template, though
-# I abandoned that approach and instead our tests use TWO databases (one with read-only geo data, and
-# one with actual application data).
+from mygeo.settings import BASE_DIR
+
+import requests
 
 
-def _run_sql(sql):
-    conn = psycopg2.connect(database="postgres")
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-    cur = conn.cursor()
-    cur.execute(sql)
-    conn.close()
+# Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.
+@pytest.fixture(autouse=True)
+def disable_network_calls(monkeypatch):
+    def stunted_get():
+        raise RuntimeError("Network access not allowed during testing!")
+
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: stunted_get())
 
 
 # def pytest_collectstart(collector):
@@ -31,7 +30,8 @@ def django_db_setup(django_db_setup, django_db_blocker):
     # See https://pytest-django.readthedocs.io/en/latest/database.html#django-db-setup for more info
 
     with django_db_blocker.unblock():
-        call_command("loaddata", "world/test_fixtures/parcel_data.yaml")
-        call_command("loaddata", "world/test_fixtures/roads_data.yaml")
-        call_command("loaddata", "world/test_fixtures/analyzed_road_data.yaml")
-        call_command("loaddata", "world/test_fixtures/zoning_base_data.yaml")
+        print("Adding parcel / roads / zoning fixtures")
+        call_command("loaddata", BASE_DIR / "world/test_fixtures/parcel_data.yaml")
+        call_command("loaddata", BASE_DIR / "world/test_fixtures/roads_data.yaml")
+        call_command("loaddata", BASE_DIR / "world/test_fixtures/analyzed_road_data.yaml")
+        call_command("loaddata", BASE_DIR / "world/test_fixtures/zoning_base_data.yaml")
