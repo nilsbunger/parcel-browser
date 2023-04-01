@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react"
 import { z, ZodError } from "zod"
 import { BACKEND_DOMAIN } from "../constants"
 import { Middleware, SWRHook } from "swr"
+import { showNotification } from "@mantine/notifications"
 
 interface ApiRequestParams<RespDataType extends z.ZodTypeAny> {
   RespDataCls: z.ZodTypeAny
@@ -49,7 +50,7 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
     ? _axiosPost.post(url, body, { params: params, timeout: 5000 })
     : _axiosGet.get(url, { params: params, timeout: 5000 })
 
-  const retval = req
+  const retval = await req
     .then((res: AxiosResponse<any>) => {
       const ResponseCls = z.object({
         errors: z.union([z.boolean(), z.record(z.string(), z.string())]),
@@ -97,6 +98,13 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
         }
       }
     })
+  if (!retval.errors) {
+    // no errors, show success toast
+    showNotification({ title: "Submission success", message: retval.message, color: "green" })
+  } else if (typeof retval.errors === "boolean") {
+    // page level errors, show error toast. (field-level errors are handled by the caller)
+    showNotification({ title: "Submission failure", message: retval.message, color: "red" })
+  }
   return retval
 }
 

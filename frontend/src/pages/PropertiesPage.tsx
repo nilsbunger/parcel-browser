@@ -2,7 +2,7 @@ import * as React from "react"
 import { useCallback, useEffect } from "react"
 
 import { Anchor, ScrollArea, Table } from "@mantine/core"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import useSWR from "swr"
 import { BACKEND_DOMAIN } from "../constants"
 import { fetcher } from "../utils/fetcher"
@@ -27,6 +27,7 @@ interface PropertiesProps {
 }
 
 export default function PropertiesPage() {
+  const navigate = useNavigate()
   useEffect(() => {
     document.title = "Properties"
     // load initial values of state from local storage
@@ -45,6 +46,7 @@ export default function PropertiesPage() {
     const id = e.currentTarget.getAttribute("data-id")
     console.log("row click:", e)
     console.log("id", id)
+    navigate(`${id}`)
     // e.preventDefault()
     // if (id) {
     //   router.push(`/props/${id}`)
@@ -54,7 +56,7 @@ export default function PropertiesPage() {
   if (error) return <div>failed to load properties list</div>
   if (isValidating) return <div>loading...</div>
 
-  const rows = data.map((row) => {
+  const rows = data.map((row: any) => {
     return (
       <tr
         key={row.id}

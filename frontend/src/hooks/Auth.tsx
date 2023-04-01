@@ -42,7 +42,10 @@ function useAuthProvider() {
 
   if (error) {
     const err = error.response
-    console.log("useAuthProvider error on call to userflows/user:", err.status, " ", err.data)
+    if (err.status != 401) {
+      // 401 is expected when user is not logged in
+      console.log("useAuthProvider error on call to userflows/user:", err.status, " ", err.data)
+    }
     // navigate("/login")
   }
   // console.log("Got user", user)

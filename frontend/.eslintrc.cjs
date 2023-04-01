@@ -7,7 +7,7 @@ module.exports = {
     tsconfigRootDir: __dirname,
     project: ["./tsconfig.json"],
   },
-  plugins: ["@typescript-eslint"],
+  plugins: ["@typescript-eslint", "eslint-plugin-testing-library", "eslint-plugin-jest-dom"],
   // See also configuration instructions in  https://typescript-eslint.io/docs/linting/configs
   extends: [
     "eslint:recommended",

@@ -75,31 +75,21 @@ export default function NewPropertyPage() {
           body: { formFields: newProperty, features: feature },
         }
       )
-      if (errors) {
-        if (typeof errors === "boolean") {
-          // page level errors, show as toast
-          showNotification({ title: "Submission failure", message, color: "red" })
+      if (errors && typeof errors !== "boolean") {
+        // field-level validation errors.
+        if (errors.features) {
+          // error in the maxpbox 'feature' field, not part of form -- unexpected
+          showNotification({
+            title: "Submission failure",
+            message: "Couldn't process address",
+            color: "red",
+          })
         } else {
-          // field-level validation errors.
-          if (errors.features) {
-            // error in the maxpbox 'feature' field (unexpected)
-            showNotification({
-              title: "Submission failure",
-              message: "Couldn't process address",
-              color: "red",
-            })
-          } else {
-            console.log("Setting field errors = ", errors)
-            form.setErrors(errors)
-          }
-        }
-        console.log("onSubmit Errors = ", errors)
-        console.log("onSubmit Message = ", message)
-        if (typeof errors !== "boolean") {
+          console.log("Setting field errors = ", errors)
           form.setErrors(errors)
         }
-      } else {
-        showNotification({ title: "Success", message, color: "green" })
+      }
+      if (!errors) {
         navigate("/properties")
       }
     },

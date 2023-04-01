@@ -17,6 +17,7 @@
     "dev": "parcel serve src/index.html src/map.ts src/parcel-detail.ts",
     "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
     "refine": "refine",
+    "lint": "eslint . --ext .ts,.tsx",
     "prettify": "prettier --write .",
     "test": "jest",
     "___old___build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
@@ -39,6 +40,8 @@
     "buffer": "^5.5.0",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-jest-dom": "^4.0.3",
+    "eslint-plugin-testing-library": "^5.10.2",
     "events": "^3.3.0",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
