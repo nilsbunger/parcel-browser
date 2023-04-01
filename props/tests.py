@@ -1,3 +1,4 @@
+from django.http import Http404
 import pytest
 
 from facts.models import AddressFeatures, StdAddress
@@ -58,6 +59,19 @@ class TestApi:
         assert response.status_code == 200
         result = response.json()
         assert result["address"]["street_addr"] == "4 Dummy Rd"
+
+    def test_get_property_no_exist(self, client_and_user, dummy_properties):
+        # Test the get-property API
+        client, user = client_and_user
+
+        response = client.get("/dj/supadupa")
+        assert response.status_code == 404
+
+        prop_under_test = dummy_properties[3]
+        path = f"/api/properties/profiles/9999999"
+        response = client.get(path)
+        assert response.status_code == 404
+        result = response.json()
 
 
 ####################

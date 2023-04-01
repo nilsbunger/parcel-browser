@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema
 from ninja.security import django_auth
 from pydantic import BaseModel, Extra
-
+from django.http.response import Http404
 from facts.models import AddressFeatures, StdAddress
 from lib.ninja_api import ApiResponseSchema
 from .models import PropertyProfile
@@ -65,7 +65,12 @@ def _create_property(request, data: CreatePropertySchema):
 
 @props_api.get("/profiles/{prop_id}", response=PropertyProfileOut)
 def _get_property(request, prop_id: int):
-    prop = get_object_or_404(PropertyProfile, id=prop_id)
+    # NOTE: this try/except block shouldn't be necessary but Pycharm debugger doesn't like an exception coming out of
+    #  the view.
+    try:
+        prop = get_object_or_404(PropertyProfile, id=prop_id)
+    except Http404:
+        return props_api.create_response(request, {"errors": True, "message": "Not found"}, status=404)
     return prop
 
 
