@@ -51,10 +51,12 @@ SHELL ["conda", "run", "-n", "parsnip", "/bin/bash", "-c"]
 ### INSTALL YARN (requires conda env) ####################################################
 RUN npm install --location=global yarn
 
-### PYTHON DEPENDENCIES ##################################################################
-# Set up a python virtual env for all subsequent commands
+### ENVIRONMENT - these variables are available in the build phase on Fly.io
 ENV BUILD_PHASE=True
+ENV REACT_APP_BACKEND_DOMAIN=https://parsnip.fly.dev
 ENV DJANGO_ENV=production
+
+### PYTHON DEPENDENCIES ##################################################################
 
 # Do python package installations first, so that they're cached in most cases
 COPY crontab crontab
@@ -75,8 +77,8 @@ RUN yarn install && yarn cache clean
 # Copy source code - put as late as possible in file, since it's fast-changing.
 WORKDIR /app
 COPY . .
-RUN mkdir -p dist/static && python manage.py collectstatic --noinput
 
+RUN mkdir -p dist/static && python manage.py collectstatic --noinput
 ### FRONT-END BUILD ##########################################################
 WORKDIR /app/frontend
 RUN yarn build

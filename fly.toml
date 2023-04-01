@@ -13,6 +13,13 @@ kill_timeout = 5
 [env]
   PORT = "8080"
 
+[build]
+  dockerfile="Dockerfile"
+
+# This *should* pass environment variables to the build process, but it doesn't seem to. We set it in Dockerfile instead
+#[build.args]
+#  REACT_APP_BACKEND_DOMAIN="https://parsnip.fly.dev"
+
 [mounts]
   processes=["web"]
   source="parsnip_data"
