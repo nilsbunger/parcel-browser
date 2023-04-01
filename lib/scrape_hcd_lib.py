@@ -1,25 +1,28 @@
-import datetime
 import json
+import logging
 import re
 import string
 from dataclasses import dataclass, field
-from datetime import timezone
-from pprint import pprint
-from typing import Any, Optional, TypeVar, cast
+from datetime import UTC, datetime
+from pprint import pformat, pprint
+from typing import Any, TypeVar, cast
 
 from pyairtable import Table
 from pyairtable.utils import date_to_iso_str
 from pydantic import BaseModel
+from requests import HTTPError
 
 from lib.power_bi import BIRow, BITable, PowerBIScraper, SelectColumns, WhereCondition
 from mygeo.settings import env
 
+log = logging.getLogger(__name__)
 
-def date_to_iso_str_safe(date: Optional[datetime]) -> Optional[str]:
+
+def date_to_iso_str_safe(date: datetime | None) -> str | None:
     return date_to_iso_str(date) if date else None
 
 
-JAN_1_2023 = datetime.datetime(2023, 1, 1, tzinfo=datetime.timezone.utc)
+JAN_1_2023 = datetime(2023, 1, 1, tzinfo=UTC)
 
 
 # Scrape HCD data from HCD website, and dump it into these AirTables:
@@ -50,7 +53,7 @@ class AirtableBase:
     api_key: str
     table_names: list
     tables: dict = field(default_factory=lambda: {})
-    view_name: Optional[str] = None
+    view_name: str | None = None
 
     def __post_init__(self) -> None:  # noqa: ANN101
         # Add the Airtable Table objects for each listed table
@@ -280,7 +283,7 @@ def prepare_he_status_sync_airtable_record(
     # Iterate over this record's fields, adjusting their format for writing to Airtable.
     for k, v in new_record.items():
         # Convert datetimes to string
-        if isinstance(v, datetime.datetime):
+        if isinstance(v, datetime):
             new_record[k] = v.isoformat()
         # Create lists for multi-select fields (e.g. 6th Cycle)
         if k in ["6th Cycle"]:
@@ -290,6 +293,7 @@ def prepare_he_status_sync_airtable_record(
 
 def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_table: BITable) -> None:
     # Sync data from HCD (both status table and review table) to a Yimby Law Airtable table that we control.
+    # Note that we write to this table even with a --dry-run flag, since this table just reflects the latest state.
 
     # table that WE control and directly write into:
     yimby_law_he_status_sync_airtable = airtable_bases.yimby_law_housing_elements.tables["HCD HE Status Sync"]
@@ -307,7 +311,14 @@ def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_tabl
             print(f"Updating {idx} of {len(airtable_records)} entries (currently on {juri})")
         if string.capwords(juri) in hcd_status_table.row_dict:
             new_record = prepare_he_status_sync_airtable_record(hcd_status_table, hcd_review_table, juri)
-            yimby_law_he_status_sync_airtable.update(record["id"], new_record, replace=True)
+            try:
+                yimby_law_he_status_sync_airtable.update(record["id"], new_record, replace=True)
+            except HTTPError as e:
+                if e.response.headers.get("Content-Type").startswith("application/json"):
+                    log.error(f"Error updating {juri} in Airtable: {e.response.json()}")
+                    log.error(f"Record: {pformat(new_record)}")
+                    raise RuntimeError(f"Error updating {juri} in Airtable: {e.response.json()}") from e
+                raise e
             processed_juris.add(juri)
         else:
             print(f"No HCD status row for {juri}; deleting airtable record")
@@ -352,7 +363,12 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, dry_run: bool) ->
         hcd_6cycle_status: list[str] = re.split(r",\s*", str(hcd_row["6th Cycle"]).upper())
         if hcd_6cycle_status != airtable_6cycle_status:
             changes.append(
-                juri + " | From **" + ",".join(airtable_6cycle_status) + "** to **" + hcd_6cycle_status + "**"
+                juri
+                + " | From **"
+                + ",".join(airtable_6cycle_status)
+                + "** to **"
+                + ",".join(hcd_6cycle_status)
+                + "**"
             )
             if dry_run:
                 print(
@@ -360,10 +376,18 @@ def diff_yimby_law_housing_elements(hcd_status_table: BITable, dry_run: bool) ->
                     f" from {airtable_6cycle_status} to {hcd_6cycle_status}"
                 )
             else:
-                airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].update(
-                    airtable_row["id"],
-                    {"HE Compliance Home3": hcd_6cycle_status},
-                )
+                try:
+                    airtable_bases.yimby_law_housing_elements.tables["HCD Cities"].update(
+                        airtable_row["id"],
+                        {"HE Compliance Home3": hcd_6cycle_status},
+                    )
+                except HTTPError as e:
+                    if e.response.headers.get("Content-Type").startswith("application/json"):
+                        log.error(f"Error updating {juri} in Airtable: {e.response.json()}")
+                        log.error(f"Record: {pformat({'HE Compliance Home3': hcd_6cycle_status})}")
+                        raise RuntimeError(f"Error updating {juri} in Airtable: {e.response.json()}") from e
+                    raise e
+
     return changes
 
 
@@ -460,7 +484,7 @@ def run_scrape_hcd(dry_run: bool = False) -> str:
     if not change_summary:
         change_summary = "No changes detected."
 
-    run_time = datetime.datetime.now(timezone.utc).strftime("%m/%d/%y %H:%M:%S")
+    run_time = datetime.now(UTC).strftime("%m/%d/%y %H:%M:%S")
     if not dry_run:
         airtable_log_table = airtable_bases.he_status_bot.tables["scrapeLog"]
         airtable_log_table.create({"runTime": run_time, "differences": change_summary})
