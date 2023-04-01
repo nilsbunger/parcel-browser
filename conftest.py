@@ -1,9 +1,8 @@
 import pytest
+import requests
 from django.core.management import call_command
 
 from mygeo.settings import BASE_DIR
-
-import requests
 
 
 # Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.

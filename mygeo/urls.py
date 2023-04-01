@@ -8,16 +8,16 @@ from django.views.defaults import page_not_found
 
 from co.co_api import api as co_api
 from mygeo import settings
+from props.api import props_api
 from userflows.api import userflows_api
 from world.api import world_api
-from props.api import props_api
 from world.infra import frontend_proxy_view
 
 # from userflows.api import userflows_api
 
 
 def trigger_error(request):
-    pass
+    division_by_zero = 1 / 0
 
 
 def check_if_superuser(user):

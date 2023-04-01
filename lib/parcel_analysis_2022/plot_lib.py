@@ -1,5 +1,4 @@
 # Helper functions to plot geographical data
-from typing import Union
 
 import geopandas
 import matplotlib.pyplot as plt
@@ -46,7 +45,7 @@ def plot_new_buildings(
     too_low_topos: GeoDataFrame,
     new_buildings: list[Polygon],
     street_edges: MultiLineString,
-    flag_poly: Union[Polygon, None],
+    flag_poly: Polygon | None,
 ):
     fig = plt.figure(f"new_buildings-{parcel.model.apn}")
     ax = fig.add_subplot()
@@ -108,7 +107,7 @@ def plot_cant_build(
     buffered_buildings: Polygonal,
     setbacks: list[Polygonal],
     too_steep: list[Polygonal],
-    flag_poly: Union[Polygon, None],
+    flag_poly: Polygon | None,
     street_edges: MultiLineString,
 ):
     fig = plt.figure(f"cant_build-{parcel.model.apn}")

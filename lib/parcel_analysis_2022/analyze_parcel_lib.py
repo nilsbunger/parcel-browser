@@ -542,7 +542,7 @@ def analyze_one_parcel(
         "FAR_ratio": max_far,
     }
 
-    datetime_ran = datetime.datetime.now(datetime.timezone.utc)
+    datetime_ran = datetime.datetime.now(datetime.UTC)
     # Save it as a database model, and return it
     dev_scenarios_dict = [x.dict(exclude={"constr_costs"}) for x in dev_scenarios]
     al_defaults = {

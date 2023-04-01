@@ -139,7 +139,7 @@ class PropertyListing(models.Model):
         """Find all stale listings, meaning ones that haven't been seen in N days, and mark them as "MISSING".
         Returns a stats dictionary."""
         listings = cls.active_listings_queryset().prefetch_related("parcel")
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         stale_listings = []
         stats = defaultdict(int)
         logging.info("Looking for stale listings:")

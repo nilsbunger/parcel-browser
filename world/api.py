@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 import tempfile
 import time
 import traceback
@@ -10,9 +9,9 @@ from ninja import NinjaAPI, Query
 from ninja.pagination import paginate
 from ninja.security import django_auth
 
+from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.mapbox import get_temporary_mapbox_token
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_one_parcel
-from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.listings_lib import address_to_parcel
 from mygeo.util import field_exists_on_model

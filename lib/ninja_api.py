@@ -1,7 +1,5 @@
-from abc import ABCMeta
-from typing import Generic, TypeVar, Union
+from typing import Generic, TypeVar
 
-from ninja import ModelSchema, Schema
 from pydantic.generics import GenericModel
 
 # Base class for API responses using Django-ninja. In typescript, the apiRequest() parses out these fields.
@@ -18,4 +16,4 @@ ResponseDataSchema = TypeVar("ResponseDataSchema")
 class ApiResponseSchema(GenericModel, Generic[ResponseDataSchema]):
     errors: bool
     message: str
-    data: Union[ResponseDataSchema, None]
+    data: ResponseDataSchema | None

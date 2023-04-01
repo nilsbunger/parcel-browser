@@ -1,7 +1,6 @@
 import json
 import re
 from math import sqrt
-from typing import Union
 
 import django.contrib.gis.geos
 import geopandas
@@ -29,8 +28,6 @@ from shapely.geometry import (
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
-from .shapely_lib import multi_line_string_split
-from .types import ParcelDC, Polygonal
 from world.models import (
     BuildingOutlines,
     Parcel,
@@ -39,6 +36,9 @@ from world.models import (
     TransitPriorityArea,
     ZoningBase,
 )
+
+from .shapely_lib import multi_line_string_split
+from .types import ParcelDC, Polygonal
 
 
 def aspect_ratio(extents):
@@ -813,7 +813,7 @@ def split_lot(parcel_geom: MultiPolygon, buildings: GeoDataFrame, target_second_
     return new_second_lot, new_area_ratio
 
 
-def identify_flag(parcel: ParcelDC, front_street_edge: Union[MultiLineString, LineString]) -> Union[Polygon, None]:
+def identify_flag(parcel: ParcelDC, front_street_edge: MultiLineString | LineString) -> Polygon | None:
     """Will return a polygon representing the area of the "flag handle" if the lot is a flag.
     If it isn't, returns None. Uses Binary search to find when the length of the handle blows up,
     in which case we have the start and end points of the flag.

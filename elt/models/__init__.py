@@ -1,5 +1,5 @@
+from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping
+from .raw_orange_county_road import RawOrangeCountyRoad, raw_orange_county_road_mapping
 from .raw_santa_ana_parcel import RawSantaAnaParcel
 from .raw_santa_ana_zoning import RawSantaAnaZoning, raw_santa_ana_zoning_mapping
-from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping
 from .raw_scag_tpa import RawScagTpa, raw_scag_tpa_mapping
-from .raw_orange_county_road import RawOrangeCountyRoad, raw_orange_county_road_mapping

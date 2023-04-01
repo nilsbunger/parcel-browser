@@ -8,16 +8,10 @@ from django.db.models import DateField, DateTimeField
 
 from mygeo.settings import LOCAL_DB
 from world.models import (
-    AnalyzedListing,
-    HousingSolutionArea,
     Parcel,
     PropertyListing,
     RentalData,
-    TransitPriorityArea,
-    ZoningBase,
-    ZoningMapLabel,
 )
-from world.models.base_models import BuildingOutlines, TpaMapLabel
 from world.models.models import AnalyzedParcel, AnalyzedRoad
 
 

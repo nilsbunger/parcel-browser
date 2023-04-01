@@ -13,6 +13,9 @@ from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 
+from mygeo.settings import TOPO_DB_ALIAS
+from world.models import Parcel, ParcelSlope, Topography, TopographyLoads
+
 from .parcel_lib import (
     get_buildings,
     get_parcels_by_neighborhood,
@@ -21,8 +24,6 @@ from .parcel_lib import (
 )
 from .shapely_lib import regularize_to_multipolygon, yield_interiors
 from .types import ParcelDC
-from mygeo.settings import TOPO_DB_ALIAS
-from world.models import Parcel, ParcelSlope, Topography, TopographyLoads
 
 # We need this to set up Django before any parallelization to work.
 # This is because when a new process is spawned, its memory isn't copied

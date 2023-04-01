@@ -1,5 +1,4 @@
 from django.db import models
-from ninja import Schema
 from pydantic import BaseModel, Extra
 
 from lib.util import LongLat

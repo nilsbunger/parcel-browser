@@ -1,14 +1,15 @@
 import logging
-from typing import NamedTuple
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema
 from ninja.security import django_auth
-from pydantic import BaseModel, Extra
-from django.http.response import Http404
+from pydantic import Extra
+
 from facts.models import AddressFeatures, StdAddress
 from lib.ninja_api import ApiResponseSchema
+
 from .models import PropertyProfile
 from .schema import PropertyProfileOut
 

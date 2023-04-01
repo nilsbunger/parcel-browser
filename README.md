@@ -84,6 +84,16 @@ using the `--apns` option. For example:
 You can take that output and load it as a fixture. See `conftest.py` to either append to the existing fixtures 
 or create a new one and load it in that file.
 
+# Code quality and style
+
+Tools we use, and how to run them. You should run these before committing code:
+* Python:
+  * `black .` : autoformat python code (and write changes to files)
+  * `ruff check .`: Lint python code
+* Typescript:
+  * `yarn lint`: Run eslint
+  * `yarn prettier`: autoformat typescript code (and write changes to files)
+
 # Simulating the production environment locallly
 
 You don't usually need to do this, but if you need to debug an environment more similar to production,

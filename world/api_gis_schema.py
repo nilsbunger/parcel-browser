@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Optional
+from typing import Any
 
 from ninja import ModelSchema, Schema
 from pydantic import Field
@@ -119,7 +119,7 @@ class ListingsFilters(Schema):
 class RentalRatesSchema(ModelSchema):
     lat: float
     long: float
-    sqft: Optional[int]
+    sqft: int | None
     rent_mean: int
     rent_75_percentile: int
 
@@ -151,7 +151,7 @@ class AnalysisResponseSchema(Schema):
 
 
 class ParcelSchema(ModelSchema):
-    ab2011_result: Optional[EligibilityCheck] = None
+    ab2011_result: EligibilityCheck | None = None
 
     class Config:
         model = Parcel

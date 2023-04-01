@@ -1,9 +1,10 @@
 import base64
 import json
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Callable, NewType, Optional, Union
+from typing import Any, NewType
 
 import requests
 from bs4 import BeautifulSoup
@@ -16,7 +17,7 @@ class BIRow:
     data: list[str]
     column_names: list[str]
 
-    def __getitem__(self, item: Union[int, str]) -> str:
+    def __getitem__(self, item: int | str) -> str:
         if isinstance(item, int):
             return self.data[item]
         elif isinstance(item, str):
@@ -24,7 +25,7 @@ class BIRow:
         else:
             raise TypeError(f"Invalid type for BIRow index: {type(item)}")
 
-    def __setitem__(self, key: Union[int, str], value: str) -> None:
+    def __setitem__(self, key: int | str, value: str) -> None:
         if isinstance(key, int):
             self.data[key] = value
         elif isinstance(key, str):
@@ -37,25 +38,25 @@ SelectColumns = NewType("SelectColumns", list[str])
 
 
 class BITable(BaseModel):
-    table_name: Optional[str]  # for descriptive purposes only
+    table_name: str | None  # for descriptive purposes only
     column_names: list[str]
     index_col: int
     rows: list[BIRow] = []  # note: pydantic correctly handles mutable default
-    _row_dict: Optional[dict[str, Union[list[BIRow], BIRow]]] = PrivateAttr()
+    _row_dict: dict[str, list[BIRow] | BIRow] | None = PrivateAttr()
     _col_idx: dict[str, int] = PrivateAttr()
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self._row_dict = None
 
-    def add_row(self, row: Union[list[str], BIRow]) -> None:
+    def add_row(self, row: list[str] | BIRow) -> None:
         if isinstance(row, BIRow):
             self.rows.append(row)
         else:
             self.rows.append(BIRow(data=row, column_names=self.column_names))
 
     @property
-    def row_dict(self) -> dict[str, Union[list[BIRow], BIRow]]:
+    def row_dict(self) -> dict[str, list[BIRow] | BIRow]:
         if self._row_dict is None:
             self._row_dict = {}
             for row in self.rows:
@@ -189,13 +190,13 @@ class PowerBIScraper:
         return [x["Name"] for x in table["Properties"]]
 
     @staticmethod
-    def _decompress_col_mapper(col_def, value_dict) -> Callable[[Any], Union[str, int, datetime, None]]:
+    def _decompress_col_mapper(col_def, value_dict) -> Callable[[Any], str | int | datetime | None]:
         # value_dict: keys are 'D0', 'D1', ... representing column names, and each value is a list which is indexed into
         # col_def: a dict containing keys:
         #   'T': column type -- 1 means indexed integer (index into value_dict); 7 means timestamp.
         #   'DN': column name -- exists if T=1, and is the key into value_dict
         # return a function that takes an encoded value for this column and returns the decoded value
-        def try_timestamping(x) -> Optional[datetime]:
+        def try_timestamping(x) -> datetime | None:
             ts = datetime.fromtimestamp(x / 1000, tz=timezone.utc) if isinstance(x, int) else None
             if not ts and x:
                 print("Note: Type error in datetime conversion of " + str(x))

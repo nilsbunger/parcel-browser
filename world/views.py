@@ -1,12 +1,8 @@
 import json
 import pprint
-from itertools import chain
 
-import geopandas
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.serializers import serialize
-from django.http import HttpResponse, HttpResponseNotFound
-from django.shortcuts import render
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import ListView
@@ -15,12 +11,10 @@ from vectortiles.mixins import BaseVectorTileView
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
-from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.types import CheckResultEnum
 from mygeo import settings
 from world.infra.django_cache import h3_cache_page
 from world.models import (
-    BuildingOutlines,
     HousingSolutionArea,
     Parcel,
     Roads,
