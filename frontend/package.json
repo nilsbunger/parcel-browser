@@ -3,6 +3,7 @@
   "description": "Frontend for Parsnip by Home3",
   "private": true,
   "version": "0.0.1",
+  "source": "src/index.html",
   "//": [
     "type:module means treat everything as an ES module (import / export syntax) without requiring .mjs files",
     "exports in package.json is not supported in parcel yet (until 2.8.4): https://github.com/parcel-bundler/parcel/issues/4155",
@@ -21,6 +22,18 @@
     "prettify": "prettier --write .",
     "test": "jest",
     "___old___build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
     "@parcel/compressor-gzip": "^2.8.3",
@@ -94,17 +107,5 @@
     "use-immer": "^0.7.0",
     "vite": "^4.2.1",
     "zod": "^3.19.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }

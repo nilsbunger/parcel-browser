@@ -13,7 +13,7 @@ When you've completed setup, you're ready to run. You need to run frontend and b
 
 1. Make sure the Mamba environment is activated:
 
-   `mamba activate mamba-parsnip`
+   `mamba activate parsnip`
 
 0. Start the frontend server:
    
@@ -222,6 +222,24 @@ We use the `LOCAL_DB=1` flag in our django app to select your local DB instance.
 
 Note: it's smart to inspect the json file to make sure no other STDOUT output
 went into it.
+
+# Upgrading the mamba environment
+
+When upgrading python or other system packages we will need to update the mamba env. 
+
+1. Move the old environment to a backup. eg:
+
+   `conda rename -n parsnip parsnip-3-9`
+2. Update mamba-env.yml file with correct versions of packages
+3. Create new environment: 
+
+   `mamba env create -f mamba-env.yml`
+4. Update python packages:
+
+    `mamba activate parnsip`
+
+    `poetry install`
+4. Update `Dockerfile`, `fly.toml`, `pyproject.toml` with new package versions as needed.
 
 # Github Actions
 

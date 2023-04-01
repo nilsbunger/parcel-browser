@@ -1,14 +1,13 @@
 # Actual production run
-10 11 * * * mamba run -n mamba-parsnip python manage.py scrape_hcd
+10 11 * * * mamba run -n parsnip python manage.py scrape_hcd
 
 #### TEST ENTRIES, not used:
 
 ## Test every 4 hours with dry run and skip emails
-# 0 */4 * * * mamba run -n mamba-parsnip python manage.py scrape_hcd --dry-run --no-emails
+# 0 */4 * * * mamba run -n parsnip python manage.py scrape_hcd --dry-run --no-emails
 
 ## Test exception reporting, generate one every day! (to remove later)
-# 10 22 * * * mamba run -n mamba-parsnip python manage.py scrape_hcd --try-exception
+# 10 22 * * * mamba run -n parsnip python manage.py scrape_hcd --try-exception
 
 ## Silly print statement to confirm we can see output
 # 0 * * * * echo "Hello from crontab!"
-

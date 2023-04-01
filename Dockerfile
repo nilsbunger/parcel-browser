@@ -41,11 +41,12 @@ COPY mamba-env.yml .
 RUN mamba env create -f mamba-env.yml \
 # Install gcc for compiling psycopg2 (it's recommended to build from source for
 # production)
-  && mamba install -n mamba-parsnip gcc_linux-64 \
+  && mamba install -n parsnip gcc_linux-64 \
+  && mamba init \
   && mamba clean -all -y
 
-# Activate environment:
-SHELL ["conda", "run", "-n", "mamba-parsnip", "/bin/bash", "-c"]
+# Make all Docker RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "parsnip", "/bin/bash", "-c"]
 
 ### INSTALL YARN (requires conda env) ####################################################
 RUN npm install --location=global yarn

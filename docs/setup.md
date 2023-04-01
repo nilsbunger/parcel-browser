@@ -40,7 +40,7 @@ From the parsnip directory:
 
 - `mamba env create -f mamba-env.yml` -- creates the conda virual environment, downloading all the system packages 
 you need.
-- `mamba activate mamba-parsnip` -- activate the virtual environment we created. You need to do this whenever you 
+- `mamba activate parsnip` -- activate the virtual environment we created. You need to do this whenever you 
 open a new terminal window. It's the equivalent of activating a python virtual env, but for the whole system 
 environnment.
 - `cd frontend && yarn install && cd ..` -- install JS dependencies for frontend.
@@ -50,4 +50,3 @@ environnment.
  
 Note: You'll periodically need to update frontend and backend dependencies as the code changes with `poetry install` and `yarn install` as 
 above.
-

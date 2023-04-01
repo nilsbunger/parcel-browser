@@ -8,7 +8,7 @@ django_settings_module = "mygeo.settings"
 [tool.ruff]
 # Ruff linter
 line-length = 120
-target-version = "py39"
+target-version = "py311"
 ignore-init-module-imports = true
 
 select = [
@@ -60,7 +60,7 @@ exclude = [
 # See Black command line options here:
 # https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
 line-length = 118
-target-version = ["py39"]
+target-version = ["py311"]
 workers = 4
 verbose = false
 extend-exclude = ".*migrations/"
@@ -73,7 +73,7 @@ authors = ["Nils Bunger <nilsbunger@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 django = "~4.1"
 django-environ = "^0.9.0"
 whitenoise = "^6.2.0"
