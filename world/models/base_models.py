@@ -1,4 +1,9 @@
-from django.contrib.gis.db import models
+from mygeo.settings import TEST_ENV
+
+if TEST_ENV:
+    from world.infra.cicd_models import models
+else:
+    from django.contrib.gis.db import models
 from pydantic import BaseModel
 
 
