@@ -62,9 +62,6 @@ DEBUG = DEV_ENV and not TEST_ENV
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
     eprint("**** TEST ENVIRONMENT ****")
-    # from world.infra.cicd_models import models as cicd_models
-
-    # print(cicd_models)
 
 eprint(f"**** DEBUG == {DEBUG} ****")
 # if not BUILD_PHASE:
@@ -268,9 +265,6 @@ else:
             "PORT": 5432,
         },
     }
-    # if TEST_ENV:
-    #     # In test environment we stub out PostGIS stuff.
-    #     DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
 
     DATABASES["basedata"] = DATABASES["default"].copy()
     DATABASES["basedata"]["TEST"] = {"MIRROR": "default"}

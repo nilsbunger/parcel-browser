@@ -1,5 +1,4 @@
 # This is an auto-generated Django model module created by ogrinspect.
-
 from django.contrib.gis.db import models
 
 
