@@ -1,0 +1,74 @@
+
+# Github actions documentation: https://docs.github.com/en/actions
+# Runner images and what's in them:
+#   General: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+#   Detail: https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md
+# Marketplace for Actions (used in "uses" clauses):
+#   https://github.com/marketplace?type=actions
+
+name: Django CICD backend test
+on: [pull_request, push] # activates the workflow when there is a push or pull request in the repo
+# Alternative syntax to specify a branch:
+# on:
+#  push:
+#    branches:
+#      - main
+#  pull_request:
+#    branches:
+#      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04 # has postgres 14.7 installed, which is helpful to avoid having to install it ourselves
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Start PostgreSQL
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres psql -c "CREATE DATABASE test_db;"
+          sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django';"
+          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO django;"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Set up Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run black (check mode)
+        run: |
+          poetry run black --check .
+
+      - name: Run ruff
+        run: |
+          ruff
+
+      - name: Run pytest
+        run: |
+          poetry run pytest
