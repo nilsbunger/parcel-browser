@@ -25,6 +25,17 @@ jobs:
       DB_NAME: test_db
       DB_USERNAME: django
       DB_PASSWORD: django
+    services:
+      postgres:
+        image: postgis/postgis:14-3.3   # versions available: https://registry.hub.docker.com/r/postgis/postgis/
+        env:
+          # must specify password for PG Docker container image, see: https://registry.hub.docker.com/_/postgres?tab=description&page=1&name=10
+          POSTGRES_PASSWORD: django
+          POSTGRES_DB: django
+        ports:
+            - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
 #    services:
 #      postgres:
@@ -42,11 +53,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Start PostgreSQL 14.x
-        # django tests create their own DB so give user lots of permissions
-        run: |
-          sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django' NOSUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;"
+#      - name: Start PostgreSQL 14.x
+#        # django tests create their own DB so give user lots of permissions
+#        run: |
+#          sudo systemctl start postgresql.service
+#          sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django' NOSUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;"
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4

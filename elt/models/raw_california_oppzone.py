@@ -1,10 +1,5 @@
 # This is an auto-generated Django model module created by ogrinspect.
-from mygeo.settings import TEST_ENV
-
-if TEST_ENV:
-    from django.db import models
-else:
-    from django.contrib.gis.db import models
+from django.contrib.gis.db import models
 
 
 class RawCaliforniaOppzone(models.Model):
