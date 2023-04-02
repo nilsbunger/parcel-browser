@@ -43,11 +43,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Start PostgreSQL 14.x
+        # django tests create their own DB so give user lots of permissions
         run: |
           sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "CREATE DATABASE test_db;"
-          sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django';"
-          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO django;"
+#          sudo -u postgres psql -c "CREATE DATABASE test_db;"
+          sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django' NOSUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;"
+#          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO django;"
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
