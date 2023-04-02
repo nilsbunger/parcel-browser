@@ -15,7 +15,7 @@ whitelist_noauth = [
     "/dj/accounts/reset/done/",
     "/1",  # catch-all React view (react router returns 200)
 ]
-whitelist_404 = ["/api/", "/api/co/", "/api/userflows/"]
+whitelist_404 = ["/api/", "/api/co/", "/api/userflows/", "/api/properties/"]
 
 
 @pytest.mark.django_db(databases=["default"])
@@ -58,6 +58,7 @@ class TestAuthenticationPaths:
         url_patterns = urls.urlpatterns
         failures = []
         tests = 0
+        response_codes = []
         for url in mygeo.util.each_url_with_placeholder(url_patterns):
             # print (f"Testing URL: {url}")
             tests += 1
@@ -66,6 +67,7 @@ class TestAuthenticationPaths:
                     response = client.get(url)
             else:
                 response = client.get(url)
+                response_codes.append(f"{url} returned code {response.status_code}")
                 if url in whitelist_noauth:
                     assert response.status_code == 200
                 elif response.status_code not in [302, 401, 405]:
