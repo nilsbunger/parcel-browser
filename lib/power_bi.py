@@ -3,7 +3,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, NewType
 
 import requests
@@ -197,7 +197,7 @@ class PowerBIScraper:
         #   'DN': column name -- exists if T=1, and is the key into value_dict
         # return a function that takes an encoded value for this column and returns the decoded value
         def try_timestamping(x) -> datetime | None:
-            ts = datetime.fromtimestamp(x / 1000, tz=UTC) if isinstance(x, int) else None
+            ts = datetime.fromtimestamp(x / 1000, tz=timezone.utc) if isinstance(x, int) else None
             if not ts and x:
                 print("Note: Type error in datetime conversion of " + str(x))
             return ts

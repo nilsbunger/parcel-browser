@@ -17,7 +17,7 @@ from world.infra import frontend_proxy_view
 
 
 def trigger_error(request):
-    division_by_zero = 1 / 0  # noqa: F841 - unused variable
+    division_by_zero = 1 / 0
 
 
 def check_if_superuser(user):

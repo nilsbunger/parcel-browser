@@ -78,7 +78,7 @@ class MyItemPipeline:
         except Exception as e:
             print(e)
             traceback.print_exc()
-            raise CloseSpider() from e
+            raise CloseSpider()
 
 
 class SanDiegoMlsSpider(scrapy.Spider):

@@ -22,7 +22,7 @@ userflows_api = NinjaAPI(
 class LoginSchema(Schema):
     email: str
     password: constr(min_length=8, max_length=32)
-    rememberMe: bool = False  # noqa: n806 - should be lowercase
+    rememberMe: bool = False
 
 
 class UserSchema(ModelSchema):

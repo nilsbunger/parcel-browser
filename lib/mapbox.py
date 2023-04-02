@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -14,7 +14,7 @@ def get_temporary_mapbox_token():
     headers = {"Content-Type": "application/json"}
 
     payload = {
-        "expires": (datetime.now(tz=UTC) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "expires": (datetime.now(tz=timezone.utc) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "scopes": [
             "styles:read",
             "styles:tiles",

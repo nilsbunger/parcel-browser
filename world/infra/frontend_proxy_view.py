@@ -50,7 +50,7 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     except HTTPError as e:
         if e.code == 404:
             log.error(f"Got 404 from upstream... url={upstream_url}")
-            raise Http404 from HTTPError
+            raise Http404
         elif e.code == 500:
             log.error(f"Got 500 from upstream... url={upstream_url}")
             return HttpResponse("Frontend Server Error", status=500)

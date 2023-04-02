@@ -1,5 +1,6 @@
 import re
 from abc import ABC, abstractmethod
+from typing import Any
 
 from django.contrib.gis.db.models.functions import Distance
 from pydantic import BaseModel
@@ -17,7 +18,7 @@ class EligibilityCheck(BaseModel):
     notes: list[str] = []
     children: list["EligibilityCheck"] = []
 
-    def __init__(self, name: str, description: str, **data: any) -> None:
+    def __init__(self, name: str, description: str, **data: Any) -> None:
         super().__init__(name=name, description=description, **data)
         # noinspection PyTypeChecker
 
@@ -67,10 +68,7 @@ class OrCheck(LogicCheck):
 # Anything w/ CC, CN, CO, CR, CP, or CV is eligible
 class PrincipallyPermittedUseCheck(EligibilityCheck):
     def __init__(self) -> None:
-        description = (
-            "Office, retail or parking is a Principally Permitted use (no Conditional User Permit or"
-            " Discretionary Review required)"
-        )
+        description = "Office, retail or parking is a Principally Permitted use (no Conditional User Permit or Discretionary Review required)"
         super().__init__("Principally Permitted Use", description)
 
     def run(self, parcel: Parcel) -> CheckResultEnum:

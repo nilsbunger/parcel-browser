@@ -19,8 +19,8 @@ class Command(BaseCommand):
         log.setLevel(logging.INFO)
         if options["cmd_name"] == "reset_credits":
             log.info("Removing out of credit errors from our Rentometer data cache")
-            no_credits = RentalData.objects.filter(details__status_code=402)  # 402 means no credits available
-            no_credits.delete()
+            l = RentalData.objects.filter(details__status_code=402)  # 402 means no credits available
+            l.delete()
         elif options["cmd_name"] == "dedup":
             rd_dupes = (
                 RentalData.objects.values("parcel_id", "br", "ba").annotate(cnt=Count("parcel_id")).filter(cnt__gt=1)

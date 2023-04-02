@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Polygon
@@ -46,9 +46,7 @@ class RawSantaAnaParcel(models.Model):
         parcel.geom = Polygon(poly[0])
         sd = arcgis_data["properties"]["LegalStartDate"]
         if sd:
-            parcel.legal_start_date = datetime.fromtimestamp(
-                arcgis_data["properties"]["LegalStartDate"] // 1000, tz=UTC
-            )
+            parcel.legal_start_date = datetime.fromtimestamp(arcgis_data["properties"]["LegalStartDate"] // 1000)
         else:
             parcel.legal_start_date = None
         parcel.assessment_no = arcgis_data["properties"]["AssessmentNo"].replace("-", "")

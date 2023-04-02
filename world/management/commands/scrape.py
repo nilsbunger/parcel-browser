@@ -43,7 +43,7 @@ def zip_groups_from_zips(zips):
     # Take a list of zip codes, and turn them into a random groups of variable # of zips for querying against.
     zips = zips.copy()
     # Make zipcode list stable for all runs in one day for debugging, by using a random seed based on date.
-    ordinal_date = datetime.datetime.now(tz=datetime.UTC).date().toordinal()
+    ordinal_date = datetime.date.today().toordinal()
     rand = random.Random(ordinal_date)
     rand.shuffle(zips)
     zip_groups = []
@@ -90,7 +90,7 @@ class Command(BaseCommand):
         parser.add_argument("--parcel", action="store", help="Run analysis only (no scrape) on a single parcel")
         parser.add_argument("--single-process", action="store_true", help="Run analysis with only a single process")
 
-    def handle(self, *args, **options):  # noqa: PLR0915 - too many statements.
+    def handle(self, *args, **options):
         mgmt_cmd_lib.init(verbose=options["verbose"])
         # -----
         # 1. Scrape latest listings if directed to.
@@ -106,8 +106,7 @@ class Command(BaseCommand):
 
             zip_groups = [[options["fetch_zip"]]] if options["fetch_zip"] else zip_groups_from_zips(AllSdCityZips)
             logging.info(
-                f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, '
-                f'Cache={options["no_cache"] is False}'
+                f'Fetching {len(zip_groups)} groups of zip codes. Local={options["fetch_local"] is True}, Cache={options["no_cache"] is False}'
             )
             stats = scrape_san_diego_listings_by_zip_groups(
                 zip_groups, localhost_mode=options["fetch_local"], cache=not options["no_cache"]
@@ -201,7 +200,7 @@ class Command(BaseCommand):
                 # Run on batch
                 parcels: list[Parcel]
                 property_listings: list[PropertyListing]
-                parcels, property_listings = zip(*parcels_to_analyze, strict=True)
+                parcels, property_listings = zip(*parcels_to_analyze)
             logging.info(f"Running parcel analysis on {len(property_listings)} listings")
             sd_utm_crs = get_utm_crs()
             # NOTE: Make sure changes to the call here are also made in api.redo_analysis
