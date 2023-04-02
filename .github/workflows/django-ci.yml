@@ -46,9 +46,7 @@ jobs:
         # django tests create their own DB so give user lots of permissions
         run: |
           sudo systemctl start postgresql.service
-#          sudo -u postgres psql -c "CREATE DATABASE test_db;"
           sudo -u postgres psql -c "CREATE USER django WITH PASSWORD 'django' NOSUPERUSER CREATEDB CREATEROLE INHERIT LOGIN;"
-#          sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE test_db TO django;"
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -60,6 +58,7 @@ jobs:
         with:
           node-version: 16
 
+      # GDAL is a dependency for any PostGIS field.
       - name: Install GDAL 3.4
         run: |
           sudo add-apt-repository ppa:ubuntugis/ppa -y
