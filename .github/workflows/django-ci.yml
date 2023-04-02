@@ -23,15 +23,15 @@ jobs:
     env:
       DB_HOST: localhost
       DB_NAME: test_db
-      DB_USERNAME: django
-      DB_PASSWORD: django
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
     services:
       postgres:
         image: postgis/postgis:14-3.3   # versions available: https://registry.hub.docker.com/r/postgis/postgis/
         env:
           # must specify password for PG Docker container image, see: https://registry.hub.docker.com/_/postgres?tab=description&page=1&name=10
-          POSTGRES_PASSWORD: django
-          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         ports:
             - 5432:5432
         # needed because the postgres container does not provide a healthcheck
