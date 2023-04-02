@@ -23,13 +23,13 @@ class PermissiveSchema(Schema, extra=Extra.allow):
 
 class PropertyCreateFormFieldsSchema(Schema):
     # formFields:
-    streetAddress: str
+    streetAddress: str  # noqa: N815 - mixed case
     city: str
     zip: str
 
 
 class CreatePropertySchema(Schema):
-    formFields: PropertyCreateFormFieldsSchema
+    formFields: PropertyCreateFormFieldsSchema  # noqa: N815 - mixed case
     features: AddressFeatures
 
 

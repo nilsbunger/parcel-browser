@@ -117,7 +117,7 @@ class Command(BaseCommand):
                 defaults={
                     "lot_size": lot_size,
                     "building_size": parcel.total_lvg_field,
-                    "skip": skip_reason != "",
+                    "skip": bool(skip_reason),
                     "skip_reason": skip_reason,
                 },
             )

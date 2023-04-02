@@ -14,7 +14,7 @@ def field_exists_on_model(model, field: str) -> bool:
         # Check if this exists
         model._meta.get_field(field)
         return True
-    except:
+    except Exception:
         return False
 
 

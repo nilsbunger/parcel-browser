@@ -47,7 +47,7 @@ class TestAuthenticationPaths:
     def test_account_login(self, client: Client):
         response = client.get("/account/login/")
         assert response.status_code == 200
-        User = django_apps.get_model(settings.AUTH_USER_MODEL)
+        User = django_apps.get_model(settings.AUTH_USER_MODEL)  # noqa: n806 - should be lowercase
         foo = User.objects.all()
         foo = list(foo)
         print(foo)
@@ -68,15 +68,14 @@ class TestAuthenticationPaths:
                 response = client.get(url)
                 if url in whitelist_noauth:
                     assert response.status_code == 200
-                else:
-                    if response.status_code not in [302, 401, 405]:
-                        if response.status_code == 404:
-                            if url in whitelist_404:
-                                continue
-                        problem = f"{url} returned code {response.status_code}, expected 302, 401, or 405"
-                        print(f"Problem: {problem}")
-                        failures.append(problem)
-                    # assert response.status_code == 302
+                elif response.status_code not in [302, 401, 405]:
+                    if response.status_code == 404:
+                        if url in whitelist_404:
+                            continue
+                    problem = f"{url} returned code {response.status_code}, expected 302, 401, or 405"
+                    print(f"Problem: {problem}")
+                    failures.append(problem)
+                # assert response.status_code == 302
         print(f"Finished testing {tests} URLs")
         failure_str = "\n  -->".join(failures)
         assert len(failures) == 0, f"Failed URLs: {failure_str}"

@@ -21,7 +21,7 @@ class CheckResultEnum(str, Enum):
     failed: str = "failed"
     error: str = "error"
 
-    def or_check(self, other: "CheckResultEnum") -> "CheckResultEnum":
+    def or_check(self, other: "CheckResultEnum") -> "CheckResultEnum":  # noqa: PLR0911 -- too many returns
         if self.passed in [self, other]:
             return CheckResultEnum(self.passed)
         elif self.assumed_pass in [self, other]:
@@ -39,7 +39,7 @@ class CheckResultEnum(str, Enum):
         elif self.error in [self, other]:
             return CheckResultEnum(self.error)
 
-    def and_check(self, other: "CheckResultEnum") -> "CheckResultEnum":
+    def and_check(self, other: "CheckResultEnum") -> "CheckResultEnum":  # noqa: PLR0911 -- too many returns
         if self.error in [self, other]:
             return CheckResultEnum(self.error)
         elif self.failed in [self, other]:

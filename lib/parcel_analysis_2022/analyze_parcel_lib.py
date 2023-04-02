@@ -132,7 +132,7 @@ def _get_existing_floor_area_stats(parcel: ParcelDC, buildings: GeoDataFrame):
     # existing_living_area + carport/garage area
     existing_floor_area = existing_living_area + garage_area
 
-    existing_FAR = existing_floor_area / parcel_size
+    existing_FAR = existing_floor_area / parcel_size  # noqa: N806 (mixed-case variable)
     if buildings is not None:
         main_building_area = buildings[buildings.building_type == "MAIN"].geometry.area.sum()
         accessory_buildings_area = buildings[buildings.building_type == "ACCESSORY"].geometry.area.sum()
@@ -296,7 +296,7 @@ def _dev_potential_by_far(
     return valid_scenarios
 
 
-def analyze_one_parcel(
+def analyze_one_parcel(  # noqa: PLR0915 -- too many statements
     parcel_model: Parcel,
     utm_crs: pyproj.CRS,
     property_listing: PropertyListing,
@@ -402,7 +402,7 @@ def analyze_one_parcel(
         percentile=re_params.existing_unit_rent_percentile,
         interpolate_distance=interp_dist,
     )
-    existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents))
+    existing_units_with_rent = list(zip([x.dict() for x in existing_units], existing_units_rents, strict=True))
 
     if (
         not len(existing_units_rents)
