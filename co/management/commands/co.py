@@ -26,7 +26,8 @@ class CoCmd(Enum):
 
 
 def get_nearby_parcels_and_roads_df(model_obj, distance, crs):
-    """Return dataframes of nearby parcels and roads within a distance (in meters) of a Django model object w/ a geom field."""
+    """Return dataframes of nearby parcels and roads within a distance (in meters) of a Django model
+    object w/ a geom field."""
 
     # for fast (not 100% accurate) distance calculations, keep calculation in degrees.
     # Lat and long delta aren't necessarily the same, so we use the average of them.
@@ -74,7 +75,7 @@ class Command(BaseCommand):
         parser.add_argument("--xoxo", action="store_true", help="kiss")
         mgmt_cmd_lib.add_common_arguments(parser)
 
-    def evaluate_ab2011_from_roads(self):
+    def evaluate_ab2011_from_roads(self):  # noqa: PLR0915 -- too many statements
         sd_utm_crs = get_utm_crs()
         # TODO: We don't clean up ANalyzedRoad entries that should be excluded. Maybe we should list *all* roads in
         #  AnalyzedRoads, even ones we aren't analyzing. If we do that we need to index on exclusion criteria.
@@ -111,7 +112,8 @@ class Command(BaseCommand):
                 )
                 # Plot background items
                 logging.info(
-                    f"Calculating idx={idx} road roadsegid={road_under_test.roadsegid} : {road_under_test.abloaddr}-{road_under_test.abhiaddr} {road_under_test.rd30full}"
+                    f"Calculating idx={idx} road roadsegid={road_under_test.roadsegid} : "
+                    f"{road_under_test.abloaddr}-{road_under_test.abhiaddr} {road_under_test.rd30full}"
                     f". Length={round(road_under_test_df.length.values[0], 1)} meters"
                 )
                 parcels_blob_df = parcels_df.dissolve()
@@ -246,28 +248,30 @@ class Command(BaseCommand):
         models_to_utm_gdf([main_parcel], sd_utm_crs, fields=["apn", "address", "geom"])
         _, roads_df, parcels_df = get_nearby_parcels_and_roads_df(main_parcel, distance=100, crs=sd_utm_crs)
 
-        for idx, row in roads_df.iterrows():
-            sys.stderr.write(f"{row['rd30full']} {row['length']}, dist={roads[idx].distance}\n")
-            points = nearest_points(row["geometry"], parcel_df["geometry"][0])
-            ### UPDATE THIS: ANGLE needs to be angle of ROAD relative to angle of
-            ### this line... we want lines that are perpendicular to the road
-
-            raise AssertionError()
-            angle = arctan2(points[1].y - points[0].y, points[1].x - points[0].x)
-            angle = abs(degrees(angle))
-            sys.stderr.write(f"angle={angle}\n")
-            if idx == 0:
-                near_lines.append(LineString([points[0], points[1]]))
-            sys.stderr.write(f"{points}")
-
-        fig = plt.figure(parcel.address)
-        ax = fig.add_subplot()
-        plt.title(parcel.apn + ":" + parcel.address)
-        roads_xlat.plot(ax=ax, color="red")
-        near_parcels_xlat.plot(ax=ax, color="gray")
-        parcel_xlat.plot(ax=ax, color="blue")
-        _, near_lines_xlat = normalize_geometries(parcel_df, GeoSeries(near_lines))
-        near_lines_xlat.plot(ax=ax, color="cyan")
+        # Nils March 2023: Commented all this out, it has lots of errors. Seems to be something not built-out yet,
+        #  but I don't remember it.
+        # for idx, row in roads_df.iterrows():
+        #     sys.stderr.write(f"{row['rd30full']} {row['length']}, dist={roads[idx].distance}\n")
+        #     points = nearest_points(row["geometry"], parcel_df["geometry"][0])
+        #     ### UPDATE THIS: ANGLE needs to be angle of ROAD relative to angle of
+        #     ### this line... we want lines that are perpendicular to the road
+        #
+        #     raise AssertionError()
+        #     angle = arctan2(points[1].y - points[0].y, points[1].x - points[0].x)
+        #     angle = abs(degrees(angle))
+        #     sys.stderr.write(f"angle={angle}\n")
+        #     if idx == 0:
+        #         near_lines.append(LineString([points[0], points[1]]))
+        #     sys.stderr.write(f"{points}")
+        #
+        # fig = plt.figure(parcel.address)
+        # ax = fig.add_subplot()
+        # plt.title(parcel.apn + ":" + parcel.address)
+        # roads_xlat.plot(ax=ax, color="red")
+        # near_parcels_xlat.plot(ax=ax, color="gray")
+        # parcel_xlat.plot(ax=ax, color="blue")
+        # _, near_lines_xlat = normalize_geometries(parcel_df, GeoSeries(near_lines))
+        # near_lines_xlat.plot(ax=ax, color="cyan")
         plt.ylim([-100, 100])
         plt.xlim([-100, 100])
         plt.show()

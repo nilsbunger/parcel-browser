@@ -1,4 +1,3 @@
-from django.http import Http404
 import pytest
 
 from facts.models import AddressFeatures, StdAddress
@@ -67,11 +66,11 @@ class TestApi:
         response = client.get("/dj/supadupa")
         assert response.status_code == 404
 
-        prop_under_test = dummy_properties[3]
+        prop_under_test = dummy_properties[3]  # noqa: F841 - unused variable
         path = f"/api/properties/profiles/9999999"
         response = client.get(path)
         assert response.status_code == 404
-        result = response.json()
+        result = response.json()  # noqa: F841 - unused variable
 
 
 ####################

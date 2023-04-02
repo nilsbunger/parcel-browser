@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import datetime
 import os
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import environ
@@ -227,19 +227,19 @@ SILKY_PYTHON_PROFILER = True
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-dbHost = None
-dbPassword = None
+db_host = None
+db_password = None
 local_db_settings = ("127.0.0.1", "parsnip", "postgres", "password")
 if LOCAL_DB:
     eprint("**** LOCAL DATABASE ****")
-    (dbHost, dbName, dbUserName, dbPassword) = local_db_settings
+    (db_host, db_name, db_user_name, db_password) = local_db_settings
 
 elif BUILD_PHASE:
     eprint("**** NO DB - BUILD PHASE ****")
-    (dbHost, dbName, dbUserName, dbPassword) = ("", "", "", "")
+    (db_host, db_name, db_user_name, db_password) = ("", "", "", "")
 else:
     eprint("**** CLOUD DATABASE ****")
-    (dbHost, dbName, dbUserName, dbPassword) = (
+    (db_host, db_name, db_user_name, db_password) = (
         env("DB_HOST"),
         env("DB_NAME"),
         env("DB_USERNAME"),
@@ -257,10 +257,10 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "HOST": dbHost,
-            "NAME": dbName,
-            "USER": dbUserName,
-            "PASSWORD": dbPassword,
+            "HOST": db_host,
+            "NAME": db_name,
+            "USER": db_user_name,
+            "PASSWORD": db_password,
             "PORT": 5432,
         },
     }
@@ -403,7 +403,7 @@ if not DEV_ENV and not TEST_ENV:
 
 LOGGING_CONFIG = "logging.config.dictConfig"
 
-LOG_DIR = f"./log/{datetime.datetime.now():%y-%m-%d}"
+LOG_DIR = f"./log/{datetime.now(tz=UTC):%y-%m-%d}"
 os.makedirs(LOG_DIR, exist_ok=True)
 LOGGING = {
     "version": 1,
@@ -423,7 +423,7 @@ LOGGING = {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": f"{LOG_DIR}/{datetime.datetime.now():%y-%m-%d-%H%M}-debug.log",
+            "filename": f"{LOG_DIR}/{datetime.now(tz=UTC):%y-%m-%d-%H%M}-debug.log",
             "formatter": "verbose",
         },
     },
