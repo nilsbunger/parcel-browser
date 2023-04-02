@@ -116,13 +116,11 @@ beautifulsoup4 = "^4.11.2"
 pytest-django = "^4.5.2"
 pyyaml = "^6.0"
 black = "~23"
-pytest-django = "^4.5.2"
 ruff = "^0.0.257"
 
 [tool.poetry.group.dev.dependencies]
 django-silk = "^5.0.1"
 locust = "^2.12.2"
-pyyaml = "^6.0"
 
 [build-system]
 requires = ["poetry-core"]
