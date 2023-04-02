@@ -20,6 +20,11 @@ on: [pull_request, push] # activates the workflow when there is a push or pull r
 jobs:
   build-and-test:
     runs-on: ubuntu-22.04 # has postgres 14.7 installed, which is helpful to avoid having to install it ourselves
+    env:
+      DB_HOST: localhost
+      DB_NAME: test_db
+      DB_USERNAME: django
+      DB_PASSWORD: django
 
 #    services:
 #      postgres:
@@ -33,11 +38,6 @@ jobs:
 #        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - env:
-          DB_HOST: localhost
-          DB_NAME: test_db
-          DB_USERNAME: django
-          DB_PASSWORD: django
 
       - name: Checkout repository
         uses: actions/checkout@v3
