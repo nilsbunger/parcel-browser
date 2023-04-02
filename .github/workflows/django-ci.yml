@@ -7,7 +7,7 @@
 #   https://github.com/marketplace?type=actions
 
 name: Django CICD backend test
-on: [pull_request, push] # activates the workflow when there is a push or pull request in the repo
+on: [push] # activates the workflow when there is a push or pull request in the repo
 # Alternative syntax to specify a branch:
 # on:
 #  push:
@@ -52,13 +52,6 @@ jobs:
         with:
           node-version: 16
 
-      # GDAL is a dependency for any PostGIS field.
-      - name: Install GDAL 3.4
-        run: |
-          sudo add-apt-repository ppa:ubuntugis/ppa -y
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y gdal-bin=3.4.* libgdal-dev=3.4.*
-
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python -
@@ -74,6 +67,13 @@ jobs:
       - name: Run ruff
         run: |
           ruff check .
+
+      # GDAL is a dependency for any PostGIS field.
+      - name: Install GDAL 3.4
+        run: |
+          sudo add-apt-repository ppa:ubuntugis/ppa -y
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gdal-bin=3.4.* libgdal-dev=3.4.*
 
       - name: Run pytest
         run: |
