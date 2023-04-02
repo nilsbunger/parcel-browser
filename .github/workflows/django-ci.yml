@@ -33,6 +33,12 @@ jobs:
 #        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
+      - env:
+          DB_HOST: localhost
+          DB_NAME: test_db
+          DB_USERNAME: django
+          DB_PASSWORD: django
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
