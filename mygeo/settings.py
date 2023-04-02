@@ -264,6 +264,9 @@ else:
             "PORT": 5432,
         },
     }
+    if TEST_ENV:
+        # In test environment we stub out PostGIS stuff.
+        DATABASES["default"]["ENGINE"] = "django.db.backends.postgresql"
 
     DATABASES["basedata"] = DATABASES["default"].copy()
     DATABASES["basedata"]["TEST"] = {"MIRROR": "default"}
