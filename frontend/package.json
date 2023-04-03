@@ -15,13 +15,13 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "parcel serve src/index.html src/map.ts src/parcel-detail.ts",
+    "dev": "REACT_APP_BACKEND_DOMAIN=http://localhost:8000 parcel serve src/index.html src/map.ts src/parcel-detail.ts",
     "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
+    "localbuild": "REACT_APP_BACKEND_DOMAIN=http://localhost:8000 parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
     "refine": "refine",
     "lint": "eslint . --ext .ts,.tsx",
     "prettify": "prettier --write .",
-    "test": "jest",
-    "___old___build": "parcel build && mkdir -p ../dist/django-templates && mv dist ../dist/static && cp ../dist/static/index.html ../dist/django-templates/"
+    "test": "jest"
   },
   "browserslist": {
     "production": [
