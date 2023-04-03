@@ -33,7 +33,7 @@ async function search(event) {
 
 form.addEventListener("submit", search)
 
-let parcelVectorSource = new VectorTileSource({
+const parcelVectorSource = new VectorTileSource({
   format: new MVT({
     idProperty: "iso_a3",
   }),
@@ -55,7 +55,7 @@ const parcelTileLayer = new VectorTileLayer({
   }),
 })
 
-let topoVectorSource = new VectorTileSource({
+const topoVectorSource = new VectorTileSource({
   format: new MVT({
     idProperty: "iso_a3",
   }),
@@ -82,14 +82,14 @@ const queryString = window.location.search
 const urlParams = new URLSearchParams(queryString)
 const centerStr = urlParams.get("center")?.split(",")
 let viewCenter = fromLonLat([-117.19905688459625, 32.78415286818754]) // 2210 Illion St, San Diego, 92110],
-let zoom = 18
+const zoom = 18
 console.log(viewCenter)
 if (centerStr) {
   viewCenter = [parseFloat(centerStr[0]), parseFloat(centerStr[1])]
 }
 console.log(viewCenter)
 
-let map = new Map({
+const map = new Map({
   layers: [
     new TileLayer({ source: new OSM() }),
     parcelTileLayer,
@@ -125,7 +125,7 @@ map.on(["click"], function (event) {
   console.log("Features:", features[0])
   if (features[0]?.properties_.apn) {
     document.body.style.cursor = "wait"
-    window.location.href = "/dj/parcel/" + features[0].properties_.apn
+    window.location.href = "/dj/parcel/" + (features[0].properties_.apn as string)
   }
   // vtLayer.getFeatures(event.pixel).then(function (features) {
   //     console.log ("Features:", features);
