@@ -12,4 +12,4 @@ dependencies:
   - gdal
   - libpq
 variables:
-  PIP_REQUIRE_VIRTUALENV: ''
+  PIP_REQUIRE_VIRTUALENV: false
