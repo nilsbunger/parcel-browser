@@ -64,9 +64,9 @@ jobs:
         run: |
           poetry run black --check .
 
-#      - name: Run ruff
-#        run: |
-#          ruff check .
+      - name: Run ruff
+        run: |
+          ruff check .
 
       # GDAL is a dependency for any PostGIS field.
       - name: Install GDAL 3.4
