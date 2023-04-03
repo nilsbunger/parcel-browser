@@ -1,0 +1,51 @@
+
+# Github actions documentation: https://docs.github.com/en/actions
+# Runner images and what's in them:
+#   General: https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners
+#   Detail: https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md
+# Marketplace for Actions (used in "uses" clauses):
+#   https://github.com/marketplace?type=actions
+
+name: Parsnip frontend lint and test
+on: [push] # activates the workflow when there is a push or pull request in the repo
+# Alternative syntax to specify a branch:
+# on:
+#  push:
+#    branches:
+#      - main
+#  pull_request:
+#    branches:
+#      - main
+
+jobs:
+  fe-build-and-test:
+    runs-on: ubuntu-22.04 # has postgres 14.7 installed, which is helpful to avoid having to install it ourselves
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: |
+          yarn install
+
+      - name: Run front-end tests (Jest)
+        run: |
+          yarn test
+
+      - name: Run front-end lint (eslint)
+        run: |
+          yarn lint
+
+      - name: Run front-end formatting check (prettier)
+        run: |
+          yarn run prettier --check .
+
+      - name: Run front-end build (parcel) (we don't use these built files though)
+        run: |
+          yarn build

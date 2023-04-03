@@ -1,3 +1,4 @@
 
-# ignore build artifacts
+# ignore build artifacts and misc reports
 dist
+parcel-bundle-reports
