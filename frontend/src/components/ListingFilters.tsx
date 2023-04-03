@@ -20,7 +20,7 @@ function Filter({
   const columnFilterValue = column.getFilterValue()
 
   // Converting to sqft if necessary
-  let modifier = (x) => x
+  const modifier = (x) => x
 
   const sortedUniqueValues = React.useMemo(
     () => (typeof firstValue === "number" ? [] : Array.from(column.getFacetedUniqueValues().keys()).sort()),

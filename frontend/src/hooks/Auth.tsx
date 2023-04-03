@@ -77,6 +77,7 @@ function useAuthProvider() {
   }
   const logOut = async () => {
     console.error("Not implemented")
+    return Promise.resolve() // bogus return value to make async function ok
     // const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`api/userflows/logout`, {
     //   RespResponseCls: LogoutResponseSchema,
     //   isPost: true,
