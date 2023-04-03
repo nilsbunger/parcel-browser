@@ -19,7 +19,12 @@ on: [push] # activates the workflow when there is a push or pull request in the 
 
 jobs:
   fe-build-and-test:
-    runs-on: ubuntu-22.04 # has postgres 14.7 installed, which is helpful to avoid having to install it ourselves
+    runs-on: ubuntu-22.04
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
     steps:
 
       - name: Checkout repository
