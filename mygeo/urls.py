@@ -30,8 +30,8 @@ def check_if_superuser(user):
 
 # To protect against brute force and other attacks, protect admin login behind the main login
 superuser_login_required = user_passes_test(check_if_superuser)
+admin.site.login = superuser_login_required(admin.site.login)
 
-# admin.site.login = superuser_login_required(admin.site.login)
 # from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
