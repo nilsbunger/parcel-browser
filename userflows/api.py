@@ -1,6 +1,7 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout
 from ninja import ModelSchema, NinjaAPI, Schema
+from ninja.errors import ValidationError
 from ninja.security import django_auth
 from pydantic import constr
 
@@ -39,6 +40,13 @@ LoginResponseSchema = ApiResponseSchema[LoginResponseDataSchema]
 
 
 LogoutResponseSchema = ApiResponseSchema[None]
+
+
+@userflows_api.exception_handler(ValidationError)
+def custom_validation_errors(request, exc):
+    # flush validation errors to console.
+    print(exc.errors)
+    return userflows_api.create_response(request, {"detail": exc.errors}, status=422)
 
 
 # Login endpoint: allow unauthenticated access

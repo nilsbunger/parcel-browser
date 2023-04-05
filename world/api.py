@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F
 from ninja import NinjaAPI, Query
+from ninja.errors import ValidationError
 from ninja.pagination import paginate
 from ninja.security import django_auth
 
@@ -28,6 +29,14 @@ from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, R
 
 # Require auth on all API routes (can be overriden if needed)
 world_api = NinjaAPI(auth=django_auth, csrf=True, urls_namespace="world_api", docs_decorator=staff_member_required)
+
+
+@world_api.exception_handler(ValidationError)
+def custom_validation_errors(request, exc):
+    # flush validation errors to console.
+    print(exc.errors)
+    return world_api.create_response(request, {"detail": exc.errors}, status=422)
+
 
 ################################################################################################
 ## GIS APIs

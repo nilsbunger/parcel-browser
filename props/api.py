@@ -4,6 +4,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema
+from ninja.errors import ValidationError
 from ninja.security import django_auth
 from pydantic import Extra
 
@@ -38,6 +39,13 @@ class NewPropertyRespDataSchema(Schema):
 
 
 NewPropertyResponseSchema = ApiResponseSchema[NewPropertyRespDataSchema]
+
+
+@props_api.exception_handler(ValidationError)
+def custom_validation_errors(request, exc):
+    # flush validation errors to console.
+    print(exc.errors)
+    return props_api.create_response(request, {"detail": exc.errors}, status=422)
 
 
 @props_api.post("/profiles", response=NewPropertyResponseSchema, url_name="_create_property")
