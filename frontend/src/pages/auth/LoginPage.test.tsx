@@ -60,7 +60,10 @@ const server = setupServer(
 beforeAll(() => server.listen())
 // reset any request handlers that are declared as a part of our tests
 // (i.e. for testing one-time error scenarios)
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  jest.clearAllMocks()
+  server.resetHandlers()
+})
 // clean up once the tests are done
 afterAll(() => server.close())
 
@@ -68,17 +71,8 @@ beforeEach(() => {
   jest.spyOn(router, "useNavigate").mockImplementation(() => navigate)
 })
 
-describe("login test module", () => {
-  test("first test", () => {
-    // react testing library examples: https://testing-library.com/docs/react-testing-library/example-intro
-    // const component = renderer.create(<LoginPage />)
-    render(<LoginPage />)
-    expect(1 + 2).toBe(3)
-    screen.getByText("Sign in")
-    // expect(navigate).toHaveBeenCalledWith('/path')
-  })
-
-  test("test handling of success response from backend", async () => {
+describe("login tests", () => {
+  test("Success response from backend", async () => {
     const user = userEvent.setup()
     render(
       <AuthProvider>
@@ -94,10 +88,11 @@ describe("login test module", () => {
       await user.click(submitButton)
     })
     // generate a mock response to the login call from the server
+    expect(navigate).toHaveBeenCalledTimes(1)
     expect(navigate).toHaveBeenCalledWith("/properties")
   })
 
-  test("test handling of validation failure from backend", async () => {
+  test("Validation failure from backend", async () => {
     server.use(
       rest.post("/login", (req, res, ctx) => {
         const s = loginScenarios["server_side_password_val_fail"]
@@ -120,6 +115,7 @@ describe("login test module", () => {
       await user.click(submitButton)
     })
     // generate a mock response to the login call from the server
+    expect(navigate).toHaveBeenCalledTimes(1)
     expect(navigate).toHaveBeenCalledWith("/properties")
   })
 })
