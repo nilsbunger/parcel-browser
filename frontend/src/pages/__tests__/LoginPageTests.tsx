@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, jest, tes
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import * as router from "react-router"
-import LoginPage from "./LoginPage"
+import LoginPage from "../auth/LoginPage"
 import { setupServer } from "msw/node"
 import { rest } from "msw"
 import React from "react"
