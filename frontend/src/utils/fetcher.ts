@@ -1,12 +1,12 @@
 import axios, { type AxiosInstance, AxiosResponse } from "axios"
 import { useCallback, useEffect, useRef } from "react"
-import { z, ZodError } from "zod"
+import { z } from "zod"
 import { BACKEND_DOMAIN } from "../constants"
 import { Middleware, SWRHook } from "swr"
 import { showNotification } from "@mantine/notifications"
 
 interface ApiRequestParams<RespDataType extends z.ZodTypeAny> {
-  RespDataCls: z.ZodTypeAny
+  RespDataCls: z.ZodTypeAny // TODO: should be RespDataType
   params?: any
   body?: any
   isPost: boolean
@@ -44,44 +44,45 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
   { RespDataCls, isPost = false, params = {}, body = {} }: ApiRequestParams<RespDataType>
 ): Promise<{ errors: boolean | Record<string, string>; data: any; message: string | null }> {
   // Promise<{ data?:z.infer<typeof respSchema>, error: boolean, unauthenticated?: boolean, message?: string}> {
-  // Note: Axios automatically sets content-type to application/json
+  const ResponseCls = z.object({
+    errors: z.union([z.boolean(), z.record(z.string(), z.string())]),
+    data: RespDataCls,
+    message: z.string().nullable(),
+  })
   url = `${BACKEND_DOMAIN}/${url}`
   const req = isPost
     ? _axiosPost.post(url, body, { params: params, timeout: 5000 })
     : _axiosGet.get(url, { params: params, timeout: 5000 })
 
-  const retval = await req
+  // Make actual request
+  const promiseReturn = await req
     .then((res: AxiosResponse<any>) => {
-      const ResponseCls = z.object({
-        errors: z.union([z.boolean(), z.record(z.string(), z.string())]),
-        data: RespDataCls,
-        message: z.string().nullable(),
-      })
-      // console.log ("api_post success. Response = ", res)
+      // console.log ("api request success. Response = ", res)
       try {
         const { errors, data, message } = ResponseCls.parse(res.data)
-        return { errors: errors, data: data, message: message }
+        return { errors: errors, data: data, message: message, unauthenticated: false }
       } catch (e) {
         console.error("apiRequest: Error parsing response: ", e)
-        return { errors: true, data: null, message: "Error parsing response" }
+        return { errors: true, data: null, message: "Error parsing response", unauthenticated: false }
       }
     })
     .catch((error) => {
-      if (error instanceof ZodError) {
-        // error while parsing response a few lines above... schema returned by server is invalid?
-        console.error("UNEXPECTED BRANCH")
-        return { message: "Error parsing response", errors: true, data: null }
-      } else {
-        // error while sending request or receiving response over network... typically a non-2xx response
-        // eg: 401 (unauthenticated) or 422 (pydantic validation error).
-        console.error("Error in apiRequest request or response: ", error)
+      // Axios raised error while sending request or receiving response over network... typically a non-2xx response
+      // eg: 401 (unauthenticated) or 422 (pydantic validation error).
+      console.log("Error in apiRequest request or response: ", error)
 
-        // report unauthenticated (401) differently than insufficient permission
-        const unauthenticated = error.response?.status == 401
-        let validationErrors = {}
-        if (error.response?.status == 422) {
-          // pydantic / ninja validation error.
-          const validationErrorsRaw = error.response.data.detail
+      // report unauthenticated (401) differently than insufficient permission
+      const unauthenticated = error.response?.status == 401
+      let validationErrors = {}
+      if (error.response?.status == 422) {
+        // pydantic / ninja validation error.
+        const validationErrorsRaw = error.response.data.detail
+
+        if (validationErrorsRaw.find((x: any) => x.type === "value_error.extra")) {
+          // server error: extra fields in request body. treat as a page-level error.
+          validationErrors = true // errors field is a boolean when it's a page-level error
+          error.message = "Invalid request to server (422)"
+        } else {
           // convert pydantic server errors into a dict of fieldname -> error message. keep only the leaf fieldname.
           validationErrors = Object.assign(
             {},
@@ -90,22 +91,23 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
           )
           console.log("errors = ", validationErrors)
         }
-        return {
-          unauthenticated,
-          message: error.message,
-          errors: validationErrors,
-          data: null,
-        }
+      }
+      // return out of promise chain to top level.
+      return {
+        unauthenticated,
+        message: error.message,
+        errors: validationErrors,
+        data: null,
       }
     })
-  if (!retval.errors) {
+  if (!promiseReturn.errors) {
     // no errors, show success toast
-    showNotification({ title: "Submission success", message: retval.message, color: "green" })
-  } else if (typeof retval.errors === "boolean") {
+    showNotification({ title: "Submission success", message: promiseReturn.message, color: "green" })
+  } else if (typeof promiseReturn.errors === "boolean") {
     // page level errors, show error toast. (field-level errors are handled by the caller)
-    showNotification({ title: "Submission failure", message: retval.message, color: "red" })
+    showNotification({ title: "Submission failure", message: promiseReturn.message, color: "red" })
   }
-  return retval
+  return promiseReturn
 }
 
 type Fetcher = (url: string, config: Record<string, unknown>) => Promise<any>

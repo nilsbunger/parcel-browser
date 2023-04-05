@@ -13,7 +13,7 @@ import { ApiResponseSchema, NewPropertyRespDataCls } from "../types"
 
 export const NewPropertyFormSchema = z.object({
   streetAddress: z.string(),
-  city: z.string().min(4).max(24),
+  city: z.string().min(4).max(40),
   zip: z.string().length(5).regex(/^\d+$/),
 })
 export type NewPropertyForm = z.infer<typeof NewPropertyFormSchema>
@@ -58,7 +58,6 @@ export default function NewPropertyPage() {
     (e: React.FormEvent<HTMLFormElement>) => {
       // remove autofill results when we see a change in the form.
       if (e.nativeEvent instanceof InputEvent) {
-        console.log("User change detected, clearing feature")
         setFeature(undefined)
       }
     },
@@ -67,6 +66,7 @@ export default function NewPropertyPage() {
 
   const onSubmit = useCallback(
     async (newProperty: NewPropertyForm) => {
+      // console.log("onSubmit: newProperty = ", newProperty)
       const { data, errors, message } = await apiRequest<typeof NewPropertyRespDataCls>(
         `api/properties/profiles`,
         {
@@ -95,10 +95,8 @@ export default function NewPropertyPage() {
     },
     [feature]
   )
-
   if (error) return <div>failed to load mapbox token</div>
   if (!accessToken) return <div>loading mapbox token...</div>
-
   const disabledBtnClass = feature ? "" : " cursor-not-allowed opacity-30"
 
   return (
