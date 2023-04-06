@@ -1,17 +1,16 @@
 import pytest
-import requests
 from django.core.management import call_command
 
 from mygeo.settings import BASE_DIR
 
-
-# Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.
-@pytest.fixture(autouse=True)
-def disable_network_calls(monkeypatch):
-    def stunted_get():
-        raise RuntimeError("Network access not allowed during testing!")
-
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: stunted_get())
+## Disable monkeypatching of network calls. It interferes with Response mocking (eg in test_attom_api.py)
+# # Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.
+# @pytest.fixture(autouse=True)
+# def disable_network_calls(monkeypatch):
+#     def stunted_get(*args, **kwargs):
+#         raise RuntimeError("Network access not allowed during testing!")
+#
+#     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: stunted_get(args, kwargs))
 
 
 # def pytest_collectstart(collector):

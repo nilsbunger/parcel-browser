@@ -1,3 +1,4 @@
+from .external_api_data import ExternalApiData
 from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping
 from .raw_orange_county_road import RawOrangeCountyRoad, raw_orange_county_road_mapping
 from .raw_santa_ana_parcel import RawSantaAnaParcel
