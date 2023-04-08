@@ -156,6 +156,2263 @@ expanded_profile_resp = {
     ],
 }
 
+expanded_profile_2241_4th_ave = {
+    "status": {
+        "version": "1.0.0",
+        "code": 0,
+        "msg": "SuccessWithResult",
+        "total": 1,
+        "page": 1,
+        "pagesize": 10,
+        "transactionID": "18ae1c5668ee2202bff954ce67eff89c",
+    },
+    "echoed_fields": {"jobID": "", "loanNumber": "", "preparedBy": "", "resellerID": "", "preparedFor": ""},
+    "property": [
+        {
+            "identifier": {
+                "Id": 156903306,
+                "fips": "06073",
+                "apn": "533-195-02-00",
+                "multiApn": "MULTIPLE PARCELS CONVEYED, UNKNOWN IMPACT TO APN",
+                "attomId": 156903306,
+            },
+            "lot": {
+                "lotNum": "C",
+                "lotSize1": 0.1224977,
+                "lotSize2": 5336,
+                "zoningType": "COMMERCIAL",
+                "siteZoningIdent": "COMMERCIAL",
+            },
+            "area": {
+                "blockNum": "259",
+                "locType": "VIEW - NONE",
+                "countrySecSubd": "San Diego",
+                "countyUse1": "15   ",
+                "munCode": "SD",
+                "munName": "SAN DIEGO",
+                "subdName": "HORTONS ADDITION",
+                "taxCodeArea": "8001",
+                "censusTractIdent": "5900",
+                "censusBlockGroup": "1",
+            },
+            "address": {
+                "country": "US",
+                "countrySubd": "CA",
+                "line1": "2241 4TH AVE",
+                "line2": "SAN DIEGO, CA 92101",
+                "locality": "SAN DIEGO",
+                "matchCode": "ExaStr",
+                "oneLine": "2241 4TH AVE, SAN DIEGO, CA 92101",
+                "postal1": "92101",
+                "postal2": "2134",
+                "postal3": "C025",
+                "stateFips": "06",
+                "situsHouseNumber": "2241",
+                "situsStreetName": "4TH",
+                "situsAddressSuffix": "AVE",
+            },
+            "location": {
+                "accuracy": "Rooftop",
+                "latitude": "32.728843",
+                "longitude": "-117.160899",
+                "distance": 0,
+                "geoid": "CO06073, CS0692780, DB0634320, PL0666000, RS0005179047, ZI92101",
+                "geoIdV4": {
+                    "CO": "886e6f26978969cee1b66ca5395912f8",
+                    "CS": "8f319ce931f118bb23a273843734d1f3",
+                    "DB": "1697d091e8943eeee0383f86912789f5",
+                    "N1": "4e3c011a03118402dad38a9665d9b9d0",
+                    "N2": "4f8e27978c61feb51b9f8fdaaac87566",
+                    "PL": "337aec169b64ca28ae95db835cf33392",
+                    "SB": "cec28ef36e1379bcf3fe9661205ffba7,05ae360da1fc74d1fb2865331038aa0c,e41ec42bfcc39d3b6f134ea19328a7ad,e03e9495d01a1879c2149403f18cc840,7e674dec3c601f55ee95859355e28bed",
+                    "ZI": "d1137929af787483e1603ce26df3e79a",
+                },
+            },
+            "summary": {
+                "absenteeInd": "ABSENTEE(MAIL AND SITUS NOT =)",
+                "propClass": "Apartment",
+                "propSubType": "COMMERCIAL",
+                "propType": "APARTMENT",
+                "yearBuilt": 2010,
+                "propLandUse": "APARTMENT",
+                "propIndicator": 22,
+                "legal1": "DB0013PG522 BLK 259*LOT C*",
+                "quitClaimFlag": "False",
+                "REOflag": "False",
+            },
+            "utilities": {},
+            "sale": {
+                "sequenceSaleHistory": 1,
+                "sellerName": "VKS 4TH AVENUE LLC",
+                "saleSearchDate": "2015-05-29",
+                "saleTransDate": "2015-04-24",
+                "transactionIdent": "548882750",
+                "amount": {
+                    "saleAmt": 6000000,
+                    "saleCode": "SALE PRICE (FULL) Full sales price as per documents",
+                    "saleRecDate": "2015-05-29",
+                    "saleDisclosureType": 0,
+                    "saleDocType": "DEED",
+                    "saleDocNum": "0000272965",
+                    "saleTransType": "Resale",
+                },
+                "calculation": {"pricePerBed": 1200000, "pricePerSizeUnit": 578.48},
+            },
+            "building": {
+                "size": {
+                    "bldgSize": 10372,
+                    "grossSize": 372,
+                    "grossSizeAdjusted": 10372,
+                    "livingSize": 10372,
+                    "sizeInd": "BUILDING SQFT",
+                    "universalSize": 10372,
+                },
+                "rooms": {"bathsFull": 1, "bathsTotal": 1.75, "beds": 5},
+                "interior": {},
+                "construction": {},
+                "parking": {},
+                "summary": {"unitsCount": 16, "view": "VIEW - NONE", "viewCode": "000"},
+            },
+            "assessment": {
+                "appraised": {},
+                "assessed": {"assdImprValue": 1585540, "assdLandValue": 1812046, "assdTtlValue": 3397586},
+                "market": {},
+                "tax": {
+                    "taxAmt": 41404.92,
+                    "taxPerSizeUnit": 3.99,
+                    "taxYear": 2022,
+                    "exemption": {},
+                    "exemptiontype": {},
+                },
+                "improvementPercent": 46,
+                "owner": {
+                    "corporateIndicator": "Y",
+                    "type": "COMPANY",
+                    "description": "COMPANY",
+                    "owner1": {"lastName": "APARTMENTS ", "firstNameAndMi": "F "},
+                    "owner2": {"lastName": "APARTMENTS ", "firstNameAndMi": "F CASA BLANCA"},
+                    "owner3": {},
+                    "owner4": {},
+                    "absenteeOwnerStatus": "A",
+                    "mailingAddressOneLine": "4060 30TH ST, SAN DIEGO, CA 92104-2602",
+                },
+                "mortgage": {
+                    "FirstConcurrent": {"deedType": "GD"},
+                    "SecondConcurrent": {},
+                    "title": {"companyName": "FIDELITY NATIONAL TITLE", "companyCode": "1788"},
+                },
+            },
+            "vintage": {"lastModified": "2022-11-16", "pubDate": "2022-11-16"},
+        }
+    ],
+}
+
+
+# assessment/detail response for 2241 4th ave in San Diego (have loopnet brochure)
+assessment_detail_2241_4th_ave = {
+    "status": {
+        "version": "1.0.0",
+        "code": 0,
+        "msg": "SuccessWithResult",
+        "total": 1,
+        "page": 1,
+        "pagesize": 10,
+        "transactionID": "0cd0210a8b24b3fff93fc25a75816761",
+    },
+    "property": [
+        {
+            "identifier": {"Id": 156903306, "fips": "06073", "apn": "533-195-02-00", "attomId": 156903306},
+            "lot": {"lotnum": "C", "lotsize1": 0.1224977, "lotsize2": 5336, "pooltype": "NO POOL"},
+            "area": {
+                "blockNum": "259",
+                "loctype": "VIEW - NONE",
+                "countrysecsubd": "San Diego",
+                "countyuse1": "15   ",
+                "muncode": "SD",
+                "munname": "SAN DIEGO",
+                "subdname": "HORTONS ADDITION",
+                "taxcodearea": "8001",
+            },
+            "address": {
+                "country": "US",
+                "countrySubd": "CA",
+                "line1": "2241 4TH AVE",
+                "line2": "SAN DIEGO, CA 92101",
+                "locality": "SAN DIEGO",
+                "matchCode": "ExaStr",
+                "oneLine": "2241 4TH AVE, SAN DIEGO, CA 92101",
+                "postal1": "92101",
+                "postal2": "2134",
+                "postal3": "C025",
+            },
+            "location": {
+                "accuracy": "Rooftop",
+                "latitude": "32.728843",
+                "longitude": "-117.160899",
+                "distance": 0,
+                "geoid": "CO06073, CS0692780, DB0634320, PL0666000, RS0005179047, ZI92101",
+                "geoIdV4": {
+                    "CO": "886e6f26978969cee1b66ca5395912f8",
+                    "CS": "8f319ce931f118bb23a273843734d1f3",
+                    "DB": "1697d091e8943eeee0383f86912789f5",
+                    "N1": "4e3c011a03118402dad38a9665d9b9d0",
+                    "N2": "4f8e27978c61feb51b9f8fdaaac87566",
+                    "PL": "337aec169b64ca28ae95db835cf33392",
+                    "SB": "cec28ef36e1379bcf3fe9661205ffba7,05ae360da1fc74d1fb2865331038aa0c,e41ec42bfcc39d3b6f134ea19328a7ad,e03e9495d01a1879c2149403f18cc840,7e674dec3c601f55ee95859355e28bed",
+                    "ZI": "d1137929af787483e1603ce26df3e79a",
+                },
+            },
+            "summary": {
+                "absenteeInd": "ABSENTEE(MAIL AND SITUS NOT =)",
+                "propclass": "Apartment",
+                "propsubtype": "COMMERCIAL",
+                "proptype": "APARTMENT",
+                "yearbuilt": 2010,
+                "propLandUse": "APARTMENT",
+                "propIndicator": "22",
+                "legal1": "DB0013PG522 BLK 259*LOT C*",
+            },
+            "utilities": {},
+            "building": {
+                "size": {
+                    "bldgsize": 10372,
+                    "grosssize": 372,
+                    "grosssizeadjusted": 10372,
+                    "livingsize": 10372,
+                    "sizeInd": "BUILDING SQFT",
+                    "universalsize": 10372,
+                },
+                "rooms": {"bathsfull": 1, "bathstotal": 1.75, "beds": 5},
+                "interior": {},
+                "construction": {},
+                "parking": {},
+                "summary": {
+                    "quality": "HIGH QUALITY RESIDENTIAL",
+                    "unitsCount": "16",
+                    "view": "VIEW - NONE",
+                    "viewCode": "000",
+                },
+            },
+            "vintage": {"lastModified": "2022-11-16", "pubDate": "2022-11-16"},
+            "assessment": {
+                "appraised": {},
+                "assessed": {
+                    "assdimprpersizeunit": 152.87,
+                    "assdimprvalue": 1585540,
+                    "assdlandpersizeunit": 339.59,
+                    "assdlandvalue": 1812046,
+                    "assdttlpersizeunit": 327.57,
+                    "assdttlvalue": 3397586,
+                },
+                "calculations": {
+                    "calcimprind": "ASSESSED VALUE",
+                    "calcimprpersizeunit": 152.87,
+                    "calcimprvalue": 1585540,
+                    "calclandind": "ASSESSED VALUE",
+                    "calclandpersizeunit": 339.59,
+                    "calclandvalue": 1812046,
+                    "calcttlind": "ASSESSED VALUE",
+                    "calcttlvalue": 3397586,
+                    "calcvaluepersizeunit": 327.57,
+                },
+                "market": {},
+                "tax": {"taxamt": 41404.92, "taxpersizeunit": 3.99, "taxyear": 2022},
+            },
+        }
+    ],
+}
+
+# /valuation/rentalavm for 2241 4th ave
+rental_avm_2241_4th_ave = {
+    "status": {
+        "version": "1.0.0",
+        "code": 0,
+        "msg": "SuccessWithResult",
+        "total": 1,
+        "page": 1,
+        "pagesize": 10,
+        "transactionID": "73b67ba26dfd49a85cd2286613d7ce45",
+    },
+    "property": [
+        {
+            "identifier": {"Id": 156903306, "fips": "06073", "apn": "533-195-02-00", "attomId": 156903306},
+            "lot": {"lotsize1": 0.1224977, "lotsize2": 5336},
+            "area": {"countrysecsubd": "San Diego"},
+            "address": {
+                "country": "US",
+                "countrySubd": "CA",
+                "line1": "2241 4TH AVE",
+                "line2": "SAN DIEGO, CA 92101",
+                "locality": "SAN DIEGO",
+                "matchCode": "ExaStr",
+                "oneLine": "2241 4TH AVE, SAN DIEGO, CA 92101",
+                "postal1": "92101",
+                "postal2": "2134",
+                "postal3": "C025",
+            },
+            "location": {
+                "accuracy": "Rooftop",
+                "latitude": "32.728843",
+                "longitude": "-117.160899",
+                "distance": 0,
+                "geoid": "CO06073, CS0692780, DB0634320, PL0666000, RS0005179047, ZI92101",
+                "geoIdV4": {
+                    "CO": "886e6f26978969cee1b66ca5395912f8",
+                    "CS": "8f319ce931f118bb23a273843734d1f3",
+                    "DB": "1697d091e8943eeee0383f86912789f5",
+                    "N1": "4e3c011a03118402dad38a9665d9b9d0",
+                    "N2": "4f8e27978c61feb51b9f8fdaaac87566",
+                    "PL": "337aec169b64ca28ae95db835cf33392",
+                    "SB": "cec28ef36e1379bcf3fe9661205ffba7,05ae360da1fc74d1fb2865331038aa0c,e41ec42bfcc39d3b6f134ea19328a7ad,e03e9495d01a1879c2149403f18cc840,7e674dec3c601f55ee95859355e28bed",
+                    "ZI": "d1137929af787483e1603ce26df3e79a",
+                },
+            },
+            "summary": {
+                "absenteeInd": "ABSENTEE(MAIL AND SITUS NOT =)",
+                "propclass": "Apartment",
+                "propsubtype": "COMMERCIAL",
+                "proptype": "APARTMENT",
+                "yearbuilt": 2010,
+                "propLandUse": "APARTMENT",
+                "propIndicator": "22",
+            },
+            "utilities": {},
+            "building": {
+                "size": {
+                    "bldgsize": 10372,
+                    "grosssize": 372,
+                    "grosssizeadjusted": 10372,
+                    "livingsize": 10372,
+                    "sizeInd": "BUILDING SQFT",
+                    "universalsize": 10372,
+                },
+                "rooms": {"bathstotal": 1.75, "beds": 5},
+                "interior": {},
+                "parking": {},
+                "summary": {"unitsCount": "16"},
+            },
+            "rentalAvm": {"estimatedRentalValue": 0, "estimatedMinRentalValue": 0, "estimatedMaxRentalValue": 0},
+            "assessment": {"assessed": {"assdttlvalue": 3397586}, "market": {}},
+            "owner": {
+                "owner1": {"lastname": "APARTMENTS ", "firstnameandmi": "F "},
+                "owner2": {"lastname": "APARTMENTS ", "firstnameandmi": "F CASA BLANCA"},
+                "owner3": {},
+                "owner4": {},
+                "absenteeownerstatus": "A",
+                "mailingaddressoneline": "4060 30TH ST, SAN DIEGO, CA 92104-2602",
+            },
+            "vintage": {"lastModified": "2022-11-16", "pubDate": "2022-11-16"},
+        }
+    ],
+}
+
+
+# sales comps data for 2241 4th ave.
+# request URL: https://api.gateway.attomdata.com/property/v2/salescomparables/address/2241%204th%20ave/
+# san%20diego/san%20diego/ca/92101
+# ?searchType=Radius&minComps=1&maxComps=20&miles=5&bedroomsRange=10&bathroomRange=10&sqFeetRange=4000
+# &lotSizeRange=10000&saleDateRange=18&yearBuiltRange=50&ownerOccupied=Both&distressed=IncludeDistressed
+sales_comps_2241_4th_ave = {
+    "RESPONSE_GROUP": {
+        "RESPONDING_PARTY": {
+            "@_Name": "ATTOM Data Solutions",
+            "@_StreetAddress": "505 Technology Drive, Suite 100",
+            "@_City": "Irvine",
+            "@_State": "CA",
+            "@_PostalCode": "92618",
+        },
+        "RESPONSE": {
+            "@ResponseDateTime": "2023-04-07T09:02:13",
+            "KEY": {"@_Name": "TransactionId", "@_Value": "735ae659-0413-4781-b4bb-f65acf663aab"},
+            "RESPONSE_DATA": {
+                "PROPERTY_INFORMATION_RESPONSE_ext": {
+                    "SUBJECT_PROPERTY_ext": {
+                        "PROPERTY": [
+                            {
+                                "@_StreetAddress": "2241 4TH AVE",
+                                "@_City": "SAN DIEGO",
+                                "@_State": "CA",
+                                "@_PostalCode": "92101",
+                                "@PropertyParcelID": "156903306",
+                                "@SiteMailAddressSameIndicator": "false",
+                                "@StandardUseCode_ext": "RAPT",
+                                "@StandardUseDescription_ext": "Apartment",
+                                "@PrivacyType_ext": "",
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompSubjectProperty",
+                                    "@RecordNumber_ext": "0",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "MAILING_ADDRESS_ext": {
+                                    "@_StreetAddress": "4060 30TH ST",
+                                    "@_City": "SAN DIEGO",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                },
+                                "_IDENTIFICATION": {
+                                    "@RTPropertyID_ext": "156903306",
+                                    "@DQPropertyID_ext": "",
+                                    "@CountyFIPSName_ext": "SAN DIEGO",
+                                    "@AssessorsParcelIdentifier": "533-195-02-00",
+                                    "@AssessorsSecondParcelIdentifier": "",
+                                    "@LongitudeNumber": "-117.160899",
+                                    "@LatitudeNumber": "32.728843",
+                                },
+                                "SALES_HISTORY": {
+                                    "@PropertySalesAmount": "6000000",
+                                    "@BuyerUnparsedName_ext": "F & F HILL 4TH AVENUE LP,",
+                                    "@RecordedDocumentIdentifier": "0000272965",
+                                    "@FullOrPartialTransferValueType_ext": "SALE PRICE (FULL) Full sales price as per documents",
+                                    "@MultipleApnIndicator_ext": "MULTIPLE PARCELS CONVEYED, UNKNOWN IMPACT TO APN",
+                                    "@SellerUnparsedName": "VKS 4TH AVENUE LLC",
+                                    "@PricePerSquareFootAmount": "578.48",
+                                    "@PropertySalesDate": "2015-05-29T00:00:00",
+                                    "LOANS_ext": {
+                                        "@SellerCarrybackindicator": "0",
+                                        "LOAN_ext": [
+                                            {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": ""},
+                                            {"@_Type": "SecondConcurrent", "@_Amount": ""},
+                                            {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                        ],
+                                    },
+                                },
+                                "_OWNER": {
+                                    "@_Name": "F & F HILL 4TH AVENUE LP,",
+                                    "@_TypeExt": "1",
+                                    "@_Description_ext": "COMPANY",
+                                    "@_SecondaryOwnerName_ext": "F CASA BLANCA APARTMENTS",
+                                },
+                                "_LEGAL_DESCRIPTION": {
+                                    "@_Type": "Other",
+                                    "@_TextDescription": "DB0013PG522 BLK 259*LOT C*",
+                                },
+                                "SITE": {
+                                    "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    "@DepthFeetCount": "",
+                                    "@WidthFeetCount": "",
+                                    "@LotSquareFeetCount": "5336.00",
+                                },
+                                "_TAX": {"@_TotalAssessedValueAmount": "3397586", "@_AssessorMarketValue_ext": ""},
+                                "STRUCTURE": {
+                                    "@TotalBathroomCount": "1.75",
+                                    "@TotalBedroomCount": "5",
+                                    "@TotalRoomCount": "",
+                                    "@StoriesCount": "",
+                                    "@LivingUnitCount": "16",
+                                    "@GrossLivingAreaSquareFeetCount": "10372",
+                                    "ATTIC": {"@SquareFeetCount": "0"},
+                                    "BASEMENT": {"@SquareFeetCount": "0"},
+                                    "LEVELS": {
+                                        "LEVEL": [
+                                            {"@_Type": "LevelOne", "@SquareFeetCount": ""},
+                                            {"@_Type": "LevelTwo", "@SquareFeetCount": ""},
+                                            {"@_Type": "LevelThree", "@SquareFeetCount": ""},
+                                            {"@_Type": "LevelFour", "@SquareFeetCount": ""},
+                                        ]
+                                    },
+                                    "CAR_STORAGE": {
+                                        "CAR_STORAGE_LOCATION": {
+                                            "@SquareFeetCount": "",
+                                            "@_ParkingSpacesCount": "",
+                                            "@_Type": "",
+                                            "@_TypeOtherDescription": "",
+                                        }
+                                    },
+                                    "HEATING": {"@_UnitDescription": ""},
+                                    "COOLING": {"@_UnitDescription": ""},
+                                    "EXTERIOR_FEATURE": [
+                                        {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        }
+                                    ],
+                                    "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "2010"},
+                                    "AMENITY": {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                },
+                                "SALES_CONTRACT": {"@_Date": "2015-05-29T00:00:00"},
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "0",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "1",
+                                    "@DistanceFromSubjectPropertyMilesCount": "1.07724398487",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "526 ANDERSON PL # 28",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92103",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.744406",
+                                    "@LongitudeNumber": "-117.159805",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156849746",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-04-20T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "5570000.00",
+                                        "@BuyerUnparsedName_ext": "IIP ANDERSON LLC",
+                                        "@SellerUnparsedName": "ANDERSON DECORTE LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "637.88364635822",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000171899",
+                                                    "@_Amount": "3850000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "16",
+                                        "@GrossLivingAreaSquareFeetCount": "8732",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "2011"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "7135.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "2426653",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 596 BLK 6*LOTS 7 & 8*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "3005 W HORIZON RIDGE PKWY STE # 141",
+                                        "@_City": "HENDERSON",
+                                        "@_State": "NV",
+                                        "@_PostalCode": "89052",
+                                    },
+                                    "_OWNER": {"@_Name": "IIP ANDERSON LLC,", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "1",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "2",
+                                    "@DistanceFromSubjectPropertyMilesCount": "1.55069288827",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "630 W WASHINGTON ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92103",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.750127",
+                                    "@LongitudeNumber": "-117.169359",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156857424",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2021-12-20T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "3531000.00",
+                                        "@BuyerUnparsedName_ext": "VWC WASHINGTON 12 LLC",
+                                        "@SellerUnparsedName": "PRICCO FAMILY LP",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "527.96052631579",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "12",
+                                        "@GrossLivingAreaSquareFeetCount": "6688",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "2013"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "4701.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "3530700",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 334 BLK 52*LOTS 9 THRU 12*W 1/2*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "27525 PUERTA REAL STE # 200",
+                                        "@_City": "MISSION VIEJO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92691",
+                                    },
+                                    "_OWNER": {"@_Name": "VWC WASHINGTON 12 LLC,", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "2",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "3",
+                                    "@DistanceFromSubjectPropertyMilesCount": "1.62579565052",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4120 3RD AVE",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92103",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.752332",
+                                    "@LongitudeNumber": "-117.162529",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156820936",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-10-07T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "4657000.00",
+                                        "@BuyerUnparsedName_ext": "3RD AVE APARTMENTS LLC",
+                                        "@SellerUnparsedName": "KPH 10 LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "349.17897578166",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "20",
+                                        "@GrossLivingAreaSquareFeetCount": "13337",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1988"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "9760.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-4:MULTIPLE RESIDENTIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "6433210",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 577 BLK 10*LOTS 17 THRU 19*ST CLSD ADJ&",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "9051 MIRA MESA BLVD",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92196",
+                                    },
+                                    "_OWNER": {"@_Name": "III AVE APARTMENTS LLC,", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "3",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "4",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.05105958396",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "3911 OREGON ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.748777",
+                                    "@LongitudeNumber": "-117.134751",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156846832",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-09-28T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "4400000.00",
+                                        "@BuyerUnparsedName_ext": "TRUDEAU, TRACY D|TRUDEAU, CELESTE F|THE 2002 TRUDEAU FAMILY TRUST",
+                                        "@SellerUnparsedName": "PETROPOULOS, JIM D",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "608.23887199337",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000380404",
+                                                    "@_Amount": "1980000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "12",
+                                        "@GrossLivingAreaSquareFeetCount": "7234",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1971"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "7032.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "3448204",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 203*LOTS 21 & 22*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "5645 TAFT AVE",
+                                        "@_City": "LA JOLLA",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92037",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "TRACY D TRUDEAU",
+                                        "@_SecondaryOwnerName_ext": "CELESTE F TRUDEAU",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "4",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "5",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.10930707739",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "3981 OREGON ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.750012",
+                                    "@LongitudeNumber": "-117.134751",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "40639130",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-02-18T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "3250000.00",
+                                        "@BuyerUnparsedName_ext": "REUTER, GARRETT",
+                                        "@SellerUnparsedName": "WEST COAST APARTMENT LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "325.03250325033",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000076956",
+                                                    "@_Amount": "2717000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "315000"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "9.00",
+                                        "@TotalBedroomCount": "12",
+                                        "@TotalBathroomFullCount_ext": "9",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "9",
+                                        "@GrossLivingAreaSquareFeetCount": "9999",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1966"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "6991.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-3:RESTRICTED MULTIPLE",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "1925296",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 203*LOTS 3 & 4*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "8800 LOMBARD PL APT # 1804",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92122",
+                                    },
+                                    "_OWNER": {"@_Name": "GARRETT REUTER", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "5",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "6",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.11084559344",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "3093 C ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92102",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.716633",
+                                    "@LongitudeNumber": "-117.127614",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156897734",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2023-02-01T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "587000.00",
+                                        "@BuyerUnparsedName_ext": "SANDAGE, BRENT JOSEPH & PATCHARA|SANDAGE, LAWRENCE DAVID",
+                                        "@SellerUnparsedName": "HOPP, SUSAN J",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "40.90022296544",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "16",
+                                        "@GrossLivingAreaSquareFeetCount": "14352",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1984"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "11816.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "1574023",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 547 BLK 94*LOT 3*ST CLSD ADJ&LOTS 1&2&",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "",
+                                        "@_City": "",
+                                        "@_State": "",
+                                        "@_PostalCode": "",
+                                    },
+                                    "_OWNER": {"@_Name": "LAWRENCE DAVID SANDAGE", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "6",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "7",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.12993417387",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4155 TEXAS ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.753222",
+                                    "@LongitudeNumber": "-117.138472",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156829889",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-04-19T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "6675000.00",
+                                        "@BuyerUnparsedName_ext": "JERMSTAD, ANDRES RODERICK",
+                                        "@SellerUnparsedName": "FLOIT, DAN",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "768.65499769691",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000169604",
+                                                    "@_Amount": "3885000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "14",
+                                        "@GrossLivingAreaSquareFeetCount": "8684",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1969"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "10478.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-3:RESTRICTED MULTIPLE",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "3600600",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 148*LOTS 10 THRU 12*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "30158 CALLE LADERA",
+                                        "@_City": "VALLEY CENTER",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92082",
+                                    },
+                                    "_OWNER": {"@_Name": "ANDRES RODERICK JERMSTAD", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "7",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "8",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.2022413192",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4386 ALABAMA ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.756893",
+                                    "@LongitudeNumber": "-117.142908",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156837852",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2023-02-16T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "0.00",
+                                        "@BuyerUnparsedName_ext": "4386 ALABAMA STREET APARTMENTS LLC",
+                                        "@SellerUnparsedName": "MCNALLY, SANDRA J",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "0.00",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000040934",
+                                                    "@_Amount": "475000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "16",
+                                        "@GrossLivingAreaSquareFeetCount": "11884",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1963"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "10510.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "1012925",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 100*LOTS 44 THRU 46*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "5075 CAMINITO EXQUISITO",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92130",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "4386 ALABAMA STREET APARTMENTS LLC,",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "8",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "9",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.25089144131",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4085 IDAHO ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.751885",
+                                    "@LongitudeNumber": "-117.133523",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "156829985",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-01-04T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "3427500.00",
+                                        "@BuyerUnparsedName_ext": "BC IDAHO LLC",
+                                        "@SellerUnparsedName": "SPIEGEL, CLAY",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "509.66542750929",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "9",
+                                        "@GrossLivingAreaSquareFeetCount": "6725",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1969"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "7070.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-3:RESTRICTED MULTIPLE",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "403374",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 167*LOTS 3 & 4*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "8445 CAMINO SANTA FE STE # 102",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92121",
+                                    },
+                                    "_OWNER": {"@_Name": "BC IDAHO LLC,", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "9",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "10",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.29398617126",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4424 MISSISSIPPI ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92116",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.757839",
+                                    "@LongitudeNumber": "-117.141676",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "155627095",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2023-01-20T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "6650000.00",
+                                        "@BuyerUnparsedName_ext": "SIPPI SIPPI ORKA HOLDINGS LLC",
+                                        "@SellerUnparsedName": "R&B RAINER LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "544.18985270049",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000016494",
+                                                    "@_Amount": "5100000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "18",
+                                        "@GrossLivingAreaSquareFeetCount": "12220",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1970"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "14008.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "462166",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 74*LOTS 30 THRU 33*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "1550 BAYSIDE DR # # 1",
+                                        "@_City": "CORONA DEL MAR",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92625",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "SIPPI SIPPI ORKA HOLDINGS LLC,",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "10",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "11",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.3599939893",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4473 MISSISSIPPI ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92116",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.758598",
+                                    "@LongitudeNumber": "-117.140963",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "15484956",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-07-18T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "3210000.00",
+                                        "@BuyerUnparsedName_ext": "TGP VENTURES LLC",
+                                        "@SellerUnparsedName": "SPANIS, CURT W",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "477.67857142857",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000294861",
+                                                    "@_Amount": "2440000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "11.00",
+                                        "@TotalBedroomCount": "14",
+                                        "@TotalBathroomFullCount_ext": "11",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "8",
+                                        "@GrossLivingAreaSquareFeetCount": "6720",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1970"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "6992.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-3:RESTRICTED MULTIPLE",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "1388729",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "LP0008PG036 BLK 73*LOTS 6 & 7*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "215 S HIGHWAY 101 STE # 215",
+                                        "@_City": "SOLANA BEACH",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92075",
+                                    },
+                                    "_OWNER": {"@_Name": "TGP VENTURES LLC,", "@_SecondaryOwnerName_ext": ""},
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "11",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "12",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.84010911529",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "3864 35TH ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92104",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.749174",
+                                    "@LongitudeNumber": "-117.11843",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "25254421",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-04-29T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "5820000.00",
+                                        "@BuyerUnparsedName_ext": "SFPT LLC|PREMIER TRUST INC|THE GLC LEGACY TRUST",
+                                        "@SellerUnparsedName": "STOS PARTNERS 53 AW 35TH STREET LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "631.44190083541",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000188185",
+                                                    "@_Amount": "4175000",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "18",
+                                        "@GrossLivingAreaSquareFeetCount": "9217",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1986"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "7132.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "4131000",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 1007 BLK 191*LOTS 41 & 42*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "555 N EL CAMINO REAL # # A313",
+                                        "@_City": "SAN CLEMENTE",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92672",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "SEPT LLC, & GLC LEGACY TRUST",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "12",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "13",
+                                    "@DistanceFromSubjectPropertyMilesCount": "2.99899104549",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4514 BANCROFT ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92116",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.759415",
+                                    "@LongitudeNumber": "-117.124271",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "51111589",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2021-12-13T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "5350000.00",
+                                        "@BuyerUnparsedName_ext": "PATHFINDER TRADEWINDS BANCROFT HOLD",
+                                        "@SellerUnparsedName": "LI, DEAN",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "488.89701178836",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {
+                                                    "@_Type": "First",
+                                                    "@TrustDeedDocumentNumber": "0000838647",
+                                                    "@_Amount": "4012500",
+                                                },
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "18",
+                                        "@GrossLivingAreaSquareFeetCount": "10943",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1970"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "11738.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "5350000",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 985 BLK 58*LOTS 15&16",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "4380 LA JOLLA VILLAGE DR STE # 250",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92122",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "PATHFINDER TRADEWINDS BANCROFT HOLDINGS",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "13",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "14",
+                                    "@DistanceFromSubjectPropertyMilesCount": "3.26479302421",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4567 HAWLEY BLVD",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92116",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.76041",
+                                    "@LongitudeNumber": "-117.1191",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "155156055",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2021-11-09T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "2922000.00",
+                                        "@BuyerUnparsedName_ext": "WSC INVESTMENT PARTNERS LLC",
+                                        "@SellerUnparsedName": "BLUE CORNER CAPITAL LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "395.39918809202",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "10.00",
+                                        "@TotalBedroomCount": "14",
+                                        "@TotalBathroomFullCount_ext": "10",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "9",
+                                        "@GrossLivingAreaSquareFeetCount": "7390",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1969"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "7303.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "R-3:RESTRICTED MULTIPLE",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "2921800",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 985 BLK 55*LOT 4*",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "5694 MISSION CENTER RD STE # 602",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92108",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "WSC INVESTMENT PARTNERS LLC,",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                            {
+                                "PRODUCT_INFO_ext": {
+                                    "@ReportID_ext": "104",
+                                    "@ReportDescription_ext": "SalesComparables",
+                                    "@Product_ext": "SalesCompProperties",
+                                    "@RecordNumber_ext": "14",
+                                    "@MappingVersion_ext": "1",
+                                },
+                                "COMPARABLE_PROPERTY_ext": {
+                                    "@_Sequence": "15",
+                                    "@DistanceFromSubjectPropertyMilesCount": "3.51763695121",
+                                    "@_City": "SAN DIEGO",
+                                    "@_StreetAddress": "4767 MANSFIELD ST",
+                                    "@_State": "CA",
+                                    "@_PostalCode": "92116",
+                                    "@StandardUseCode_ext": "RAPT",
+                                    "@StandardUseDescription_ext": "Apartment",
+                                    "@SiteMailAddressSameIndicator_ext": "",
+                                    "@LatitudeNumber": "32.764789",
+                                    "@LongitudeNumber": "-117.118038",
+                                    "_IDENTIFICATION": {
+                                        "@RTPropertyID_ext": "18303980",
+                                        "@CountyFIPSName_ext": "San Diego",
+                                        "@AssessorsSecondParcelIdentifier": "",
+                                        "@DQPropertyID_ext": "",
+                                    },
+                                    "SALES_HISTORY": {
+                                        "@TransferDate_ext": "2022-08-09T00:00:00",
+                                        "@FullOrPartialTransferValueType_ext": "",
+                                        "@PropertySalesAmount": "0.00",
+                                        "@BuyerUnparsedName_ext": "WSC INVESTMENT PARTNERS LLC",
+                                        "@SellerUnparsedName": "MANSFIELD 1031 LLC",
+                                        "@MultipleApnIndicator_ext": "",
+                                        "@ArmsLengthTransactionIndicatorExt": "A",
+                                        "@PricePerSquareFootAmount": "0.00",
+                                        "LOANS_ext": {
+                                            "LOAN_ext": [
+                                                {"@_Type": "First", "@TrustDeedDocumentNumber": "", "@_Amount": "0"},
+                                                {"@_Type": "SecondConcurrent", "@_Amount": "0"},
+                                                {"@_Type": "ThirdConcurrent", "@_Amount": ""},
+                                            ]
+                                        },
+                                        "LOAN_ext": {"@SellerCarrybackindicator": ""},
+                                    },
+                                    "STRUCTURE": {
+                                        "@TotalBathroomCount": "0.00",
+                                        "@TotalBedroomCount": "0",
+                                        "@TotalBathroomFullCount_ext": "0",
+                                        "@TotalBathroomHalfCount_ext": "",
+                                        "@TotalBathroomQuarterCount_ext": "",
+                                        "@TotalBathroomThreeQuarterCount_ext": "",
+                                        "@TotalRoomCount": "0",
+                                        "@StoriesCount": "0",
+                                        "@LivingUnitCount": "20",
+                                        "@GrossLivingAreaSquareFeetCount": "8240",
+                                        "@TotalBathroomCountDq_ext": "",
+                                        "STRUCTURE_ANALYSIS": {"@PropertyStructureBuiltYear": "1973"},
+                                        "CAR_STORAGE": {
+                                            "CAR_STORAGE_LOCATION": {
+                                                "@SquareFeetCount": "0",
+                                                "@_ParkingSpacesCount": "",
+                                                "@_Type": "",
+                                                "@_TypeOtherDescription": "NOT PROVIDED",
+                                            }
+                                        },
+                                        "ATTIC": {"@SquareFeetCount": "0"},
+                                        "BASEMENT": {"@SquareFeetCount": "0", "@_FinishedPercent": "0.00"},
+                                        "AMENITIES": {
+                                            "AMENITY": [
+                                                {"@_Type": "Pool", "@_ExistsIndicator": ""},
+                                                {"@_Type": "Fireplace", "@_DetailedDescription": ""},
+                                            ]
+                                        },
+                                        "EXTERIOR_FEATURE": {
+                                            "@_Type": "Other",
+                                            "@_TypeOtherDescription": "RoofMaterial",
+                                            "@_Description": "Unknown or Not Provided",
+                                        },
+                                        "HEATING": {"@_TypeOtherDescription": "000", "@_UnitDescription": "NONE"},
+                                        "LEVELS": {
+                                            "LEVEL": [
+                                                {"@_Type": "LevelOne", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelTwo", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelThree", "@SquareFeetCount": "0"},
+                                                {"@_Type": "LevelFour", "@SquareFeetCount": "0"},
+                                            ]
+                                        },
+                                        "COOLING": {"@_UnitDescription": "NP"},
+                                    },
+                                    "SITE": {
+                                        "@DepthFeetCount": "0.00",
+                                        "@LotSquareFeetCount": "12618.00",
+                                        "@WidthFeetCount": "0.00",
+                                        "@PropertyZoningCategoryType": "COMMERCIAL",
+                                    },
+                                    "_TAX": {
+                                        "@_AssessorFullCashValue_ext": "",
+                                        "@_AssessorMarketValue_ext": "0",
+                                        "@_TotalAssessedValueAmount": "1750550",
+                                    },
+                                    "_LEGAL_DESCRIPTION": {
+                                        "@_Type": "Other",
+                                        "@_TextDescription": "TR 985 BLK 25*LOTS 4&5",
+                                    },
+                                    "MAILING_ADDRESS_ext": {
+                                        "@_StreetAddress": "5694 MISSION CENTER RD STE # 602",
+                                        "@_City": "SAN DIEGO",
+                                        "@_State": "CA",
+                                        "@_PostalCode": "92108",
+                                    },
+                                    "_OWNER": {
+                                        "@_Name": "WSC INVESTMENT PARTNERS LLC,",
+                                        "@_SecondaryOwnerName_ext": "",
+                                    },
+                                },
+                            },
+                        ]
+                    }
+                }
+            },
+        },
+        "PRODUCT": {
+            "STATUS": {
+                "@_Code": "0",
+                "@_Condition": "Success",
+                "@_Name": "Success",
+                "@_Description": "Successful execution",
+            }
+        },
+        "ECHOED_FIELDS_ext": {
+            "@JobID": "",
+            "@LoanNumber": "",
+            "@PreparedBy": "",
+            "@ResellerID": "",
+            "@PreparedFor": "",
+        },
+    }
+}
+
+# Calls with no response:
+# /attomavm/detail
+# /valuation/homeequity
+
 
 # Response from fetch of ATTOM data /properties/address - multifam properties in 92101 zip code (downtown san diego)
 multifam_92101_resp = {
