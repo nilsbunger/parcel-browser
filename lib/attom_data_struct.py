@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Union
 
 from pydantic import BaseModel, Extra
 
@@ -9,6 +10,17 @@ class PropertyAddressResponse(BaseModel):
     status: "ApiResponseStatus"
     property: list["AttomPropertyRecord"]
     # raw: any  # raw django model entry for this response (optional)
+
+
+class AttomPropertyRecord(BaseModel, extra=Extra.ignore):
+    # ATTOM Property record fields:
+    identifier: "_Identifier"
+    address: "Address"
+    location: "_Location"
+    summary: Union["_Summary", None]  # present in expanded profile views
+    sale: Union["_Sale", None]  # present in expanded profile views
+    building: Union["_Building", None]
+    vintage: "_Vintage"
 
 
 class Address(BaseModel):
@@ -42,14 +54,19 @@ class Address(BaseModel):
         return self.postal1
 
 
-class Identifier(BaseModel):
+###################################################################################################
+## INTERNAL CLASSES
+###################################################################################################
+
+
+class _Identifier(BaseModel):
     Id: int
     fips: str
     apn: str
     attomId: int
 
 
-class Location(BaseModel):
+class _Location(BaseModel):
     # location data is missing from some records
     accuracy: str | None
     latitude: float | None
@@ -69,7 +86,7 @@ class Location(BaseModel):
     # },
 
 
-class Summary(BaseModel, extra=Extra.allow):
+class _Summary(BaseModel, extra=Extra.allow):
     # allow extra fields here since there may be variability in what's returned
     archStyle: str | None
     absenteeInd: str
@@ -84,7 +101,7 @@ class Summary(BaseModel, extra=Extra.allow):
     REOflag: bool
 
 
-class SaleAmount(BaseModel, extra=Extra.allow):
+class _SaleAmount(BaseModel, extra=Extra.allow):
     saleAmt: int | None
     saleCode: str | None  # eg "SALE PRICE (FULL) Full sales price"
     saleDisclosureType: int
@@ -94,17 +111,17 @@ class SaleAmount(BaseModel, extra=Extra.allow):
     saleTransType: str  # eg "Resale", "Construcction Loan/Financing",
 
 
-class Sale(BaseModel, extra=Extra.allow):
+class _Sale(BaseModel, extra=Extra.allow):
     sequenceSaleHistory: int
     sellerName: str
     saleSearchDate: date
     saleTransDate: date | None
     transactionIdent: str
     calculation: dict
-    amount: SaleAmount
+    amount: _SaleAmount
 
 
-class BuildingSize(BaseModel, extra=Extra.allow):
+class _BuildingSize(BaseModel, extra=Extra.allow):
     bldgSize: int
     grossSize: int
     grossSizeAdjusted: int
@@ -114,7 +131,7 @@ class BuildingSize(BaseModel, extra=Extra.allow):
     universalSize: int
 
 
-class Rooms(BaseModel, extra=Extra.allow):
+class _Rooms(BaseModel, extra=Extra.allow):
     bathFixtures: int | None
     bathsFull: int
     bathsTotal: float
@@ -122,7 +139,7 @@ class Rooms(BaseModel, extra=Extra.allow):
     roomsTotal: int | None
 
 
-class Interior(BaseModel, extra=Extra.allow):
+class _Interior(BaseModel, extra=Extra.allow):
     bsmtSize: int | None
     bsmtFinishedPercent: int | None
     fplcCount: int | None
@@ -130,7 +147,7 @@ class Interior(BaseModel, extra=Extra.allow):
     fplcType: str | None
 
 
-class Construction(BaseModel, extra=Extra.allow):
+class _Construction(BaseModel, extra=Extra.allow):
     condition: str | None
     wallType: str | None
     propertyStructureMajorImprovementsYear: str | None
@@ -138,12 +155,12 @@ class Construction(BaseModel, extra=Extra.allow):
     constructionType: str | None  # eg "WOOD"
 
 
-class Parking(BaseModel, extra=Extra.allow):
+class _Parking(BaseModel, extra=Extra.allow):
     prkgSize: int | None
     prkgSpaces: int | None
 
 
-class BuildingSummary(BaseModel, extra=Extra.allow):
+class _BuildingSummary(BaseModel, extra=Extra.allow):
     levels: int | None
     unitsCount: int
     view: str  # eg "VIEW - NONE"
@@ -151,28 +168,28 @@ class BuildingSummary(BaseModel, extra=Extra.allow):
     storyDesc: str | None  # eg "MISCELLANEOUS"
 
 
-class Building(BaseModel, extra=Extra.allow):
-    size: BuildingSize
-    rooms: Rooms
-    interior: Interior
-    construction: Construction
-    parking: Parking
-    summary: BuildingSummary
+class _Building(BaseModel, extra=Extra.allow):
+    size: _BuildingSize
+    rooms: _Rooms
+    interior: _Interior
+    construction: _Construction
+    parking: _Parking
+    summary: _BuildingSummary
 
 
-class AssessedValue(BaseModel, extra=Extra.allow):
+class _AssessedValue(BaseModel, extra=Extra.allow):
     assdImprValue: int
     assdLandValue: int
     assdTtlValue: int
 
 
-class MarketValue(BaseModel, extra=Extra.allow):
+class _MarketValue(BaseModel, extra=Extra.allow):
     mktImprValue: int
     mktLandValue: int
     mktTtlValue: int
 
 
-class Exemption(BaseModel, extra=Extra.allow):
+class _Exemption(BaseModel, extra=Extra.allow):
     # Github pilot made up these fields, but maybe it has seen ATTOM API before?
     exemptionAmt: int
     exemptionCode: str
@@ -180,38 +197,38 @@ class Exemption(BaseModel, extra=Extra.allow):
     exemptionYear: int
 
 
-class ExemptionType(BaseModel, extra=Extra.allow):
+class _ExemptionType(BaseModel, extra=Extra.allow):
     # Github pilot made up these fields, but maybe it has seen ATTOM API before?
     exemptionTypeCode: str
     exemptionTypeDesc: str
 
 
-class Tax(BaseModel, extra=Extra.allow):
+class _Tax(BaseModel, extra=Extra.allow):
     taxAmt: float
     taxPerSizeUnit: float
     taxYear: int
-    exemption: Exemption
-    exemptiontype: ExemptionType
+    exemption: _Exemption
+    exemptiontype: _ExemptionType
 
 
-class OwnerDetail(BaseModel, extra=Extra.allow):
+class _OwnerDetail(BaseModel, extra=Extra.allow):
     lastName: str
     trustIndicator: str
 
 
-class Owner(BaseModel, extra=Extra.allow):
+class _Owner(BaseModel, extra=Extra.allow):
     corporateIndicator: str
     type: str
     description: str
-    owner1: OwnerDetail
-    owner2: OwnerDetail
-    owner3: OwnerDetail
-    owner4: OwnerDetail
+    owner1: _OwnerDetail
+    owner2: _OwnerDetail
+    owner3: _OwnerDetail
+    owner4: _OwnerDetail
     absenteeOwnerStatus: str
     mailingAddressOneLine: str
 
 
-class Mortgage(BaseModel, extra=Extra.allow):
+class _Mortgage(BaseModel, extra=Extra.allow):
     class Title(BaseModel, extra=Extra.allow):
         companyName: str
 
@@ -226,29 +243,20 @@ class Mortgage(BaseModel, extra=Extra.allow):
     title: Title
 
 
-class Assessment(BaseModel, extra=Extra.allow):
-    # assessment fields:
-    appraised: dict
-    assessed: AssessedValue
-    market: MarketValue
-    tax: Tax
-    improvementPercent: int
-    owner: Owner
-    mortgage: Mortgage
+# class _Assessment(BaseModel, extra=Extra.allow):
+#     # assessment fields:
+#     appraised: dict
+#     assessed: _AssessedValue
+#     market: _MarketValue
+#     tax: _Tax
+#     improvementPercent: int
+#     owner: _Owner
+#     mortgage: _Mortgage
 
 
-class Vintage(BaseModel):
+class _Vintage(BaseModel):
     lastModified: date
     pubDate: date
 
 
-class AttomPropertyRecord(BaseModel, extra=Extra.ignore):
-    # ATTOM Property record fields:
-    identifier: Identifier
-    address: Address
-    location: Location
-    summary: Summary | None  # present in expanded profile views
-    sale: Sale | None  # present in expanded profile views
-    building: Building | None
-
-    vintage: Vintage
+AttomPropertyRecord.update_forward_refs()
