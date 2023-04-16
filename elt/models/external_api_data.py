@@ -1,5 +1,7 @@
+import math
 from abc import ABC
 from dataclasses import dataclass
+from hashlib import blake2b
 from typing import TypeVar
 from urllib.parse import quote, urlencode
 
@@ -18,7 +20,7 @@ class ExternalApiData(models.Model):
 
     data = models.JSONField()
     lookup_hash = models.BigIntegerField()
-    lookup_key = models.CharField(max_length=64)
+    lookup_key = models.CharField(max_length=128)
     hash_version = models.IntegerField(
         default=1
     )  # hash and data version - increase when using a new hash function or changing the data
@@ -47,44 +49,68 @@ class CacheableApi(ABC):
     ) -> ExternalApiData:
         # look in DB for data by
         # if not found, make request and save to DB
-        lookup_hash = hash("GET:" + lookup_key)
+        lcl_key = "GET:" + lookup_key
+        lookup_hash = int.from_bytes(blake2b(bytes(lcl_key, "utf-8"), digest_size=7).digest(), "little")
         cached_results = ExternalApiData.objects.filter(
             vendor=self.vendor, lookup_hash=lookup_hash, hash_version=hash_version
         )
-        if len(cached_results) == 0:
-            # fetch the data using requests.get(url, params)
+        if not paged:
+            print("NOT PAGED... see if this call works")
+        paged = True  # TODO: remove this if it works for all calls
+        if len(cached_results) == 1:
+            # cache hit
+            print(f"CACHE HIT for {url} {params}")
+            resp = cached_results[0]
+            resp.cache_hit = True
+            return resp
+        elif len(cached_results) > 1:
+            # TODO: instead of raising, compare to the lookup key to disambiguate
+            raise Exception("Multiple results found for lookup hash")
+        else:
+            # cache miss -- fetch the data using requests.get(url, params)
+            num_pages = 1
+            print(f"CACHE MISS... fetching data. LCL KEY={lcl_key}, HASH={hex(lookup_hash)}")
             if paged:
                 params["page"] = 1
                 params["pagesize"] = 200
-            query = urlencode(params, quote_via=quote)
-            print(query)
-            response = requests.get(url, query, headers=headers)
-            if response.status_code != 200:
-                raise Exception(f"API call to {url} returned an error: " + str(response.status_code))
-            json_resp = response.json()
-            status = ApiResponseStatus.parse_obj(json_resp["status"])
-            if status.msg != "SuccessWithResult":
-                print(f"API call to {url} returned an error: " + status.msg)
-            if paged and status.pagesize <= status.total:
-                raise NotImplementedError("Paged API calls not implemented yet")
 
+            while num_pages > 0:
+                query = urlencode(params, quote_via=quote)
+                print(query)
+                response = requests.get(url, query, headers=headers)
+                if response.status_code != 200:
+                    raise Exception(f"API call to {url} returned an error: " + str(response.status_code))
+                json_resp = response.json()
+                status = ApiResponseStatus.parse_obj(json_resp["status"])
+                if status.msg != "SuccessWithResult":
+                    print(f"API call to {url} returned an error: " + status.msg)
+
+                if paged:
+                    if params["page"] == 1:
+                        # first page result... use this to initalize data
+                        num_pages = math.ceil(status.total / status.pagesize)
+                        # find data field, it's the response field that's a list
+                        data_field = [k for k, v in json_resp.items() if type(v) is list]
+                        assert len(data_field) == 1
+                        data_key = data_field[0]
+                        data = json_resp[data_key]
+                        assert isinstance(data, list)
+                    else:
+                        data.extend(json_resp[data_key])
+                    params["page"] = params["page"] + 1
+                num_pages -= 1
+            if paged:
+                json_resp[data_key] = data
             # save to DB
             resp = ExternalApiData.objects.create(
                 vendor=self.vendor,
                 lookup_hash=lookup_hash,
-                lookup_key=lookup_key,
+                lookup_key=lcl_key,
                 hash_version=hash_version,
                 data=json_resp,
             )
             resp.cache_hit = False
             return resp
-        elif len(cached_results) == 1:
-            resp = cached_results[0]
-            resp.cache_hit = True
-            return resp
-        else:
-            # TODO: instead of raising, compare to the lookup key to disambiguate
-            raise Exception("Multiple results found for lookup hash")
 
 
 class ApiResponseStatus(BaseModel, extra=Extra.ignore):
