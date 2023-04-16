@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from pydantic import ValidationError
+
 from elt.models import ExternalApiData
 from elt.models.external_api_data import CacheableApi
 from facts.models import StdAddress
@@ -22,17 +24,17 @@ class AttomDataApi(CacheableApi):
     # Property-centric APIs:  https://api.developer.attomdata.com/docs#!/Property32V1
     # ########################################
     def get_properties_in_zip(self, zipcode: str) -> PropertyAddressResponse:
-        # List of properties within a zip code.
+        # List of multifam properties with 12 or more BRs in a zip code.
         # Check that we called with:
         #   https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address?postalcode=92101&propertytype=MULTI%20FAMILY%20DWELLING&orderby=beds&page=1&pagesize=200
         #  - a valid zip code
         url = self.api_url + "/propertyapi/v1.0.0/property/address"
         # propertytype = "MULTI FAMILY DWELLING"
         propertytype = "Apartment"
-        params = {"postalcode": zipcode, "propertytype": propertytype}
+        params = {"postalcode": zipcode, "propertytype": propertytype, "minBeds": 12}
         # lookup key should be unique within the vendor
-        lookup_key = f"property/address:{zipcode}:{propertytype}"
-        hash_version = 1  # change when we change lookup key
+        lookup_key = f"property/address:{sorted(params.items())}"
+        hash_version = 2  # change when we change lookup key
 
         external_data = self.get(
             url,
@@ -66,7 +68,12 @@ class AttomDataApi(CacheableApi):
             paged=False,
         )
         assert len(external_data.data["property"]) == 1, "Expected only one property record"
-        prop_expanded_profile = AttomPropertyRecord.parse_obj(external_data.data["property"][0])
+        try:
+            prop_expanded_profile = AttomPropertyRecord.parse_obj(external_data.data["property"][0])
+        except ValidationError as e:
+            print(e)
+            print("...")
+            raise e
         return prop_expanded_profile
 
 

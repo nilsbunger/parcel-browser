@@ -13,27 +13,40 @@ class PropertyAddressResponse(BaseModel):
 
 class Address(BaseModel):
     country: str  # country
-    countrySubd: str  # state  # noqa: N815
+    countrySubd: str  # state
     line1: str | None  # address - optiional, some records have no street address
     line2: str  # city, state zip
-    locality: str
-    matchCode: str | None  # missing from some records  # noqa: N815
-    postal1: str
+    locality: str  # city
+    matchCode: str | None  # missing from some records
+    postal1: str  # zipcode
     # fields typically present in "expanded profile" search but not in "address search":
-    situsHouseNumber: int | None  # noqa: N815
-    situsStreetName: str | None  # noqa: N815
-    situsAddressSuffix: str | None  # noqa: N815
+    situsHouseNumber: int | None
+    situsStreetName: str | None
+    situsAddressSuffix: str | None
+
     # skipped:
     # "oneLine": "1646 J ST, SAN DIEGO, CA 92101",
     # "postal2": "7627",
     # "postal3": "C020",
+
+    @property
+    def city(self) -> str:
+        return self.locality
+
+    @property
+    def state(self) -> str:
+        return self.countrySubd
+
+    @property
+    def zip(self) -> str:
+        return self.postal1
 
 
 class Identifier(BaseModel):
     Id: int
     fips: str
     apn: str
-    attomId: int  # noqa: N815
+    attomId: int
 
 
 class Location(BaseModel):
@@ -58,78 +71,84 @@ class Location(BaseModel):
 
 class Summary(BaseModel, extra=Extra.allow):
     # allow extra fields here since there may be variability in what's returned
-    archStyle: str  # noqa: N815
-    absenteeInd: str  # noqa: N815
-    propClass: str  # noqa: N815
-    propSubType: str  # noqa: N815
-    propType: str  # noqa: N815
-    yearBuilt: int  # noqa: N815
-    propLandUse: str  # noqa: N815
-    propIndicator: int  # noqa: N815
-    legal1: str  # noqa: N815
-    quitClaimFlag: bool  # noqa: N815
-    REOflag: bool  # noqa: N815
+    archStyle: str | None
+    absenteeInd: str
+    propClass: str
+    propSubType: str
+    propType: str
+    yearBuilt: int
+    propLandUse: str
+    propIndicator: int
+    legal1: str
+    quitClaimFlag: bool
+    REOflag: bool
 
 
 class SaleAmount(BaseModel, extra=Extra.allow):
-    saleRecDate: date  # noqa: N815
-    saleDisclosureType: int  # noqa: N815
-    saleDocNum: str  # noqa: N815
-    saleTransType: str  # noqa: N815
+    saleAmt: int | None
+    saleCode: str | None  # eg "SALE PRICE (FULL) Full sales price"
+    saleDisclosureType: int
+    saleDocNum: str
+    saleDocType: str | None  # eg "DEED"
+    saleRecDate: date
+    saleTransType: str  # eg "Resale", "Construcction Loan/Financing",
 
 
 class Sale(BaseModel, extra=Extra.allow):
-    sequenceSaleHistory: int  # noqa: N815
-    sellerName: str  # noqa: N815
-    saleSearchDate: date  # noqa: N815
-    saleTransDate: date  # noqa: N815
-    transactionIdent: str  # noqa: N815
-    calculation: dict  # noqa: N815
-    amount: SaleAmount  # noqa: N815
+    sequenceSaleHistory: int
+    sellerName: str
+    saleSearchDate: date
+    saleTransDate: date | None
+    transactionIdent: str
+    calculation: dict
+    amount: SaleAmount
 
 
 class BuildingSize(BaseModel, extra=Extra.allow):
     bldgSize: int
     grossSize: int
     grossSizeAdjusted: int
-    groundFloorSize: int
+    groundFloorSize: int | None
     livingSize: int
-    sizeInd: str
+    sizeInd: str  # eg "BUILDING SQFT"
     universalSize: int
 
 
 class Rooms(BaseModel, extra=Extra.allow):
-    bathFixtures: int
+    bathFixtures: int | None
     bathsFull: int
-    bathsTotal: int
+    bathsTotal: float
     beds: int
-    roomsTotal: int
+    roomsTotal: int | None
 
 
 class Interior(BaseModel, extra=Extra.allow):
-    bsmtSize: int
-    bsmtFinishedPercent: int
-    fplcCount: int
-    fplcInd: str
-    fplcType: str
+    bsmtSize: int | None
+    bsmtFinishedPercent: int | None
+    fplcCount: int | None
+    fplcInd: str | None
+    fplcType: str | None
 
 
 class Construction(BaseModel, extra=Extra.allow):
-    condition: str
-    wallType: str
-    propertyStructureMajorImprovementsYear: str
+    condition: str | None
+    wallType: str | None
+    propertyStructureMajorImprovementsYear: str | None
+    frameType: str | None  # eg "WOOD"
+    constructionType: str | None  # eg "WOOD"
 
 
 class Parking(BaseModel, extra=Extra.allow):
-    prkgSize: int
-    prkgSpaces: int
+    prkgSize: int | None
+    prkgSpaces: int | None
 
 
 class BuildingSummary(BaseModel, extra=Extra.allow):
-    levels: int
+    levels: int | None
     unitsCount: int
-    view: str
+    view: str  # eg "VIEW - NONE"
     viewCode: str
+    storyDesc: str | None  # eg "MISCELLANEOUS"
 
 
 class Building(BaseModel, extra=Extra.allow):
@@ -155,29 +174,29 @@ class MarketValue(BaseModel, extra=Extra.allow):
 
 class Exemption(BaseModel, extra=Extra.allow):
     # Github pilot made up these fields, but maybe it has seen ATTOM API before?
-    exemptionAmt: int  # noqa: N815
-    exemptionCode: str  # noqa: N815
-    exemptionDesc: str  # noqa: N815
-    exemptionYear: int  # noqa: N815
+    exemptionAmt: int
+    exemptionCode: str
+    exemptionDesc: str
+    exemptionYear: int
 
 
 class ExemptionType(BaseModel, extra=Extra.allow):
     # Github pilot made up these fields, but maybe it has seen ATTOM API before?
-    exemptionTypeCode: str  # noqa: N815
-    exemptionTypeDesc: str  # noqa: N815
+    exemptionTypeCode: str
+    exemptionTypeDesc: str
 
 
 class Tax(BaseModel, extra=Extra.allow):
-    taxAmt: float  # noqa: N815
-    taxPerSizeUnit: float  # noqa: N815
-    taxYear: int  # noqa: N815
-    exemption: Exemption  # noqa: N815
-    exemptiontype: ExemptionType  # noqa: N815
+    taxAmt: float
+    taxPerSizeUnit: float
+    taxYear: int
+    exemption: Exemption
+    exemptiontype: ExemptionType
 
 
 class OwnerDetail(BaseModel, extra=Extra.allow):
-    lastName: str  # noqa: N815
-    trustIndicator: str  # noqa: N815
+    lastName: str
+    trustIndicator: str
 
 
 class Owner(BaseModel, extra=Extra.allow):
@@ -219,8 +238,8 @@ class Assessment(BaseModel, extra=Extra.allow):
 
 
 class Vintage(BaseModel):
-    lastModified: date  # noqa: N815
-    pubDate: date  # noqa: N815
+    lastModified: date
+    pubDate: date
 
 
 class AttomPropertyRecord(BaseModel, extra=Extra.ignore):
