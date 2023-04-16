@@ -1,0 +1,14 @@
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+# import fixtures from zip file since they get so big
+sys.path.insert(0, str(Path(__file__).resolve().parent / "attom_90006_apts.py.zip"))
+import attom_90006_apts  # noqa: E402 - import not at top of file
+
+
+# /property/address: get units in a zip code. zip=90006, apartments with more than 12 bedrooms (2 pages of results)
+@dataclass(frozen=True)
+class AttomPropertyAddressFixture:
+    APTS_90006_PG1 = attom_90006_apts.props_90006_apartments_pg1
+    APTS_90006_PG2 = attom_90006_apts.props_90006_apartments_pg2
