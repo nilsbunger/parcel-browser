@@ -105,7 +105,8 @@ class TestAttomApi:
                 json=AttomCompsFixture.COMPS_2769_SAN_MARINO,
                 match=[matchers.header_matcher(expected_req_headers)],
             )
-            x = attom_api.get_comps("5077-028-025", "Los Angeles", "CA")
+            attom_api.get_comps("5077-028-025", "Los Angeles", "CA")
+            assert rsp1.call_count == 1
             print("HI")
 
 
