@@ -5,7 +5,7 @@ from responses import matchers
 from facts.models import StdAddress
 from lib.attom_data import AttomDataApi
 from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
-from lib.tests.fixtures import AttomPropertyAddressFixture
+from lib.tests.fixtures import AttomCompsFixture, AttomPropertyAddressFixture
 from lib.tests.fixtures.attom_data_fixtures import (
     expanded_profile_resp,
     multifam_92101_resp,
@@ -90,3 +90,23 @@ class TestAttomApi:
         assert resp.building.construction.condition == "GOOD"
         assert resp.building.size.grossSize == 1414
         assert resp.building.size.livingSize == 934
+
+    @pytest.mark.django_db
+    def test_get_comps(self, mocker):
+        attom_api = AttomDataApi(api_key="5050505050", api_url="http://test:9191")
+        expected_req_headers = {"Accept": "application/json", "Apikey": "5050505050"}
+        with responses.RequestsMock() as rsps:
+            rsp1 = rsps.get(
+                "http://test:9191/property/v2/salescomparables/apn/5077-028-025/Los%20Angeles/CA"
+                "?searchType=Radius&minComps=1&maxComps=20&miles=5&bedroomsRange=10&bathroomRange=10&sqFeetRange=10000"
+                "&lotSizeRange=10000&saleDateRange=24&ownerOccupied=IncludeAbsentOwnerOnly"
+                "&distressed=IncludeDistressed",
+                status=200,
+                json=AttomCompsFixture.COMPS_2769_SAN_MARINO,
+                match=[matchers.header_matcher(expected_req_headers)],
+            )
+            x = attom_api.get_comps("5077-028-025", "Los Angeles", "CA")
+            print("HI")
+
+
+#            resp: AttomCompsResponse = x

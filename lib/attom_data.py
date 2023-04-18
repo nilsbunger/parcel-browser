@@ -5,6 +5,7 @@ from pydantic import ValidationError
 from elt.models import ExternalApiData
 from elt.models.external_api_data import CacheableApi
 from facts.models import StdAddress
+from lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
 from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
 
 
@@ -65,11 +66,59 @@ class AttomDataApi(CacheableApi):
             lookup_key=lookup_key,
             hash_version=hash_version,
             headers={"Apikey": self.api_key, "Accept": "application/json"},
-            paged=False,
+            paged=True,
         )
         assert len(external_data.data["property"]) == 1, "Expected only one property record"
         try:
             prop_expanded_profile = AttomPropertyRecord.parse_obj(external_data.data["property"][0])
+        except ValidationError as e:
+            print(e)
+            print("...")
+            raise e
+        return prop_expanded_profile
+
+    def get_comps(self, apn, county: str, state: str):
+        # Get comparable sales for a property from the ATTOM API with some reasonable parameters
+        # https://api.gateway.attomdata.com/property/v2/salescomparables/apn/5077-028-025/Los%20Angeles/CA
+        #   ?searchType=Radius&minComps=1&maxComps=20&miles=5&bedroomsRange=10&bathroomRange=10&sqFeetRange=10000
+        #   &lotSizeRange=10000&saleDateRange=24&ownerOccupied=IncludeAbsentOwnerOnly&distressed=IncludeDistressed
+        assert len(state) == 2
+        url = self.api_url + f"/property/v2/salescomparables/apn/{apn}/{county}/{state}"
+        params = {
+            "searchType": "Radius",
+            "minComps": 1,
+            "maxComps": 20,
+            "miles": 5,
+            "bedroomsRange": 10,
+            "bathroomRange": 10,
+            "sqFeetRange": 10000,
+            "lotSizeRange": 10000,
+            "saleDateRange": 24,
+            "ownerOccupied": "IncludeAbsentOwnerOnly",
+            "distressed": "IncludeDistressed",
+        }
+        # lookup key should be unique within the vendor
+        lookup_key = f"property/v2/salescomp/apn:{sorted(params.items())}"
+        hash_version = 1  # change when we change lookup key
+        external_data = self.get(
+            url,
+            params,
+            lookup_key=lookup_key,
+            hash_version=hash_version,
+            headers={"Apikey": self.api_key, "Accept": "application/json"},
+            paged=False,
+        )
+        try:
+            comp_property = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"][
+                "PROPERTY_INFORMATION_RESPONSE_ext"
+            ]["SUBJECT_PROPERTY_ext"]["PROPERTY"][1]
+            subj_property = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"][
+                "PROPERTY_INFORMATION_RESPONSE_ext"
+            ]["SUBJECT_PROPERTY_ext"]["PROPERTY"][0]
+
+            y = SubjectProperty.parse_obj(subj_property)
+            x = CompPropertyContainer.parse_obj(comp_property)
+            prop_expanded_profile = CompSalesResponse.parse_obj(external_data.data)
         except ValidationError as e:
             print(e)
             print("...")

@@ -20,7 +20,7 @@ class ExternalApiData(models.Model):
 
     data = models.JSONField()
     lookup_hash = models.BigIntegerField()
-    lookup_key = models.CharField(max_length=128)
+    lookup_key = models.CharField(max_length=512)
     hash_version = models.IntegerField(
         default=1
     )  # hash and data version - increase when using a new hash function or changing the data
@@ -54,9 +54,6 @@ class CacheableApi(ABC):
         cached_results = ExternalApiData.objects.filter(
             vendor=self.vendor, lookup_hash=lookup_hash, hash_version=hash_version
         )
-        if not paged:
-            print("NOT PAGED... see if this call works")
-        paged = True  # TODO: remove this if it works for all calls
         if len(cached_results) == 1:
             # cache hit
             print(f"CACHE HIT for {url} {params}")
@@ -81,23 +78,26 @@ class CacheableApi(ABC):
                 if response.status_code != 200:
                     raise Exception(f"API call to {url} returned an error: " + str(response.status_code))
                 json_resp = response.json()
-                status = ApiResponseStatus.parse_obj(json_resp["status"])
-                if status.msg != "SuccessWithResult":
-                    print(f"API call to {url} returned an error: " + status.msg)
+                # Different Attom API calls have pretty different response structures. The property APIs
+                # have a "status" field and can be paged. But comp sales doesn't, for example.
+                if "status" in json_resp:
+                    status = ApiResponseStatus.parse_obj(json_resp["status"])
+                    if status.msg != "SuccessWithResult":
+                        print(f"API call to {url} returned an error: " + status.msg)
 
-                if paged:
-                    if params["page"] == 1:
-                        # first page result... use this to initalize data
-                        num_pages = math.ceil(status.total / status.pagesize)
-                        # find data field, it's the response field that's a list
-                        data_field = [k for k, v in json_resp.items() if type(v) is list]
-                        assert len(data_field) == 1
-                        data_key = data_field[0]
-                        data = json_resp[data_key]
-                        assert isinstance(data, list)
-                    else:
-                        data.extend(json_resp[data_key])
-                    params["page"] = params["page"] + 1
+                    if paged:
+                        if params["page"] == 1:
+                            # first page result... use this to initalize data
+                            num_pages = math.ceil(status.total / status.pagesize)
+                            # find data field, it's the response field that's a list
+                            data_field = [k for k, v in json_resp.items() if type(v) is list]
+                            assert len(data_field) == 1
+                            data_key = data_field[0]
+                            data = json_resp[data_key]
+                            assert isinstance(data, list)
+                        else:
+                            data.extend(json_resp[data_key])
+                        params["page"] = params["page"] + 1
                 num_pages -= 1
             if paged:
                 json_resp[data_key] = data
