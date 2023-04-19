@@ -5,8 +5,9 @@ from pydantic import ValidationError
 from elt.models import ExternalApiData
 from elt.models.external_api_data import CacheableApi
 from facts.models import StdAddress
-from lib.attom_comp_data_struct import CompSalesResponse
+from lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
 from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
+from mygeo import settings
 
 
 @dataclass(kw_only=True)
@@ -109,15 +110,13 @@ class AttomDataApi(CacheableApi):
             paged=False,
         )
         try:
-            # # Debugging code, not needed if things work.
-            # comp_property = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"][
-            #     "PROPERTY_INFORMATION_RESPONSE_ext"
-            # ]["SUBJECT_PROPERTY_ext"]["PROPERTY"][1]
-            # subj_property = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"][
-            #     "PROPERTY_INFORMATION_RESPONSE_ext"
-            # ]["SUBJECT_PROPERTY_ext"]["PROPERTY"][0]
-            # y = SubjectProperty.parse_obj(subj_property)
-            # x = CompPropertyContainer.parse_obj(comp_property)
+            if settings.DEV_ENV:
+                # parse subject and comps separately in debug to make it easier to untangle a validation error.
+                resp_data = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"]
+                prop_list = resp_data["PROPERTY_INFORMATION_RESPONSE_ext"]["SUBJECT_PROPERTY_ext"]["PROPERTY"]
+                subj_property, comp_property = prop_list[0:2]
+                subj_prop = SubjectProperty.parse_obj(subj_property)
+                comp_prop = CompPropertyContainer.parse_obj(comp_property)
             prop_expanded_profile = CompSalesResponse.parse_obj(external_data.data)
         except ValidationError as e:
             print(e)
