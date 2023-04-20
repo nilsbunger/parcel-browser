@@ -3,8 +3,6 @@ from typing import Union
 
 from pydantic import BaseModel, Extra
 
-from elt.models.external_api_data import ApiResponseStatus
-
 
 class PropertyAddressResponse(BaseModel):
     status: "ApiResponseStatus"
@@ -260,3 +258,12 @@ class _Vintage(BaseModel):
 
 
 AttomPropertyRecord.update_forward_refs()
+
+
+class ApiResponseStatus(BaseModel, extra=Extra.ignore):
+    version: str
+    code: int
+    msg: str
+    total: int
+    page: int
+    pagesize: int

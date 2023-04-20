@@ -3,11 +3,11 @@ from dataclasses import dataclass
 
 from pydantic import ValidationError
 
+from elt.lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
+from elt.lib.attom_data_struct import ApiResponseStatus, AttomPropertyRecord, PropertyAddressResponse
+from elt.lib.elt_api import CacheableApi
 from elt.models import ExternalApiData
-from elt.models.external_api_data import ApiResponseStatus, CacheableApi
 from facts.models import StdAddress
-from lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
-from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
 from mygeo import settings
 
 

@@ -1,7 +1,7 @@
 from django.db import models
 from pydantic import BaseModel, Extra
 
-from lib.attom_data_struct import Address as AttomAddress
+from elt.lib.attom_data_struct import Address as AttomAddress
 from lib.util import LongLat
 
 

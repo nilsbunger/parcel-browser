@@ -5,14 +5,14 @@ import pytest
 import responses
 from responses import matchers
 
-from facts.models import StdAddress
-from lib.attom_data import AttomDataApi
-from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
-from lib.tests.fixtures import AttomCompsFixture, AttomPropertyAddressFixture
-from lib.tests.fixtures.attom_data_fixtures import (
-    expanded_profile_resp,
-    multifam_92101_resp,
+from elt.lib.attom_data import AttomDataApi
+from elt.lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
+from elt.tests.fixtures import (
+    AttomCompsFixture,
+    AttomPropertyAddressFixture,
 )
+from elt.tests.fixtures.attom_data_fixtures import expanded_profile_resp, multifam_92101_resp
+from facts.models import StdAddress
 
 
 class TestAttomApi:
