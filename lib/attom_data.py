@@ -23,14 +23,18 @@ class AttomDataApi(CacheableApi):
     # Transaction V3 : preforeclosure detail
     # https://api.gateway.attomdata.com/property/v3/preforeclosuredetails?combinedAddress=11235%20S%20STEWART%20AVE%2C%20Chicago%2C%20IL%2C%2060628
 
-    def paged_data_fetcher(self, url: str, params: dict[str, any], headers: dict[str, str]) -> dict[str, any]:
+    @property
+    def headers(self):
+        return {"Accept": "application/json", "Apikey": self.api_key}
+
+    def _paged_data_fetcher(self, url: str, params: dict[str, any]) -> dict[str, any]:
         # get data across multiple pages, expecting Attom status field in response. Used by property API calls.
         num_pages = 1
 
         # get first page to calculate overall length and set up accumulating data structure.
         params["page"] = 1
         params["pagesize"] = 200
-        json_resp = self._fetch_json(url, params, headers)
+        json_resp = self._fetch_json(url, params, self.headers)
         status = ApiResponseStatus.parse_obj(json_resp["status"])
         if status.msg != "SuccessWithResult":
             raise (f"API call to {url} returned an error: " + status.msg)
@@ -45,7 +49,7 @@ class AttomDataApi(CacheableApi):
         # get remaining pages
         while num_pages > 0:
             params["page"] = params["page"] + 1
-            json_resp = self._fetch_json(url, params, headers)
+            json_resp = self._fetch_json(url, params, self.headers)
             # Different Attom API calls have pretty different response structures. The property APIs
             # have a "status" field and can be paged. But comp sales doesn't, for example.
             status = ApiResponseStatus.parse_obj(json_resp["status"])
@@ -58,9 +62,9 @@ class AttomDataApi(CacheableApi):
         json_resp[data_key] = accum_data
         return json_resp
 
-    def single_data_fetcher(self, url: str, params: dict[str, any], headers: dict[str, str]) -> dict[str, any]:
+    def _single_data_fetcher(self, url: str, params: dict[str, any]) -> dict[str, any]:
         # get data for a single page, parsing the response as a single object. Used by comps API call.
-        json_resp = self._fetch_json(url, params, headers)
+        json_resp = self._fetch_json(url, params, self.headers)
         return json_resp
 
     # ########################################
@@ -79,14 +83,7 @@ class AttomDataApi(CacheableApi):
         lookup_key = f"property/address:{sorted(params.items())}"
         hash_version = 2  # change when we change lookup key
 
-        external_data = self.get(
-            url,
-            params,
-            lookup_key=lookup_key,
-            hash_version=hash_version,
-            headers={"Apikey": self.api_key, "Accept": "application/json"},
-            fetcher=self.paged_data_fetcher,
-        )
+        external_data = self.get(url, params, lookup_key, hash_version, self._paged_data_fetcher)
         prop_addr_resp = PropertyAddressResponse.parse_obj(external_data.data)
         # prop_addr_resp.raw = external_data
         return prop_addr_resp
@@ -102,14 +99,7 @@ class AttomDataApi(CacheableApi):
         lookup_key = f"property/expandedprofile:{address.street_addr}:{address.city}:{address.state}"
         hash_version = 1  # change when we change lookup key
 
-        external_data = self.get(
-            url,
-            params,
-            lookup_key=lookup_key,
-            hash_version=hash_version,
-            headers={"Apikey": self.api_key, "Accept": "application/json"},
-            fetcher=self.paged_data_fetcher,
-        )
+        external_data = self.get(url, params, lookup_key, hash_version, self._paged_data_fetcher)
         assert len(external_data.data["property"]) == 1, "Expected only one property record"
         try:
             prop_expanded_profile = AttomPropertyRecord.parse_obj(external_data.data["property"][0])
@@ -142,14 +132,7 @@ class AttomDataApi(CacheableApi):
         # lookup key should be unique within the vendor
         lookup_key = f"property/v2/salescomp/apn:{sorted(params.items())}"
         hash_version = 1  # change when we change lookup key
-        external_data = self.get(
-            url,
-            params,
-            lookup_key=lookup_key,
-            hash_version=hash_version,
-            headers={"Apikey": self.api_key, "Accept": "application/json"},
-            fetcher=self.single_data_fetcher,
-        )
+        external_data = self.get(url, params, lookup_key, hash_version, self._single_data_fetcher)
         try:
             if settings.DEV_ENV:
                 # parse subject and comps separately in debug to make it easier to untangle a validation error.

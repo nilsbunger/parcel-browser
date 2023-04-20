@@ -50,7 +50,6 @@ class CacheableApi(ABC):
         self,
         url: str,
         params: dict[str, any],
-        headers: dict[str, str],
         lookup_key: str,
         hash_version: int,
         fetcher: Callable,
@@ -74,7 +73,7 @@ class CacheableApi(ABC):
         else:
             # cache miss -- fetch the data using requests.get(url, params)
             print(f"CACHE MISS... fetching data. LCL KEY={lcl_key}, HASH={hex(lookup_hash)}")
-            json_resp = fetcher(url, params, headers)
+            json_resp = fetcher(url, params)
             # save to DB
             resp = ExternalApiData.objects.create(
                 vendor=self.vendor,
