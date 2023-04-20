@@ -8,7 +8,7 @@ extra_setting = Extra.forbid
 
 
 def empty_to_none(v: str) -> str | None:
-    if v == "":
+    if v == "":  # noqa: PLC1901 - ignore can be simplified to "if not v:"
         return None
     return v
 

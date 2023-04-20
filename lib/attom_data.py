@@ -139,8 +139,8 @@ class AttomDataApi(CacheableApi):
                 resp_data = external_data.data["RESPONSE_GROUP"]["RESPONSE"]["RESPONSE_DATA"]
                 prop_list = resp_data["PROPERTY_INFORMATION_RESPONSE_ext"]["SUBJECT_PROPERTY_ext"]["PROPERTY"]
                 subj_property, comp_property = prop_list[0:2]
-                subj_prop = SubjectProperty.parse_obj(subj_property)
-                comp_prop = CompPropertyContainer.parse_obj(comp_property)
+                subj_prop = SubjectProperty.parse_obj(subj_property)  # noqa:F841
+                comp_prop = CompPropertyContainer.parse_obj(comp_property)  # noqa:F841
             prop_expanded_profile = CompSalesResponse.parse_obj(external_data.data)
         except ValidationError as e:
             print(e)
