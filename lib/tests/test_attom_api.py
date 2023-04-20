@@ -1,3 +1,6 @@
+from pprint import pprint
+
+import pandas as pd
 import pytest
 import responses
 from responses import matchers
@@ -105,7 +108,12 @@ class TestAttomApi:
                 json=AttomCompsFixture.COMPS_2769_SAN_MARINO,
                 match=[matchers.header_matcher(expected_req_headers)],
             )
-            attom_api.get_comps("5077-028-025", "Los Angeles", "CA")
+            x = attom_api.get_comps("5077-028-025", "Los Angeles", "CA")
+            prop_list = x.group.resp.resp_data.property_info_response.subject_property.properties
+            subject_property = prop_list[0]
+            comps = [x.comp_prop for x in prop_list[1:]]
+            pprint(comps[0].__dict__)
+            y = pd.json_normalize([comp.dict() for comp in comps], sep=".")
             assert rsp1.call_count == 1
             print("HI")
 

@@ -1,9 +1,10 @@
+import math
 from dataclasses import dataclass
 
 from pydantic import ValidationError
 
 from elt.models import ExternalApiData
-from elt.models.external_api_data import CacheableApi
+from elt.models.external_api_data import ApiResponseStatus, CacheableApi
 from facts.models import StdAddress
 from lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
 from lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
@@ -21,6 +22,46 @@ class AttomDataApi(CacheableApi):
 
     # Transaction V3 : preforeclosure detail
     # https://api.gateway.attomdata.com/property/v3/preforeclosuredetails?combinedAddress=11235%20S%20STEWART%20AVE%2C%20Chicago%2C%20IL%2C%2060628
+
+    def paged_data_fetcher(self, url: str, params: dict[str, any], headers: dict[str, str]) -> dict[str, any]:
+        # get data across multiple pages, expecting Attom status field in response. Used by property API calls.
+        num_pages = 1
+
+        # get first page to calculate overall length and set up accumulating data structure.
+        params["page"] = 1
+        params["pagesize"] = 200
+        json_resp = self._fetch_json(url, params, headers)
+        status = ApiResponseStatus.parse_obj(json_resp["status"])
+        if status.msg != "SuccessWithResult":
+            raise (f"API call to {url} returned an error: " + status.msg)
+        num_pages = math.ceil(status.total / status.pagesize) - 1
+        # find data field, it's the response field that's a list
+        data_field = [k for k, v in json_resp.items() if type(v) is list]
+        assert len(data_field) == 1
+        data_key = data_field[0]
+        accum_data = json_resp[data_key]
+        assert isinstance(accum_data, list)
+
+        # get remaining pages
+        while num_pages > 0:
+            params["page"] = params["page"] + 1
+            json_resp = self._fetch_json(url, params, headers)
+            # Different Attom API calls have pretty different response structures. The property APIs
+            # have a "status" field and can be paged. But comp sales doesn't, for example.
+            status = ApiResponseStatus.parse_obj(json_resp["status"])
+            if status.msg != "SuccessWithResult":
+                raise (f"API call to {url} returned an error: " + status.msg)
+
+            accum_data.extend(json_resp[data_key])
+            num_pages -= 1
+        # stitch together the accumulated data
+        json_resp[data_key] = accum_data
+        return json_resp
+
+    def single_data_fetcher(self, url: str, params: dict[str, any], headers: dict[str, str]) -> dict[str, any]:
+        # get data for a single page, parsing the response as a single object. Used by comps API call.
+        json_resp = self._fetch_json(url, params, headers)
+        return json_resp
 
     # ########################################
     # Property-centric APIs:  https://api.developer.attomdata.com/docs#!/Property32V1
@@ -44,7 +85,7 @@ class AttomDataApi(CacheableApi):
             lookup_key=lookup_key,
             hash_version=hash_version,
             headers={"Apikey": self.api_key, "Accept": "application/json"},
-            paged=True,
+            fetcher=self.paged_data_fetcher,
         )
         prop_addr_resp = PropertyAddressResponse.parse_obj(external_data.data)
         # prop_addr_resp.raw = external_data
@@ -67,7 +108,7 @@ class AttomDataApi(CacheableApi):
             lookup_key=lookup_key,
             hash_version=hash_version,
             headers={"Apikey": self.api_key, "Accept": "application/json"},
-            paged=True,
+            fetcher=self.paged_data_fetcher,
         )
         assert len(external_data.data["property"]) == 1, "Expected only one property record"
         try:
@@ -107,7 +148,7 @@ class AttomDataApi(CacheableApi):
             lookup_key=lookup_key,
             hash_version=hash_version,
             headers={"Apikey": self.api_key, "Accept": "application/json"},
-            paged=False,
+            fetcher=self.single_data_fetcher,
         )
         try:
             if settings.DEV_ENV:

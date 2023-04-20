@@ -1,5 +1,5 @@
-import math
 from abc import ABC
+from collections.abc import Callable
 from dataclasses import dataclass
 from hashlib import blake2b
 from typing import TypeVar
@@ -38,6 +38,14 @@ T = TypeVar("T")
 class CacheableApi(ABC):
     vendor: ExternalApiData.Vendor
 
+    def _fetch_json(self, url: str, params: dict[str, any], headers: dict[str, str]) -> dict[str, any]:
+        query = urlencode(params, quote_via=quote)
+        response = requests.get(url, query, headers=headers)
+        response.raise_for_status()
+        # if response.status_code != 200:
+        #     raise Exception(f"API call to {url} returned an error: " + str(response.status_code))
+        return response.json()
+
     def get(
         self,
         url: str,
@@ -45,7 +53,7 @@ class CacheableApi(ABC):
         headers: dict[str, str],
         lookup_key: str,
         hash_version: int,
-        paged: bool,
+        fetcher: Callable,
     ) -> ExternalApiData:
         # look in DB for data by
         # if not found, make request and save to DB
@@ -65,42 +73,8 @@ class CacheableApi(ABC):
             raise Exception("Multiple results found for lookup hash")
         else:
             # cache miss -- fetch the data using requests.get(url, params)
-            num_pages = 1
             print(f"CACHE MISS... fetching data. LCL KEY={lcl_key}, HASH={hex(lookup_hash)}")
-            if paged:
-                params["page"] = 1
-                params["pagesize"] = 200
-
-            while num_pages > 0:
-                query = urlencode(params, quote_via=quote)
-                print(query)
-                response = requests.get(url, query, headers=headers)
-                if response.status_code != 200:
-                    raise Exception(f"API call to {url} returned an error: " + str(response.status_code))
-                json_resp = response.json()
-                # Different Attom API calls have pretty different response structures. The property APIs
-                # have a "status" field and can be paged. But comp sales doesn't, for example.
-                if "status" in json_resp:
-                    status = ApiResponseStatus.parse_obj(json_resp["status"])
-                    if status.msg != "SuccessWithResult":
-                        print(f"API call to {url} returned an error: " + status.msg)
-
-                    if paged:
-                        if params["page"] == 1:
-                            # first page result... use this to initalize data
-                            num_pages = math.ceil(status.total / status.pagesize)
-                            # find data field, it's the response field that's a list
-                            data_field = [k for k, v in json_resp.items() if type(v) is list]
-                            assert len(data_field) == 1
-                            data_key = data_field[0]
-                            data = json_resp[data_key]
-                            assert isinstance(data, list)
-                        else:
-                            data.extend(json_resp[data_key])
-                        params["page"] = params["page"] + 1
-                num_pages -= 1
-            if paged:
-                json_resp[data_key] = data
+            json_resp = fetcher(url, params, headers)
             # save to DB
             resp = ExternalApiData.objects.create(
                 vendor=self.vendor,
