@@ -15,7 +15,6 @@ from mygeo import settings
 class AttomDataApi(CacheableApi):
     api_key: str
     api_url: str = "https://api.gateway.attomdata.com"
-    zoo: int = 1
     vendor: ExternalApiData.Vendor = ExternalApiData.Vendor.ATTOM
 
     # https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address?postalcode=82009&page=1&pagesize=100
@@ -76,9 +75,7 @@ class AttomDataApi(CacheableApi):
         #   https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address?postalcode=92101&propertytype=MULTI%20FAMILY%20DWELLING&orderby=beds&page=1&pagesize=200
         #  - a valid zip code
         url = self.api_url + "/propertyapi/v1.0.0/property/address"
-        # propertytype = "MULTI FAMILY DWELLING"
-        propertytype = "Apartment"
-        params = {"postalcode": zipcode, "propertytype": propertytype, "minBeds": 12}
+        params = {"postalcode": zipcode, "propertytype": "Apartment", "minBeds": 12}
         # lookup key should be unique within the vendor
         lookup_key = f"property/address:{sorted(params.items())}"
         hash_version = 2  # change when we change lookup key
@@ -109,7 +106,7 @@ class AttomDataApi(CacheableApi):
             raise e
         return prop_expanded_profile
 
-    def get_comps(self, apn, county: str, state: str):
+    def get_comps(self, apn, county: str, state: str) -> CompSalesResponse:
         # Get comparable sales for a property from the ATTOM API with some reasonable parameters
         # https://api.gateway.attomdata.com/property/v2/salescomparables/apn/5077-028-025/Los%20Angeles/CA
         #   ?searchType=Radius&minComps=1&maxComps=20&miles=5&bedroomsRange=10&bathroomRange=10&sqFeetRange=10000
@@ -141,12 +138,12 @@ class AttomDataApi(CacheableApi):
                 subj_property, comp_property = prop_list[0:2]
                 subj_prop = SubjectProperty.parse_obj(subj_property)  # noqa:F841
                 comp_prop = CompPropertyContainer.parse_obj(comp_property)  # noqa:F841
-            prop_expanded_profile = CompSalesResponse.parse_obj(external_data.data)
+            comp_sales: CompSalesResponse = CompSalesResponse.parse_obj(external_data.data)
         except ValidationError as e:
             print(e)
             print("...")
             raise e
-        return prop_expanded_profile
+        return comp_sales
 
 
 PropertyAddressResponse.update_forward_refs()

@@ -4,7 +4,8 @@ from django.contrib.gis.db import models
 class ExternalApiData(models.Model):
     class Vendor(models.IntegerChoices):
         ATTOM = 1
-        SOMEONE_ELSE = 99
+        RENTOMETER = 2
+        SOMEONE_ELSE = 9999
 
     vendor = models.IntegerField(choices=Vendor.choices)
     created_at = models.DateTimeField(auto_now_add=True)

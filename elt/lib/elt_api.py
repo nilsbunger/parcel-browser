@@ -49,7 +49,7 @@ class CacheableApi(ABC):
             raise Exception("Multiple results found for lookup hash")
         else:
             # cache miss -- fetch the data using requests.get(url, params)
-            print(f"CACHE MISS... fetching data. LCL KEY={lcl_key}, HASH={hex(lookup_hash)}")
+            print(f"CACHE MISS for {url} {params}... fetching data.\n    LCL KEY={lcl_key}, HASH={hex(lookup_hash)}")
             json_resp = fetcher(url, params)
             # save to DB
             resp = ExternalApiData.objects.create(
