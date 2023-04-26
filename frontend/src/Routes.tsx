@@ -6,13 +6,13 @@ import WideLayout from "./layouts/WideLayout"
 import { UserFlowLayout } from "./layouts/UserFlowLayout"
 import { useAuth } from "./hooks/Auth"
 import { Loader } from "@mantine/core"
-import BackyardPage from "./pages/deals/BackyardPage"
 import dataProvider from "@refinedev/simple-rest"
 import routerBindings from "@refinedev/react-router-v6"
 import { Refine } from "@refinedev/core"
 
 // Lazy page loads for faster initial load (bundle splitting)
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
+const BackyardPage = lazy(() => import("./pages/deals/BackyardPage"))
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
 const NewListingPage = lazy(() => import("./pages/NewListingPage"))
 const RentalRatesPage = lazy(() => import("./pages/RentalRatesPage"))
@@ -53,7 +53,7 @@ export function MyRoutes() {
                 <Route index element={<LoginPage />} />
               </Route>
 
-              <Route path="deals" element={<HomeLayout />}>
+              <Route path="deals" element={<UserFlowLayout />}>
                 <Route path="backyard" element={<BackyardPage />} />
               </Route>
 

@@ -31,7 +31,7 @@ export default function Navbar() {
   const userNavigation = [
     { name: "Profile", href: "#" },
     // { name: 'Settings', href: '#' },
-    { name: "Sign out", href: "/logout" },
+    { name: "Sign out", href: "/dj/accounts/logout" },
   ]
 
   return (
