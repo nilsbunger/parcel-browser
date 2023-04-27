@@ -26,69 +26,69 @@ export function MyRoutes() {
   return (
     <BrowserRouter>
       <React.StrictMode>
-        <Refine
-          dataProvider={dataProvider("http://localhost:8000/api")}
-          // notificationProvider={notificationProvider} // seems to overlap with our notif provider
-          routerProvider={routerBindings}
-          // authProvider={authProvider}  // overlaps with our auth provider, maybe we can add this later?
-          resources={
-            [
-              // {
-              //   name: "properties",
-              //   list: "/properties",
-              //   create: "/properties/create",
-              //   edit: "/properties/edit/:id",
-              //   show: "/properties/show/:id",
-              //   meta: {
-              //     canDelete: true,
-              //   },
-              // },
-            ]
-          }
-        >
-          <Suspense fallback={<LoadingScreen />}>
-            <Routes>
-              {/* Pages that don't require login */}
-              <Route path="login" element={<UserFlowLayout />}>
-                <Route index element={<LoginPage />} />
-              </Route>
+        {/*<Refine*/}
+        {/*  dataProvider={dataProvider("http://localhost:8000/api")}*/}
+        {/*  // notificationProvider={notificationProvider} // seems to overlap with our notif provider*/}
+        {/*  routerProvider={routerBindings}*/}
+        {/*  // authProvider={authProvider}  // overlaps with our auth provider, maybe we can add this later?*/}
+        {/*  resources={*/}
+        {/*    [*/}
+        {/*      // {*/}
+        {/*      //   name: "properties",*/}
+        {/*      //   list: "/properties",*/}
+        {/*      //   create: "/properties/create",*/}
+        {/*      //   edit: "/properties/edit/:id",*/}
+        {/*      //   show: "/properties/show/:id",*/}
+        {/*      //   meta: {*/}
+        {/*      //     canDelete: true,*/}
+        {/*      //   },*/}
+        {/*      // },*/}
+        {/*    ]*/}
+        {/*  }*/}
+        {/*>*/}
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            {/* Pages that don't require login */}
+            <Route path="login" element={<UserFlowLayout />}>
+              <Route index element={<LoginPage />} />
+            </Route>
 
-              <Route path="deals" element={<UserFlowLayout />}>
-                <Route path="backyard" element={<BackyardPage />} />
-              </Route>
+            <Route path="deals" element={<UserFlowLayout />}>
+              <Route path="backyard" element={<BackyardPage />} />
+            </Route>
 
-              {/* Rest of pages require login... */}
-              <Route element={<ProtectedRoute />}>
-                {/*<Route path="/properties" element={<MantineInferencer />} />*/}
+            {/* Rest of pages require login... */}
+            <Route element={<ProtectedRoute />}>
+              {/*<Route path="/properties" element={<MantineInferencer />} />*/}
 
-                <Route element={<WideLayout />}>
-                  <Route path="listings">
-                    <Route index element={<ListingsPage />} />
-                  </Route>
+              <Route element={<WideLayout />}>
+                <Route path="listings">
+                  <Route index element={<ListingsPage />} />
                 </Route>
-                <Route path="logout" element={<LogoutHelper />} />
-
-                <Route element={<HomeLayout />}>
-                  {/*<Route path="login" element={<LoginPage/>}/>*/}
-                  <Route index element={<Navigate replace to="/listings" />} />
-                  {/*<Route index element={<HomePage/>}/>*/}
-                  <Route path="analysis">
-                    <Route path=":analysisId" element={<ListingDetailPage />} />
-                  </Route>
-                  <Route path="search" element={<NewListingPage />} />
-                  <Route path="rental-rates" element={<RentalRatesPage />} />
-                  <Route path="map" element={<CoMapPage />} />
-                  <Route path="properties" element={<PropertiesPage />} />
-                  <Route path="properties/new" element={<NewPropertyPage />} />
-                  <Route path="properties/:id" element={<PropertyDetailPage />} />
-                  <Route path="mapbox" element={<MapboxTestPage />} />
-                </Route>
-                {/* Catch-all element below */}
-                <Route path="*" element={<PageNotFound />} />
               </Route>
-            </Routes>
-          </Suspense>
-        </Refine>
+              <Route path="logout" element={<LogoutHelper />} />
+
+              <Route element={<HomeLayout />}>
+                {/*<Route path="login" element={<LoginPage/>}/>*/}
+                <Route index element={<Navigate replace to="/listings" />} />
+                {/*<Route index element={<HomePage/>}/>*/}
+                <Route path="analysis">
+                  <Route path=":analysisId" element={<ListingDetailPage />} />
+                </Route>
+                <Route path="search" element={<NewListingPage />} />
+                <Route path="rental-rates" element={<RentalRatesPage />} />
+                <Route path="map" element={<CoMapPage />} />
+                <Route path="properties" element={<PropertiesPage />} />
+                <Route path="properties/new" element={<NewPropertyPage />} />
+                <Route path="properties/:id" element={<PropertyDetailPage />} />
+                <Route path="mapbox" element={<MapboxTestPage />} />
+              </Route>
+              {/* Catch-all element below */}
+              <Route path="*" element={<PageNotFound />} />
+            </Route>
+          </Routes>
+        </Suspense>
+        {/*</Refine>*/}
       </React.StrictMode>
     </BrowserRouter>
   )
