@@ -1,4 +1,19 @@
+import { useSearchParams } from "react-router-dom"
+
 export default function BackyardPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  if (searchParams.get("t" + "o" + "k" + "en") !== (3 ** (5 ** 2)).toString()) {
+    return (
+      <div className="w-100 h-100 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">You're not authorized to see this page</h1>
+          <p>
+            Reach out to <a href="mailto:hello@home3.co">hello@home3.co</a> if you got this message in error.
+          </p>
+        </div>
+      </div>
+    )
+  }
   return (
     <div>
       <div className="md:container md:mx-auto md:w-8/12">
@@ -343,30 +358,28 @@ export default function BackyardPage() {
         </article>
         <article className="prose max-w-full">
           <h1>Deal Documents</h1>
-          <p>
-            <ul>
-              <li>
-                <a className="link link-hover" href="#">
-                  📄 Backyard Deal Overview
-                </a>
-              </li>
-              <li>
-                <a className="link link-hover" href="#">
-                  📄 Backyard 2022 Q3 Update
-                </a>
-              </li>
-              <li>
-                <a className="link link-hover" href="#">
-                  📄 Backyard-Home3 SPV Operating Agreement
-                </a>
-              </li>
-              <li>
-                <a className="link link-hover" href="#">
-                  📄 Backyard-Home3 SPV Side Letter
-                </a>
-              </li>
-            </ul>
-          </p>
+          <ul>
+            <li>
+              <a className="link link-hover" href="#">
+                📄 Backyard Deal Overview
+              </a>
+            </li>
+            <li>
+              <a className="link link-hover" href="#">
+                📄 Backyard 2022 Q3 Update
+              </a>
+            </li>
+            <li>
+              <a className="link link-hover" href="#">
+                📄 Backyard-Home3 SPV Operating Agreement
+              </a>
+            </li>
+            <li>
+              <a className="link link-hover" href="#">
+                📄 Backyard-Home3 SPV Side Letter
+              </a>
+            </li>
+          </ul>
           <h2>Next Steps</h2>
           <p>Reach out to marcio@home3.co with any questions about this deal.</p>
           <form action="https://forms.gle/o4uhhDWYWZAzzMSc6" method="get" target="_blank">
