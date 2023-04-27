@@ -1,66 +1,51 @@
-# fly.toml file generated for parsnip on 2022-08-10T11:15:31-07:00
+# fly.toml app configuration file generated for parsnip on 2023-04-25T18:19:08-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "parsnip"
+primary_region = "lax"
 kill_signal = "SIGINT"
-kill_timeout = 5
+kill_timeout = "5s"
 
-# [build]
-#   dockerfile = "Dockerfile"
+[experimental]
+  auto_rollback = true
 
 [deploy]
- release_command = "mamba run -n parsnip python manage.py migrate"
+  release_command = "mamba run -n parsnip python manage.py migrate"
 
 [env]
   PORT = "8080"
 
-[build]
-  dockerfile="Dockerfile"
+[processes]
+  cron = "supercronic /app/crontab"
+  web = "mamba run -n parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
 
-# This *should* pass environment variables to the build process, but it doesn't seem to. We set it in Dockerfile instead
-#[build.args]
-#  REACT_APP_BACKEND_DOMAIN="https://parsnip.fly.dev"
-
-[mounts]
-  processes=["web"]
-  source="parsnip_data"
-  destination="/parsnip_data"
-
-[experimental]
-  allowed_public_ports = []
-  auto_rollback = true
+[[mounts]]
+  source = "parsnip_data_machines"
+  destination = "/parsnip_data"
+  processes = ["web"]
 
 [[services]]
-  http_checks = []
-  internal_port = 8080
-  # expose web service to the internet (cron is not listed here because it's internal)
-  processes = ["web"]
   protocol = "tcp"
-  script_checks = []
+  internal_port = 8080
+  processes = ["web"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
   [services.concurrency]
+    type = "connections"
     hard_limit = 8
     soft_limit = 5
-    type = "connections"
-
-  [[services.ports]]
-    force_https = true
-    handlers = ["http"]
-    port = 80
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = 443
 
   [[services.tcp_checks]]
-    grace_period = "1s"
     interval = "30s"
-    restart_limit = 0
     timeout = "10s"
-
-# [[statics]]
-#   guest_path = "/app/public"
-#   url_prefix = "/static/"
-
-[processes]
-# Specify our web service and supercronic (crontab) process groups
-  web = "mamba run -n parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
-  cron = "supercronic /app/crontab"
+    grace_period = "1s"
+    restart_limit = 0
