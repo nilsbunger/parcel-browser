@@ -53,7 +53,7 @@ RUN npm install --location=global yarn
 
 ### ENVIRONMENT - these variables are available in the build phase on Fly.io
 ENV BUILD_PHASE=True
-ENV REACT_APP_BACKEND_DOMAIN=https://parsnip.fly.dev
+ENV REACT_APP_BACKEND_DOMAIN=https://app.home3.co
 ENV DJANGO_ENV=production
 
 ### PYTHON DEPENDENCIES ##################################################################

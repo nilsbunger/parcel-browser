@@ -49,7 +49,8 @@ DJANGO_ENV = env("DJANGO_ENV")
 LOCAL_DB = env("LOCAL_DB")
 TEST_ENV = env("TEST_ENV")
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
-eprint("Django Log Level", DJANGO_LOG_LEVEL)
+eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
+print("Django Log Level (to stdout)", DJANGO_LOG_LEVEL)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
@@ -85,7 +86,9 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "parsnip.fly.dev"]
+ALLOWED_HOSTS = ["parsnip.fly.dev", "app.home3.co"]
+if DEV_ENV:
+    ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
 
 AUTH_USER_MODEL = "userflows.User"
 
@@ -160,7 +163,8 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
+    #  "django.middleware.security.SecurityMiddleware",
+    "world.infra.cloudflare_middleware.CloudflareMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
     "world.infra.my_white_noise_middleware.MyWhiteNoiseMiddleware",
     # ----------------------------------------------------------------------------
@@ -419,6 +423,7 @@ LOGGING = {
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
+            "stream": sys.stdout,
             "formatter": "verbose",
         },
         "file": {
@@ -482,6 +487,16 @@ LOGGING = {
             "level": "INFO",
         },
         "parsnip.commands": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "parsnip": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "mygeo": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
             "propagate": False,
