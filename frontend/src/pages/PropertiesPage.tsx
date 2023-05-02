@@ -77,6 +77,9 @@ export default function PropertiesPage() {
     <ScrollArea>
       <div className="flex flex-row">
         <div className="flex-grow text-right">
+          <Link to={{ pathname: `/bov/1` }} className="btn btn-primary btn-sm mr-4">
+            BOV example
+          </Link>
           <Link to={{ pathname: `/properties/new` }} className="btn btn-primary btn-sm">
             ADD...
           </Link>
