@@ -115,6 +115,9 @@ rich = "^13.3.1"
 beautifulsoup4 = "^4.11.2"
 polars = "^0.17.5"
 pyarrow = "^11.0.0"
+google-api-python-client = "^2.86.0"
+google-auth-httplib2 = "^0.1.0"
+google-auth-oauthlib = "^1.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest-django = "^4.5.2"
@@ -131,6 +134,7 @@ black = "~23"
 pytest-django = "^4.5.2"
 pyyaml = "^6.0"
 ruff = "^0.0.260"
+tiktoken = "^0.3.3"
 
 [build-system]
 requires = ["poetry-core"]
