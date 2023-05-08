@@ -6,9 +6,6 @@ import WideLayout from "./layouts/WideLayout"
 import { UserFlowLayout } from "./layouts/UserFlowLayout"
 import { useAuth } from "./hooks/Auth"
 import { Loader } from "@mantine/core"
-import dataProvider from "@refinedev/simple-rest"
-import routerBindings from "@refinedev/react-router-v6"
-import { Refine } from "@refinedev/core"
 
 // Lazy page loads for faster initial load (bundle splitting)
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
