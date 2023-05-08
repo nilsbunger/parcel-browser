@@ -41,7 +41,7 @@ def frontend_proxy_dev_view(request, path, upstream="http://localhost:1234"):
     upstream_url = upstream + full_path
     try:
         response = urllib.request.urlopen(upstream_url)
-        log.debug(f"Proxying to {upstream_url}")
+        log.debug(f"Proxy to {upstream_url}")
         headers = {}
         if "Accept" in request.headers:
             headers["Accept"] = request.headers["Accept"]
