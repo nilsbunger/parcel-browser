@@ -45,15 +45,17 @@ env = environ.Env(
     ATTOM_DATA_API_KEY=(str, None),
 )
 BUILD_PHASE = env("BUILD_PHASE") == "True"
+
 DJANGO_ENV = env("DJANGO_ENV")
-LOCAL_DB = env("LOCAL_DB")
-TEST_ENV = env("TEST_ENV")
-DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
-eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
-print("Django Log Level (to stdout)", DJANGO_LOG_LEVEL)
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
-TEST_ENV |= executable_name in ["pytest", "_jb_pytest_runner.py"]
+
+LOCAL_DB = env("LOCAL_DB")
+TEST_ENV = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
+DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
+assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
+print("Django Log Level (to stdout)", DJANGO_LOG_LEVEL)
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 CLOUDFLARE_R2_ENABLED = env("CLOUDFLARE_R2_ENABLED") and not TEST_ENV
 
@@ -415,7 +417,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{asctime:.19} [{name}] {levelname}: {message}",
+            "format": "{asctime:.19} {levelname:.5}: {message}  [{name}]",
             "style": "{",
         },
     },
@@ -429,7 +431,7 @@ LOGGING = {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
-            "filename": f"{LOG_DIR}/{datetime.now(tz=UTC):%y-%m-%d-%H%M}-debug.log",
+            "filename": f"{LOG_DIR}/{datetime.now(tz=UTC):%y-%m-%d}-debug.log",
             "formatter": "verbose",
         },
     },
@@ -441,6 +443,11 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": DJANGO_LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "WARNING",
             "propagate": False,
         },
         "django.utils.autoreload": {"level": "INFO"},
@@ -472,14 +479,10 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "rasterio.env": {"level": "INFO"},
         "environ": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": False,
-        },
-        "django.server": {
-            "handlers": ["console"],
-            "level": DJANGO_LOG_LEVEL,
             "propagate": False,
         },
         "two_factor": {
