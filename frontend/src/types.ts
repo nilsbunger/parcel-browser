@@ -291,3 +291,13 @@ export type LoginRequest = z.infer<typeof LoginRequestSchema>
 
 export const LogoutResponseSchema = ApiResponseSchema.extend({})
 export type LogoutResponse = z.infer<typeof LogoutResponseSchema>
+
+export const RentRollRespDataCls = z.object({
+  Occupied: z.array(z.string()),
+  CurrentRent: z.array(z.number()),
+  UnitNum: z.array(z.string()),
+  MoveInDate: z.array(z.number()),
+  LeaseEndDate: z.array(z.number()),
+  SqFt: z.array(z.number()),
+})
+export type RentRollResponse = z.infer<typeof RentRollRespDataCls>

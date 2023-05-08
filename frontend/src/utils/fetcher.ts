@@ -102,10 +102,10 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
     })
   if (!promiseReturn.errors) {
     // no errors, show success toast
-    showNotification({ title: "Submission success", message: promiseReturn.message, color: "green" })
+    showNotification({ title: "Success", message: promiseReturn.message, color: "green" })
   } else if (typeof promiseReturn.errors === "boolean") {
     // page level errors, show error toast. (field-level errors are handled by the caller)
-    showNotification({ title: "Submission failure", message: promiseReturn.message, color: "red" })
+    showNotification({ title: "Failure", message: promiseReturn.message, color: "red" })
   }
   return promiseReturn
 }

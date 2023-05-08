@@ -21,7 +21,8 @@
     "refine": "refine",
     "lint": "eslint . --ext .ts,.tsx",
     "prettify": "prettier --write .",
-    "test": "jest"
+    "test": "jest",
+    "clean": "rm -rf .parcel-cache/ dist/"
   },
   "browserslist": {
     "production": [
@@ -71,12 +72,12 @@
   },
   "dependencies": {
     "@deck.gl/geo-layers": "^8.8.11",
-    "@emotion/react": "^11.10.4",
+    "@emotion/react": "^11.10.8",
     "@headlessui/react": "^1.6.6",
     "@heroicons/react": "^1.0.6",
-    "@mantine/core": "^5.5.0",
+    "@mantine/core": "^6.0.10",
     "@mantine/form": "^5.10.0",
-    "@mantine/hooks": "^5.5.0",
+    "@mantine/hooks": "^6.0.10",
     "@mantine/notifications": "^5.10.0",
     "@mapbox/search-js-react": "^1.0.0-beta.14",
     "@refinedev/cli": "^2.1.2",
@@ -93,6 +94,7 @@
     "deck.gl": "^8.8.11",
     "immer": "^9.0.15",
     "leaflet": "^1.8.0",
+    "mantine-datatable": "^2.4.15",
     "mapbox-gl": "^2.10.0",
     "ol": "^6.14.1",
     "react": "^18.2.0",
