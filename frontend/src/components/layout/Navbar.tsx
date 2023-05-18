@@ -31,7 +31,7 @@ export default function Navbar() {
   const userNavigation = [
     { name: "Profile", href: "#" },
     // { name: 'Settings', href: '#' },
-    { name: "Sign out", href: "/dj/accounts/logout" },
+    { name: "Sign out", backend_href: "/user/logout" },
   ]
 
   return (
@@ -68,7 +68,7 @@ export default function Navbar() {
                   </div>
                   {/* Desktop - Notification bell icon */}
                   <div className="hidden md:block">
-                    <div className="ml-4 md:ml-6">
+                    <div className="ml-4 md:ml-6 flex items-center">
                       {/*<button*/}
                       {/*  type="button"*/}
                       {/*  className="bg-gray-800 p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"*/}
@@ -77,8 +77,10 @@ export default function Navbar() {
                       {/*  <BellIcon className="h-6 w-6" aria-hidden="true" />*/}
                       {/*</button>*/}
                       {/*<Auth0LoginButton />*/}
+
                       {/* Desktop - Profile dropdown */}
                       {!isAuthenticated && <span>No auth</span>}
+                      {isAuthenticated && <span className="text-sm text-gray-700">{user.email}</span>}
                       {isAuthenticated && (
                         // this uses https://headlessui.dev/react/menu Menu
                         <Menu as="div" className="ml-3 flex items-center flex-col justify-items-center">
@@ -95,20 +97,29 @@ export default function Navbar() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                           >
-                            <Menu.Items className="origin-top-right absolute right-10 mt-7 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            {/* Dropdown menu for user avatar icon.*/}
+                            <Menu.Items className="origin-top-right absolute right-60 z-40 mt-7 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                               {userNavigation.map((item) => (
                                 <Menu.Item key={item.name}>
-                                  {({ active }) => (
-                                    <Link
-                                      to={item.href}
-                                      className={classNames(
-                                        active ? "bg-gray-100" : "",
-                                        "block px-4 py-2 text-sm text-gray-700"
-                                      )}
-                                    >
-                                      {item.name}
-                                    </Link>
-                                  )}
+                                  {({ active }) => {
+                                    const classnames = classNames(
+                                      active ? "bg-gray-100" : "",
+                                      "block px-4 py-2 text-sm text-gray-700"
+                                    )
+                                    if (item?.backend_href) {
+                                      return (
+                                        <a href={item.backend_href} className={classnames}>
+                                          {item.name}
+                                        </a>
+                                      )
+                                    } else {
+                                      return (
+                                        <Link to={item.href as string} className={classnames}>
+                                          {item.name}
+                                        </Link>
+                                      )
+                                    }
+                                  }}
                                 </Menu.Item>
                               ))}
                             </Menu.Items>

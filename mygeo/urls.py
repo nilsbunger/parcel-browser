@@ -35,29 +35,34 @@ admin.site.login = superuser_login_required(admin.site.login)
 # from two_factor.urls import urlpatterns as tf_urls
 
 urlpatterns = [
-    path("sentry-debug/", trigger_error, name="sentry-debug"),
-    #### ---- Django-rendered routes
+    ############ login/logout paths: ############
+    path("user/", include("userflows.urls_login")),
+    ############ Django-admin routes ############
     # TODO: make admin require two-factor auth - https://django-two-factor-auth.readthedocs.io/en/1.14.0/class-reference.html
     path("dj/admin/", admin.site.urls),
+    ############ Backend-rendered routes (traditional django template rendering) ############
+    path("dj/co/", include("co.urls")),
+    path("dj/userflows/", include("userflows.urls")),
+    ############ Django-ninja API routes, per app ############
+    path("api/co/", co_api.urls),
+    path("api/userflows/", userflows_api.urls),
+    path("api/properties/", props_api.urls),
+    path("api/", world_api.urls),  # generic / fallback APIs
+    ############ Original routes (including dj/api/ stuff, which should transition to django-ninja) ############
+    path("dj/", include("world.urls")),
+    # Debug route - generate error
+    path("sentry-debug/", trigger_error, name="sentry-debug"),
+    ############ Catch-all for routes that should NOT go to react (ones starting with dj/ or api/) ############
+    re_path(r"^(?:dj|api)/", page_not_found, {"exception": django.http.Http404()}, name="page_not_found"),
+    ############ All other routes - send to React for rendering ############
+    re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
+    ############ Commented-out routes ############
     # # django-two-factor-auth URLS
     # path("", include(tf_urls), name="two-factor-urls"),
     # # django-allauth routes
     # path("dj/allauth/accounts/", include("allauth.urls")),
     # # Original django-auth.... not sure what to do with it yet
-    path("dj/accounts/", include("django.contrib.auth.urls")),
-    path("dj/co/", include("co.urls")),
-    path("dj/userflows/", include("userflows.urls")),
-    # Django-ninja API routes, per app
-    path("api/co/", co_api.urls),
-    path("api/userflows/", userflows_api.urls),
-    path("api/properties/", props_api.urls),
-    path("api/", world_api.urls),  # generic / fallback APIs
-    # Old-school django routes (including dj/api/ stuff, which should transition to django-ninja)
-    path("dj/", include("world.urls")),
-    # Add catch-all for routes that should NOT go to react (ones starting with dj/ or api/)
-    re_path(r"^(?:dj|api)/.+$", page_not_found, {"exception": django.http.Http404()}, name="page_not_found"),
-    # All other routes - send to React for rendering
-    re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
+    # path("dj/accounts/", include("django.contrib.auth.urls")),
 ]
 
 if settings.ENABLE_SILK:

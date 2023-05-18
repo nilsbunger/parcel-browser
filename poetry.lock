@@ -863,6 +863,24 @@ phonenumbers = ["phonenumbers (>=7.0.2)"]
 phonenumberslite = ["phonenumberslite (>=7.0.2)"]
 
 [[package]]
+name = "django-sesame"
+version = "3.1"
+description = "Frictionless authentication with \"Magic Links\" for your Django project."
+category = "main"
+optional = false
+python-versions = ">=3.6.2"
+files = [
+    {file = "django-sesame-3.1.tar.gz", hash = "sha256:5ca0366259f86e5c0d38ee6401c3df39cf9b7af9dfcc13cc229bc2b7cc862a9b"},
+    {file = "django_sesame-3.1-py3-none-any.whl", hash = "sha256:91ede4fe1bc6e6a8994441adf747f75b9e7e76a6a7c96e76c2980f8ac10dce60"},
+]
+
+[package.dependencies]
+django = ">=3.2"
+
+[package.extras]
+ua = ["ua-parser (>=0.10)"]
+
+[[package]]
 name = "django-silk"
 version = "5.0.1"
 description = "Silky smooth profiling for the Django Framework"
@@ -4031,4 +4049,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "189725dc33e522d417834828810c5ffdb57c124b544a531469ff10b0eb88d28f"
+content-hash = "84b0b50996f2ef5d6a22feb372ac6f0fc7f34dbe8dccddd6ca09c9d5a539fb1b"

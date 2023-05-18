@@ -296,8 +296,8 @@ export const RentRollRespDataCls = z.object({
   Occupied: z.array(z.string()),
   CurrentRent: z.array(z.number()),
   UnitNum: z.array(z.string()),
-  MoveInDate: z.array(z.number()),
-  LeaseEndDate: z.array(z.number()),
+  MoveInDate: z.array(z.string()),
+  LeaseEndDate: z.array(z.string()),
   SqFt: z.array(z.number()),
 })
 export type RentRollResponse = z.infer<typeof RentRollRespDataCls>

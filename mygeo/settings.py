@@ -94,9 +94,15 @@ if DEV_ENV:
 
 AUTH_USER_MODEL = "userflows.User"
 
+# Magic link login settings (django-sesame)
+SESAME_MAX_AGE = 300  # 300 seconds = 5 minutes
+
+
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     "django.contrib.auth.backends.ModelBackend",
+    # "magic-link" auth
+    "sesame.backends.ModelBackend",
     # `allauth` specific authentication methods, such as login by e-mail
     # "allauth.account.auth_backends.AuthenticationBackend",
 ]
@@ -324,8 +330,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # LOGIN_URL = "/dj/all-auth/accounts/login/"
 # LOGIN_REDIRECT_URL = "/listings/"
 # LOGIN_URL = "two_factor:login"
-LOGIN_URL = "/login"
-LOGIN_REDIRECT_URL = "two_factor:profile"
+LOGIN_URL = "/user/login"
+LOGIN_REDIRECT_URL = "/properties/"
 
 LOGOUT_REDIRECT_URL = "/"
 # # Authentication -- django-allauth config

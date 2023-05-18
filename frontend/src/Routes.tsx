@@ -9,7 +9,7 @@ import { Loader } from "@mantine/core"
 
 // Lazy page loads for faster initial load (bundle splitting)
 const ListingsPage = lazy(() => import("./pages/ListingsPage"))
-const BackyardPage = lazy(() => import("./pages/deals/BackyardPage"))
+// const BackyardPage = lazy(() => import("./pages/deals/BackyardPage"))
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"))
 const NewListingPage = lazy(() => import("./pages/NewListingPage"))
 const RentalRatesPage = lazy(() => import("./pages/RentalRatesPage"))
@@ -50,13 +50,13 @@ export function MyRoutes() {
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             {/* Pages that don't require login */}
-            <Route path="login" element={<UserFlowLayout />}>
+            <Route path="login_with_password" element={<UserFlowLayout />}>
               <Route index element={<LoginPage />} />
             </Route>
 
-            <Route path="deals" element={<UserFlowLayout />}>
-              <Route path="backyard" element={<BackyardPage />} />
-            </Route>
+            {/*<Route path="deals" element={<UserFlowLayout />}>*/}
+            {/*  <Route path="backyard" element={<BackyardPage />} />*/}
+            {/*</Route>*/}
 
             {/* Rest of pages require login... */}
             <Route element={<ProtectedRoute />}>
@@ -114,7 +114,9 @@ const ProtectedRoute = () => {
   // }
   if (!user && !isLoading) {
     console.log("Protected route, didn't find user, redirecting to login")
-    return <Navigate to="/login" replace />
+    window.location.href = "/user/login"
+    return <LoadingScreen />
+    // return <Navigate to="/user/login" replace />
   }
   return <Outlet />
 }
