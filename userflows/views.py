@@ -37,6 +37,7 @@ class MagicLinkLoginView(FormView):
         """Send an email with this login link to this user."""
         user.email_user(
             subject="[Turboprop] Log in to our app",
+            from_email="hello@home3.co",
             message=f"""\
 Hello,
 

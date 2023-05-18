@@ -94,9 +94,11 @@ if DEV_ENV:
 
 AUTH_USER_MODEL = "userflows.User"
 
-# Magic link login settings (django-sesame)
+# Magic link login settings (django-sesame) -- note: changing settings invalidates existing tokens.
 SESAME_MAX_AGE = 300  # 300 seconds = 5 minutes
-
+SESAME_TOKEN_NAME = "login_token"
+SESAME_TOKENS = ["sesame.tokens_v2"]
+SESAME_SIGNATURE_SIZE = 16
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
