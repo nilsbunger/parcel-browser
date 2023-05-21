@@ -116,7 +116,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "whitenoise.runserver_nostatic",
+    "whitenoise.runserver_nostatic",  # disable django's built-in static file serving, letting whitenoise take over
     "django.contrib.staticfiles",
     # "django.contrib.sites",   # seems to disable site switching for django-allauth?
     "django_extensions",
@@ -203,10 +203,16 @@ if ENABLE_SILK:
 
 ROOT_URLCONF = "mygeo.urls"
 
+# location to get index.html from
+if DEV_ENV:
+    template_dirs = [BASE_DIR / "frontend/dist"]
+else:
+    template_dirs = [BASE_DIR / "dist/django-templates"]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "dist/django-templates"],
+        "DIRS": template_dirs,
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -376,7 +382,7 @@ STATIC_URL = "/static/"
 # Where static files are collected to (eg by "python manage.py collectstatic")
 STATIC_ROOT = BASE_DIR / "dist/static/"
 
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATICFILES_DIRS = [BASE_DIR / "frontend/dist"]
 
 # Static files storage.
 if TEST_ENV:
@@ -387,12 +393,13 @@ else:
 # WHITENOISE_INDEX_FILE = "index.html"
 
 # Absolute path to a directory of files which will be served at the root of your application
-# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL
-WHITENOISE_ROOT = BASE_DIR / "dist/static"
+# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL. We also serve bundled
+# files from here, eg the parcel build output.
+WHITENOISE_ROOT = BASE_DIR / "mygeo/static"
 
 # Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
 # detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
-# by the parcel build process, so we need to set it explicitly. A
+# by the parcel build process, so we need to set it explicitly.
 WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
 
 # Default primary key field type

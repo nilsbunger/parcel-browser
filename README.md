@@ -5,7 +5,7 @@ Home3 application for evaluating parcels for upzoning.
 
 Setup Django, Postgres, and frontend using these steps:
 
-* [Setup steps](docs/setup.md)
+* [Setup steps](docs/setup.md) including Mamba environment setup.
 * [Old brew-based (deprecated) setup steps](docs/archived-brew-setup.md)
 
 # Running in dev
@@ -142,6 +142,9 @@ The major components of the system are:
 When you're working on the code, you'll want the docs open for Shapely, GeoPandas, Django querysets and GeoDjango. 
 You can google for all of them.
 
+# React and static files
+See [static-files.md](docs/static-files.md) to learn how React and static files are served in dev and prod.
+
 
 # Importing data
 
@@ -232,24 +235,6 @@ We use the `LOCAL_DB=1` flag in our django app to select your local DB instance.
 
 Note: it's smart to inspect the json file to make sure no other STDOUT output
 went into it.
-
-# Upgrading the mamba environment
-
-When upgrading python or other system packages we will need to update the mamba env. 
-
-1. Move the old environment to a backup. eg:
-
-   `conda rename -n parsnip parsnip-3-9`
-2. Update mamba-env.yml file with correct versions of packages
-3. Create new environment: 
-
-   `mamba env create -f mamba-env.yml`
-4. Update python packages:
-
-    `mamba activate parnsip`
-
-    `poetry install`
-4. Update `Dockerfile`, `fly.toml`, `pyproject.toml` with new package versions as needed.
 
 # Github Actions
 

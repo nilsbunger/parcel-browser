@@ -15,14 +15,21 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "REACT_APP_BACKEND_DOMAIN=http://localhost:8000 parcel serve src/index.html src/map.ts src/parcel-detail.ts",
-    "build": "parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
+    "dev": "REACT_APP_BACKEND_DOMAIN=http://localhost:8000 parcel watch --target default",
+    "build": "parcel build --no-cache --target default",
+    "___build": "parcel build --dist-dir ../dist/static --no-cache src/index.html src/map.ts src/parcel-detail.ts && mkdir -p ../dist/django-templates && mv ../dist/static/index.html* ../dist/django-templates/",
     "localbuild": "REACT_APP_BACKEND_DOMAIN=http://localhost:8000 parcel build --dist-dir ../dist/static --no-cache && mkdir -p ../dist/django-templates && mv ../dist/static/index.html ../dist/django-templates/",
     "refine": "refine",
     "lint": "eslint . --ext .ts,.tsx",
     "prettify": "prettier --write .",
     "test": "jest",
     "clean": "rm -rf .parcel-cache/ dist/"
+  },
+  "targets": {
+    "default": {
+      "publicUrl": "/static/",
+      "source": ["partials/headend.partial.html", "partials/bodyend.partial.html"]
+    }
   },
   "browserslist": {
     "production": [

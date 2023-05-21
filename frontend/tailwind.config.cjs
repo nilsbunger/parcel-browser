@@ -1,16 +1,24 @@
 module.exports = {
   darkMode: "unusedDarkModeClass", // disable dark mode for now. Remove to fallback to listening to prefer-media-scheme
-  content: ["./src/**/*.{html,js,ts,tsx}"],
+  // Include Django template dirs (../*/templates/) so Tailwind can see classes used in Django templates.
+  content: ["./src/**/*.{html,js,ts,tsx}", "../*/templates/**/*.html"],
   theme: {
     extend: {
       opacity: ["disabled"],
     },
     fontFamily: {
-      sans: ["Syne", "sans-serif"],
-      heading: ["Urbanist"],
+      accent: ["turboserif", "serif"],
+      body: ["DM Sans", "sans-serif"],
     },
-    container: {
+    container: {  // container parameters from tailwind docs
       center: true,
+      padding: {
+        DEFAULT: '1rem',
+        sm: '2rem',
+        lg: '4rem',
+        xl: '5rem',
+        '2xl': '6rem',
+      },
     },
     colors: ({ colors }) => ({
       inherit: colors.inherit,
@@ -61,6 +69,9 @@ module.exports = {
     }),
   },
   variants: {},
+  corePlugins:{
+    // preflight: false,   // disable Tailwind's resetting of styles
+  },
   plugins: [require("@tailwindcss/typography"), require("daisyui")],
   daisyui: {
     themes: ["light"],

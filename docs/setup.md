@@ -1,4 +1,4 @@
-## Setup steps
+# Setup steps
 
 Recommended setup steps are to use:
 * Mamba (a faster version of Conda) for managing system packages and environments. This is like a better 
@@ -6,7 +6,7 @@ version of 'brew' that supports multiple environments.
 * Docker for running Postgres + PostGIS in a container. This is easier than running them directly on your system.
 
 This section walks you through the steps:
-### 1. Set up Mamba + system packages:
+## 1. Set up Mamba + system packages:
 Mamba is a wrapper around Conda. It also installs Conda. 
 
 Mamba creates a "base" environment that's used by default in any terminal. You can install packages you want
@@ -19,7 +19,7 @@ Download **mambaforge** from the link there for your computer architecture (eg. 
 should see the `mambaforge/bin` path at the beginning.
 - You can install system-wide packages here, similar to how brew works, with `mamba install <package>`.
  
-### 2. Docker image for Postgres:
+## 2. Docker image for Postgres:
 This is the recommended way to run Postgres + Postgis on your local machine.
 1. Get the Docker Desktop app (the M1 Mac app) from Docker.com and install it.
 2. `docker pull ghcr.io/baosystems/postgis:14`  -- downloads the Postgis image. [Ref]( https://github.com/postgis/docker-postgis/issues/216#issuecomment-981824739).
@@ -35,7 +35,7 @@ using it.
 
 
 
-### 3. Setup Parsnip environment
+## 3. Setup Mamba for parsnip environment
 From the parsnip directory:
 
 - `mamba env create -f mamba-env.yml` -- creates the conda virual environment, downloading all the system packages 
@@ -50,3 +50,23 @@ environnment.
  
 Note: You'll periodically need to update frontend and backend dependencies as the code changes with `poetry install` and `yarn install` as 
 above.
+
+
+
+## 4. Upgrading python in the mamba environment
+
+When upgrading python or other system packages we will need to update the mamba env. 
+
+1. Move the old environment to a backup. eg:
+
+   `conda rename -n parsnip parsnip-3-9`
+2. Update mamba-env.yml file with correct versions of packages
+3. Create new environment: 
+
+   `mamba env create -f mamba-env.yml`
+4. Update python packages:
+
+    `mamba activate parnsip`
+
+    `poetry install`
+4. Update `Dockerfile`, `fly.toml`, `pyproject.toml` with new package versions as needed.

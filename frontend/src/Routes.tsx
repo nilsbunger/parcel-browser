@@ -113,9 +113,11 @@ const ProtectedRoute = () => {
   //   )
   // }
   if (!user && !isLoading) {
-    console.log("Protected route, didn't find user, redirecting to login")
-    window.location.href = "/user/login"
-    return <LoadingScreen />
+    return (
+      <h2>
+        Protected route. Try <a href="/user/login">logging in?</a>
+      </h2>
+    )
     // return <Navigate to="/user/login" replace />
   }
   return <Outlet />

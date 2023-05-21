@@ -268,7 +268,7 @@ export default function ListingsPage() {
     const jsonSettings = JSON.parse(window.localStorage.getItem("listings_page_settings") as string)
     if (jsonSettings) {
       const settings = ListingsPageLocalStorage.parse(jsonSettings)
-      console.log("Setting local state to", settings)
+      // console.log("Setting local state to", settings)
       setPageSize(settings.pageSize)
       setPageIndex(settings.pageIndex)
       setSorting(settings.sorting as SortingState)
@@ -345,15 +345,17 @@ export default function ListingsPage() {
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
   })
 
-  if (error)
+  if (error) {
+    console.log("Error", pageSize, error)
     return (
       <div className="md:container px-8 lg:px-16 pt-2">
         <h2>Failed to load</h2>
         <p>
-          Try <a href="/dj/accounts/login/">logging in?</a>
+          Try <a href="/user/login">logging in?</a>
         </p>
       </div>
     )
+  }
 
   return (
     <div className={"flex flex-row"}>

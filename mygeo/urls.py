@@ -1,4 +1,5 @@
 """mygeo URL Configuration"""
+
 import django
 from django.contrib import admin
 from django.contrib.auth.decorators import user_passes_test
@@ -11,7 +12,7 @@ from mygeo import settings
 from props.api import props_api
 from userflows.api import userflows_api
 from world.api import world_api
-from world.infra import frontend_proxy_view
+from world.infra.frontend_proxy_view import FrontEndProxyView
 
 # from userflows.api import userflows_api
 
@@ -55,7 +56,8 @@ urlpatterns = [
     ############ Catch-all for routes that should NOT go to react (ones starting with dj/ or api/) ############
     re_path(r"^(?:dj|api)/", page_not_found, {"exception": django.http.Http404()}, name="page_not_found"),
     ############ All other routes - send to React for rendering ############
-    re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
+    re_path(r"^[^.]*$", FrontEndProxyView.as_view(template_name="react_layout.html"), name="frontend_proxy_view"),
+    # re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
     ############ Commented-out routes ############
     # # django-two-factor-auth URLS
     # path("", include(tf_urls), name="two-factor-urls"),

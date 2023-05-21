@@ -1,4 +1,6 @@
 # Create your views here.
+import logging
+
 import sesame
 import sesame.utils
 from django import forms
@@ -7,6 +9,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import FormView
+
+log = logging.getLogger(__name__)
 
 
 class MagicLinkLoginForm(forms.Form):
@@ -23,8 +27,13 @@ class MagicLinkLoginView(FormView):
         try:
             return User.objects.get(email=email)
         except User.DoesNotExist:
+            pass
+        addr, domain = email.split("@")
+        if domain in ["home3.co"]:
             new_user = User.objects.create_user(email=email)
             return new_user
+        log.error(f"Request to create account from email {email}")
+        return None
 
     def create_link(self, user):
         """Create a login link for this user."""

@@ -1,3 +1,4 @@
+parsnip*.json
 *.pyc
 .idea/
 .env*
