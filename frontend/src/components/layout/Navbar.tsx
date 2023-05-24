@@ -36,7 +36,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="h-1 w-full bg-pinkpop"></div>
+      <div className="h-1 w-full bg-accent"></div>
       <div className="md:container px-8 lg:px-16 pt-2">
         <Disclosure as="nav" className="">
           {({ open }) => (

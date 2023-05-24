@@ -1,21 +1,13 @@
 {% extends "base_layout.html" %}
-{#<!DOCTYPE html>#}
-{#<html lang="en">#}
-{#    <head>#}
-{#        <title>Log in</title>#}
-{#    </head>#}
-{#    <body>#}
 {% block content %}
-        {% if request.user.is_authenticated %}
-        <p>You are already logged in as {{ request.user.email }}.</p>
-        {% endif %}
-        <form action="{{ request.path }}" method="POST">
-            {% csrf_token %}
-            <p>
-                {{ form }}
-                <input type="submit" value="Send log in link">
-            </p>
-        </form>
+  {#    {% if request.user.is_authenticated %}#}
+  {#        <p>You are already logged in as {{ request.user.email }}.</p>#}
+  {#    {% endif %}#}
+  <section>
+    <div id="login_react_div"></div>
+  </section>
+
+  {# this should be at body end #}
+  {% include "login.partial.html" %}
+
 {% endblock %}
-{#    </body>#}
-{#</html>#}

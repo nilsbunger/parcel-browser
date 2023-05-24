@@ -10,6 +10,8 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import FormView
 
+from .lib import send_magic_link_email
+
 log = logging.getLogger(__name__)
 
 
@@ -21,19 +23,10 @@ class MagicLinkLoginView(FormView):
     template_name = "userflows/magic_link_login.html"
     form_class = MagicLinkLoginForm
 
-    def get_user(self, email):
-        """Find the user with this email address."""
+    def get_user(self, email) -> get_user_model() | None:
+        """Find the user with this email address, return its instance or None"""
         User = get_user_model()
-        try:
-            return User.objects.get(email=email)
-        except User.DoesNotExist:
-            pass
-        addr, domain = email.split("@")
-        if domain in ["home3.co"]:
-            new_user = User.objects.create_user(email=email)
-            return new_user
-        log.error(f"Request to create account from email {email}")
-        return None
+        return User.objects.get_or_create(email=email)
 
     def create_link(self, user):
         """Create a login link for this user."""
@@ -42,29 +35,11 @@ class MagicLinkLoginView(FormView):
         link += sesame.utils.get_query_string(user)
         return link
 
-    def send_email(self, user, link):
-        """Send an email with this login link to this user."""
-        user.email_user(
-            subject="[Turboprop] Log in to our app",
-            from_email="hello@home3.co",
-            message=f"""\
-Hello,
-
-You requested that we send you a link to log in to our app:
-
-    {link}
-
-Thank you for using Turboprop!
-""",
-        )
-
-    def email_submitted(self, email):
+    def form_valid(self, form):
+        email = form.cleaned_data["email"]
         user = self.get_user(email)
         link = self.create_link(user)
-        self.send_email(user, link)
-
-    def form_valid(self, form):
-        self.email_submitted(form.cleaned_data["email"])
+        send_magic_link_email(user, link)
         return render(self.request, "userflows/magic_link_login_success.html")
 
 

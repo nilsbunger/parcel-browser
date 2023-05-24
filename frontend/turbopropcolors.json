@@ -1,0 +1,93 @@
+[
+  {
+    "paletteName": "TP Yellows",
+    "swatches": [
+      {
+        "name": "200",
+        "color": "332F1A"
+      },
+      {
+        "name": "400",
+        "color": "6C6322"
+      },
+      {
+        "name": "600",
+        "color": "9B921E"
+      },
+      {
+        "name": "700",
+        "color": "C9BE13"
+      },
+      {
+        "name": "TP Yellow",
+        "color": "EADE00"
+      },
+      {
+        "name": "900",
+        "color": "FFF200"
+      }
+    ]
+  },
+  {
+    "paletteName": "TP Blues",
+    "swatches": [
+      {
+        "name": "TP Blue",
+        "color": "00142B"
+      },
+      {
+        "name": "200",
+        "color": "133260"
+      },
+      {
+        "name": "400",
+        "color": "3B5995"
+      },
+      {
+        "name": "600",
+        "color": "778ECA"
+      },
+      {
+        "name": "800",
+        "color": "C9D5FF"
+      }
+    ]
+  },
+  {
+    "paletteName": "TP Grays",
+    "swatches": [
+      {
+        "name": "100",
+        "color": "1E1E1E"
+      },
+      {
+        "name": "200",
+        "color": "2e2e2d"
+      },
+      {
+        "name": "400",
+        "color": "656563"
+      },
+      {
+        "name": "600",
+        "color": "9E9E9D"
+      },
+      {
+        "name": "TPGray",
+        "color": "C9C9C7"
+      },
+      {
+        "name": "800",
+        "color": "DEDDD8"
+      },
+      {
+        "name": "TPWheat",
+        "color": "F3F1ED"
+      },
+      {
+        "name": "White",
+        "color": "FFFFFF"
+      }
+    ]
+  }
+]

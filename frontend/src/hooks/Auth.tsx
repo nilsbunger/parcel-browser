@@ -2,7 +2,7 @@ import * as React from "react"
 import { createContext, useContext } from "react"
 import { apiRequest, ApiResponse, fetcher } from "../utils/fetcher"
 import useSWR from "swr"
-import { LoginRequest, LoginRespDataCls, User } from "../types"
+import { isMagicLinkLogin, LoginRequest, LoginRespDataCls, MagicLinkLoginRequest, User } from "../types"
 import { BACKEND_DOMAIN } from "../constants"
 import { z } from "zod"
 
@@ -18,15 +18,17 @@ export const useAuth = () => {
 
 // Auth context provider:
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // console.log("Running AuthProvider")
   const auth: AuthContextType = useAuthProvider()
+  // console.log("Authprovider value is", auth)
   return <authContext.Provider value={auth}>{children}</authContext.Provider>
 }
 
 // Provider hook that creates auth object and handles state
 function useAuthProvider() {
+  // console.log("Running useAuthProvider")
   // const [user, setUser] = useState(null);
   // const navigate = useNavigate();
-
   const { data, error, isValidating, mutate } = useSWR<User | null>(
     `${BACKEND_DOMAIN}/api/userflows/user`,
     fetcher,
@@ -50,13 +52,14 @@ function useAuthProvider() {
   }
   // console.log("Got user", user)
   const logIn = async (
-    loginParameters: LoginRequest
+    loginParameters: LoginRequest | MagicLinkLoginRequest
   ): Promise<{
     errors: boolean | Record<string, string>
     data: z.infer<typeof LoginRespDataCls>
     message: string | null
   }> => {
-    const { data, errors, message } = await apiRequest<typeof LoginRespDataCls>(`api/userflows/login`, {
+    const apiUrl = isMagicLinkLogin(loginParameters) ? "api/userflows/magic_link_login" : "api/userflows/login"
+    const { data, errors, message } = await apiRequest<typeof LoginRespDataCls>(apiUrl, {
       RespDataCls: LoginRespDataCls,
       isPost: true,
       body: loginParameters,
@@ -96,7 +99,6 @@ function useAuthProvider() {
     console.error("Not implemented")
     return Promise.resolve()
   }
-
   // Return the user object and auth methods
   return {
     user,
@@ -114,7 +116,7 @@ export interface AuthContextType {
   user: User | null
   error: string | null
   isLoading: boolean
-  logIn: (x: LoginRequest) => Promise<ApiResponse<typeof LoginRespDataCls>>
+  logIn: (x: LoginRequest | MagicLinkLoginRequest) => Promise<ApiResponse<typeof LoginRespDataCls>>
   logOut: () => Promise<void>
   signUp: (x: LoginRequest) => Promise<void>
   sendPasswordResetEmail: (x: string) => Promise<void>

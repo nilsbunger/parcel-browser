@@ -288,6 +288,15 @@ export const LoginRequestSchema = z.object({
   rememberMe: z.boolean(),
 })
 export type LoginRequest = z.infer<typeof LoginRequestSchema>
+export const MagicLinkLoginRequestSchema = z.object({
+  email: z.string().email(),
+  rememberMe: z.boolean(),
+})
+export type MagicLinkLoginRequest = z.infer<typeof MagicLinkLoginRequestSchema>
+
+export function isMagicLinkLogin(req: LoginRequest | MagicLinkLoginRequest): req is MagicLinkLoginRequest {
+  return (req as LoginRequest).password !== undefined
+}
 
 export const LogoutResponseSchema = ApiResponseSchema.extend({})
 export type LogoutResponse = z.infer<typeof LogoutResponseSchema>

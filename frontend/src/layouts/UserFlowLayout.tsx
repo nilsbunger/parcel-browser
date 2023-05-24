@@ -9,7 +9,7 @@ export const UserFlowLayout = () => {
       <div className="min-h-screen w-full coolbg">
         <div className="flex min-h-screen flex-col justify-between">
           <div>
-            <div className="h-1 w-full bg-pinkpop"></div>
+            <div className="h-1 w-full bg-accent"></div>
             <div className="md:container px-8 lg:px-16 pt-2">
               <Home3Logo />
             </div>

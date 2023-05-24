@@ -28,7 +28,11 @@
   "targets": {
     "default": {
       "publicUrl": "/static/",
-      "source": ["partials/headend.partial.html", "partials/bodyend.partial.html"]
+      "source": [
+        "partials/headend.partial.html",
+        "partials/bodyend.partial.html",
+        "partials/login.partial.html"
+      ]
     }
   },
   "browserslist": {
@@ -90,7 +94,7 @@
     "@tabler/icons": "^1.103.0",
     "@tanstack/react-table": "^8.5.2",
     "axios": "^0.27.2",
-    "daisyui": "^2.22.0",
+    "daisyui": "^2.51.6",
     "deck.gl": "^8.8.11",
     "immer": "^9.0.15",
     "leaflet": "^1.8.0",
