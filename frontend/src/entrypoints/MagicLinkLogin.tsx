@@ -47,13 +47,13 @@ export function MagicLinkLogin() {
 
   return (
     <div className="flex flex-col items-center justify-center md:px-6 py-8 mx-auto lg:py-0">
-      <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0">
+      <div className="w-full rounded-lg bg-white shadow md:mt-0 sm:max-w-md xl:p-0">
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
           {isEmailSent && (
-            <>
-              <h2>Thanks for connecting! </h2>
+            <div className="text-center">
+              <h2>Welcome to Turboprop! </h2>
               <p>Check your email for a link to login</p>
-            </>
+            </div>
           )}
           {!isEmailSent && (
             <>

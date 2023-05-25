@@ -36,12 +36,12 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="h-1 w-full bg-accent"></div>
+      <div className="h-1 w-full bg-acc"></div>
       <div className="md:container px-8 lg:px-16 pt-2">
         <Disclosure as="nav" className="">
           {({ open }) => (
             <>
-              <div className="max-w-7xl mx-auto">
+              <div className="mx-auto">
                 <div className="flex items-center justify-between h-16">
                   <div className="flex items-center">
                     {/* Logo:*/}

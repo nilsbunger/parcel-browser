@@ -6,12 +6,11 @@ import React from "react"
 const WideLayout = () => {
   return (
     <>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col">
         <Navbar />
-        <main className="grow">
+        <main className="grow bg-white">
           <Outlet />
         </main>
-        <Home3Footer />
       </div>
     </>
   )

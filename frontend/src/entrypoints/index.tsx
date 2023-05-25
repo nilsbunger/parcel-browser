@@ -8,7 +8,7 @@ import { Notifications } from "@mantine/notifications"
 
 export function App() {
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
+    <MantineProvider>
       <Notifications position="top-right" zIndex={2077} limit={8} />
       <AuthProvider>
         <MyRoutes />
@@ -16,7 +16,6 @@ export function App() {
     </MantineProvider>
   )
 }
-
 
 const app = document.getElementById("app")
 ReactDOM.render(<App />, app)

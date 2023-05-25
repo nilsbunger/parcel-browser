@@ -6,18 +6,18 @@ import { ErrorBoundary } from "react-error-boundary"
 
 type Props = { listings: Listing[] }
 
-const asSqFt = (m) => Math.round(m * 3.28 * 3.28)
+const asSqFt = (m: number) => Math.round(m * 3.28 * 3.28)
 
 function ListingsMap({ listings }: Props) {
   const center = [32.7157, -117.1611]
   return (
     <ErrorBoundary fallback={<div>Error in ListingsMap</div>}>
       <MapContainer
-        center={center}
+        center={center as any}
         zoom={13}
         scrollWheelZoom={true}
         className={"!h-[80vh] !w-5/12"}
-        whenCreated={(map) =>
+        whenCreated={(map: any) =>
           setInterval(() => {
             map.invalidateSize()
           }, 100)

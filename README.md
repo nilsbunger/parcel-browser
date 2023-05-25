@@ -94,16 +94,19 @@ Tools we use, and how to run them. You should run these before committing code:
   * `yarn lint`: Run eslint
   * `yarn prettier`: autoformat typescript code (and write changes to files)
 
-# Simulating the production environment locallly
+# Simulate the production environment locallly
 
 You don't usually need to do this, but if you need to debug an environment more similar to production,
 you can run the app in production mode as follows:
 
 1. Build frontend files: 
-`cd frontend && yarn build && cd ..`
+`cd frontend && REACT_APP_BACKEND_DOMAIN=http://localhost:8080 yarn build && cd ..`
 
-2. Serve with similar command line as in production:
-`DJANGO_ENV=prod LOCAL_DB=0 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
+2. Collect static files:
+`rm -rf dist && ./manage.py collectstatic -v3 --noinput`
+
+3. Serve with similar command line as in production:
+`DJANGO_ENV=production LOCAL_DB=1 DJANGO_SECRET_KEY=12345 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
 
 It is possible to go even higher fidelity, by running in a docker container.
 

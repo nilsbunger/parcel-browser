@@ -27,26 +27,6 @@ export function MyRoutes() {
   return (
     <BrowserRouter>
       <React.StrictMode>
-        {/*<Refine*/}
-        {/*  dataProvider={dataProvider("http://localhost:8000/api")}*/}
-        {/*  // notificationProvider={notificationProvider} // seems to overlap with our notif provider*/}
-        {/*  routerProvider={routerBindings}*/}
-        {/*  // authProvider={authProvider}  // overlaps with our auth provider, maybe we can add this later?*/}
-        {/*  resources={*/}
-        {/*    [*/}
-        {/*      // {*/}
-        {/*      //   name: "properties",*/}
-        {/*      //   list: "/properties",*/}
-        {/*      //   create: "/properties/create",*/}
-        {/*      //   edit: "/properties/edit/:id",*/}
-        {/*      //   show: "/properties/show/:id",*/}
-        {/*      //   meta: {*/}
-        {/*      //     canDelete: true,*/}
-        {/*      //   },*/}
-        {/*      // },*/}
-        {/*    ]*/}
-        {/*  }*/}
-        {/*>*/}
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             {/* Pages that don't require login */}
@@ -114,11 +94,16 @@ const ProtectedRoute = () => {
   // }
   if (!user && !isLoading) {
     return (
-      <h2>
-        Protected route. Try <a href="/user/login">logging in?</a>
-      </h2>
+      <div className="flex flex-col items-center justify-center min-h-screen w-full coolbg md:px-6 py-8 mx-auto lg:py-0">
+        <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
+          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+            <h2 className="text-center">
+              You're signed out. Try <a href="/user/login">signing in?</a>
+            </h2>
+          </div>
+        </div>
+      </div>
     )
-    // return <Navigate to="/user/login" replace />
   }
   return <Outlet />
 }

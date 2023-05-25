@@ -47,6 +47,7 @@ env = environ.Env(
 BUILD_PHASE = env("BUILD_PHASE") == "True"
 
 DJANGO_ENV = env("DJANGO_ENV")
+assert DJANGO_ENV in ["development", "production"]
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 
@@ -89,7 +90,7 @@ SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
 ALLOWED_HOSTS = ["parsnip.fly.dev", "app.home3.co"]
-if DEV_ENV:
+if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
     ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
 
 AUTH_USER_MODEL = "userflows.User"
@@ -204,7 +205,7 @@ if ENABLE_SILK:
 ROOT_URLCONF = "mygeo.urls"
 
 # location to get index.html from
-if DEV_ENV:
+if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
     template_dirs = [BASE_DIR / "frontend/dist"]
 else:
     template_dirs = [BASE_DIR / "dist/django-templates"]

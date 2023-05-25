@@ -1,11 +1,23 @@
 {% extends "base_layout.html" %}
+
+
 {% block content %}
   {#    {% if request.user.is_authenticated %}#}
   {#        <p>You are already logged in as {{ request.user.email }}.</p>#}
   {#    {% endif %}#}
-  <section>
-    <div id="login_react_div"></div>
-  </section>
+  <div>
+    <div class="h-1 w-full bg-acc"></div>
+    <div class="container px-8 lg:px-16 pt-2">
+      <img src="/logo/Turboprop wordmark dark@2x.png" alt="Turboprop logo" class="h-10 w-auto"/>
+    </div>
+  </div>
+    <div class="container px-8 py-2 flex flex-col">
+      <main>
+        <section>
+          <div id="login_react_div"></div>
+        </section>
+      </main>
+    </div>
 
   {# this should be at body end #}
   {% include "login.partial.html" %}
