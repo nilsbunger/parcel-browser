@@ -100,7 +100,7 @@ You don't usually need to do this, but if you need to debug an environment more 
 you can run the app in production mode as follows:
 
 1. Build frontend files: 
-`cd frontend && REACT_APP_BACKEND_DOMAIN=http://localhost:8080 yarn build && cd ..`
+`cd frontend && yarn build && cd ..`
 
 2. Collect static files:
 `rm -rf dist && ./manage.py collectstatic -v3 --noinput`

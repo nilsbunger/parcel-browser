@@ -4,7 +4,6 @@ import { useCallback, useEffect } from "react"
 import { Anchor, ScrollArea, Table } from "@mantine/core"
 import { Link, useNavigate } from "react-router-dom"
 import useSWR from "swr"
-import { BACKEND_DOMAIN } from "../constants"
 import { fetcher } from "../utils/fetcher"
 
 // const useStyles = createStyles((theme) => ({
@@ -34,7 +33,7 @@ export default function PropertiesPage() {
   }, [])
 
   // get property profiles
-  const { data, error, isValidating } = useSWR(`${BACKEND_DOMAIN}/api/properties/profiles`, fetcher)
+  const { data, error, isValidating } = useSWR(`/api/properties/profiles`, fetcher)
   console.log("isValidating", isValidating)
   console.log("data", data)
 

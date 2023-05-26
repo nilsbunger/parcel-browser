@@ -4,7 +4,6 @@ import { useCallback, useEffect } from "react"
 import { Anchor, ScrollArea, Table } from "@mantine/core"
 import { Link, useParams } from "react-router-dom"
 import useSWR from "swr"
-import { BACKEND_DOMAIN } from "../constants"
 import { fetcher } from "../utils/fetcher"
 import CollapsibleTree from "../components/CollapsibleTree"
 
@@ -12,7 +11,7 @@ export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
 
   // get property profiles
-  const { data, error, isValidating } = useSWR(`${BACKEND_DOMAIN}/api/properties/profiles/${id}`, fetcher)
+  const { data, error, isValidating } = useSWR(`/api/properties/profiles/${id}`, fetcher)
   const addr: string = data?.address.street_addr || "Loading..."
   useEffect(() => {
     document.title = addr

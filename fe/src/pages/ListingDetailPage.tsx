@@ -9,13 +9,12 @@ import { AnalysisGetResp, AnalysisPostResp, AnalysisPostRespSchema } from "../ty
 import { AxiosError } from "axios"
 import { IconX } from "@tabler/icons"
 import { hideNotification, showNotification } from "@mantine/notifications"
-import { BACKEND_DOMAIN } from "../constants"
 
 async function doAnalysis(
   analysisId: number
 ): Promise<{ data: AnalysisPostResp; error: boolean; message: string | null }> {
   // const fetchResponse = AnalysisPostRespSchema.parse(
-  //   await post_csrf(`${BACKEND_DOMAIN}/api/world/analysis/`, {params: { al_id: analysisId }})
+  //   await post_csrf(`/api/world/analysis/`, {params: { al_id: analysisId }})
   // )
   const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`api/world/analysis/`, {
     ResponseCls: AnalysisPostRespSchema,
@@ -66,7 +65,7 @@ export default function ListingDetailPage() {
   // const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false)
   const { data, error } = useSWR<AnalysisGetResp, AxiosError>(
-    `${BACKEND_DOMAIN}/api/world/analysis/${params.analysisId}`,
+    `/api/world/analysis/${params.analysisId}`,
     fetcher
   )
   const { mutate } = useSWRConfig()
@@ -92,7 +91,7 @@ export default function ListingDetailPage() {
     hideNotification("analysis-loading")
     if (!error) {
       console.log("GOT DATA on redo analysis", data)
-      return mutate(`${BACKEND_DOMAIN}/api/world/analysis/${data.analysisId}`)
+      return mutate(`/api/world/analysis/${data.analysisId}`)
     } else {
       console.log("Failed to redo analysis")
       showNotification({ title: "Failed to re-run analysis", message: message, color: "red" })

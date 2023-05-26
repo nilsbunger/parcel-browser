@@ -25,7 +25,6 @@ import ListingsMap from "../components/layout/ListingsMap"
 import { useImmer } from "use-immer"
 import TablePagination from "../components/TablePagination"
 import ListingTable from "../components/ListingTable"
-import { BACKEND_DOMAIN } from "../constants"
 
 const basicAccessor = (cell: Cell<Listing, unknown>) => {
   return String(cell.getValue()).slice(0, 20)
@@ -278,7 +277,7 @@ export default function ListingsPage() {
 
   const { data, error, isValidating } = useSWR(
     [
-      pageSize > -1 && `${BACKEND_DOMAIN}/api/world/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
+      pageSize > -1 && `/api/world/listings`, // if pageSize is undefined, we haven't initialized yet, so wait to fetch
       {
         params: {
           limit: pageSize,

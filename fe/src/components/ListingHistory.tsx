@@ -1,10 +1,9 @@
 import useSWR from "swr"
 import { fetcher } from "../utils/fetcher"
 import * as React from "react"
-import { BACKEND_DOMAIN } from "../constants"
 
 export function ListingHistory({ mlsid }) {
-  const { data, error } = useSWR(`${BACKEND_DOMAIN}/api/world/listinghistory?mlsid=${mlsid}`, fetcher)
+  const { data, error } = useSWR(`/api/world/listinghistory?mlsid=${mlsid}`, fetcher)
   if (error) return <div>ListingHistory failed its AJAX call. {JSON.stringify(error)}</div>
   if (!data) return <div>loading...</div>
   return (

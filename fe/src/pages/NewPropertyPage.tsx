@@ -1,6 +1,5 @@
 import { useForm, zodResolver } from "@mantine/form"
 import useSWR from "swr"
-import { BACKEND_DOMAIN } from "../constants"
 import { apiRequest, fetcher } from "../utils/fetcher"
 import * as React from "react"
 import { useCallback, useState } from "react"
@@ -37,14 +36,14 @@ export default function NewPropertyPage() {
       zip: "",
     },
   })
-  const { data: accessToken, error } = useSWR<string, string>(`${BACKEND_DOMAIN}/api/world/mapboxtoken`, fetcher)
+  const { data: accessToken, error } = useSWR<string, string>(`/api/world/mapboxtoken`, fetcher)
 
   const [showMinimap, setShowMinimap] = useState(true)
   const [feature, setFeature] = useState()
   const navigate = useNavigate()
 
   const handleRetrieve = useCallback(
-    (res) => {
+    (res:any) => {
       console.log("Handle retrieve... features = ", res.features)
       const feature = res.features[0]
       setFeature(feature)

@@ -5,7 +5,6 @@ import useSWR from "swr"
 import "react-data-grid/lib/styles.css"
 import DataGrid, { Column } from "react-data-grid"
 import { apiRequest, fetcher } from "../utils/fetcher"
-import { BACKEND_DOMAIN } from "../constants"
 import { LoginRespDataCls, RentRollRespDataCls } from "../types"
 
 // React data grid: https://github.com/adazzle/react-data-grid/blob/main/README.md
@@ -81,7 +80,7 @@ export default function BovDetailPage() {
         setIsLoading(false)
       })
   }, [id])
-  // const { data, error, isValidating } = useSWR(`${BACKEND_DOMAIN}/api/properties/bov/${id}`, fetcher)
+  // const { data, error, isValidating } = useSWR(`/api/properties/bov/${id}`, fetcher)
   // const addr: string = data?.address.street_addr || "Loading..."
 
   // useMemo(() => {

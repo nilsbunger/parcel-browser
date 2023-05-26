@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, AxiosResponse } from "axios"
 import { useCallback, useEffect, useRef } from "react"
 import { z } from "zod"
-import { BACKEND_DOMAIN } from "../constants"
 import { Middleware, SWRHook } from "swr"
 import { showNotification } from "@mantine/notifications"
 
@@ -49,7 +48,6 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
     data: RespDataCls,
     message: z.string().nullable(),
   })
-  url = `${BACKEND_DOMAIN}/${url}`
   const req = isPost
     ? _axiosPost.post(url, body, { params: params, timeout: 5000 })
     : _axiosGet.get(url, { params: params, timeout: 5000 })

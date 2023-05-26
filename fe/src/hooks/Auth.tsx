@@ -3,7 +3,6 @@ import { createContext, useContext } from "react"
 import { apiRequest, ApiResponse, fetcher } from "../utils/fetcher"
 import useSWR from "swr"
 import { isMagicLinkLogin, LoginRequest, LoginRespDataCls, MagicLinkLoginRequest, User } from "../types"
-import { BACKEND_DOMAIN } from "../constants"
 import { z } from "zod"
 
 const authContext = createContext<AuthContextType | { user: null; isLoading: true }>({
@@ -30,7 +29,7 @@ function useAuthProvider() {
   // const [user, setUser] = useState(null);
   // const navigate = useNavigate();
   const { data, error, isValidating, mutate } = useSWR<User | null>(
-    `${BACKEND_DOMAIN}/api/userflows/user`,
+    `/api/userflows/user`,
     fetcher,
     {
       // More SWR config options at https://swr.vercel.app/docs/api

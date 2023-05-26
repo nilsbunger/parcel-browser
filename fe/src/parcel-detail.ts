@@ -19,7 +19,7 @@
 //   format: new MVT({
 //     idProperty: "iso_a3",
 //   }),
-//   url: `${BACKEND_DOMAIN}/dj/api/topotile/{z}/{x}/{y}`,
+//   url: `/dj/api/topotile/{z}/{x}/{y}`,
 //   wrapX: false,
 // })
 //
