@@ -1,9 +1,12 @@
 FROM postgres:14-bullseye
 
-LABEL maintainer="PostGIS Project - https://postgis.net"
+LABEL maintainer="PostGIS Project - https://postgis.net" \
+      org.opencontainers.image.description="PostGIS 3.3.2+dfsg-1.pgdg110+1 spatial database extension with PostgreSQL 14 bullseye" \
+      org.opencontainers.image.source="https://github.com/postgis/docker-postgis"
 
+## NOTE: See README.md in this directory to help with versions for this Dockerfile.
 ENV POSTGIS_MAJOR 3
-ENV POSTGIS_VERSION 3.2.2+dfsg-1.pgdg110+1
+ENV POSTGIS_VERSION 3.3.2+dfsg-1.pgdg110+1
 
 # RUN mkdir /pgdata/data && chown postgres:postgres /pgdata/data && chmod og+rx /pgdata
 

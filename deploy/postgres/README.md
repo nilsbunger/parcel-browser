@@ -1,4 +1,4 @@
-Dockerfile and scripts come from https://github.com/postgis/docker-postgis/tree/master/14-3.2
+Dockerfile and scripts come from https://github.com/postgis/docker-postgis/tree/master/14-3.3
 
 This is based on the official Postgres image, and this repo with PostGIS extension is is referenced by Postgres 
 
