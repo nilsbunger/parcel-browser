@@ -57,7 +57,7 @@ function useAuthProvider() {
     data: z.infer<typeof LoginRespDataCls>
     message: string | null
   }> => {
-    const apiUrl = isMagicLinkLogin(loginParameters) ? "api/userflows/magic_link_login" : "api/userflows/login"
+    const apiUrl = isMagicLinkLogin(loginParameters) ? "/api/userflows/magic_link_login" : "/api/userflows/login"
     const { data, errors, message } = await apiRequest<typeof LoginRespDataCls>(apiUrl, {
       RespDataCls: LoginRespDataCls,
       isPost: true,
@@ -80,7 +80,7 @@ function useAuthProvider() {
   const logOut = async () => {
     console.error("Not implemented")
     return Promise.resolve() // bogus return value to make async function ok
-    // const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`api/userflows/logout`, {
+    // const fetchResponse = await apiRequest<typeof LogoutResponseSchema>(`/api/userflows/logout`, {
     //   RespResponseCls: LogoutResponseSchema,
     //   isPost: true,
     // })

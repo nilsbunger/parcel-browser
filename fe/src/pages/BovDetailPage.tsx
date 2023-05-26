@@ -59,7 +59,7 @@ export default function BovDetailPage() {
     // load initial values of state from local storage
   }, [id])
   useEffect(() => {
-    apiRequest<typeof RentRollRespDataCls>(`api/properties/bov/${id}`, {
+    apiRequest<typeof RentRollRespDataCls>(`/api/properties/bov/${id}`, {
       RespDataCls: RentRollRespDataCls,
       isPost: false,
       body: undefined,

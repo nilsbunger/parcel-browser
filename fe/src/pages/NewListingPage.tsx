@@ -15,7 +15,7 @@ export default function NewListingPage() {
   // This will make a call every time that addressSearch is mutated, which could
   // result in many network calls. May need to change later
   const { data: addrSearchData, error } = useSWR<AddressSearchGetResp, string>(
-    address.length >= 3 ? `api/world/address-search/${address}` : null,
+    address.length >= 3 ? `/api/world/address-search/${address}` : null,
     fetcher
   )
   const handleAddressSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,13 +27,13 @@ export default function NewListingPage() {
     // @ts-ignore  -- fix this later
     if ("apn" in addrSearchData) {
       setLoading(true)
-      const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`api/world/analysis/`, {
+      const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/world/analysis/`, {
         ResponseCls: AnalysisPostRespSchema,
         isPost: false,
         params: { apn: addrSearchData.apn },
       })
       if (!errors) {
-        await mutate(`api/world/address-search/${address}`)
+        await mutate(`/api/world/address-search/${address}`)
       }
       setLoading(false)
     }

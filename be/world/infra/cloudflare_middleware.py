@@ -2,7 +2,7 @@
 # to the web app. Patch up the request here so we still get the client IP address.
 import logging
 
-from mygeo.settings import DEV_ENV
+from mygeo.settings import DEV_ENV, STAGE_ENV
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class CloudflareMiddleware:
         if "HTTP_CF_CONNECTING_IP" in request.META:
             request.META["REMOTE_ADDR"] = request.META["HTTP_CF_CONNECTING_IP"]
             log.info("CloudflareMiddleware: REMOTE_ADDR set to " + request.META["REMOTE_ADDR"])
-        elif not DEV_ENV:
+        elif not DEV_ENV and not STAGE_ENV:
             log.error(
                 "CloudflareMiddleware: HTTP_CF_CONNECTING_IP not found in request.META. IP="
                 + request.META["REMOTE_ADDR"]

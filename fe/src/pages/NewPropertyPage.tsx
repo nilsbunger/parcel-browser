@@ -67,7 +67,7 @@ export default function NewPropertyPage() {
     async (newProperty: NewPropertyForm) => {
       // console.log("onSubmit: newProperty = ", newProperty)
       const { data, errors, message } = await apiRequest<typeof NewPropertyRespDataCls>(
-        `api/properties/profiles`,
+        `/api/properties/profiles`,
         {
           RespDataCls: NewPropertyRespDataCls,
           isPost: true,

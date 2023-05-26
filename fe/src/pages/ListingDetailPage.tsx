@@ -16,7 +16,7 @@ async function doAnalysis(
   // const fetchResponse = AnalysisPostRespSchema.parse(
   //   await post_csrf(`/api/world/analysis/`, {params: { al_id: analysisId }})
   // )
-  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`api/world/analysis/`, {
+  const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/world/analysis/`, {
     ResponseCls: AnalysisPostRespSchema,
     params: { al_id: analysisId },
     isPost: false,
