@@ -30,10 +30,12 @@ executable_name = os.path.basename(sys.argv[0])
 
 ### CORE configuration variables
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+# Environ package converts environment variables to proper booleans, ints, etc.
 env = environ.Env(
     LOCAL_DB=(bool, False),
     TEST_ENV=(bool, False),  # Running tests; disables silk and other dev infra
-    BUILD_PHASE=(str, "False"),  ## TODO: this should be switchable to a boolean
+    BUILD_PHASE=(bool, False),
     DJANGO_LOG_LEVEL=(str, "INFO"),
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
@@ -44,15 +46,16 @@ env = environ.Env(
     MAPBOX_API_KEY=(str, None),
     ATTOM_DATA_API_KEY=(str, None),
 )
-BUILD_PHASE = env("BUILD_PHASE") == "True"
+BUILD_PHASE: bool = env("BUILD_PHASE")
 
-DJANGO_ENV = env("DJANGO_ENV")
-assert DJANGO_ENV in ["development", "production"]
+DJANGO_ENV: str = env("DJANGO_ENV")
+assert DJANGO_ENV in ["development", "production", "staging"]
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
+STAGE_ENV = DJANGO_ENV == "staging"  # running on staging server
 
-LOCAL_DB = env("LOCAL_DB")
-TEST_ENV = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
+LOCAL_DB: bool = env("LOCAL_DB")
+TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
@@ -78,7 +81,7 @@ eprint(f"**** DEBUG == {DEBUG} ****")
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if PROD_ENV and not BUILD_PHASE and not TEST_ENV:
+if (PROD_ENV or STAGE_ENV) and not BUILD_PHASE and not TEST_ENV:
     SECRET_KEY = env("DJANGO_SECRET_KEY")
     INSECURE = False
 else:
@@ -92,7 +95,8 @@ SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 ALLOWED_HOSTS = ["parsnip.fly.dev", "app.home3.co"]
 if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
     ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
-
+if STAGE_ENV:
+    ALLOWED_HOSTS += ["parsnip-stage.fly.dev"]
 AUTH_USER_MODEL = "userflows.User"
 
 # Magic link login settings (django-sesame) -- note: changing settings invalidates existing tokens.
@@ -204,11 +208,12 @@ if ENABLE_SILK:
 
 ROOT_URLCONF = "mygeo.urls"
 
-# location to get index.html from
+# location to get *.partial.html from
 if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
-    template_dirs = [BASE_DIR / "frontend/dist"]
+    template_dirs = [BASE_DIR / ".." / "fe" / "dist"]
 else:
-    template_dirs = [BASE_DIR / "dist/django-templates"]
+    template_dirs = [BASE_DIR / ".." / "dist" / "django-templates"]
+
 
 TEMPLATES = [
     {
@@ -253,20 +258,20 @@ db_host = None
 db_password = None
 local_db_settings = ("127.0.0.1", "parsnip", "postgres", "password")
 if LOCAL_DB:
-    eprint("**** LOCAL DATABASE ****")
+    eprint("**** LOCAL DATABASE **** (Local DB is:", LOCAL_DB, ")")
     (db_host, db_name, db_user_name, db_password) = local_db_settings
 
 elif BUILD_PHASE:
     eprint("**** NO DB - BUILD PHASE ****")
     (db_host, db_name, db_user_name, db_password) = ("", "", "", "")
 else:
-    eprint("**** CLOUD DATABASE ****")
     (db_host, db_name, db_user_name, db_password) = (
         env("DB_HOST"),
         env("DB_NAME"),
         env("DB_USERNAME"),
         env("DB_PASSWORD"),
     )
+    eprint("**** CLOUD DATABASE ****. HOST=", db_host, "DB=", db_name, "USER=", db_user_name)
 
 if BUILD_PHASE:
     DATABASES = {}
@@ -380,10 +385,22 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-# Where static files are collected to (eg by "python manage.py collectstatic")
-STATIC_ROOT = BASE_DIR / "dist/static/"
+# Where static files are collected to by "./manage.py collectstatic"
+STATIC_ROOT = BASE_DIR / ".." / "dist" / "static"
 
-STATICFILES_DIRS = [BASE_DIR / "frontend/dist"]
+# additional locations the staticfiles app will traverse looking for statics if the FileSystemFinder finder is enabled
+# in our case, the "mygeo" project folder has a global static folder in it.
+# STATICFILES_DIRS = [BASE_DIR / "fe" / "static"]
+
+# Absolute path to a directory of files which will be served at the root of your application
+# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL. We also serve bundled
+# files from here, eg the parcel build output.
+WHITENOISE_ROOT = BASE_DIR / "mygeo" / "static"
+
+# Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
+# detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
+# by the parcel build process, so we need to set it explicitly.
+WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
 
 # Static files storage.
 if TEST_ENV:
@@ -393,15 +410,6 @@ else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # WHITENOISE_INDEX_FILE = "index.html"
 
-# Absolute path to a directory of files which will be served at the root of your application
-# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL. We also serve bundled
-# files from here, eg the parcel build output.
-WHITENOISE_ROOT = BASE_DIR / "mygeo/static"
-
-# Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
-# detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
-# by the parcel build process, so we need to set it explicitly.
-WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -528,7 +536,7 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
         "LOCATION": "/parsnip_data/django-cache"
-        if (PROD_ENV and not TEST_ENV and not LOCAL_DB)
+        if ((PROD_ENV or STAGE_ENV) and not TEST_ENV and not LOCAL_DB)
         else BASE_DIR / ".django-cache",
         "TIMEOUT": 3600 * 24 * 365,  # default timeout of 1 year
         "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries

@@ -1,4 +1,4 @@
-# ARG PYTHON_VERSION=3.9
+# ARG PYTHON_VERSION=3.11
 # FROM python:${PYTHON_VERSION}
 
 # Ubuntu 20.04 LTS std support until April 2025, EOL April 2030.
@@ -53,7 +53,7 @@ RUN npm install --location=global yarn
 
 ### ENVIRONMENT - these variables are available in the build phase on Fly.io
 ENV BUILD_PHASE=True
-ENV REACT_APP_BACKEND_DOMAIN=https://app.home3.co
+#ENV REACT_APP_BACKEND_DOMAIN=https://app.home3.co
 ENV DJANGO_ENV=production
 
 ### PYTHON DEPENDENCIES ##################################################################
@@ -67,10 +67,10 @@ RUN poetry install --only main --no-root --no-interaction --no-ansi
 
 ### FRONTEND DEPENDENCIES ##################################################################
 # Do frontend package installations before copying files too, so they're cached.
-RUN mkdir frontend
-WORKDIR /app/frontend
-COPY frontend/package.json .
-COPY frontend/yarn.lock .
+RUN mkdir fe
+WORKDIR /app/fe
+COPY fe/package.json .
+COPY fe/yarn.lock .
 RUN yarn install && yarn cache clean
 
 ### COPY FRONTEND AND BACKEND SOURCE CODE ##################################################
@@ -78,15 +78,20 @@ RUN yarn install && yarn cache clean
 WORKDIR /app
 COPY . .
 
-RUN mkdir -p dist/static && python manage.py collectstatic --noinput
+RUN mkdir -p dist/static
+
+WORKDIR /app/be
+RUN python manage.py collectstatic --noinput
 ### FRONT-END BUILD ##########################################################
-WORKDIR /app/frontend
+WORKDIR /app/fe
 RUN yarn build
 
-WORKDIR /app
-EXPOSE 8080
+
 
 ### EXECUTE THE APP SERVER ###############################################################
+# Setting directory to backend is important for release_command in fly.toml
+WORKDIR /app/be
+EXPOSE 8080
 
 # NOTE: I believe this is overridden by fly.toml's processes list
 # CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]

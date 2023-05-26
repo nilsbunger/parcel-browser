@@ -1,7 +1,7 @@
 module.exports = {
     darkMode: "unusedDarkModeClass", // disable dark mode for now. Remove to fallback to listening to prefer-media-scheme
     // Include Django template dirs (../*/templates/) so Tailwind can see classes used in Django templates.
-    content: ["./src/**/*.{html,js,ts,tsx}", "../*/templates/**/*.html"],
+    content: ["./src/**/*.{html,js,ts,tsx}", "../be/**/templates/**/*.html"],
     theme: {
         extend: {
             opacity: ["disabled"],
