@@ -20,7 +20,7 @@ from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 from whitenoise import WhiteNoise
 
-from mygeo.util import eprint
+from .util import eprint
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -436,6 +436,16 @@ LOGGING_CONFIG = "logging.config.dictConfig"
 
 LOG_DIR = f"./log/{datetime.now(tz=UTC):%y-%m-%d}"
 os.makedirs(LOG_DIR, exist_ok=True)
+
+log_handlers = ["file"] if PROD_ENV or STAGE_ENV else ["console"]
+info_logger = {
+    "handlers": log_handlers,
+    "level": "INFO",
+}
+debug_logger = {
+    "handlers": log_handlers,
+    "level": "DEBUG",
+}
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -460,74 +470,28 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console", "file"],
+        "handlers": log_handlers,
         "level": DJANGO_LOG_LEVEL,
     },
     "loggers": {
-        "django": {
-            "handlers": ["console"],
-            "level": DJANGO_LOG_LEVEL,
-            "propagate": False,
-        },
-        "django.server": {
-            "handlers": ["console"],
-            "level": "WARNING",
-            "propagate": False,
-        },
-        "django.utils.autoreload": {"level": "INFO"},
-        "django.db.backends": {
-            "level": "INFO",
-        },
-        "silk": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "botocore": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "boto3": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "matplotlib": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "shapely": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "rasterio.env": {"level": "INFO"},
-        "environ": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "two_factor": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "parsnip.commands": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
-        "parsnip": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
-        "mygeo": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
+        # "django": {
+        #     "handlers": log_handlers,
+        #     "level": DJANGO_LOG_LEVEL,
+        # },
+        "django.server": info_logger,
+        "django.utils.autoreload": info_logger,
+        "django.db.backends": info_logger,
+        "silk": info_logger,
+        "botocore": info_logger,
+        "boto3": info_logger,
+        "matplotlib": info_logger,
+        "shapely": info_logger,
+        "rasterio.env": info_logger,
+        "environ": info_logger,
+        "two_factor": info_logger,
+        "parsnip.commands": debug_logger,
+        "parsnip": debug_logger,
+        "mygeo": debug_logger,
     },
 }
 
