@@ -1,26 +1,25 @@
-# fly.toml app configuration file generated for parsnip-stage on 2023-05-25T11:08:04-07:00
+# fly.toml app configuration file generated for parsnip on 2023-04-25T18:19:08-07:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "parsnip-stage"
+app = "parsnip"
 primary_region = "lax"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
-#console_command = "/code/manage.py shell"
 
 [experimental]
   auto_rollback = true
 
 [deploy]
-  release_command = "mamba run -n parsnip python manage.py migrate"
+  release_command = "cd be && mamba run -n parsnip python manage.py migrate"
 
 [env]
   PORT = "8080"
 
 [processes]
   cron = "supercronic /app/crontab"
-  web = "mamba run -n parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
+  web = "cd be && mamba run -n parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
 
 [[mounts]]
   source = "parsnip_data_machines"
@@ -50,7 +49,3 @@ kill_timeout = "5s"
     timeout = "10s"
     grace_period = "1s"
     restart_limit = 0
-
-#[[statics]]
-#  guest_path = "/code/static"
-#  url_prefix = "/static/"
