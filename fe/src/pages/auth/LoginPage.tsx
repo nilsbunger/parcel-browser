@@ -26,7 +26,6 @@ export default function LoginPage() {
 
     const { errors, message, data } = await logIn(loginData)
     if (errors) {
-      if (message) showNotification({ title: "Login failure", message, color: "red" })
       if (typeof errors === "object") form.setErrors(errors)
     } else {
       // successful login

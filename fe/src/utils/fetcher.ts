@@ -45,7 +45,7 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
   // Promise<{ data?:z.infer<typeof respSchema>, error: boolean, unauthenticated?: boolean, message?: string}> {
   const ResponseCls = z.object({
     errors: z.union([z.boolean(), z.record(z.string(), z.string())]),
-    data: RespDataCls,
+    data: RespDataCls.nullable(),
     message: z.string().nullable(),
   })
   const req = isPost
@@ -98,6 +98,7 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
         data: null,
       }
     })
+
   if (!promiseReturn.errors) {
     // no errors, show success toast
     showNotification({ title: "Success", message: promiseReturn.message, color: "green" })

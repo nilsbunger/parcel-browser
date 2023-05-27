@@ -4,7 +4,7 @@ import { Checkbox, MantineProvider, TextInput } from "@mantine/core"
 import { MagicLinkLoginRequest, MagicLinkLoginRequestSchema } from "../types"
 import { AuthContextType, AuthProvider, useAuth } from "../hooks/Auth"
 import { useForm, zodResolver } from "@mantine/form"
-import { showNotification } from "@mantine/notifications"
+import { Notifications, showNotification } from "@mantine/notifications"
 import { createRoot } from "react-dom/client";
 
 const loginElement = document.getElementById("login_react_div")
@@ -15,6 +15,7 @@ root.render(<MagicLinkLoginWrapper/>)
 export function MagicLinkLoginWrapper() {
   return (
     <MantineProvider>
+      <Notifications position="top-right" zIndex={2077} limit={8} />
       <AuthProvider>
         <MagicLinkLogin />
       </AuthProvider>
@@ -37,7 +38,6 @@ export function MagicLinkLogin() {
     // console.log("on submit", loginData)
     const { errors, message, data } = await logIn(loginData)
     if (errors) {
-      if (message) showNotification({ title: "Login failure", message, color: "red" })
       if (typeof errors === "object") form.setErrors(errors)
     } else {
       // successful login
