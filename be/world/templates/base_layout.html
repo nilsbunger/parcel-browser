@@ -33,15 +33,15 @@
 
     {% block content %}{% endblock %}
 
-    <footer class="py-3 md:py-6 bg-prim w-full flex-none">
-      <div class="md:container py-2 px-8 lg:px-16">
-        <div class="flex flex-col gap-4">
+    <footer class="py-2 bg-prim w-full flex-none">
+      <div class="container py-2 px-8 lg:px-16">
+        <div class="flex flex-col gap-0.5">
           {#          center logo and LI/etc icons vertically and spread horizontally  #}
           <div class="flex flex-row flex-grow items-center justify-between">
             <img src="/logo/Turboprop wordmark light@2x.png" alt="Turboprop logo" class="h-10 w-auto"/>
 
             <div class="flex flex-row">
-              <a href="frontend/src/components/layout/Home3Footer#" aria-label="LinkedIn">
+              <a href="#" aria-label="LinkedIn">
                 {#                <FaLinkedin fontSize="1.25rem" />{" "}#}
               </a>
               <a href="#" aria-label="Twitter">
@@ -49,7 +49,7 @@
               </a>
             </div>
           </div>
-          <p class="">
+          <p class="text-xs">
             &copy; 2023 Home3, Inc. All rights reserved.
           </p>
         </div>
