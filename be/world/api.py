@@ -5,17 +5,17 @@ import traceback
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.gis.db.models.functions import Centroid
 from django.db.models import F
-from ninja import NinjaAPI, Query
-from ninja.errors import ValidationError
-from ninja.pagination import paginate
-from ninja.security import django_auth
-
 from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.mapbox import get_temporary_mapbox_token
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_one_parcel
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.listings_lib import address_to_parcel
-from mygeo.util import field_exists_on_model
+from ninja import NinjaAPI, Query
+from ninja.errors import ValidationError
+from ninja.pagination import paginate
+from ninja.security import django_auth
+from parsnip.util import field_exists_on_model
+
 from world.api_gis_schema import (
     AnalysisResponseSchema,
     ListingHistorySchema,

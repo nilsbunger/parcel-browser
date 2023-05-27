@@ -17,7 +17,6 @@ from botocore.exceptions import ClientError
 from geopandas import GeoDataFrame
 from pydantic import BaseModel
 from shapely.ops import unary_union
-
 from world.models.base_models import Parcel
 from world.models.models import AnalyzedListing, PropertyListing
 
@@ -51,9 +50,8 @@ from datetime import date
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
-
-from mygeo.settings import CLOUDFLARE_R2_ENABLED, env
-from mygeo.util import eprint
+from parsnip.settings import CLOUDFLARE_R2_ENABLED, env
+from parsnip.util import eprint
 
 from .finance_lib import Financials
 from .plot_lib import plot_cant_build, plot_new_buildings, plot_split_lot

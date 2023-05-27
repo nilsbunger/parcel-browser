@@ -5,8 +5,8 @@ from enum import Enum
 from django.core.management import BaseCommand
 from django.core.paginator import Paginator
 from django.db.models import DateField, DateTimeField
+from parsnip.settings import LOCAL_DB
 
-from mygeo.settings import LOCAL_DB
 from world.models import (
     Parcel,
     PropertyListing,

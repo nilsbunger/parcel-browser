@@ -6,13 +6,13 @@ from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import ListView
+from lib.parcel_analysis_2022.types import CheckResultEnum
+from parsnip import settings
 from vectortiles.mixins import BaseVectorTileView
 
 # Create your views here.
 from vectortiles.postgis.views import MVTView
 
-from lib.parcel_analysis_2022.types import CheckResultEnum
-from mygeo import settings
 from world.infra.django_cache import h3_cache_page
 from world.models import (
     HousingSolutionArea,

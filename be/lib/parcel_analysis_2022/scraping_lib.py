@@ -7,11 +7,10 @@ from urllib.parse import urljoin
 
 import scrapy
 from django.core.exceptions import MultipleObjectsReturned
+from parsnip.settings import env
 from scraper_api import ScraperAPIClient
 from scrapy.crawler import CrawlerProcess
 from scrapy.exceptions import CloseSpider
-
-from mygeo.settings import env
 from world.models import PropertyListing
 
 log = logging.getLogger(__name__)

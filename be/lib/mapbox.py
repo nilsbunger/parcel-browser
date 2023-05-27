@@ -1,8 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import requests
-
-from mygeo.settings import env
+from parsnip.settings import env
 
 
 # Mapbox tokens have to be periodically rotated if they're exposed to the client. This function

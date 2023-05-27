@@ -106,7 +106,7 @@ you can run the app in production mode as follows:
 `cd be && ./manage.py collectstatic -v3 --noinput`
 
 3. Serve with similar command line as in production:
-`DJANGO_ENV=production LOCAL_DB=1 DJANGO_SECRET_KEY=12345 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`
+`DJANGO_ENV=production LOCAL_DB=1 DJANGO_SECRET_KEY=12345 poetry run gunicorn --bin :8080 --workers 3 parsnip.wsgi:application`
 
 It is possible to go even higher fidelity, by running in a docker container.
 

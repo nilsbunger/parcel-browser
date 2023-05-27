@@ -2,12 +2,11 @@ from enum import Enum, EnumMeta
 
 import polars as pl
 from django.core.management.base import BaseCommand
-
 from elt.lib.attom_data import AttomDataApi
 from elt.lib.attom_data_struct import AttomPropertyRecord
 from elt.lib.rentometer_data import RentometerApi
 from facts.models import StdAddress
-from mygeo.settings import env
+from parsnip.settings import env
 from world.models import Parcel
 
 ATTOM_API_KEY = env("ATTOM_DATA_API_KEY")  # noqa: N806

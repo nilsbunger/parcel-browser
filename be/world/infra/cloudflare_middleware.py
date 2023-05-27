@@ -2,7 +2,7 @@
 # to the web app. Patch up the request here so we still get the client IP address.
 import logging
 
-from mygeo.settings import DEV_ENV, STAGE_ENV
+from parsnip.settings import DEV_ENV, STAGE_ENV
 
 log = logging.getLogger(__name__)
 

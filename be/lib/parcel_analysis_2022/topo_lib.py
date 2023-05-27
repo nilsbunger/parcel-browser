@@ -9,11 +9,10 @@ import pyproj
 import shapely
 from joblib import Parallel, delayed
 from matplotlib import pyplot as plt
+from parsnip.settings import TOPO_DB_ALIAS
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
-
-from mygeo.settings import TOPO_DB_ALIAS
 from world.models import Parcel, ParcelSlope, Topography, TopographyLoads
 
 from .parcel_lib import (

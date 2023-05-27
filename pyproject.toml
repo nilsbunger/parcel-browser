@@ -3,7 +3,7 @@
 plugins = ["mypy_django_plugin.main"]
 
 [tool.django-stubs]
-django_settings_module = "mygeo.settings"
+django_settings_module = "parsnip.settings"
 
 [tool.ruff]
 # Ruff linter

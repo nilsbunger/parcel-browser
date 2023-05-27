@@ -4,9 +4,8 @@ from statistics import NormalDist
 import requests
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.measure import D
+from parsnip.settings import env
 from requests import HTTPError
-
-from mygeo.settings import env
 from world.models import PropertyListing
 from world.models.base_models import RentalUnit
 from world.models.rental_data import RentalData

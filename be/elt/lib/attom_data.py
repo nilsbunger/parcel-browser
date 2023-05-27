@@ -1,14 +1,14 @@
 import math
 from dataclasses import dataclass
 
+from facts.models import StdAddress
+from parsnip import settings
 from pydantic import ValidationError
 
 from elt.lib.attom_comp_data_struct import CompPropertyContainer, CompSalesResponse, SubjectProperty
 from elt.lib.attom_data_struct import ApiResponseStatus, AttomPropertyRecord, PropertyAddressResponse
 from elt.lib.elt_api import CacheableApi
 from elt.models import ExternalApiData
-from facts.models import StdAddress
-from mygeo import settings
 
 
 @dataclass(kw_only=True)

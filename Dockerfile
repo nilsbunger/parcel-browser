@@ -94,5 +94,5 @@ WORKDIR /app/be
 EXPOSE 8080
 
 # NOTE: I believe this is overridden by fly.toml's processes list
-# CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "mygeo.wsgi:application"]
+# CMD ["poetry", "run", "gunicorn", "--bind", ":8080", "--workers", "3", "parsnip.wsgi:application"]
 # CMD ["sleep", "999999"]

@@ -19,7 +19,7 @@ kill_timeout = "5s"
 
 [processes]
   cron = "supercronic /app/crontab"
-  web = "cd be && mamba run -n parsnip gunicorn --bind :8080 --workers 3 mygeo.wsgi:application"
+  web = "cd be && mamba run -n parsnip gunicorn --bind :8080 --workers 3 parsnip.wsgi:application"
 
 [[mounts]]
   source = "parsnip_data_machines"

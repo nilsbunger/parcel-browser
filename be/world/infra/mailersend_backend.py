@@ -1,8 +1,7 @@
 import django
 from django.core.mail.backends.base import BaseEmailBackend
 from mailersend import emails
-
-from mygeo.settings import env
+from parsnip.settings import env
 
 ## Backend for sending email.
 ## Example of how to send an email:

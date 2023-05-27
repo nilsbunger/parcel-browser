@@ -7,13 +7,13 @@ from datetime import UTC, datetime
 from pprint import pformat, pprint
 from typing import Any, TypeVar, cast
 
+from parsnip.settings import env
 from pyairtable import Table
 from pyairtable.utils import date_to_iso_str
 from pydantic import BaseModel
 from requests import HTTPError
 
 from lib.power_bi import BIRow, BITable, PowerBIScraper, SelectColumns, WhereCondition
-from mygeo.settings import env
 
 log = logging.getLogger(__name__)
 

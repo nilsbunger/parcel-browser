@@ -1,9 +1,8 @@
 import django
 from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
-
 from lib.scrape_hcd_lib import run_scrape_hcd
-from mygeo.settings import env
+from parsnip.settings import env
 
 
 class Command(BaseCommand):

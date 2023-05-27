@@ -1,6 +1,7 @@
+from parsnip import settings
+
 from lib.extract.arcgis import extract_from_api
 from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
-from mygeo import settings
 
 DATA_DIR = settings.BASE_DIR / "deploy" / "data-files" / "elt"
 

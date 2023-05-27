@@ -7,8 +7,7 @@ from enum import StrEnum
 import polars as pl
 from google.oauth2 import service_account
 from googleapiclient import discovery
-
-from mygeo.settings import BASE_DIR
+from parsnip.settings import BASE_DIR
 
 log = logging.getLogger(__name__)
 

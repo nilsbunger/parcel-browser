@@ -4,7 +4,7 @@ from pathlib import Path
 from django.dispatch import receiver
 from django.template.autoreload import get_template_directories
 from django.utils.autoreload import file_changed
-from mygeo.settings import DEV_ENV
+from parsnip.settings import DEV_ENV
 
 log = logging.getLogger(__name__)
 

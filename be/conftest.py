@@ -1,7 +1,6 @@
 import pytest
 from django.core.management import call_command
-
-from mygeo.settings import BASE_DIR
+from parsnip.settings import BASE_DIR
 
 ## Disable monkeypatching of network calls. It interferes with Response mocking (eg in test_attom_api.py)
 # # Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.

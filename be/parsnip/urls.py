@@ -1,18 +1,18 @@
-"""mygeo URL Configuration"""
+"""parsnip URL Configuration"""
 
 import django
+from co.co_api import api as co_api
 from django.contrib import admin
 from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.urls import include, path, re_path
 from django.views.defaults import page_not_found
-
-from co.co_api import api as co_api
-from mygeo import settings
 from props.api import props_api
 from userflows.api import userflows_api
 from world.api import world_api
 from world.infra.frontend_proxy_view import FrontEndProxyView
+
+from parsnip import settings
 
 # from userflows.api import userflows_api
 

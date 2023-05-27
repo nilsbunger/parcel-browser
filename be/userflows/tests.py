@@ -1,10 +1,9 @@
+import parsnip
 import pytest
 from django.apps import apps as django_apps
 from django.test import Client
 from django.urls import get_resolver, reverse
-
-import mygeo
-from mygeo import settings, urls
+from parsnip import settings, urls
 
 whitelist_noauth = [
     "/account/login/",
@@ -59,7 +58,7 @@ class TestAuthenticationPaths:
         failures = []
         tests = 0
         response_codes = []
-        for url in mygeo.util.each_url_with_placeholder(url_patterns):
+        for url in parsnip.util.each_url_with_placeholder(url_patterns):
             # print (f"Testing URL: {url}")
             tests += 1
             if url == "/sentry-debug/":

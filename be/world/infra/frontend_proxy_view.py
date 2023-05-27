@@ -7,8 +7,7 @@ from django.template import engines
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView
-
-from mygeo import settings
+from parsnip import settings
 
 log = logging.getLogger(__name__)
 

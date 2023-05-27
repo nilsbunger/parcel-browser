@@ -8,9 +8,9 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
-
 from lib.extract.arcgis.types import GeoEnum
-from mygeo.util import eprint
+from parsnip.util import eprint
+
 from world.models import (
     BuildingOutlines,
     Parcel,
@@ -103,7 +103,7 @@ class Command(BaseCommand):
             eprint("Unknown command!")
 
     def tiles_cmd(self, geo, model, fname):
-        from mygeo import settings
+        from parsnip import settings
 
         dir = settings.BASE_DIR / "deploy" / "data-files" / geo
         shapefiles = sorted(Path(dir).rglob("*.shp"))

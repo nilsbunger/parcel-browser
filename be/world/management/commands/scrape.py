@@ -11,16 +11,16 @@ from collections import Counter, defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.management import BaseCommand
-from pandas import DataFrame
-
 from lib import mgmt_cmd_lib
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_batch
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.listings_lib import address_to_parcel
 from lib.parcel_analysis_2022.neighborhoods import AllSdCityZips, Neighborhood
 from lib.parcel_analysis_2022.scraping_lib import scrape_san_diego_listings_by_zip_groups
-from mygeo import settings
-from mygeo.util import eprint
+from pandas import DataFrame
+from parsnip import settings
+from parsnip.util import eprint
+
 from world.models import Parcel, PropertyListing
 
 
