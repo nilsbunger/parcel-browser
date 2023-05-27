@@ -1,10 +1,10 @@
 import React from "react"
-import ReactDOM from "react-dom"
 
 import { MantineProvider } from "@mantine/core"
 import { MyRoutes } from "../Routes"
 import { AuthProvider } from "../hooks/Auth"
 import { Notifications } from "@mantine/notifications"
+import { createRoot } from "react-dom/client";
 
 export function App() {
   return (
@@ -18,4 +18,6 @@ export function App() {
 }
 
 const app = document.getElementById("app")
-ReactDOM.render(<App />, app)
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const root = createRoot(app!);
+root.render(<App />);

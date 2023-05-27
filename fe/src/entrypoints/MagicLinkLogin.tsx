@@ -1,14 +1,16 @@
 import React from "react"
-import ReactDOM from "react-dom"
 
 import { Checkbox, MantineProvider, TextInput } from "@mantine/core"
 import { MagicLinkLoginRequest, MagicLinkLoginRequestSchema } from "../types"
 import { AuthContextType, AuthProvider, useAuth } from "../hooks/Auth"
 import { useForm, zodResolver } from "@mantine/form"
 import { showNotification } from "@mantine/notifications"
+import { createRoot } from "react-dom/client";
 
 const loginElement = document.getElementById("login_react_div")
-ReactDOM.render(<MagicLinkLoginWrapper />, loginElement)
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const root = createRoot(loginElement!); // createRoot(container!) if you use TypeScript
+root.render(<MagicLinkLoginWrapper/>)
 
 export function MagicLinkLoginWrapper() {
   return (
