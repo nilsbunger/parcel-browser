@@ -17,11 +17,11 @@ When you've completed setup, you're ready to run. You need to run frontend and b
 
 0. Start the frontend server:
    
-   `cd frontend && yarn dev` -- start frontend dev server. This will watch for changes and rebuild the JS bundle.
+   `cd fe && yarn dev` -- start frontend dev server. This will watch for changes and rebuild the JS bundle.
 
 0. Start the Django server:
     
-   `./manage.py runserver`
+   `cd be && ./manage.py runserver`
 
 Browse to http://localhost:8000/map or http://localhost:8000/admin and see if things work.
 
@@ -100,10 +100,10 @@ You don't usually need to do this, but if you need to debug an environment more 
 you can run the app in production mode as follows:
 
 1. Build frontend files: 
-`cd frontend && yarn build && cd ..`
+`cd fe && yarn build && cd ..`
 
 2. Collect static files:
-`rm -rf dist && ./manage.py collectstatic -v3 --noinput`
+`cd be && ./manage.py collectstatic -v3 --noinput`
 
 3. Serve with similar command line as in production:
 `DJANGO_ENV=production LOCAL_DB=1 DJANGO_SECRET_KEY=12345 poetry run gunicorn --bin :8080 --workers 3 mygeo.wsgi:application`

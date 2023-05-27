@@ -68,7 +68,7 @@ coverage.xml
 cover/
 
 # Parcel bundler
-frontend/parcel-bundle-reports/
+fe/parcel-bundle-reports/
 
 # Translations
 *.mo

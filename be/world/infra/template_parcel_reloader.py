@@ -4,7 +4,6 @@ from pathlib import Path
 from django.dispatch import receiver
 from django.template.autoreload import get_template_directories
 from django.utils.autoreload import file_changed
-
 from mygeo.settings import DEV_ENV
 
 log = logging.getLogger(__name__)
@@ -23,5 +22,5 @@ def _turboprop_template_changed(sender, file_path, **kwargs):
         if template_dir in file_path.parents:
             # an HTML file in a template directory has changed. Force parcel to reload so we get new Tailwind classes.
             log.info("HTML file changed, touching tailwind.config.cjs to force parcel reload")
-            Path("frontend/tailwind.config.cjs").touch()
+            Path("../fe/tailwind.config.cjs").touch()
             return True
