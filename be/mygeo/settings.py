@@ -206,14 +206,44 @@ MIDDLEWARE = [
 if ENABLE_SILK:
     MIDDLEWARE.insert(1, "silk.middleware.SilkyMiddleware")
 
-ROOT_URLCONF = "mygeo.urls"
+# #####################################################################
+# STATIC FILES and TEMPLATES
 
-# location to get *.partial.html from
 if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
+    # location to get *.partial.html from
     template_dirs = [BASE_DIR / ".." / "fe" / "dist"]
+    STATIC_ROOT = BASE_DIR / ".." / "fe" / "dist"
 else:
+    # When we build + deploy, yarn script moves built files into central django-templates and static folders.
     template_dirs = [BASE_DIR / ".." / "dist" / "django-templates"]
+    # Where static files are collected to by "./manage.py collectstatic"
+    STATIC_ROOT = BASE_DIR / ".." / "dist" / "static"
 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.0/howto/static-files/
+
+STATIC_URL = "static/"
+# additional locations the staticfiles app will traverse looking for statics if the FileSystemFinder finder is enabled
+# in our case, the "mygeo" project folder has a global static folder in it.
+# STATICFILES_DIRS = [BASE_DIR / "fe" / "static"]
+
+# Absolute path to a directory of files which will be served at the root of your application
+# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL. We also serve bundled
+# files from here, eg the parcel build output.
+WHITENOISE_ROOT = BASE_DIR / "mygeo" / "static"
+
+# Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
+# detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
+# by the parcel build process, so we need to set it explicitly.
+WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
+
+# Static files storage.
+if TEST_ENV:
+    # Don't use manifest storage in testing, as per https://docs.djangoproject.com/en/4.1/ref/contrib/staticfiles/
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# WHITENOISE_INDEX_FILE = "index.html"
 
 TEMPLATES = [
     {
@@ -232,6 +262,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "mygeo.wsgi.application"
+ROOT_URLCONF = "mygeo.urls"
 
 try:
     GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH")
@@ -347,7 +378,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = "/user/login"
 LOGIN_REDIRECT_URL = "/properties/"
 
-LOGOUT_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/user/login"
 # # Authentication -- django-allauth config
 # ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 # ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
@@ -379,36 +410,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.0/howto/static-files/
-
-STATIC_URL = "/static/"
-
-# Where static files are collected to by "./manage.py collectstatic"
-STATIC_ROOT = BASE_DIR / ".." / "dist" / "static"
-
-# additional locations the staticfiles app will traverse looking for statics if the FileSystemFinder finder is enabled
-# in our case, the "mygeo" project folder has a global static folder in it.
-# STATICFILES_DIRS = [BASE_DIR / "fe" / "static"]
-
-# Absolute path to a directory of files which will be served at the root of your application
-# Useful for files like robots.txt or favicon.ico which you want to serve at a specific URL. We also serve bundled
-# files from here, eg the parcel build output.
-WHITENOISE_ROOT = BASE_DIR / "mygeo" / "static"
-
-# Set caching for static files. Technically we shouldn't need to do this, because whitenoise should automatically
-# detect files with a hash in their name and cache them forever. But it doesn't detect that hash for files created
-# by the parcel build process, so we need to set it explicitly.
-WHITENOISE_MAX_AGE = WhiteNoise.FOREVER
-
-# Static files storage.
-if TEST_ENV:
-    # Don't use manifest storage in testing, as per https://docs.djangoproject.com/en/4.1/ref/contrib/staticfiles/
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-else:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-# WHITENOISE_INDEX_FILE = "index.html"
 
 
 # Default primary key field type
