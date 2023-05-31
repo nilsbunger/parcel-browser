@@ -41,7 +41,6 @@ export function MagicLinkLogin() {
       if (typeof errors === "object") form.setErrors(errors)
     } else {
       // successful login
-      if (message) showNotification({ title: "Success", message, color: "green" })
       setIsEmailSent(true)
       // window.location.href = "/properties"
     }
