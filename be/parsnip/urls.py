@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.urls import include, path, re_path
 from django.views.defaults import page_not_found
+from django.views.generic import TemplateView
 from props.api import props_api
 from userflows.api import userflows_api
 from world.api import world_api
@@ -51,6 +52,8 @@ urlpatterns = [
     path("api/", world_api.urls),  # generic / fallback APIs
     ############ Original routes (including dj/api/ stuff, which should transition to django-ninja) ############
     path("dj/", include("world.urls")),
+    # Temporary web frontpage, to be replaced w/ webflow.
+    path("", TemplateView.as_view(template_name="django_homepage.html"), name="frontpage"),
     # Debug route - generate error
     path("sentry-debug/", trigger_error, name="sentry-debug"),
     ############ Catch-all for routes that should NOT go to react (ones starting with dj/ or api/) ############
