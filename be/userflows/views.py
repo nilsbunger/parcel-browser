@@ -1,6 +1,8 @@
 # Create your views here.
 import logging
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 import sesame
 import sesame.utils
 from django import forms
@@ -19,6 +21,7 @@ class MagicLinkLoginForm(forms.Form):
     email = forms.EmailField()
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class MagicLinkLoginView(FormView):
     template_name = "userflows/magic_link_login.html"
     form_class = MagicLinkLoginForm

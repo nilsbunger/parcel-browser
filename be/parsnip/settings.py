@@ -92,7 +92,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_AGE = 1209600  # DEFAULT SESSION AGE OF 2 WEEKS
 
-ALLOWED_HOSTS = ["parsnip.fly.dev", "app.home3.co"]
+ALLOWED_HOSTS = ["app.home3.co", "turboprop.ai", "app.turboprop.ai", "stage-app.turboprop.ai"]
 if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
     ALLOWED_HOSTS += ["localhost", "127.0.0.1"]
 if STAGE_ENV:
@@ -178,7 +178,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 MIDDLEWARE = [
-    #  "django.middleware.security.SecurityMiddleware",
+    "django.middleware.security.SecurityMiddleware",
     "world.infra.cloudflare_middleware.CloudflareMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
     "world.infra.my_white_noise_middleware.MyWhiteNoiseMiddleware",
@@ -277,6 +277,12 @@ except ImproperlyConfigured:
 # See also https://docs.djangoproject.com/en/4.0/ref/settings/#secure-proxy-ssl-header
 # and https://fly.io/docs/reference/runtime-environment/
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# If we get an http request, redirect to https. Shouldn't happen due to proxy, but adds defense in depth.
+SECURE_SSL_REDIRECT = not DEBUG
+
+# Set header telling browser not to connect without https
+SECURE_HSTS_SECONDS = 3600 * 24
 
 # Silk profiler
 SILKY_AUTHENTICATION = True  # User must login

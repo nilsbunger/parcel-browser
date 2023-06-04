@@ -128,6 +128,7 @@ the right python version and all the packages installed. NOTE: I think this is n
 
 # System architecture
 
+## Components
 The app is a Django application at its core.
 
 The major components of the system are:
@@ -137,13 +138,23 @@ The major components of the system are:
     - Django with GeoDjango library (built-in),
     - Shapely (geometry manipulation)
     - GeoPandas (GeoDataFrame and GeoSeries), which includes pandas for data analysis and shapely for geometry manipulation.
-- Front end:
-  - React
+- Cron server:
+  - Periodic jobs are run using supercron. A separate instance of the django app 
+server is instantiated with supercron.
+- Front end: (deployed in app server)
+  - React using Parcel for bundling.
   - Deck.gl (for mapping using webgl)
   - Some older pages using Shapely and react-table (react-table is kind of a nightmare)
 
-When you're working on the code, you'll want the docs open for Shapely, GeoPandas, Django querysets and GeoDjango. 
-You can google for all of them.
+
+## Production and staging environments
+
+We have separate staging and production environments, at stage-app.turboprop.ai and app.turboprop.ai. Each environment
+has its own Django server and Postgres+PostGIS DB server running as a set of fly.io VMs.
+
+Both the staging and prod apps are proxied through the Cloudflare CDN. Cloudflare's 
+TLS mode is set to "Full" for each domain so we have connection security between Cloudflare and the client,
+and between Cloudflare and our Django app server.
 
 # React and static files
 See [static-files.md](docs/static-files.md) to learn how React and static files are served in dev and prod.

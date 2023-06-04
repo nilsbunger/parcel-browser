@@ -66,7 +66,7 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
     })
     .catch((error) => {
       // Axios raised error while sending request or receiving response over network... typically a non-2xx response
-      // eg: 401 (unauthenticated) or 422 (pydantic validation error).
+      // eg: 401 (unauthenticated), 403 (permission denied / CSRF failure), or 422 (pydantic validation error).
       console.log("Error in apiRequest request or response: ", error)
 
       // report unauthenticated (401) differently than insufficient permission
@@ -89,6 +89,10 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
           )
           console.log("errors = ", validationErrors)
         }
+      } else {
+        // not validation error, treat as a page-level error.
+        validationErrors = true // errors field is a boolean when it's a page-level error
+        error.message = `Error communicating with server (${error.response?.status})`
       }
       // return out of promise chain to top level.
       return {
@@ -104,7 +108,7 @@ export async function apiRequest<RespDataType extends z.ZodTypeAny>(
     showNotification({ title: "Success", message: promiseReturn.message, color: "green" })
   } else if (typeof promiseReturn.errors === "boolean") {
     // page level errors, show error toast. (field-level errors are handled by the caller)
-    showNotification({ title: "Failure", message: promiseReturn.message, color: "red" })
+    showNotification({ title: "That didn't work...", message: promiseReturn.message, color: "red" })
   }
   return promiseReturn
 }
