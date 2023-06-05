@@ -82,6 +82,19 @@ def reonomy_search_summary_call(all=False, save=True):
     return accum_resp
 
 
+def reonomy_property_detail_call(id, save=True):
+    # Caution -- This call uses up one of our precious tokens!
+    resp = reonomy_get_call(
+        f"property/{id}",
+        params={
+            "detail_type": ["taxes", "sales", "mortgages", "basic", "reported-owners", "tenants", "ownership"],
+            "filter_pii": False,
+        },
+        save=save,
+    )
+    return resp
+
+
 def read_saved_calls() -> list[list[str, dict]]:
     with open("reonomy_calls.py", mode="r") as localfile:
         lines = localfile.readlines()
@@ -124,19 +137,6 @@ def find_search_summaries(saved_calls):
     # reonomy_property_detail_call(sold_may_26[0], save=True)
 
     return id_dict
-
-
-def reonomy_property_detail_call(id, save=True):
-    # Caution -- This call uses up one of our precious tokens!
-    resp = reonomy_get_call(
-        f"property/{id}",
-        params={
-            "detail_type": ["taxes", "sales", "mortgages", "basic", "reported-owners", "tenants", "ownership"],
-            "filter_pii": False,
-        },
-        save=save,
-    )
-    return resp
 
 
 def main():
