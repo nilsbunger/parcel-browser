@@ -2,9 +2,11 @@ import ast
 from collections import Counter
 from datetime import datetime
 from math import ceil
-from pprint import pformat
+from pprint import pformat, pprint
 
+import pandas as pd
 import requests
+import tabulate
 
 REONOMY_ACCESS_KEY = "home3inc"
 REONOMY_SECRET_KEY = "e6ey32vyrghuuag9"
@@ -50,7 +52,7 @@ def save_resp(response, api_call):
         localfile.write('\n["' + time_str + ": " + api_call + '",\n' + pformat(response, indent=2) + "],")
 
 
-def reonomy_search_summary_call(all=False, save=True):
+def reonomy_search_summary_call(all_pages=False, save=True):
     # get list of properties matching a filtered search
     body = {
         "bounding_box": {},
@@ -64,7 +66,7 @@ def reonomy_search_summary_call(all=False, save=True):
             # fmt:on
             "locations": [{"kind": "city", "state": "CA", "text": "San Francisco"}],
             "portfolio_properties_count": {"max": 10},
-            "total_units": {"max": 50, "min": 10},
+            "total_units": {"max": 9, "min": 5},
         },
     }
     resp = reonomy_post_call("search/summaries", body=body, save=save)
@@ -95,7 +97,7 @@ def reonomy_property_detail_call(id, save=True):
     return resp
 
 
-def read_saved_calls() -> list[list[str, dict]]:
+def load_calls_from_disk() -> list[list[str, dict]]:
     with open("reonomy_calls.py", mode="r") as localfile:
         lines = localfile.readlines()
     lines[-1] += "]"
@@ -107,9 +109,11 @@ def read_saved_calls() -> list[list[str, dict]]:
     return saved_calls
 
 
-def find_search_summaries(saved_calls):
-    search_summary_calls = [call[1] for call in saved_calls if "search/summaries" in call[0]]
+def find_search_summaries(saved_calls, region):
+    assert region in ["la", "sf"]
+    search_summary_calls = [call[1] for call in saved_calls if f"search/summaries/{region}" in call[0]]
 
+    print(f"Found {len(search_summary_calls)} stored search results for region {region}")
     # merge search_summary_calls from multiple calls into a single list of all properties (may contain dupes)
     search_summaries = []
     for call in search_summary_calls:
@@ -125,23 +129,52 @@ def find_search_summaries(saved_calls):
 
     num_dupes = len(search_summaries) - len(id_dict)
     print(f"DONE. Found {num_dupes} duplicates.")
-
+    update_type = "mtg_update_time"
     # Create a histogram of the master_update_time field (which is a date) across all the properties in id_dict
     # This is a proxy for the date the property was last updated
-    dates = [id_dict[id]["sale_update_time"] for id in id_dict]
-    hist = Counter(dates)
+    dates = [id_dict[id][update_type][0:7] for id in id_dict]
+    hist = sorted(Counter(dates).items())
+    print(f"Histogram of {update_type}:")
+    pprint(hist)
 
-    sold_may_26 = [id for id in id_dict if id_dict[id]["sale_update_time"] == "2023-05-26"]
-    print(f"Found {len(sold_may_26)} properties sold on May 26, 2023")
-    assert len(sold_may_26) == 1
+    # Find specific property
+    apn = 1244003
+    # Look into 2023 February updates as a recent example where data should be settled.
+    feb_updates = [id_dict[id] for id in id_dict if id_dict[id][update_type][0:7] == "2023-02"]
+    feb_mtg_updates_df = pd.DataFrame.from_records(feb_updates)
+    cols_to_print = feb_mtg_updates_df[
+        [
+            "mtg_update_time",
+            "sale_update_time",
+            "owner_update_time",
+            "tax_update_time",
+            "building_update_time",
+            "shape_update_time",
+            "master_update_time",
+            "id",
+        ]
+    ]
+    print(tabulate.tabulate(cols_to_print, headers="keys"))
+
+    # sold_may_26 = [id for id in id_dict if id_dict[id][update_type] == "2023-05-26"]
+    # assert len(sold_may_26) == 1
+
+    # EXPENSIVE CALL:
     # reonomy_property_detail_call(sold_may_26[0], save=True)
+
+    # EXPENSIVE CALL: Property that has a "building update"
+    # resp = reonomy_property_detail_call("2c8c4b98-a8be-5694-a91e-7a703ca2e645", save=True)
+
+    # print(f"Found {len(sold_may_26)} properties sold on May 26, 2023")
 
     return id_dict
 
 
 def main():
-    saved_calls = read_saved_calls()
-    find_search_summaries(saved_calls)
+    # search_summary = reonomy_search_summary_call()
+
+    saved_calls = load_calls_from_disk()
+    find_search_summaries(saved_calls, region="sf")
 
     # resp = reonomy_get_call("users/me", save=False)
     # resp = reonomy_search_summary_call(all=False, save=False)
