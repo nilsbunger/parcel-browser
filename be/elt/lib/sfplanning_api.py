@@ -1,4 +1,7 @@
-# From SF PIM, get sales and building permits and other assessor info. Example for 1700 golden gate ave:
+# From SF PIM, get sales and building permits and other assessor info.
+
+# TODO: this should be combined with arcgis extractor
+
 import ast
 from collections import Counter
 from datetime import datetime

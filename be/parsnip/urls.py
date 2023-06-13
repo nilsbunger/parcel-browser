@@ -45,6 +45,7 @@ urlpatterns = [
     ############ Backend-rendered routes (traditional django template rendering) ############
     path("dj/co/", include("co.urls")),
     path("dj/userflows/", include("userflows.urls")),
+    path("dj/elt/", include("elt.urls")),
     ############ Django-ninja API routes, per app ############
     path("api/co/", co_api.urls),
     path("api/userflows/", userflows_api.urls),

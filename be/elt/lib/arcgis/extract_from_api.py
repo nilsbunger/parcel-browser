@@ -5,16 +5,16 @@ from copy import deepcopy
 import requests
 
 from elt.models import RawSantaAnaParcel
-from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
-from lib.extract.elt_utils import get_elt_pipe_filenames, log_and_print, pipestage_prompt
+from elt.lib.types import Juri, GisData
+from elt.lib.elt_utils import get_elt_pipe_filenames, log_and_print, pipestage_prompt
 
 
 # Extract data from an ArcGIS server with API calls. Support different cities and data types (parcels, zones, etc).
 # pipestage is defined in the ARCGIS_DATA_SOURCES dict. thru_data is data passed from previous stages into the
 # fetcher. This function writes the results of each stage to a file, can reuse previous fetches, and logs the
 # capture. The function returns the filename in which the data was written.
-def extract_from_arcgis_api(geo: GeoEnum, datatype: GisDataTypeEnum, pipestage: int, thru_data=None):
-    from lib.extract.arcgis.params import ARCGIS_DATA_SOURCES, DATA_DIR
+def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_data=None):
+    from elt.lib.arcgis.params import ARCGIS_DATA_SOURCES, DATA_DIR
 
     stage_config = ARCGIS_DATA_SOURCES[geo][datatype][pipestage]
     geo_name = ARCGIS_DATA_SOURCES[geo]["geo_name"]
@@ -52,10 +52,11 @@ def extract_from_arcgis_api(geo: GeoEnum, datatype: GisDataTypeEnum, pipestage: 
         raise NotImplementedError("Not implemented yet - use older existing data")
 
     # Fetch data from API or from file
+    file_to_write = (new_file if use_file == "c" else outfile,)
     result_count = stage_config["fetcher_fn"](
         stage_config["url"],
         stage_config["custom_params"],
-        outfile=new_file if use_file == "c" else outfile,
+        outfile=file_to_write,
         thru_data=thru_data,
         do_incremental=(use_file == "i"),
         skip_stage=(use_file == "s"),
@@ -68,7 +69,7 @@ def extract_from_arcgis_api(geo: GeoEnum, datatype: GisDataTypeEnum, pipestage: 
 # Execute one query to Arc GIS server and process its response. Apply default parameters, and merge with query-specific
 # parameters. Return the response as a JSON object.
 def arc_gis_get(url, arc_custom_params):
-    from lib.extract.arcgis.params import DEFAULT_ARCGIS_PARAMS
+    from elt.lib.arcgis.params import DEFAULT_ARCGIS_PARAMS
 
     params = deepcopy(DEFAULT_ARCGIS_PARAMS)
     params.update(arc_custom_params)

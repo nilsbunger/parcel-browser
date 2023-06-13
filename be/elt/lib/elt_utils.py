@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from rich.prompt import Prompt
 
-from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
+from elt.lib.types import Juri, GisData
 
 
 def log_and_print(logmsg, log):
@@ -29,24 +29,27 @@ def pipestage_prompt(is_incremental, existing_filename):
 
 
 def get_elt_pipe_filenames(
-    geo: GeoEnum, datatype: GisDataTypeEnum, stage_dirname: str, extension="jsonl", expect_existing=False
+    geo: Juri, datatype: GisData, stage_dirname: str, extension="jsonl", expect_existing=False
 ):
-    from lib.extract.arcgis.params import DATA_DIR
+    """Find filenames ."""
+    from elt.lib.arcgis.params import DATA_DIR
 
-    now = datetime.now(tz=ZoneInfo("America/Los_Angeles"))
-    output_dir = DATA_DIR / geo.value / "shapes" / datatype.value / stage_dirname
-    if not output_dir.is_dir():
+    stage_dir = (DATA_DIR / geo.value / datatype.value / stage_dirname).resolve()
+
+    if not stage_dir.is_dir() and not expect_existing:
         # Confirm with the user that we should make the directory
-        print(f"Directory {output_dir} does not exist.")
+        print(f"Directory {stage_dir} does not exist.")
         make_the_dir = Prompt.ask("Create it?", choices=["y", "n"])
         if make_the_dir == "y":
-            output_dir.mkdir(parents=True)
-    assert output_dir.is_dir()
+            stage_dir.mkdir(parents=True)
+        assert stage_dir.is_dir()
 
-    existing_files = sorted(output_dir.iterdir(), reverse=True)
-    new_file = output_dir / f"{now.strftime('%y%m%d')}.{extension}"
-    if not existing_files and expect_existing:
-        print(f"Error: no existing files found in {output_dir}. " f"\nYou should create a file like {new_file}")
-        sys.exit(1)
-
-    return existing_files, new_file
+    existing_dirs = sorted(stage_dir.iterdir(), reverse=True) if stage_dir.is_dir() else []
+    now = datetime.now(tz=ZoneInfo("America/Los_Angeles"))
+    new_file = stage_dir / f"{now.strftime('%y%m%d')}.{extension}"
+    if expect_existing:
+        if not existing_dirs:
+            print(f"Error: no existing files found in {stage_dir}. " f"\nYou should create a file like {new_file}")
+            sys.exit(1)
+        return existing_dirs, None
+    return existing_dirs, new_file

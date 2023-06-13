@@ -1,14 +1,14 @@
 from parsnip import settings
 
-from lib.extract.arcgis import extract_from_api
-from lib.extract.arcgis.types import GeoEnum, GisDataTypeEnum
+from elt.lib.arcgis import extract_from_api
+from elt.lib.types import Juri, GisData
 
-DATA_DIR = settings.BASE_DIR / "deploy" / "data-files" / "elt"
+DATA_DIR = settings.BASE_DIR / ".." / "deploy" / "data-files" / "elt"
 
 ARCGIS_DATA_SOURCES = {
-    GeoEnum.santa_ana: {  # santa ana
+    Juri.santa_ana: {  # santa ana
         "geo_name": "Santa Ana",
-        GisDataTypeEnum.parcel: [  # pipeline of stages
+        GisData.parcel: [  # pipeline of stages
             {
                 "name": "object_ids",  # First stage -- get Object IDs from arcgis for parcels in Santa Ana
                 "url": "https://www.ocgis.com/survey/rest/services/WebApps/ParcelFeatures/FeatureServer/0/query",

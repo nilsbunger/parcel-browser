@@ -8,7 +8,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
-from lib.extract.arcgis.types import GeoEnum
+from elt.lib.types import Juri
 from parsnip.util import eprint
 
 from world.models import (
@@ -82,7 +82,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "geo",
-            choices=GeoEnum.__members__,
+            choices=Juri.__members__,
             help="Region (santa_ana, san_diego, san_francisco) to load data for",
         )
         # parser.add_argument("model", choices=LoadModel.__members__)

@@ -1,1 +1,27 @@
 # Create your views here.
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.generic import ListView
+from vectortiles.postgis.views import MVTView
+
+from elt.models import RawSfParcel
+from world.infra.django_cache import h3_cache_page
+
+
+# Generate parcel tiles on-demand for ELT models, used in admin view
+# @method_decorator(h3_cache_page(60 * 60 * 24 * 365), name="dispatch")  # cache for 365 days
+class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
+    model = RawSfParcel
+    vector_tile_layer_name = "raw_sf_parcel"
+    vector_tile_fields = (
+        "blklot",
+        "zoning_cod",
+        "zoning_dis",
+        "street_nam",
+        "from_addre",
+        "to_address",
+    )
+
+    def get_vector_tile_queryset(self):
+        return self.model.objects.all()
+        # return self.model.objects.filter(text__regex=r"^[RC]")

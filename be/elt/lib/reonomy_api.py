@@ -48,7 +48,7 @@ def reonomy_post_call(api_call, params=None, body=None, save=True):
 
 def save_resp(response, api_call):
     time_str = datetime.now().strftime("%m%d %H:%M:%S")
-    with open("reonomy_calls.py", mode="a") as localfile:
+    with open("../../lib/reonomy_calls.py", mode="a") as localfile:
         localfile.write('\n["' + time_str + ": " + api_call + '",\n' + pformat(response, indent=2) + "],")
 
 
@@ -98,7 +98,7 @@ def reonomy_property_detail_call(id, save=True):
 
 
 def load_calls_from_disk() -> list[list[str, dict]]:
-    with open("reonomy_calls.py", mode="r") as localfile:
+    with open("../../lib/reonomy_calls.py", mode="r") as localfile:
         lines = localfile.readlines()
     lines[-1] += "]"
     try:

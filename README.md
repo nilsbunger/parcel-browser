@@ -1,12 +1,12 @@
 # Parsnip
 Home3 application for evaluating parcels for upzoning.
 
-# Setup
+# Other files
 
-Setup Django, Postgres, and frontend using these steps:
-
-* [Setup steps](docs/setup.md) including Mamba environment setup.
+* [Setup steps](docs/setup.md) for your dev environment including Mamba environment setup.
 * [Old brew-based (deprecated) setup steps](docs/archived-brew-setup.md)
+* [static-files.md](docs/static-files.md) : how React and static files are served in dev and prod.
+
 
 # Running in dev
 When you've completed setup, you're ready to run. You need to run frontend and backend servers:
@@ -23,7 +23,7 @@ When you've completed setup, you're ready to run. You need to run frontend and b
     
    `cd be && ./manage.py runserver`
 
-Browse to http://localhost:8000/map or http://localhost:8000/admin and see if things work.
+Browse to http://localhost:8000/map or http://localhost:8000/dj/admin and see if things work.
 
 If you haven't loaded any data, you should see an OpenStreetMap map at /map, but you won't see parcels.
 
@@ -157,7 +157,6 @@ TLS mode is set to "Full" for each domain so we have connection security between
 and between Cloudflare and our Django app server.
 
 # React and static files
-See [static-files.md](docs/static-files.md) to learn how React and static files are served in dev and prod.
 
 
 # Importing data
@@ -260,7 +259,6 @@ the Ubuntu 20.04 image which includes Postgres 14.6.
 
 [This blog post](https://blog.healthchecks.io/2020/11/using-github-actions-to-run-django-tests/) has an
 example of a Github Action configuration with Django and Postgres. 
-
 
 
 # Hardcore debugging
