@@ -28,7 +28,8 @@ class Command(BaseCommand):
             # SF
             case Juri.sf, GisData.parcel:
                 extract_from_shapefile(geo, gis_data_type)
-
+            case Juri.sf, GisData.zoning:
+                extract_from_shapefile(geo, gis_data_type)
             # Orange county / santa ana
             case Juri.santa_ana, GisData.parcel:
                 object_id_file = extract_from_arcgis_api(geo, gis_data_type, 0)

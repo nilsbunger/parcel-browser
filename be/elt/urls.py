@@ -6,4 +6,12 @@ urlpatterns = [
     path(
         "api/tile/raw_sf_parcel/<int:z>/<int:x>/<int:y>", views.RawSfParcelTile.as_view(), name="raw-sf-parcel-tile"
     ),
+    path(
+        "api/tile/raw_sf_zoning/<int:z>/<int:x>/<int:y>", views.RawSfZoningTile.as_view(), name="raw-sf-parcel-tile"
+    ),
+    path(
+        "api/tile/raw_sf_zoning_height_bulk/<int:z>/<int:x>/<int:y>",
+        views.RawSfZoningHeightBulkTile.as_view(),
+        name="raw-sf-parcel-tile",
+    ),
 ]

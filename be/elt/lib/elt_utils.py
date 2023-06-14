@@ -1,3 +1,4 @@
+from itertools import chain
 import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -34,8 +35,17 @@ def get_elt_pipe_filenames(
     """Find filenames ."""
     from elt.lib.arcgis.params import DATA_DIR
 
-    stage_dir = (DATA_DIR / geo.value / datatype.value / stage_dirname).resolve()
-
+    # stage_dir = (DATA_DIR / geo.value / datatype.value / stage_dirname).resolve()
+    stage_dir = (DATA_DIR / geo.value).resolve()
+    matching_data_dirs = list(chain(stage_dir.glob("zoning_*"), stage_dir.glob("zoning")))
+    if len(matching_data_dirs) > 1:
+        print("Choose which data dir to use:")
+        for i, data_dir in enumerate(matching_data_dirs):
+            print(f"{i+1}: {data_dir.name}")
+        choice = int(Prompt.ask("Your choice? ", choices=[str(i + 1) for i in range(len(matching_data_dirs))]))
+        stage_dir = matching_data_dirs[choice - 1]
+    resolved_datatype = stage_dir.name
+    stage_dir = stage_dir / stage_dirname
     if not stage_dir.is_dir() and not expect_existing:
         # Confirm with the user that we should make the directory
         print(f"Directory {stage_dir} does not exist.")
@@ -51,5 +61,5 @@ def get_elt_pipe_filenames(
         if not existing_dirs:
             print(f"Error: no existing files found in {stage_dir}. " f"\nYou should create a file like {new_file}")
             sys.exit(1)
-        return existing_dirs, None
-    return existing_dirs, new_file
+        new_file = None
+    return existing_dirs, resolved_datatype, new_file

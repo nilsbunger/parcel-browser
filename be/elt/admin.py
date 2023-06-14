@@ -5,7 +5,7 @@ from django import forms
 from more_itertools import collapse, flatten
 import numpy as np
 
-from elt.models import RawSfParcel
+from elt.models import RawSfParcel, RawSfZoningDistricts, RawSfZoningHeightBulkDistricts
 
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
@@ -27,8 +27,9 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
     # Use custom form as a way to disable geometry editing (making field readonly makes it not display the map)
     form = RawSfParcelAdminForm
     change_list_template = "elt/admin/raw_sf_parcel_change_list.html"
+    # what to show in list view:
     list_display = [
-        "id",
+        "mapblklot",
         "resolved_address",  # from Model file
         "zoning_cod",
         "zoning_dis",
@@ -40,8 +41,23 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
               ('zoning_cod', 'zoning_dis'), ('in_asr_sec', 'pw_recorde', 'active',), ('date_rec_a', 'date_rec_d'),
               ('date_map_a', 'date_map_d', 'date_map_2'), ('project_id', 'project_2', 'project_3')]
     # fmt:on
+    # what to show in detail view:
     fields = list(_fieldlist)
     readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(RawSfZoningDistricts)
+class RawSfZoningAdmin(admin.GISModelAdmin):
+    list_display = ["codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
+    fields = ["geom", "codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
+    readonly_fields = ["codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
+
+
+@admin.register(RawSfZoningHeightBulkDistricts)
+class RawSfZoningHeightBulkAdmin(admin.GISModelAdmin):
+    list_display = ["gen_height", "height"]
+    fields = ["geom", "gen_height", "height"]
+    readonly_fields = ["gen_height", "height"]

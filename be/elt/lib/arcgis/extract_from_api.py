@@ -21,7 +21,7 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
     print(f"Extract from Arc GIS API pipe stage: geo={geo}, datatype={datatype}, {pipestage}: {stage_config['name']}")
     if stage_config["has_file_output"]:  # file-based output
         pipestage_dirname = f"{pipestage}.{stage_config['name']}"
-        existing_files, new_file = get_elt_pipe_filenames(geo, datatype, pipestage_dirname)
+        existing_files, resolved_datatype, new_file = get_elt_pipe_filenames(geo, datatype, pipestage_dirname)
     else:
         existing_files, new_file = [], "DB"
 
@@ -41,13 +41,15 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
     # or load existing data
     if use_file == "c":  # create new data
         outfile = new_file
-        logmsg = f"Fetched {geo_name} {datatype} {stage_config['name']}, wrote to {outfile}\n"
+        logmsg = f"Fetched {geo_name} {resolved_datatype} {stage_config['name']}, wrote to {outfile}\n"
     elif use_file == "i":  # incrementally add to latest file
         outfile = existing_filename
-        logmsg = f"Fetched {geo_name} {datatype} {stage_config['name']}, wrote incrementally to {outfile}\n"
+        logmsg = f"Fetched {geo_name} {resolved_datatype} {stage_config['name']}, wrote incrementally to {outfile}\n"
     elif use_file == "s":  # skip stage, using existing data
         outfile = existing_filename
-        logmsg = f"Skip stage, with existing {geo_name} {datatype} {stage_config['name']} data from {outfile}\n"
+        logmsg = (
+            f"Skip stage, with existing {geo_name} {resolved_datatype} {stage_config['name']} data from {outfile}\n"
+        )
     else:
         raise NotImplementedError("Not implemented yet - use older existing data")
 
