@@ -33,7 +33,7 @@ class RawSfParcel(models.Model):
         try:
             if not self.from_addre:
                 long, lat = self.geom.centroid.coords
-                return f"No address, Mapblklot={self.mapblklot}, lat/long={lat},{long}"
+                return f"No addr, blklot={self.blklot}, lat/long={round(lat,5)},{round(long, 5)}"
             street_num = self.from_addre + (
                 "-" + self.to_address if (self.to_address and self.to_address != self.from_addre) else ""
             )

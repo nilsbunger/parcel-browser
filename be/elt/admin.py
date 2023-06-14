@@ -29,7 +29,7 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
     change_list_template = "elt/admin/raw_sf_parcel_change_list.html"
     # what to show in list view:
     list_display = [
-        "mapblklot",
+        "blklot",
         "resolved_address",  # from Model file
         "zoning_cod",
         "zoning_dis",
@@ -37,8 +37,9 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
         # "geom",
     ]
     # fmt:off
-    _fieldlist = ['resolved_address', 'geom', ('mapblklot', 'blklot', 'block_num', 'lot_num', 'odd_even'),
-              ('zoning_cod', 'zoning_dis'), ('in_asr_sec', 'pw_recorde', 'active',), ('date_rec_a', 'date_rec_d'),
+    _fieldlist = ['resolved_address', 'geom', ('blklot', 'block_num', 'mapblklot', 'lot_num', 'odd_even'),
+              ('zoning_cod', 'zoning_dis'), ('from_addre', 'to_address', 'street_nam', 'street_typ',),
+              ('in_asr_sec', 'pw_recorde', 'active',), ('date_rec_a', 'date_rec_d'),
               ('date_map_a', 'date_map_d', 'date_map_2'), ('project_id', 'project_2', 'project_3')]
     # fmt:on
     # what to show in detail view:
