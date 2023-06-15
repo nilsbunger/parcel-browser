@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from django.views.generic import DetailView
 from more_itertools import collapse
 
-from elt.models import RawSfParcel, RawSfZoningDistricts, RawSfZoningHeightBulkDistricts
+from elt.models import RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
@@ -26,7 +26,7 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
     form = RawSfParcelAdminForm
     change_list_template = "elt/admin/raw_sf_parcel_change_list.html"
     change_form_template = "elt/admin/raw_parcel_change_form.html"
-    associated_models = [RawSfZoningDistricts, RawSfZoningHeightBulkDistricts]
+    associated_models = [RawSfZoning, RawSfZoningHeightBulk]
     # what to show in list view:
     list_display = [
         "blklot",
@@ -105,14 +105,14 @@ class InlineRenderedAdminMixin:
         return related_admin_form
 
 
-@admin.register(RawSfZoningDistricts)
+@admin.register(RawSfZoning)
 class RawSfZoningAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
     list_display = ["codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
     fields = (("zoning", "zoning_sim"), ("codesection", "districtname"), ("gen", "url"))
     readonly_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
-@admin.register(RawSfZoningHeightBulkDistricts)
+@admin.register(RawSfZoningHeightBulk)
 class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
     list_display = ["gen_height", "height"]
     fields = ["gen_height", "height"]
@@ -123,7 +123,7 @@ class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
 class ParcelDetailView(DetailView):
     template_name = "elt/admin/raw_sf_parcel_detail.html"
     model = RawSfParcel
-    associated_models = [RawSfZoningDistricts, RawSfZoningHeightBulkDistricts]
+    associated_models = [RawSfZoning, RawSfZoningHeightBulk]
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()

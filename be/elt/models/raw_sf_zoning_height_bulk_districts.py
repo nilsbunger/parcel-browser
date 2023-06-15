@@ -2,7 +2,7 @@
 from django.contrib.gis.db import models
 
 
-class RawSfZoningHeightBulkDistricts(models.Model):
+class RawSfZoningHeightBulk(models.Model):
     height = models.CharField(max_length=254, null=True, blank=True)
     gen_height = models.FloatField(null=True, blank=True)
     geom = models.MultiPolygonField(srid=4326)
@@ -12,7 +12,7 @@ class RawSfZoningHeightBulkDistricts(models.Model):
         super().save(force_insert, force_update, using, update_fields)
 
 
-raw_sf_zoning_height_bulk_districts_mapping = {
+raw_sf_zoning_height_bulk_mapping = {
     "gen_height": "gen_hght",
     "geom": "MULTIPOLYGON",
     "height": "height",

@@ -5,7 +5,7 @@ from django.views.generic import ListView
 from vectortiles.postgis.views import MVTView
 from world.infra.django_cache import h3_cache_page
 
-from elt.models import RawSfParcel, RawSfZoningDistricts, RawSfZoningHeightBulkDistricts
+from elt.models import RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
@@ -24,13 +24,13 @@ class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
 
 @method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds
 class RawSfZoningTile(LoginRequiredMixin, MVTView, ListView):
-    model = RawSfZoningDistricts
+    model = RawSfZoning
     vector_tile_layer_name = "raw_sf_zoning"
     vector_tile_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
 @method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache for 1 hour
 class RawSfZoningHeightBulkTile(LoginRequiredMixin, MVTView, ListView):
-    model = RawSfZoningHeightBulkDistricts
+    model = RawSfZoningHeightBulk
     vector_tile_layer_name = "raw_sf_zoning_height_bulk"
     vector_tile_fields = ("height", "gen_height")

@@ -2,7 +2,7 @@
 from django.contrib.gis.db import models
 
 
-class RawSfZoningDistricts(models.Model):
+class RawSfZoning(models.Model):
     zoning_sim = models.CharField(max_length=254, null=True, blank=True)
     districtname = models.CharField(max_length=254, null=True, blank=True)
     url = models.CharField(max_length=254, null=True, blank=True)
@@ -12,7 +12,7 @@ class RawSfZoningDistricts(models.Model):
     geom = models.MultiPolygonField(srid=4326)
 
 
-raw_sf_zoning_districts_mapping = {
+raw_sf_zoning_mapping = {
     "codesection": "codesectio",
     "districtname": "districtna",
     "gen": "gen",
