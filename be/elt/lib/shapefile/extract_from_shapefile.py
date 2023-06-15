@@ -1,17 +1,17 @@
-from datetime import date
 import sys
 import tempfile
 import zipfile
+from datetime import date
 from pathlib import Path
 from pprint import pformat
 
+from dateutil.parser import parse as date_parse
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.utils import LayerMapping, mapping, ogrinspect
 
 import elt.models as elt_models
-from elt.lib.types import Juri, GisData
 from elt.lib.elt_utils import get_elt_pipe_filenames, pipestage_prompt
-from dateutil.parser import parse as date_parse
+from elt.lib.types import GisData, Juri
 
 
 # Return a version of the DB model which sets the run-date as specified.
@@ -95,7 +95,7 @@ def generate_model_text(tempdir, model_name):
     print(
         f"""
 Add text above to elt/models/__init__.py and elt/models/{model_name}.py.
-Then run './manage.py makemigrations' and './manage.py migrate'. 
+Then run './manage.py makemigrations' and './manage.py migrate'.
 Then run this script again.
 """
     )

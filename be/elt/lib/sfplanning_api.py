@@ -11,9 +11,8 @@ from time import sleep
 from urllib.parse import urlencode
 
 from dateutil.parser import parse
-from scraper_api import ScraperAPIClient
-
 from parsnip.settings import env
+from scraper_api import ScraperAPIClient
 
 __url = (
     "https://sfplanninggis.org/proxy/DotNet/proxy.ashx?https://sfplanninggis.org/arcgiswa/rest/services/PIM_v26/MapServer/identify?"
@@ -131,7 +130,7 @@ def load_calls_from_disk() -> list[list[str, dict]]:
     saved_calls = []
     for fname in fnames:
         print("Loading", fname)
-        with open(fname, mode="r") as localfile:
+        with open(fname) as localfile:
             lines = localfile.readlines()
         lines[0] = "[" + lines[0]
         lines[-1] += "]"
@@ -140,7 +139,7 @@ def load_calls_from_disk() -> list[list[str, dict]]:
             saved_calls.extend(raw_lines)
         except ValueError as e:
             print(e)
-    l = [y for y in [x[1]["results"] for x in saved_calls]]
+    l = [x[1]["results"] for x in saved_calls]
     flatlist = [item for sublist in l for item in sublist]
     print(f"DONE. Found {len(flatlist)} records")
     dates = [x["attributes"]["CURRSALEDATE"] for x in flatlist]

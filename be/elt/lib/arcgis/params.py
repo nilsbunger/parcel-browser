@@ -1,7 +1,7 @@
 from parsnip import settings
 
 from elt.lib.arcgis import extract_from_api
-from elt.lib.types import Juri, GisData
+from elt.lib.types import GisData, Juri
 
 DATA_DIR = settings.BASE_DIR / ".." / "deploy" / "data-files" / "elt"
 

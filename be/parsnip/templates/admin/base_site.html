@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %} }}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+      #site-name {
+          margin: 0;
+      }
+      #branding h2 {
+          padding-top: 2px;
+          padding-bottom: 2px;
+          margin:0;
+      }
+      #header {
+          padding-top:4px;
+          padding-bottom:4px;
+      }
+      div.breadcrumbs {
+          padding-top:4px;
+          padding-bottom:4px;
+      }
+  </style>
+{% endblock %}
+
+{% block branding %}
+  <h2 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Turboprop admin') }}</a></h2>
+{% endblock %}

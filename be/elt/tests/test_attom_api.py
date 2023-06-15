@@ -3,6 +3,7 @@ from pprint import pprint
 import pandas as pd
 import pytest
 import responses
+from facts.models import StdAddress
 from responses import matchers
 
 from elt.lib.attom_data import AttomDataApi
@@ -12,7 +13,6 @@ from elt.tests.fixtures import (
     AttomPropertyAddressFixture,
 )
 from elt.tests.fixtures.attom_data_fixtures import expanded_profile_resp, multifam_92101_resp
-from facts.models import StdAddress
 
 
 class TestAttomApi:

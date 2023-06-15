@@ -4,9 +4,9 @@ from copy import deepcopy
 
 import requests
 
-from elt.models import RawSantaAnaParcel
-from elt.lib.types import Juri, GisData
 from elt.lib.elt_utils import get_elt_pipe_filenames, log_and_print, pipestage_prompt
+from elt.lib.types import GisData, Juri
+from elt.models import RawSantaAnaParcel
 
 
 # Extract data from an ArcGIS server with API calls. Support different cities and data types (parcels, zones, etc).

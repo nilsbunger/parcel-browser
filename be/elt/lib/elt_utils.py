@@ -1,11 +1,11 @@
-from itertools import chain
 import sys
 from datetime import datetime
+from itertools import chain
 from zoneinfo import ZoneInfo
 
 from rich.prompt import Prompt
 
-from elt.lib.types import Juri, GisData
+from elt.lib.types import GisData, Juri
 
 
 def log_and_print(logmsg, log):

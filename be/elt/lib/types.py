@@ -23,3 +23,4 @@ class GisData(Enum):
     oppzone = "oppzone"
     tpa = "tpa"
     road = "road"
+    meta = "meta"  # create Meta db table to relate parcels to other data

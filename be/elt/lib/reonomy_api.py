@@ -98,7 +98,7 @@ def reonomy_property_detail_call(id, save=True):
 
 
 def load_calls_from_disk() -> list[list[str, dict]]:
-    with open("../../lib/reonomy_calls.py", mode="r") as localfile:
+    with open("../../lib/reonomy_calls.py") as localfile:
         lines = localfile.readlines()
     lines[-1] += "]"
     try:

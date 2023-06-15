@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+
+{% block content %}
+  <h2>Hello from change template</h2>
+  {{ block.super }}
+{% endblock %}
+
+{% block after_related_objects %}
+
+  <h1>Data related to this parcel:</h1>
+  {% for entry in related_forms %}
+    <h2>{{ entry.name }}</h2>
+    {% for fieldset in entry.form %}
+      <p>Fieldset:</p>
+      {% include "admin/includes/fieldset.html" %}
+    {% endfor %}
+  {% endfor %}
+
+{% endblock %}
+
+{% block submit_buttons_bottom %}{% endblock %}

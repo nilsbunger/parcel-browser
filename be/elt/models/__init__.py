@@ -5,6 +5,7 @@ from .raw_santa_ana_parcel import RawSantaAnaParcel
 from .raw_santa_ana_zoning import RawSantaAnaZoning, raw_santa_ana_zoning_mapping
 from .raw_scag_tpa import RawScagTpa, raw_scag_tpa_mapping
 from .raw_sf_parcel import RawSfParcel, raw_sf_parcel_mapping
+from .raw_sf_parcel_meta import RawSfParcelMeta
 from .raw_sf_zoning_districts import RawSfZoningDistricts, raw_sf_zoning_districts_mapping
 from .raw_sf_zoning_height_bulk_districts import (
     RawSfZoningHeightBulkDistricts,

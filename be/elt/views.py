@@ -3,9 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 from vectortiles.postgis.views import MVTView
+from world.infra.django_cache import h3_cache_page
 
 from elt.models import RawSfParcel, RawSfZoningDistricts, RawSfZoningHeightBulkDistricts
-from world.infra.django_cache import h3_cache_page
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
