@@ -17,6 +17,10 @@ from parsnip import settings
 
 # from userflows.api import userflows_api
 
+# Admin site variables: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#adminsite-objects
+admin.site.site_header = "Turboprop admin"
+admin.site.site_title = "Turboprop site admin"
+
 
 def trigger_error(request):
     division_by_zero = 1 / 0  # noqa: F841 - unused variable

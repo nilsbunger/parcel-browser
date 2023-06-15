@@ -9,33 +9,27 @@ from elt.models import RawSfParcel, RawSfZoningDistricts, RawSfZoningHeightBulkD
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
-@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache for 1 hour
+@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache for 1 hour
 class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcel
     vector_tile_layer_name = "raw_sf_parcel"
-    vector_tile_fields = (
-        "blklot",
-        "zoning_cod",
-        "zoning_dis",
-        "street_nam",
-        "from_addre",
-        "to_address",
-        "street_typ",
-    )
 
+    # fmt:off
+    vector_tile_fields = ("blklot", "zoning_cod", "zoning_dis", "street_nam", "from_addre", "to_address","street_typ")
+    # fmt:on
     def get_vector_tile_queryset(self):
         return self.model.objects.all()
         # return self.model.objects.filter(text__regex=r"^[RC]")
 
 
-@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache for 1 hour
+@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds
 class RawSfZoningTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfZoningDistricts
     vector_tile_layer_name = "raw_sf_zoning"
     vector_tile_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
-@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache for 1 hour
+@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache for 1 hour
 class RawSfZoningHeightBulkTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfZoningHeightBulkDistricts
     vector_tile_layer_name = "raw_sf_zoning_height_bulk"
