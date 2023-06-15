@@ -9,22 +9,21 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import os
-import sys
 from datetime import UTC, datetime
+import os
 from pathlib import Path
+import sys
 
+from django.core.exceptions import ImproperlyConfigured
 import environ
 import sentry_sdk
-from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 from whitenoise import WhiteNoise
 
 from .util import eprint
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
+BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory should be "be/" (the Django project root)
 
 executable_name = os.path.basename(sys.argv[0])
 
@@ -33,12 +32,13 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 # Environ package converts environment variables to proper booleans, ints, etc.
 env = environ.Env(
-    LOCAL_DB=(bool, False),
+    DB=(str, None),
     TEST_ENV=(bool, False),  # Running tests; disables silk and other dev infra
     BUILD_PHASE=(bool, False),
     DJANGO_LOG_LEVEL=(str, "INFO"),
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
+    WHICH_DB=(str, None),
     CLOUDFLARE_R2_ENABLED=(bool, True),
     AIRTABLE_API_KEY=(str, None),
     AIRTABLE_YIMBY_LAW_HE_API_KEY=(str, None),
@@ -53,8 +53,8 @@ assert DJANGO_ENV in ["development", "production", "staging"]
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 STAGE_ENV = DJANGO_ENV == "staging"  # running on staging server
-
-LOCAL_DB: bool = env("LOCAL_DB")
+DB: str = env("DB")  # which DB to use for primary data storage:
+assert DB in ["LOCAL", "DEV", "PROD"]
 TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -62,6 +62,8 @@ eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
 print("Django Log Level (to stdout)", DJANGO_LOG_LEVEL)
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 CLOUDFLARE_R2_ENABLED = env("CLOUDFLARE_R2_ENABLED") and not TEST_ENV
+
+LOCAL_DB: bool = DB == "LOCAL"
 
 # DEBUG variable - controls display of error messages, static file handling, etc. Never use it in production!
 DEBUG = DEV_ENV and not TEST_ENV
@@ -71,11 +73,6 @@ eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONM
 if TEST_ENV:
     eprint("**** TEST ENVIRONMENT ****")
 eprint(f"**** DEBUG == {DEBUG} ****")
-# if not BUILD_PHASE:
-#     AUTH0_DOMAIN = env("AUTH0_DOMAIN")
-#     AUTH0_CLIENT_ID = env("AUTH0_CLIENT_ID")
-#     AUTH0_CLIENT_SECRET = env("AUTH0_CLIENT_SECRET")
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -109,7 +106,7 @@ AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
     "django.contrib.auth.backends.ModelBackend",
     # "magic-link" auth
-    "sesame.backends.ModelBackend",
+    "sesame.backends.ModelBackend"
     # `allauth` specific authentication methods, such as login by e-mail
     # "allauth.account.auth_backends.AuthenticationBackend",
 ]
@@ -159,23 +156,6 @@ if ENABLE_SILK:
 
 # django-allauth requires using django sites
 SITE_ID = 1
-
-# Provider specific settings
-SOCIALACCOUNT_PROVIDERS = {
-    # "amazon_cognito": {
-    #     "DOMAIN": "https://parsnip.auth.us-west-2.amazoncognito.com",
-    # }
-    # 'google': {
-    #     # For each OAuth based provider, either add a ``SocialApp``
-    #     # (``socialaccount`` app) containing the required client
-    #     # credentials, or list them here:
-    #     'APP': {
-    #         'client_id': '123',
-    #         'secret': '456',
-    #         'key': ''
-    #     }
-    # }
-}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -245,6 +225,8 @@ else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # WHITENOISE_INDEX_FILE = "index.html"
 
+template_dirs.append(BASE_DIR / "parsnip" / "templates")
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -256,7 +238,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ],
+            ]
         },
     },
 ]
@@ -290,25 +272,30 @@ SILKY_AUTHORISATION = True  # User must have permissions
 SILKY_PYTHON_PROFILER = True
 
 # Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-db_host = None
-db_password = None
-local_db_settings = ("127.0.0.1", "parsnip", "postgres", "password")
-if LOCAL_DB:
-    eprint("**** LOCAL DATABASE **** (Local DB is:", LOCAL_DB, ")")
-    (db_host, db_name, db_user_name, db_password) = local_db_settings
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-elif BUILD_PHASE:
+# railway_db_settings = ("containers-us-west-40.railway.app", 5944, "railway", "postgres", "aQezfx1tHL5zDRFWSbxI")
+# PGPASSWORD=aQezfx1tHL5zDRFWSbxI psql -h containers-us-west-40.railway.app -U postgres -p 5944 -d railway
+
+local_db_settings = ("127.0.0.1", 5432, "parsnip", "postgres", "password")
+match DB:
+    case "DEV":  # remote development DB
+        db_settings = [
+            env(x) for x in ["DB_DEV_HOST", "DB_DEV_PORT", "DB_DEV_NAME", "DB_DEV_USERNAME", "DB_DEV_PASSWORD"]
+        ]
+    case "LOCAL":
+        db_settings = local_db_settings
+    case "PROD":
+        db_settings = (env("DB_HOST"), env("DB_PORT"), env("DB_NAME"), env("DB_USERNAME"), env("DB_PASSWORD"))
+    case _:
+        assert False
+
+if BUILD_PHASE:
+    (db_host, db_port, db_name, db_user, db_passwd) = ("", "", "", "", "")
     eprint("**** NO DB - BUILD PHASE ****")
-    (db_host, db_name, db_user_name, db_password) = ("", "", "", "")
 else:
-    (db_host, db_name, db_user_name, db_password) = (
-        env("DB_HOST"),
-        env("DB_NAME"),
-        env("DB_USERNAME"),
-        env("DB_PASSWORD"),
-    )
-    eprint("**** CLOUD DATABASE ****. HOST=", db_host, "DB=", db_name, "USER=", db_user_name)
+    db_host, db_port, db_name, db_user, db_passwd = db_settings
+    eprint(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}")
 
 if BUILD_PHASE:
     DATABASES = {}
@@ -323,10 +310,10 @@ else:
             "ENGINE": "django.contrib.gis.db.backends.postgis",
             "HOST": db_host,
             "NAME": db_name,
-            "USER": db_user_name,
-            "PASSWORD": db_password,
-            "PORT": 5432,
-        },
+            "USER": db_user,
+            "PASSWORD": db_passwd,
+            "PORT": db_port,
+        }
     }
 
     DATABASES["basedata"] = DATABASES["default"].copy()
@@ -351,6 +338,7 @@ else:
         DATABASES["cloud_db"]["TEST"] = {"MIRROR": "default"}
 
 CONN_MAX_AGE = None  # allow persistent DB connection forever
+CONN_HEALTH_CHECKS = True  #
 
 if DEV_ENV:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -360,21 +348,10 @@ else:
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-        "OPTIONS": {
-            "min_length": 8,
-        },
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 # Authentication config
@@ -417,7 +394,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
@@ -427,9 +403,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 if not DEV_ENV and not TEST_ENV:
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        integrations=[
-            DjangoIntegration(),
-        ],
+        integrations=[DjangoIntegration()],
         # Set traces_sample_rate to 1.0 to capture 100%
         # of transactions for performance monitoring.
         # We recommend adjusting this value in production.
@@ -445,46 +419,26 @@ LOG_DIR = f"./log/{datetime.now(tz=UTC):%y-%m-%d}"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 log_handlers = ["file"] if PROD_ENV or STAGE_ENV else ["console"]
-info_logger = {
-    "handlers": log_handlers,
-    "level": "INFO",
-}
-debug_logger = {
-    "handlers": log_handlers,
-    "level": "DEBUG",
-}
+info_logger = {"handlers": log_handlers, "level": "INFO"}
+debug_logger = {"handlers": log_handlers, "level": "DEBUG"}
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "verbose": {
-            "format": "{asctime:.19} {levelname:.5}: {message}  [{name}]",
-            "style": "{",
-        },
+        "verbose": {"format": "{asctime:.19} {levelname:.5}: {message}  [{name}]", "style": "{"},
     },
     "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "stream": sys.stdout,
-            "formatter": "verbose",
-        },
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "stream": sys.stdout, "formatter": "verbose"},
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": f"{LOG_DIR}/{datetime.now(tz=UTC):%y-%m-%d}-debug.log",
             "formatter": "verbose",
+            "delay": True,
         },
     },
-    "root": {
-        "handlers": log_handlers,
-        "level": DJANGO_LOG_LEVEL,
-    },
+    "root": {"handlers": log_handlers, "level": DJANGO_LOG_LEVEL},
     "loggers": {
-        # "django": {
-        #     "handlers": log_handlers,
-        #     "level": DJANGO_LOG_LEVEL,
-        # },
         "django.server": info_logger,
         "django.utils.autoreload": info_logger,
         "django.db.backends": info_logger,
@@ -498,17 +452,15 @@ LOGGING = {
         "two_factor": info_logger,
         "parsnip.commands": debug_logger,
         "parsnip": debug_logger,
-        "parsnip": debug_logger,
     },
 }
 
 # Set up caching to cache the tile views which contain high-cost SQL queries
+prod_cache = (PROD_ENV or STAGE_ENV) and not TEST_ENV and not LOCAL_DB
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": "/parsnip_data/django-cache"
-        if ((PROD_ENV or STAGE_ENV) and not TEST_ENV and not LOCAL_DB)
-        else BASE_DIR / ".django-cache",
+        "LOCATION": "/parsnip_data/django-cache" if prod_cache else BASE_DIR / ".django-cache",
         "TIMEOUT": 3600 * 24 * 365,  # default timeout of 1 year
         "OPTIONS": {"MAX_ENTRIES": 10000, "CULL_FREQUENCY": 4},  # Cull 1/4th of entries when we hit max-entries
     }
