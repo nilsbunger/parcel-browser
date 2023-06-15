@@ -107,5 +107,4 @@ def _user(request) -> UserSchema | None:
 
 @userflows_api.get("/profile", response=None)  # ProfileSchema)
 def _user_profile(request):
-    print("HI")
     return request.user.profile

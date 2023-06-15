@@ -119,7 +119,5 @@ class TestAttomApi:
         # generate a dataframe
         comps_df = pd.json_normalize([comp.dict() for comp in comps], sep=".")
 
-        print("HI")
-
 
 #            resp: AttomCompsResponse = x
