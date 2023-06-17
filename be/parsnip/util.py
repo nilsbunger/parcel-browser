@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+import re
 import sys
 
 from django.urls import NoReverseMatch, URLPattern, URLResolver
@@ -54,3 +56,18 @@ def each_url_with_placeholder(url_patterns, namespace=""):
             # else:
             #     url = reverse(namespace + url_pattern.name, args=args)
             yield url
+
+
+@dataclass
+class RegexEqual(str):
+    """Regex matching for"match / case. Example at https://martinheinz.dev/blog/78"""
+
+    string: str
+    match: re.Match = None
+
+    def __eq__(self, pattern):
+        self.match = re.search(pattern, self.string)
+        return self.match is not None
+
+    def __getitem__(self, group):
+        return self.match[group]

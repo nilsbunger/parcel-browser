@@ -1,7 +1,7 @@
-
 from django.core.management.base import BaseCommand
 
 from elt.lib.arcgis.extract_from_api import extract_from_arcgis_api
+from elt.lib.excel.extract_from_excel import extract_from_excel
 from elt.lib.shapefile.extract_from_shapefile import extract_from_shapefile
 from elt.lib.types import GisData, Juri
 
@@ -39,7 +39,8 @@ class Command(BaseCommand):
                 extract_from_shapefile(geo, gis_data_type)
             # case Juri.sf, GisData.meta:
             #     self.generate_meta_model(geo)
-
+            case Juri.sf, GisData.he:
+                extract_from_excel(geo, gis_data_type)
             # Orange county / santa ana
             case Juri.santa_ana, GisData.parcel:
                 object_id_file = extract_from_arcgis_api(geo, gis_data_type, 0)
@@ -54,5 +55,4 @@ class Command(BaseCommand):
                 extract_from_shapefile(geo, gis_data_type)
             case _:
                 raise NotImplementedError("This combination of geo and gis_data_type is not implemented yet.")
-        print("DONE: NOTE -- if you've generated new GisData, you should rerun <geo> meta to update meta models.")
         print("DONE")

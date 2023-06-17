@@ -12,3 +12,7 @@ from .raw_sf_zoning_height_bulk_districts import (
     RawSfZoningHeightBulk,
     raw_sf_zoning_height_bulk_mapping,
 )
+
+from .raw_sf_he_table_a import RawSfHeTableA
+from .raw_sf_he_table_b import RawSfHeTableB
+from .raw_sf_he_table_c import RawSfHeTableC
