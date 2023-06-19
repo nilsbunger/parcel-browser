@@ -1,4 +1,5 @@
 from copy import deepcopy
+from math import isnan
 
 from elt.lib.excel.extract_from_excel import camelcase
 
@@ -16,8 +17,13 @@ class CreateSanitizedMixin:
     @classmethod
     def create_sanitized(cls, *args, **kwargs):
         """Create an instance of this model, with enums mapped from values and string fields limited to 250 characters"""
+
         obj = cls()
         init_vals = deepcopy(kwargs)
+        # get rid of NaNs in all fields
+        for key in init_vals:
+            if type(init_vals[key]) == float and isnan(init_vals[key]):
+                init_vals[key] = None
         for field in cls.choice_fields:
             str_val = camelcase(init_vals[field.name])
             if str_val is None:

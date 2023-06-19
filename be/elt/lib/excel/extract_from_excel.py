@@ -1,7 +1,5 @@
-from cmath import isnan
-import datetime
+from math import isnan
 from datetime import date
-from math import nan
 import re
 import sys
 
@@ -23,8 +21,11 @@ MODELS_DIR = BASE_DIR / "elt" / "models"
 def sanitize(name):
     """Return a name converted to lowercase and underscored, with non-alphanumeric characters removed."""
     # # Fetch everything up to first non-alpha character, while also having tighter rules for first character.
-    if type(name) == float and isnan(name):
+    if (name is None) or (type(name) == float and isnan(name)):
         return None
+    if str(name) == "nan":
+        print("unexpected nan")
+        raise ValueError("Unexpected nan - should be turned into None")
     base = re.sub("[^A-Za-z0-9_\- ]", "_", str(name).strip().lower())
     # convert multiple spaces, dashes, and underscores to an underscore
     base = re.sub("[ _\-]+", "_", base)
@@ -47,7 +48,7 @@ def confirm_overwrite(fname):
 def camelcase(name):
     """Return a ready-for-DB camel-cased name based on an arbitrary incoming name."""
     m = sanitize(name)
-    if not m:
+    if m is None:
         return None
     base_str = m.strip()
     base_str = "".join(x.capitalize() for x in re.split("[ _]", base_str))
@@ -113,8 +114,7 @@ def parse_sf_he(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
         for col in enum_cols:
             df[col] = df[col].astype("category")
         for col in int_cols:
-            df[col] = df[col].fillna(-1)  # get rid of NaN for conversion, by turning them to -1
-            df[col] = df[col].astype("int64")
+            df[col] = df[col].astype("Int64")  # Int64 allows for nulls
     except Exception as e:
         print(f"Error processing sheet {friendly_sheet_name}: {e}")
         raise e
@@ -170,8 +170,9 @@ def save_df_to_db(sheet_df: DataFrame, db_model: models.Model, run_date: date):
     db_model_with_date: Model | None = elt_model_with_run_date(db_model.__name__, run_date)
     assert db_model_with_date
     df_records = sheet_df.to_dict("records")
-    print(f"Saving {len(df_records)} records to {db_model_with_date.__name__}...")
-    for batch in batched(df_records, 100):
+    batch_size = 1000
+    print(f"Saving {len(df_records)} records to {db_model_with_date.__name__} ({batch_size} at a time...")
+    for batch in batched(df_records, batch_size):
         print(".", end="")
         # noinspection PyCallingNonCallable
         models = [db_model_with_date.create_sanitized(**record, run_date=run_date) for record in batch]
@@ -198,9 +199,8 @@ def extract_from_excel(geo: Juri, datatype: GisData, thru_data=None):
 
     # load the excel file from latest_file
     xls = pd.ExcelFile(latest_file)
-    # keep sheet names only up to first dash (effectively treating the dash like a comment char)
     full_sheet_names = xls.sheet_names
-    # full_sheet_names.reverse()
+    full_sheet_names.reverse()
     for full_sheet_name in full_sheet_names:
         sanitized_sheet_name = sanitize(re.match("^[^\-]+", full_sheet_name)[0])
         parser_fn = globals()[f"parse_{geo.name}_{resolved_datatype}"]
