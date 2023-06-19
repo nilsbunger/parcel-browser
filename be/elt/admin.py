@@ -8,7 +8,7 @@ from django.utils.html import format_html
 from django.views.generic import DetailView
 from more_itertools import collapse
 
-from elt.models import RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
+from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfHeTableC, RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
@@ -133,3 +133,24 @@ class ParcelDetailView(DetailView):
         context = self.get_context_data(object=self.object)
         retval = self.render_to_response(context)
         return retval
+
+
+@admin.register(RawSfHeTableA)
+class RawSfHeTableAAdmin(admin.GISModelAdmin):
+    model = RawSfHeTableA
+    list_display = ["mapblklot", "address", "ex_gp_des", "ex_zoning", "acres", "ex_use_vac", "run_date"]
+
+
+@admin.register(RawSfHeTableB)
+class RawSfHeTableBAdmin(admin.GISModelAdmin):
+    model = RawSfHeTableB
+    # fmt:off
+    list_display = ["mapblklot", "address", "acres", "ex_zoning","m1_zoning","m2_zoning", "m3_zoning", "vacant",
+                    "ex_use","run_date"]
+    # fmt:on
+
+
+@admin.register(RawSfHeTableC)
+class RawSfHeTableCAdmin(admin.GISModelAdmin):
+    model = RawSfHeTableC
+    list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]

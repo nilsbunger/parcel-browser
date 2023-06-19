@@ -1,7 +1,8 @@
 from copy import deepcopy
 import sys
 from datetime import date, datetime
-from itertools import chain
+from itertools import chain, islice
+import warnings
 from zoneinfo import ZoneInfo
 
 from django.db import models
@@ -20,16 +21,38 @@ def log_and_print(logmsg, log):
 
 # Prompt user within a pipestage - do they want to create new data, add to existing data, or skip the stage?
 # Returns 'c', 'i', or 's' for create, incremental, or skip
-def pipestage_prompt(is_incremental, existing_filename):
+def pipestage_prompt(is_incremental, existing_filename=None, num_existing_entries=None, run_date=None):
     print("Stage options:")
-    print("C:Create new data")
+    # print options for this stage. run_date and num_existing won't print if num_existing_entries is 0.
+    num_existing_str = f" {num_existing_entries}" if num_existing_entries else ""
+    run_date_str = f" with run_date={run_date}" if run_date and num_existing_entries else ""
+    fname_str = f" from {existing_filename}" if existing_filename else ""
+    print(f"C:Create new data, replacing{num_existing_str} existing entries{run_date_str}{fname_str}")
     prompt_options = ["c", "s"]
-    if is_incremental:
-        print(f"I:Add to existing data incrementally: {existing_filename}")
+    if is_incremental and (num_existing_entries or existing_filename):
+        print(f"I:Add to{num_existing_str} existing entires{run_date_str} incrementally{fname_str}")
         prompt_options += ["i"]
-    print(f"S:Skip stage, using latest existing data: {existing_filename}")
+    if num_existing_entries or existing_filename:
+        print(f"S:Skip stage, using latest{num_existing_str} existing entries{run_date_str}{fname_str}")
+    else:
+        print("Note: no existing data found for this stage. Choosing C...")
+        return "c"
     use_file = Prompt.ask("Your choice? ", choices=prompt_options)
     return use_file
+
+
+def batched(iterable, n):
+    """Yield tuples of n items at a time from iterable."""
+    # batched is in the std library in python 3.12.
+    if sys.version_info >= (3, 12):
+        warnings.warn("batched is in the std library in python 3.12.", DeprecationWarning, stacklevel=2)
+
+    if n < 1:
+        raise ValueError("n must be at least one")
+    it = iter(iterable)
+    # yield one tuple at a time until it's exhausted
+    while batch := tuple(islice(it, n)):
+        yield batch
 
 
 def get_elt_pipe_filenames(
@@ -76,8 +99,8 @@ def get_elt_pipe_filenames(
     return date_files, resolved_datatype, new_file
 
 
-def db_model_with_run_date(model_name_camel: str, run_date: date) -> models.Model | None:
-    """Return a version of the given DB model which sets run-date as specified
+def elt_model_with_run_date(model_name_camel: str, run_date: date) -> models.Model | None:
+    """Return a version of the given ELT DB model which sets run-date as specified
     Args:
         model_name_camel (str): DB model name in CamelCase
         run_date (date): date to set in run_date field when saving
