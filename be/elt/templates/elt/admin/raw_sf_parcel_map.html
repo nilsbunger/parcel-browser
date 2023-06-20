@@ -1,0 +1,288 @@
+{% extends "admin/base_site.html" %}
+{#  See base at https://github.com/django/django/blob/main/django/contrib/admin/templates/admin/change_list.html #}
+{% load static %}
+
+{% block dark-mode-vars %}{% endblock %}
+{% block extrastyle %}
+  {#  {{ block.super }}#}
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet"/>
+  <style>
+      .theme-toggle { /* disable dark mode toggle */
+          display: none;
+      }
+
+      #map {
+          aspect-ratio: 1 / 1;
+          max-height: 70vh;
+          width: 100%;
+      }
+
+      #menu {
+          background: #fff;
+          position: relative;
+          z-index: 1;
+          top: 10px;
+          right: 10px;
+          border-radius: 3px;
+      {#width: 120px;#}{#border: 1px solid rgba(0, 0, 0, 0.4);#} font-family: 'Open Sans', sans-serif;
+      }
+
+      #menu a {
+          font-size: 13px;
+          color: #404040;
+          margin: 5px;
+          padding: 5px;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+          text-align: center;
+      }
+
+      #menu a:last-child {
+          border: none;
+      }
+
+      #menu a:hover {
+          background-color: #f8f8f8;
+          color: #404040;
+      }
+
+      #menu a.active {
+          background-color: #3887be;
+          color: #ffffff;
+      }
+
+      #menu a.active:hover {
+          background: #3074a4;
+      }
+  </style>
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <!-- Load the `mapbox-gl-geocoder` plugin. -->
+  <script
+    src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+  <link rel="stylesheet"
+        href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css"
+        type="text/css">
+
+{% endblock %}
+
+{% block content %}
+  <div>
+    <nav id="menu"></nav>
+    <div id="map"></div>
+  </div>
+{% endblock %}
+
+{% block footer %}
+  {#  {{ block.super }}#}
+  <script>
+      // keep mapbox token in backend codebase.
+      // NOTE : this is mapbox's public token.
+      mapboxgl.accessToken = 'pk.eyJ1Ijoibmlsc2hvbWUzIiwiYSI6ImNsOHJtbDFtbDI2Znkzb3RvdDV0emhmamEifQ.rkpWuotqi4HacN2QUoWkgg';
+      console.log("MAPBOX SCRIPT")
+      const bounds = [
+          [-122.66336, 37.492987], // Southwest coordinates
+          [-122.050481, 37.871651] // Northeast coordinates
+      ];
+
+      const map = new mapboxgl.Map({
+          container: 'map',
+          // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+          // https://docs.mapbox.com/api/maps/styles/#mapbox-styles
+          style: 'mapbox://styles/mapbox/light-v11', // mapboxStyle
+          center: [-122.47, 37.76],
+          zoom: 15,
+          maxBounds: bounds,
+      });
+      // Add the control to the map.
+      map.addControl(
+          new MapboxGeocoder({accessToken: mapboxgl.accessToken, mapboxgl: mapboxgl})
+      );
+      map.addControl(new mapboxgl.FullscreenControl());
+
+
+      map.on('load', () => {
+          // -------------------------------------------------------------------
+          // tile layers
+          console.log("Map on load")
+          // Sources here are making requests against elt/views.py
+          map.addSource('raw_sf_parcel_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel/{z}/{x}/{y}'],
+              'minzoom': 15,
+              'maxzoom': 17
+          });
+          map.addSource('raw_sf_zoning_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning/{z}/{x}/{y}'],
+              'minzoom': 12,
+              'maxzoom': 18
+          });
+          map.addSource('raw_sf_zoning_height_bulk_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning_height_bulk/{z}/{x}/{y}'],
+              'minzoom': 12,
+              'maxzoom': 18
+          });
+
+          // create parcel poly layer so we can click on it
+          map.addLayer({
+              'id': 'parcel_poly', // Layer ID
+              'type': 'fill',
+              'source': 'raw_sf_parcel_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_parcel', // layer name in the tileset (set in backend)
+              'paint': {'fill-opacity': 0}
+          });
+
+          map.addLayer({
+              'id': 'parcel', // Layer ID
+              'type': 'line',
+              'source': 'raw_sf_parcel_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_parcel', // ID of the tile source created above
+          })
+          map.addLayer({
+              'id': 'zoning_poly', // Layer ID
+              'type': 'fill',
+              'source': 'raw_sf_zoning_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning', // layer name in the tileset (set in backend)
+              'paint': {'fill-opacity': 0}
+          });
+          map.addLayer({
+              'id': 'zoning', // Layer ID
+              'type': 'line',
+              'source': 'raw_sf_zoning_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning', // ID of the tile source created above
+              'paint': {'line-width': 3, 'line-color': '#a0a050'}
+          })
+          map.addLayer({
+              'id': 'zoning_height_poly', // Layer ID
+              'type': 'fill',
+              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning_height_bulk', // layer name in the tileset (set in backend)
+              'paint': {'fill-opacity': 0}
+          });
+          map.addLayer({
+              'id': 'zoning_height', // Layer ID
+              'type': 'line',
+              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning_height_bulk', // ID of the tile source created above
+              'paint': {'line-width': 4, 'line-color': '#4040a0'}
+          })
+          map.addLayer({
+              'id': 'zoning_labels', // Layer ID
+              'type': 'symbol',
+              'source': 'raw_sf_zoning_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning', // ID of the tile source created above
+              'paint': {'text-color': '#808040', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
+              'layout': {
+                  'text-field': ['get', 'zoning'],
+                  'text-anchor': 'center',
+                  'text-justify': 'center',
+                  'text-size': 16,
+              },
+          })
+          map.addLayer({
+              'id': 'zoning_height_labels', // Layer ID
+              'type': 'symbol',
+              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
+              'source-layer': 'raw_sf_zoning_height_bulk', // ID of the tile source created above
+              'paint': {'text-color': '#303070', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
+              'layout': {
+                  'text-field': ['get', 'gen_height'],
+                  'text-anchor': 'center',
+                  'text-justify': 'center',
+                  'text-size': 15,
+              },
+          })
+      });
+
+      const menu = document.getElementById('menu');
+
+      // create layer toggles
+      for (const btn of [['Parcel', 'parcel'], ['Zoning', 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels']]) {
+          const link = document.createElement('a');
+          link.id = btn[0] + '_toggle';
+          link.href = '#';
+          link.textContent = btn[0];
+          link.className = 'active';
+          // Show or hide layer when the toggle is clicked.
+          link.onclick = function (e) {
+              {#const clickedLayer = this.textContent;#}
+              e.preventDefault();
+              e.stopPropagation();
+              {#console.log("Clicked layer:", clickedLayer)#}
+              const layers = btn.slice(1)
+              this.className = this.className === 'active' ? '' : 'active';
+              const visibility = this.className === 'active' ? 'visible' : 'none';
+              for (const layer of layers) {
+                  map.setLayoutProperty(layer, 'visibility', visibility);
+              }
+          }
+          menu.appendChild(link);
+      }
+
+      // -------------------------------------------------------------------
+      // Event handlers
+
+      map.on('click', (e) => {
+          {#console.log("Click", e)#}
+          // Set `bbox` as reactangle area around clicked point.
+          {#const coordinates = [e.features[0].geometry.coordinates.slice();]#}
+          const bbox = [
+              [e.point.x - 1, e.point.y - 1],
+              [e.point.x + 1, e.point.y + 1]
+          ];
+          // Find features intersecting the bounding box.
+          const selectedFeatures = map.queryRenderedFeatures(bbox);
+          //, {
+          //    layers: ['parcel_poly', 'zoning', 'zoning_height']
+          //});
+
+          console.log("Selected features:", selectedFeatures);
+          const features = selectedFeatures.toReversed().map((feature) => {
+              console.log("Feature:", feature)
+              const p = feature.properties
+              switch (feature.layer.id) {
+                  case 'parcel_poly':
+                      const addr = p.from_addre ? `${p.from_addre}-${p.to_address} ${p.street_nam} ${p.street_typ}`
+                          : '[no address]'
+                      return `<p><a href='/dj/admin/elt/rawsfparcel/${p.id}'>Parcel: ${p.blklot}:${p.zoning_cod} : ${addr}</a></p>`
+                  case 'zoning_poly':
+                      return `<p>Zoning: ${p.zoning} : ${p.gen} : ${p.codesection} : ${p.districtname}</p>`
+                  case 'zoning_height_poly':
+                      return `<p>Zoning Height/Bulk: ${p.height} : ${p.gen_height}</p>`
+              }
+
+              {#popup.setLngLat(e.lngLat).setHTML(feature.properties.description).addTo(map);#}
+          })
+          new mapboxgl.Popup({maxWidth: "none"})
+              .setLngLat(e.lngLat)
+              .setHTML(features.join(''))
+              .addTo(map);
+      });
+
+      map.on('moveend', (e) => {
+          const bounds = map.getBounds();
+          {#console.log('A moveend event occurred. bounds=', bounds);#}
+      });
+      map.on('mouseenter', 'parcel_poly', (e) => {
+          // Change the cursor style as a UI indicator.
+          map.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.on('mouseleave', 'parcel_poly', () => {
+          map.getCanvas().style.cursor = '';
+      });
+      map.on('idle', () => {
+          const bounds = map.getBounds();
+          {#console.log('A idle event occurred. bounds=', bounds);#}
+
+      });
+
+  </script>
+
+
+{% endblock %}

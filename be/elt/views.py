@@ -5,17 +5,18 @@ from django.views.generic import ListView
 from vectortiles.postgis.views import MVTView
 from world.infra.django_cache import h3_cache_page
 
-from elt.models import RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
+from elt.models import RawSfHeTableB, RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
-@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache for 1 hour
+# @method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds
+@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds
 class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcel
     vector_tile_layer_name = "raw_sf_parcel"
 
     # fmt:off
-    vector_tile_fields = ("blklot", "zoning_cod", "zoning_dis", "street_nam", "from_addre", "to_address","street_typ")
+    vector_tile_fields = ("id", "blklot", "zoning_cod", "zoning_dis", "street_nam", "from_addre", "to_address","street_typ")
     # fmt:on
     def get_vector_tile_queryset(self):
         return self.model.objects.all()
@@ -29,8 +30,15 @@ class RawSfZoningTile(LoginRequiredMixin, MVTView, ListView):
     vector_tile_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
-@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache for 1 hour
+@method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds
 class RawSfZoningHeightBulkTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfZoningHeightBulk
     vector_tile_layer_name = "raw_sf_zoning_height_bulk"
     vector_tile_fields = ("height", "gen_height")
+
+
+@method_decorator(h3_cache_page(60), name="dispatch")  # cache time in seconds
+class RawSfHeTableBTile(LoginRequiredMixin, MVTView, ListView):
+    model = RawSfHeTableB
+    vector_tile_layer_name = "raw_sf_he"
+    vector_tile_fields = ("m1_zoning", "m2_zoning", "m3_zoning")

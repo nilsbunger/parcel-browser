@@ -1,12 +1,28 @@
 from copy import deepcopy
 from math import isnan
 
-from elt.lib.excel.extract_from_excel import camelcase
+from elt.lib.excel.extract_from_excel import camel_to_verbose, camelcase
+
+
+# String representation of model types
+raw_str = {
+    "RawSfHeTableA": ("{}: APN={}", "address", "mapblklot"),
+    "RawSfHeTableB": ("{}: APN={}", "address", "mapblklot"),
+    "RawSfHeTableC": ("{}: {}", "zoning", "zoning_name"),
+    "RawSfParcel": ("{}: APN={}", "resolved_address", "mapblklot"),
+}
 
 
 class CreateSanitizedMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def __str__(self) -> str:
+        """Return a string representation of the model instance for admin"""
+        clsname = self.__class__.__name__
+        format_str = raw_str[clsname][0]
+        values = [getattr(self, fieldname) for fieldname in raw_str[clsname][1:]]
+        return f"{format_str.format(*values)} ({camel_to_verbose(clsname)})"
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "choice_fields") or not hasattr(cls, "str_fields"):

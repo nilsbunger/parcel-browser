@@ -1,9 +1,11 @@
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
 
+from elt.models.model_utils import CreateSanitizedMixin
 
-class RawSfParcel(models.Model):
-    # run_date = models.DateField()  # note: see extract_from_shapefile for example
+
+class RawSfParcel(CreateSanitizedMixin, models.Model):
+    # run_date = models.DateField()  # note: see extract_from_excel for example
     # TODO: create run_date field, populate it from extract_from_shapefile, ...
     mapblklot = models.CharField(max_length=254, null=True, blank=True)
     blklot = models.CharField(max_length=254, null=True, blank=True, unique=True)
@@ -29,6 +31,7 @@ class RawSfParcel(models.Model):
     active = models.CharField(max_length=1, null=True, blank=True)
     geom = models.MultiPolygonField(srid=4326)
 
+    @property
     def resolved_address(self):
         try:
             if not self.from_addre:
