@@ -6,8 +6,8 @@ from elt.models.model_utils import CreateSanitizedMixin
 
 class RawSfHeTableB(CreateSanitizedMixin, models.Model):
     class Meta:
-        verbose_name = "Raw SF HE Table B"
-        verbose_name_plural = "Raw SF HE Table B"
+        verbose_name = "Raw SF HE Table B [Excel]"
+        verbose_name_plural = "Raw SF HE Table B [Excel]"
 
     class ShortfallEnum(models.IntegerChoices):
         ShortfallOfSites = 0

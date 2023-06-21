@@ -7,6 +7,9 @@ from world.infra.django_cache import h3_cache_page
 
 from elt.models import RawSfHeTableB, RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
 
+# Another resource for generating vector tiles:
+# https://medium.com/@mrgrantanderson/https-medium-com-serving-vector-tiles-from-django-38c705f677cf
+
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
 # @method_decorator(h3_cache_page(60 * 60 * 24 * 14), name="dispatch")  # cache time in seconds

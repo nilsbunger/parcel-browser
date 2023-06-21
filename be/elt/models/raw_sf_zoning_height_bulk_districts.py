@@ -3,6 +3,10 @@ from django.contrib.gis.db import models
 
 
 class RawSfZoningHeightBulk(models.Model):
+    class Meta:
+        verbose_name = "Raw SF Zoning Height Bulk [Shapefile]"
+        verbose_name_plural = "Raw SF Zoning Height Bulk [Shapefile]"
+
     height = models.CharField(max_length=254, null=True, blank=True)
     gen_height = models.FloatField(null=True, blank=True)
     geom = models.MultiPolygonField(srid=4326)

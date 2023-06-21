@@ -6,8 +6,8 @@ from elt.models.model_utils import CreateSanitizedMixin
 
 class RawSfHeTableA(CreateSanitizedMixin, models.Model):
     class Meta:
-        verbose_name = "Raw SF HE Table A"
-        verbose_name_plural = "Raw SF HE Table A"
+        verbose_name = "Raw SF HE Table A [Excel]"
+        verbose_name_plural = "Raw SF HE Table A [Excel]"
 
     class ExGpDesEnum(models.IntegerChoices):
         CentralSomaMixedUseOffice = 0

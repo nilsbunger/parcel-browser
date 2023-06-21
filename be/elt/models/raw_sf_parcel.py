@@ -5,6 +5,10 @@ from elt.models.model_utils import CreateSanitizedMixin
 
 
 class RawSfParcel(CreateSanitizedMixin, models.Model):
+    class Meta:
+        verbose_name = "Raw SF Parcel [Shapefile]"
+        verbose_name_plural = "Raw SF Parcel [Shapefile]"
+
     # run_date = models.DateField()  # note: see extract_from_excel for example
     # TODO: create run_date field, populate it from extract_from_shapefile, ...
     mapblklot = models.CharField(max_length=254, null=True, blank=True)

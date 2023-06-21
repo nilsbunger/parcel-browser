@@ -3,6 +3,10 @@ from django.contrib.gis.db import models
 
 
 class RawSfZoning(models.Model):
+    class Meta:
+        verbose_name = "Raw SF Zoning [Shapefile]"
+        verbose_name_plural = "Raw SF Zoning [Shapefile]"
+
     zoning_sim = models.CharField(max_length=254, null=True, blank=True)
     districtname = models.CharField(max_length=254, null=True, blank=True)
     url = models.CharField(max_length=254, null=True, blank=True)

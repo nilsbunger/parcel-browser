@@ -5,8 +5,8 @@ from elt.models.model_utils import CreateSanitizedMixin
 
 class RawSfHeTableC(CreateSanitizedMixin, models.Model):
     class Meta:
-        verbose_name = "Raw Sf He Table C"
-        verbose_name_plural = "Raw Sf He Table C"
+        verbose_name = "Raw SF HE Table C [Excel]"
+        verbose_name_plural = "Raw Sf HE Table C [Excel]"
 
     class ZoningTypeEnum(models.IntegerChoices):
         Commercial = 0
