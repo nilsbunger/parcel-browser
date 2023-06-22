@@ -6,14 +6,15 @@ from elt.lib.excel.extract_from_excel import camel_to_verbose, camelcase
 
 # String representation of model types
 raw_str = {
-    "RawSfHeTableA": ("{}: APN={}", "address", "mapblklot"),
-    "RawSfHeTableB": ("{}: APN={}", "address", "mapblklot"),
+    "RawSfHeTableA": ("APN={}, {}", "mapblklot", "address"),
+    "RawSfHeTableB": ("APN={}, {} ", "mapblklot", "address"),
     "RawSfHeTableC": ("{}: {}", "zoning", "zoning_name"),
-    "RawSfParcel": ("{}: APN={}", "resolved_address", "mapblklot"),
+    "RawSfParcel": ("APN={}. {}", "blklot", "resolved_address"),
+    "RawSfParcelWrap": ("Wrap {} he_a={}, he_b={}", "parcel", "he_table_a", "he_table_b"),
 }
 
 
-class CreateSanitizedMixin:
+class SanitizedModelMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -22,9 +23,10 @@ class CreateSanitizedMixin:
         clsname = self.__class__.__name__
         format_str = raw_str[clsname][0]
         values = [getattr(self, fieldname) for fieldname in raw_str[clsname][1:]]
-        return f"{format_str.format(*values)} ({camel_to_verbose(clsname)})"
+        return f"{format_str.format(*values)}"
 
     def __new__(cls, *args, **kwargs):
+        """Patch object creation to have a list of fields to sanitize"""
         if not hasattr(cls, "choice_fields") or not hasattr(cls, "str_fields"):
             cls.choice_fields = [f for f in cls._meta.fields if f.choices]
             cls.str_fields = [f for f in cls._meta.fields if f.get_internal_type() == "CharField"]
@@ -32,7 +34,7 @@ class CreateSanitizedMixin:
 
     @classmethod
     def create_sanitized(cls, *args, **kwargs):
-        """Create an instance of this model, with enums mapped from values and string fields limited to 250 characters"""
+        """Create an instance of this model with enums mapped from values & string fields limited to 250 characters"""
 
         obj = cls()
         init_vals = deepcopy(kwargs)

@@ -10,6 +10,21 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def dict_keep_keys(dict, keys):
+    """return a copy of dict with only keys kept"""
+    return {k: dict[k] for k in keys if k in dict}
+
+
+def dict_del_keys(dict, keys):
+    """return a copy of dict with keys removed"""
+    return {k: dict[k] for k in dict if k not in keys}
+
+
+def dict_filter(dict, fn):
+    """filter a dict's keys or values by a function (fn) that takes a tuple of (key, value)"""
+    return {k: v for k, v in dict.items() if fn((k, v))}
+
+
 def field_exists_on_model(model, field: str) -> bool:
     # A simple function to check if a field exists on a model
     try:

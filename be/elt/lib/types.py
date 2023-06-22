@@ -23,5 +23,11 @@ class GisData(Enum):
     oppzone = "oppzone"
     tpa = "tpa"
     road = "road"
-    meta = "meta"  # create Meta db table to relate parcels to other data
     he = "he"  # housing element
+
+    # postprocess raw data -- create / update wrapper models, find duplicates, etc.
+    post = "post"
+
+    # California resource areas from CTCAD/HCD Opportunity maps: https://www.treasurer.ca.gov/ctcac/opportunity.asp
+    #   Not to be confused with Opportunity Zones.
+    high_resource = "high_resource"

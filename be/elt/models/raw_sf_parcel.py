@@ -1,10 +1,10 @@
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
 
-from elt.models.model_utils import CreateSanitizedMixin
+from elt.models.model_utils import SanitizedModelMixin
 
 
-class RawSfParcel(CreateSanitizedMixin, models.Model):
+class RawSfParcel(SanitizedModelMixin, models.Model):
     class Meta:
         verbose_name = "Raw SF Parcel [Shapefile]"
         verbose_name_plural = "Raw SF Parcel [Shapefile]"
@@ -40,7 +40,7 @@ class RawSfParcel(CreateSanitizedMixin, models.Model):
         try:
             if not self.from_addre:
                 long, lat = self.geom.centroid.coords
-                return f"No addr, blklot={self.blklot}, lat/long={round(lat,5)},{round(long, 5)}"
+                return f"No addr - lat/long={round(lat,5)},{round(long, 5)}"
             street_num = self.from_addre + (
                 "-" + self.to_address if (self.to_address and self.to_address != self.from_addre) else ""
             )

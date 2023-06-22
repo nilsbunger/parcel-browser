@@ -8,6 +8,7 @@ from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
 from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfHeTableC, RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
+from elt.models import RawSfParcelWrap
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
@@ -78,6 +79,19 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
 
         context.update({"related_forms": rel_forms})
         return super().render_change_form(request, context, add=add, change=not add, obj=obj, form_url=form_url)
+
+
+@admin.register(RawSfParcelWrap)
+class RawSfParcelWrapAdmin(admin.GISModelAdmin):
+    model = RawSfParcelWrap
+    list_display = ["apn", "parcel", "he_table_a", "he_table_b"]
+    readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b"]
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        # Optimize the number of DB queries.
+        queryset = queryset.select_related("parcel", "he_table_a", "he_table_b")
+        return queryset
 
 
 @admin.register(RawSfZoning)

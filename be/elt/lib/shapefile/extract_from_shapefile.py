@@ -33,7 +33,7 @@ def extract_from_shapefile(geo: Juri, datatype: GisData):
     existing_files, resolved_datatype, _ = get_elt_pipe_filenames(
         geo, datatype, pipestage_dirname, extension="zip", expect_existing=True
     )
-    model_name = f"raw_{geo.name}_{resolved_datatype}"
+    model_name = f"raw_{geo.value}_{resolved_datatype}"
     latest_file = existing_files[0]
     print(" Using latest file: ", latest_file)
 
