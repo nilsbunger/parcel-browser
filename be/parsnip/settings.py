@@ -154,6 +154,24 @@ ENABLE_SILK = DEV_ENV and not TEST_ENV
 if ENABLE_SILK:
     INSTALLED_APPS += ["silk"]
 
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
+    INTERNAL_IPS = ["127.0.0.1"]  # for debug toolbar
+    DEBUG_TOOLBAR_PANELS = [
+        "debug_toolbar.panels.history.HistoryPanel",
+        "debug_toolbar.panels.versions.VersionsPanel",
+        "debug_toolbar.panels.timer.TimerPanel",
+        "debug_toolbar.panels.settings.SettingsPanel",
+        "debug_toolbar.panels.headers.HeadersPanel",
+        "debug_toolbar.panels.request.RequestPanel",
+        "debug_toolbar.panels.sql.SQLPanel",
+        "debug_toolbar.panels.staticfiles.StaticFilesPanel",
+        "debug_toolbar.panels.templates.TemplatesPanel",
+        "debug_toolbar.panels.cache.CachePanel",
+        "debug_toolbar.panels.signals.SignalsPanel",
+        "debug_toolbar.panels.redirects.RedirectsPanel",
+        "debug_toolbar.panels.profiling.ProfilingPanel",
+    ]
 # django-allauth requires using django sites
 SITE_ID = 1
 
@@ -162,6 +180,7 @@ MIDDLEWARE = [
     "world.infra.cloudflare_middleware.CloudflareMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
     "world.infra.my_white_noise_middleware.MyWhiteNoiseMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware" if DEBUG else None,
     # ----------------------------------------------------------------------------
     ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
     ##    GzipMiddleware, LocaleMiddleware, etc.

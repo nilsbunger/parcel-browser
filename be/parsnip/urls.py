@@ -77,3 +77,6 @@ urlpatterns = [
 
 if settings.ENABLE_SILK:
     urlpatterns.insert(0, path("dj/silk/", include("silk.urls", namespace="silk")))
+
+if settings.DEBUG:
+    urlpatterns.insert(10, path("__debug__/", include("debug_toolbar.urls")))
