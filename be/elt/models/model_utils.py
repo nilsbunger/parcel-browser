@@ -11,6 +11,7 @@ raw_str = {
     "RawSfHeTableC": ("{}: {}", "zoning", "zoning_name"),
     "RawSfParcel": ("APN={}. {}", "blklot", "resolved_address"),
     "RawSfParcelWrap": ("Wrap {} he_a={}, he_b={}", "parcel", "he_table_a", "he_table_b"),
+    "RawCaliResourceLevel": ("{}: {}, {}", "fips", "cnty_nm", "oppcat"),
 }
 
 
@@ -21,9 +22,11 @@ class SanitizedModelMixin:
     def __str__(self) -> str:
         """Return a string representation of the model instance for admin"""
         clsname = self.__class__.__name__
-        format_str = raw_str[clsname][0]
-        values = [getattr(self, fieldname) for fieldname in raw_str[clsname][1:]]
-        return f"{format_str.format(*values)}"
+        format_entry = raw_str.get(clsname)
+        if not format_entry:
+            return super().__str__()
+        values = [getattr(self, fieldname) for fieldname in format_entry[1:]]
+        return f"{format_entry[0].format(*values)}"
 
     def __new__(cls, *args, **kwargs):
         """Patch object creation to have a list of fields to sanitize"""

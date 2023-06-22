@@ -30,4 +30,4 @@ class GisData(Enum):
 
     # California resource areas from CTCAD/HCD Opportunity maps: https://www.treasurer.ca.gov/ctcac/opportunity.asp
     #   Not to be confused with Opportunity Zones.
-    high_resource = "high_resource"
+    resource_level = "resource_level"

@@ -15,8 +15,13 @@ urlpatterns = [
         name="raw-sf-zoning-height-bulk-tile",
     ),
     path(
-        "api/tile/raw_sf_he_tile/<int:z>/<int:x>/<int:y>",
+        "api/tile/raw_sf_he/<int:z>/<int:x>/<int:y>",
         views.RawSfHeTableBTile.as_view(),
         name="raw-sf-he-table-b-tile",
+    ),
+    path(
+        "api/tile/raw_cali_resource_level/<int:z>/<int:x>/<int:y>",
+        views.RawCaliResourceLevelTile.as_view(),
+        name="raw-cali-resource-level-tile",
     ),
 ]

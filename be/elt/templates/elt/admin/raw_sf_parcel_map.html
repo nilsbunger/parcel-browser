@@ -102,7 +102,15 @@
           new MapboxGeocoder({accessToken: mapboxgl.accessToken, mapboxgl: mapboxgl})
       );
       map.addControl(new mapboxgl.FullscreenControl());
+      const oppcat = ['get', 'oppcat'];
 
+      const resourceTest = [
+          ['==', oppcat, 'High Segregation & Poverty'],
+          ['==', oppcat, 'Low Resource'],
+          ['==', oppcat, 'Moderate Resource'],
+          ['==', oppcat, 'High Resource'],
+          ['==', oppcat, 'Highest Resource']
+      ]
 
       map.on('load', () => {
           // -------------------------------------------------------------------
@@ -118,14 +126,37 @@
           map.addSource('raw_sf_zoning_src', {
               'type': 'vector',
               'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning/{z}/{x}/{y}'],
-              'minzoom': 12,
+              'minzoom': 11,
               'maxzoom': 18
           });
           map.addSource('raw_sf_zoning_height_bulk_src', {
               'type': 'vector',
               'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning_height_bulk/{z}/{x}/{y}'],
-              'minzoom': 12,
+              'minzoom': 11,
               'maxzoom': 18
+          });
+          map.addSource('raw_cali_resource_level_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_cali_resource_level/{z}/{x}/{y}'],
+              'minzoom': 11,
+              'maxzoom': 18
+          });
+         map.addLayer({
+              'id': 'resource_level', // Layer ID
+              'type': 'fill',
+              'source': 'raw_cali_resource_level_src', // ID of the tile source created above
+              'source-layer': 'raw_cali_resource_level', // layer name in the tileset (set in backend)
+              'paint': {
+                  'fill-opacity': 0.5,
+                  'fill-color': ['case',
+                      resourceTest[0], '#801000',
+                      resourceTest[1], '#FF0000',
+                      resourceTest[2], '#FFA500',
+                      resourceTest[3], '#FFFF00',
+                      resourceTest[4], '#00FF00',
+                      '#403030'
+                      ]
+              }
           });
 
           // create parcel poly layer so we can click on it
@@ -202,7 +233,11 @@
       const menu = document.getElementById('menu');
 
       // create layer toggles
-      for (const btn of [['Parcel', 'parcel'], ['Zoning', 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels']]) {
+      for (const btn of [
+          ['Parcel', 'parcel'],
+          ['Zoning', 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels'],
+          ['Resource Areas', 'resource_level']
+      ]) {
           const link = document.createElement('a');
           link.id = btn[0] + '_toggle';
           link.href = '#';
@@ -249,11 +284,13 @@
                   case 'parcel_poly':
                       const addr = p.from_addre ? `${p.from_addre}-${p.to_address} ${p.street_nam} ${p.street_typ}`
                           : '[no address]'
-                      return `<p><a href='/dj/admin/elt/rawsfparcel/${p.id}'>Parcel: ${p.blklot}:${p.zoning_cod} : ${addr}</a></p>`
+                      return `<p><a href='/dj/admin/elt/rawsfparcelwrap/${p.apn}'>Parcel: ${p.apn}:${p.zoning_cod} : ${addr}</a></p>`
                   case 'zoning_poly':
                       return `<p>Zoning: ${p.zoning} : ${p.gen} : ${p.codesection} : ${p.districtname}</p>`
                   case 'zoning_height_poly':
                       return `<p>Zoning Height/Bulk: ${p.height} : ${p.gen_height}</p>`
+                  case 'resource_level':
+                      return `<p>Resource Area: ${p.oppcat}, fips=${p.fips}</p>`
               }
 
               {#popup.setLngLat(e.lngLat).setHTML(feature.properties.description).addTo(map);#}

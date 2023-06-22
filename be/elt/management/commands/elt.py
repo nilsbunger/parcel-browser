@@ -45,7 +45,7 @@ class Command(BaseCommand):
             case Juri.sf, GisData.he:
                 extract_from_excel(geo, gis_data_type)
             # California
-            case Juri.california, GisData.high_resource:
+            case Juri.california, GisData.resource_level:
                 extract_from_shapefile(geo, gis_data_type)
             case Juri.california, GisData.oppzone:
                 assert False, "Outdated implementation... review before using"

@@ -67,7 +67,7 @@ def extract_from_shapefile(geo: Juri, datatype: GisData):
         db_model.objects.all().delete()
         print(f"Saving data from {latest_file} to DB {db_model}...")
         # save new layer, with commit every 'step' entries.
-        lm.save(strict=True, verbose=False, progress=True, step=500)
+        lm.save(strict=False, verbose=False, progress=True, step=500)
         print("Done saving.")
 
 

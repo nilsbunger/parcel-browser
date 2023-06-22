@@ -7,7 +7,15 @@ from django.views.generic import TemplateView
 from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
-from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfHeTableC, RawSfParcel, RawSfZoning, RawSfZoningHeightBulk
+from elt.models import (
+    RawCaliResourceLevel,
+    RawSfHeTableA,
+    RawSfHeTableB,
+    RawSfHeTableC,
+    RawSfParcel,
+    RawSfZoning,
+    RawSfZoningHeightBulk,
+)
 from elt.models import RawSfParcelWrap
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
@@ -175,3 +183,17 @@ class RawSfHeTableCAdmin(admin.GISModelAdmin):
     model = RawSfHeTableC
     list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]
     search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
+
+
+@admin.register(RawCaliResourceLevel)
+class RawCaliResourceLevelAdmin(admin.GISModelAdmin):
+    model = RawCaliResourceLevel
+    list_display = ["cnty_nm", "region", "oppcat"]
+
+    search_fields = ["cnty_nm", "region", "oppcat"]
+    # fmt:off
+    readonly_fields = [
+        "cnty_nm", "countyd", "ecn_dmn", "ed_domn", "env_hl_field", "fips", "fips_bg", "index", "oppcat",
+        "region", "run_date"
+    ]
+    # fmt:on
