@@ -13,7 +13,7 @@ When you've completed setup, you're ready to run. You need to run frontend and b
 
 1. Make sure the Mamba environment is activated:
 
-   `mamba activate parsnip`
+   `mamba activate mamba-parsnip`
 
 0. Start the frontend server:
    
