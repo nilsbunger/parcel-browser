@@ -10,6 +10,11 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def keep_truthy(*args):
+    """return a list of truthy values"""
+    return [x for x in args if x]
+
+
 def dict_keep_keys(dict, keys):
     """return a copy of dict with only keys kept"""
     return {k: dict[k] for k in keys if k in dict}

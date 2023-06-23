@@ -20,7 +20,7 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from whitenoise import WhiteNoise
 
-from .util import eprint
+from .util import eprint, keep_truthy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory should be "be/" (the Django project root)
@@ -68,6 +68,10 @@ LOCAL_DB: bool = DB == "LOCAL"
 # DEBUG variable - controls display of error messages, static file handling, etc. Never use it in production!
 DEBUG = DEV_ENV and not TEST_ENV
 # NOTE: DEBUG is set to false within tests regardless of the value of DEBUG here.
+# profiling and debugging tools
+ENABLE_SILK = False and DEBUG  # DEV_ENV and not TEST_ENV
+ENABLE_DEBUG_TOOLBAR = False and DEBUG
+
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
@@ -112,7 +116,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = keep_truthy(
     "parsnip.apps.MyAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -123,6 +127,8 @@ INSTALLED_APPS = [
     # "django.contrib.sites",   # seems to disable site switching for django-allauth?
     "django_extensions",
     "django.contrib.gis",
+    "silk" if ENABLE_SILK else None,
+    "debug_toolbar" if ENABLE_DEBUG_TOOLBAR else None,
     ## For django-two-factor-auth package:
     # "django_otp",
     # "django_otp.plugins.otp_static",
@@ -146,16 +152,9 @@ INSTALLED_APPS = [
     "elt",
     "props",
     "facts",
-]
+)
 
-# silk profiler
-ENABLE_SILK = DEV_ENV and not TEST_ENV
-
-if ENABLE_SILK:
-    INSTALLED_APPS += ["silk"]
-
-if DEBUG:
-    INSTALLED_APPS += ["debug_toolbar"]
+if ENABLE_DEBUG_TOOLBAR:
     INTERNAL_IPS = ["127.0.0.1"]  # for debug toolbar
     DEBUG_TOOLBAR_PANELS = [
         "debug_toolbar.panels.history.HistoryPanel",
@@ -175,12 +174,14 @@ if DEBUG:
 # django-allauth requires using django sites
 SITE_ID = 1
 
-MIDDLEWARE = [
+MIDDLEWARE = keep_truthy(
     "django.middleware.security.SecurityMiddleware",
+    # Add silk profiler right after security middleware.
+    "silk.middleware.SilkyMiddleware" if ENABLE_SILK else None,
     "world.infra.cloudflare_middleware.CloudflareMiddleware",
     ## Keep Whitenoise above all middleware except SecurityMiddleware
     "world.infra.my_white_noise_middleware.MyWhiteNoiseMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware" if DEBUG else None,
+    "debug_toolbar.middleware.DebugToolbarMiddleware" if ENABLE_DEBUG_TOOLBAR else None,
     # ----------------------------------------------------------------------------
     ## UpdateCacheMiddleware needs to appear ABOVE anythning else that adds to the Vary header, like SessionMiddleware,
     ##    GzipMiddleware, LocaleMiddleware, etc.
@@ -199,11 +200,7 @@ MIDDLEWARE = [
     ## END for django-two-factor-auth package
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
-
-# Add silk profiler right after security middleware.
-if ENABLE_SILK:
-    MIDDLEWARE.insert(1, "silk.middleware.SilkyMiddleware")
+)
 
 # #####################################################################
 # STATIC FILES and TEMPLATES
