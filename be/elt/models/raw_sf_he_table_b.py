@@ -82,37 +82,19 @@ class RawSfHeTableB(SanitizedModelMixin, models.Model):
         Rm4 = 44
         Rto = 45
 
-    class M1GpTypeEnum(models.IntegerChoices):
+    class GpTypeEnum(models.IntegerChoices):
         MultiFamilyMixedUse = 0
         MultiFamilyResidential = 1
 
-    class M2GpTypeEnum(models.IntegerChoices):
-        MultiFamilyMixedUse = 0
-        MultiFamilyResidential = 1
-
-    class M3GpTypeEnum(models.IntegerChoices):
-        MultiFamilyMixedUse = 0
-        MultiFamilyResidential = 1
-
-    class M1ZoningEnum(models.IntegerChoices):
-        A140HeightAllowed = 0
-        A240HeightAllowed = 1
-        A55HeightAllowed = 2
-        A65HeightAllowed = 3
-        A85HeightAllowed = 4
-        AddedHeightInExistingFormBasedArea = 5
-        IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 6
-        NoHeightChangeDensityDecontrol = 7
-
-    class M2ZoningEnum(models.IntegerChoices):
-        A140HeightAllowed = 0
-        A240HeightAllowed = 1
-        A55HeightAllowed = 2
-        A65HeightAllowed = 3
-        A85HeightAllowed = 4
-        IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 5
-
-    class M3ZoningEnum(models.IntegerChoices):
+    # class M2ZoningEnum(models.IntegerChoices):
+    #     A140HeightAllowed = 0
+    #     A240HeightAllowed = 1
+    #     A55HeightAllowed = 2
+    #     A65HeightAllowed = 3
+    #     A85HeightAllowed = 4
+    #     IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 5
+    #
+    class ZoningEnum(models.IntegerChoices):
         A140HeightAllowed = 0
         A240HeightAllowed = 1
         A55HeightAllowed = 2
@@ -205,12 +187,12 @@ class RawSfHeTableB(SanitizedModelMixin, models.Model):
     acres = models.FloatField(null=True, blank=True)
     ex_gp_type = models.IntegerField(choices=ExGpTypeEnum.choices, null=True, blank=True)
     ex_zoning = models.IntegerField(choices=ExZoningEnum.choices, null=True, blank=True)
-    m1_gp_type = models.IntegerField(choices=M1GpTypeEnum.choices, null=True, blank=True)
-    m2_gp_type = models.IntegerField(choices=M2GpTypeEnum.choices, null=True, blank=True)
-    m3_gp_type = models.IntegerField(choices=M3GpTypeEnum.choices, null=True, blank=True)
-    m1_zoning = models.IntegerField(choices=M1ZoningEnum.choices, null=True, blank=True)
-    m2_zoning = models.IntegerField(choices=M2ZoningEnum.choices, null=True, blank=True)
-    m3_zoning = models.IntegerField(choices=M3ZoningEnum.choices, null=True, blank=True)
+    m1_gp_type = models.IntegerField(choices=GpTypeEnum.choices, null=True, blank=True)
+    m2_gp_type = models.IntegerField(choices=GpTypeEnum.choices, null=True, blank=True)
+    m3_gp_type = models.IntegerField(choices=GpTypeEnum.choices, null=True, blank=True)
+    m1_zoning = models.IntegerField(choices=ZoningEnum.choices, null=True, blank=True)
+    m2_zoning = models.IntegerField(choices=ZoningEnum.choices, null=True, blank=True)
+    m3_zoning = models.IntegerField(choices=ZoningEnum.choices, null=True, blank=True)
     min_dens = models.FloatField(null=True, blank=True)
     m1_maxdens = models.FloatField(null=True, blank=True)
     m2_maxdens = models.FloatField(null=True, blank=True)

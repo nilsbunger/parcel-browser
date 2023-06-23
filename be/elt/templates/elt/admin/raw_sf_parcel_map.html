@@ -71,7 +71,19 @@
 
 {% block content %}
   <div>
-    <nav id="menu"></nav>
+    <nav id="menu" style="display:flex;">
+      <div id="menu-insert"></div>
+      <fieldset style="display:flex; align-items:center; border-top:none">
+        <input type="radio" id="he1-radio" name="he_select" value="m1_zoning" checked style="margin:0 5px 0 10px">
+        <label for="he1-radio">HE 1</label>
+        <input type="radio" id="he2-radio" name="he_select" value="m2_zoning" style="margin:0 5px 0 10px">
+        <label for="he2-radio">HE 2</label>
+        <input type="radio" id="he3-radio" name="he_select" value="m3_zoning" style="margin:0 5px 0 10px">
+        <label for="he3-radio">HE 3</label>
+        <input type="radio" id="no-he-radio" name="he_select" value="none" style="margin:0 5px 0 10px">
+        <label for="no-he-radio">No HE</label>
+      </fieldset>
+    </nav>
     <div id="map"></div>
   </div>
 {% endblock %}
@@ -102,8 +114,12 @@
           new MapboxGeocoder({accessToken: mapboxgl.accessToken, mapboxgl: mapboxgl})
       );
       map.addControl(new mapboxgl.FullscreenControl());
-      const oppcat = ['get', 'oppcat'];
 
+      let layervisinit = {}
+
+      // Set up mabox expressions to provide coloring based on data
+      // mapbox expressions: https://docs.mapbox.com/mapbox-gl-js/style-spec/expressions/
+      const oppcat = ['get', 'oppcat'];
       const resourceTest = [
           ['==', oppcat, 'High Segregation & Poverty'],
           ['==', oppcat, 'Low Resource'],
@@ -111,6 +127,41 @@
           ['==', oppcat, 'High Resource'],
           ['==', oppcat, 'Highest Resource']
       ]
+      const heTest = (he_plan) => { // he_plan should be "m1_zoning", "m2_zoning", "m3_zoning"
+          const zoning = ['get', he_plan];
+          return [
+              ['==', zoning, 0],  // A140HeightAllowed
+              ['==', zoning, 1],  // A240HeightAllowed
+              ['==', zoning, 2],  // A55HeightAllowed
+              ['==', zoning, 3],  // A65HeightAllowed
+              ['==', zoning, 4],  // A85HeightAllowed
+              ['==', zoning, 5],  // AddedHeightInExistingFormBasedArea
+              ['==', zoning, 6],  // IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots
+              ['==', zoning, 7],  // NoHeightChangeDensityDecontrol
+          ]
+      }
+      const heZoningName = ["140 feet", "240 feet", "55 feet", "65 feet", "85 feet", "Extra height in existing...",
+          "Up to 4 units (6 on corner lot)", "Density decontrol"]
+      const paintExpression = (he_plan) =>
+          {
+              const noHe = ['!', ['any', ...heTest(he_plan)]]
+              const heVal = heTest(he_plan);
+              return {
+                  'fill-opacity': ['case', noHe, 0.0, 0.4],
+                  'fill-color': ['case',
+                      heVal[6], '#39639c', // Up to 4 units (6 on corner lot)
+                      heVal[7], '#89b3cf', // Density decontrol
+                      heVal[2], '#dedf00', // 55 ft
+                      heVal[3], '#fab037', // 65 ft
+                      heVal[4], '#fd7100', // 85 ft
+                      heVal[0], '#fc3600', // 140 ft
+                      heVal[1], '#c50600', // 240 ft
+
+                      heVal[5], '#485b34', // (not in HE map) Added Height, existing form based area
+                      '#303030'
+                  ]
+              }
+      }
 
       map.on('load', () => {
           // -------------------------------------------------------------------
@@ -120,7 +171,7 @@
           map.addSource('raw_sf_parcel_src', {
               'type': 'vector',
               'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel/{z}/{x}/{y}'],
-              'minzoom': 15,
+              'minzoom': 12,
               'maxzoom': 17
           });
           map.addSource('raw_sf_zoning_src', {
@@ -141,7 +192,7 @@
               'minzoom': 11,
               'maxzoom': 18
           });
-         map.addLayer({
+          map.addLayer({
               'id': 'resource_level', // Layer ID
               'type': 'fill',
               'source': 'raw_cali_resource_level_src', // ID of the tile source created above
@@ -154,18 +205,32 @@
                       resourceTest[2], '#FFA500',
                       resourceTest[3], '#FFFF00',
                       resourceTest[4], '#00FF00',
-                      '#403030'
-                      ]
+                      '#3030a0'
+                  ]
               }
           });
-
           // create parcel poly layer so we can click on it
           map.addLayer({
               'id': 'parcel_poly', // Layer ID
               'type': 'fill',
               'source': 'raw_sf_parcel_src', // ID of the tile source created above
               'source-layer': 'raw_sf_parcel', // layer name in the tileset (set in backend)
-              'paint': {'fill-opacity': 0}
+              'paint': paintExpression('m1_zoning')
+              {#    {#}
+              {#    'fill-opacity': ['case', noHe, 0.0, 0.4],#}
+              {#    'fill-color': ['case',#}
+              {#        heTest[6], '#39639c', // Up to 4 units (6 on corner lot)#}
+              {#        heTest[7], '#89b3cf', // Density decontrol#}
+              {#        heTest[2], '#dedf00', // 55 ft#}
+              {#        heTest[3], '#fab037', // 65 ft#}
+              {#        heTest[4], '#fd7100', // 85 ft#}
+              {#        heTest[0], '#fc3600', // 140 ft#}
+              {#        heTest[1], '#c50600', // 240 ft#}
+              {##}
+              {#        heTest[5], '#485b34', // (not in HE map) Added Height, existing form based area#}
+              {#        '#303030'#}
+              {#    ]#}
+              {# } #}
           });
 
           map.addLayer({
@@ -174,6 +239,7 @@
               'source': 'raw_sf_parcel_src', // ID of the tile source created above
               'source-layer': 'raw_sf_parcel', // ID of the tile source created above
           })
+
           map.addLayer({
               'id': 'zoning_poly', // Layer ID
               'type': 'fill',
@@ -228,28 +294,39 @@
                   'text-size': 15,
               },
           })
-      });
+          for (layer in layervisinit) {
+              map.setLayoutProperty(layer, 'visibility', layervisinit[layer]);
+          }
+      })
+      ;
 
-      const menu = document.getElementById('menu');
+      const menu = document.getElementById('menu-insert');
 
       // create layer toggles
       for (const btn of [
-          ['Parcel', 'parcel'],
-          ['Zoning', 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels'],
-          ['Resource Areas', 'resource_level']
+          ['Parcel', true, 'parcel'],
+          ['Zoning', false, 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels'],
+          ['Resource Areas', false, 'resource_level']
       ]) {
           const link = document.createElement('a');
           link.id = btn[0] + '_toggle';
           link.href = '#';
           link.textContent = btn[0];
-          link.className = 'active';
+          // initialize button and layer to active or disabled depending on btn[1]
+          if (btn[1]) {
+              link.className = 'active';
+          }
+          const layers = btn.slice(2)
+          for (const layer of layers) {
+              layervisinit[layer] = btn[1] ? 'visible' : 'none';
+          }
           // Show or hide layer when the toggle is clicked.
           link.onclick = function (e) {
               {#const clickedLayer = this.textContent;#}
               e.preventDefault();
               e.stopPropagation();
               {#console.log("Clicked layer:", clickedLayer)#}
-              const layers = btn.slice(1)
+              const layers = btn.slice(2)
               this.className = this.className === 'active' ? '' : 'active';
               const visibility = this.className === 'active' ? 'visible' : 'none';
               for (const layer of layers) {
@@ -258,6 +335,8 @@
           }
           menu.appendChild(link);
       }
+      // create HE selector
+
 
       // -------------------------------------------------------------------
       // Event handlers
@@ -272,9 +351,6 @@
           ];
           // Find features intersecting the bounding box.
           const selectedFeatures = map.queryRenderedFeatures(bbox);
-          //, {
-          //    layers: ['parcel_poly', 'zoning', 'zoning_height']
-          //});
 
           console.log("Selected features:", selectedFeatures);
           const features = selectedFeatures.toReversed().map((feature) => {
@@ -284,7 +360,12 @@
                   case 'parcel_poly':
                       const addr = p.from_addre ? `${p.from_addre}-${p.to_address} ${p.street_nam} ${p.street_typ}`
                           : '[no address]'
-                      return `<p><a href='/dj/admin/elt/rawsfparcelwrap/${p.apn}'>Parcel: ${p.apn}:${p.zoning_cod} : ${addr}</a></p>`
+                      return `<p><a href='/dj/admin/elt/rawsfparcelwrap/${p.apn}'>Parcel: ` +
+                          `${p.apn}:${p.zoning_cod} : ${addr}</a>` +
+                          `<br />HE plan 1: ` + (heZoningName[p.m1_zoning] || "None") +
+                          `<br />HE plan 2: ` + (heZoningName[p.m2_zoning] || "None") +
+                          `<br />HE plan 3: ` + (heZoningName[p.m3_zoning] || "None") +
+                          "</p>"
                   case 'zoning_poly':
                       return `<p>Zoning: ${p.zoning} : ${p.gen} : ${p.codesection} : ${p.districtname}</p>`
                   case 'zoning_height_poly':
@@ -301,24 +382,33 @@
               .addTo(map);
       });
 
-      map.on('moveend', (e) => {
-          const bounds = map.getBounds();
-          {#console.log('A moveend event occurred. bounds=', bounds);#}
-      });
-      map.on('mouseenter', 'parcel_poly', (e) => {
-          // Change the cursor style as a UI indicator.
-          map.getCanvas().style.cursor = 'pointer';
+      // change pointer styles with hovering.
+      map.on('mouseenter', 'parcel_poly', (e) => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'parcel_poly', (e) => { map.getCanvas().style.cursor = ''; });
+
+      // Add event listener for housing element radio buttons
+      document.addEventListener("DOMContentLoaded", function () {
+          var radioButtons = document.getElementsByName("he_select");
+          for (var i = 0; i < radioButtons.length; i++) {
+              radioButtons[i].addEventListener("click", function () {
+                  console.log("You have selected color: " + this.value);
+                  const layerPaint = paintExpression(this.value);
+                  map.setPaintProperty('parcel_poly', 'fill-opacity', layerPaint['fill-opacity']);
+                  map.setPaintProperty('parcel_poly', 'fill-color', layerPaint['fill-color']);
+              });
+          }
       });
 
-      map.on('mouseleave', 'parcel_poly', () => {
-          map.getCanvas().style.cursor = '';
+      // unused stuff:
+      /* map.on('moveend', (e) => {
+          const bounds = map.getBounds();
+          {#console.log('A moveend event occurred. bounds=', bounds);#}
       });
       map.on('idle', () => {
           const bounds = map.getBounds();
           {#console.log('A idle event occurred. bounds=', bounds);#}
 
-      });
-
+      });*/
   </script>
 
 

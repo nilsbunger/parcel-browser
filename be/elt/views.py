@@ -19,7 +19,7 @@ from elt.models import (
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
-# @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
+# @method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache time in seconds
 class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcelWrap
     vector_tile_layer_name = "raw_sf_parcel"

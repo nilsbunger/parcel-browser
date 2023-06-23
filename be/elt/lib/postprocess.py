@@ -45,23 +45,28 @@ def postprocess_sf():
     print(f"{len(table_a_unknown_apns)} unmatched apns in table_a")
     print(f"{len(table_b_unknown_apns)} unmatched apns in table_b")
 
-    parcels = RawSfParcel.objects.all()
+    parcels = RawSfParcel.objects.only("blklot").all()
 
+    batch_size = 100
+    print(f"Creating {len(parcels)} RawSfParcelWrap objects (each dot represents {batch_size}...")
     # Create RawSfParcelWrap objects for each parcel
     wrap_objects = []
     wrap_update_fields = {f.name for f in RawSfParcelWrap._meta.fields} - {"apn"}
+    # he_table_a_all = RawSfHeTableA.objects.only("mapblklot").all()
+    # he_table_b_all = RawSfHeTableB.objects.only("mapblklot").all()
     for parcel in parcels:
         # Get associated he_table_a and he_table_b entries. Sort by run_date so most recent is first, and take that
-        # entry.
-
-        he_table_a = RawSfHeTableA.objects.filter(mapblklot=parcel.blklot).order_by("-run_date").first()
-        he_table_b = RawSfHeTableB.objects.filter(mapblklot=parcel.blklot).order_by("-run_date").first()
+        # entry. # TODO: this can be made much faster if we preload the tables instead.
+        he_table_a = RawSfHeTableA.objects.filter(mapblklot=parcel.blklot)
+        he_table_a = he_table_a.only("mapblklot").order_by("-run_date").first()
+        he_table_b = RawSfHeTableB.objects.filter(mapblklot=parcel.blklot)
+        he_table_b = he_table_b.only("mapblklot").order_by("-run_date").first()
 
         # Create RawSfParcelWrap object
         wrap = RawSfParcelWrap(apn=parcel.blklot, parcel=parcel, he_table_a=he_table_a, he_table_b=he_table_b)
         # Accumulate wrap objects and then bulk_create 1000 of them at a time
         wrap_objects.append(wrap)
-        if len(wrap_objects) >= 100:
+        if len(wrap_objects) >= batch_size:
             # create with fallback to update existing entries (updating all fields besides apn)
             RawSfParcelWrap.objects.bulk_create(
                 wrap_objects, update_conflicts=True, unique_fields=["apn"], update_fields=wrap_update_fields
