@@ -110,7 +110,7 @@ export default function BackyardPage() {
           <li>Targeted Investor IRR: 16-18%</li>
           <li>Targeted Investor Equity Multiple: 2.3x</li>
           <li>No acquisition or disposition fee</li>
-          <li>No AUM fee</li>
+          <li>1.5% AUM fee</li>
           </ul>                                
           <p><b>Backyard waterfall</b></p>        
           <ul>
