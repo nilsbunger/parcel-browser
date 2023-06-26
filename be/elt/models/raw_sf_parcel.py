@@ -9,8 +9,8 @@ class RawSfParcel(SanitizedModelMixin, models.Model):
         verbose_name = "Raw SF Parcel [Shapefile]"
         verbose_name_plural = "Raw SF Parcel [Shapefile]"
 
-    # run_date = models.DateField()  # note: see extract_from_excel for example
-    # TODO: create run_date field, populate it from extract_from_shapefile, ...
+    # TODO: populate run_date from extract_from_shapefile. see extract_from_excel for example
+    run_date = models.DateField()
     mapblklot = models.CharField(max_length=254, null=True, blank=True)
     blklot = models.CharField(max_length=254, null=True, blank=True, unique=True)
     block_num = models.CharField(max_length=254, null=True, blank=True)

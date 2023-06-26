@@ -1,8 +1,11 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 from vectortiles.postgis.views import MVTView
+
+from elt.models.elt_analysis import EltAnalysis
 from world.infra.django_cache import h3_cache_page
 
 from elt.models import (
@@ -19,10 +22,10 @@ from elt.models import (
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
-# @method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache time in seconds
-class RawSfParcelTile(LoginRequiredMixin, MVTView, ListView):
+@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache time in seconds
+class RawSfParcelWrapTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcelWrap
-    vector_tile_layer_name = "raw_sf_parcel"
+    vector_tile_layer_name = "raw_sf_parcel_wrap"
     vector_tile_geom_name = "parcel__geom"
 
     # fmt:off
@@ -63,3 +66,21 @@ class RawCaliResourceLevelTile(LoginRequiredMixin, MVTView, ListView):
     model = RawCaliResourceLevel
     vector_tile_layer_name = "raw_cali_resource_level"
     vector_tile_fields = ("fips", "oppcat")
+
+
+# @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
+class EltAnalysisTile(LoginRequiredMixin, MVTView, ListView):
+    model = EltAnalysis
+    vector_tile_layer_name = "elt_analysis"
+    # vector_tile_fields = ("fips", "oppcat")
+    vector_tile_geom_name = "parcels__parcel__geom"
+
+    def get(self, request, geo: str, analysis: str, z: int, x: int, y: int):
+        if geo != "sf" or analysis != "yigby":
+            # return a 404 response
+            return HttpResponseNotFound()
+        return super().get(request, z, x, y)
+
+    def get_vector_tile_queryset(self, *args, **kwargs):
+        print("HI")
+        return self.model.objects.select_related("parcels", "parcels__parcel")

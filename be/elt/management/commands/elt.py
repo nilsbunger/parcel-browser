@@ -38,6 +38,8 @@ class Command(BaseCommand):
                 extract_from_shapefile(geo, gis_data_type)
             case Juri.sf, GisData.zoning:
                 extract_from_shapefile(geo, gis_data_type)
+            case Juri.sf, GisData.reportall:
+                extract_from_shapefile(geo, gis_data_type)
             case Juri.sf, GisData.post:
                 postprocess_sf()
             # case Juri.sf, GisData.meta:

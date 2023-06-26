@@ -12,6 +12,7 @@ raw_str = {
     "RawSfParcel": ("APN={}. {}", "blklot", "resolved_address"),
     "RawSfParcelWrap": ("Wrap {} he_a={}, he_b={}", "parcel", "he_table_a", "he_table_b"),
     "RawCaliResourceLevel": ("{}: {}, {}", "fips", "cnty_nm", "oppcat"),
+    "RawSfReportall": ("{}: {}", "parcel_id", "situs"),
 }
 
 

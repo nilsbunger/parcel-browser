@@ -13,6 +13,7 @@ from elt.models import (
     RawSfHeTableB,
     RawSfHeTableC,
     RawSfParcel,
+    RawSfReportall,
     RawSfZoning,
     RawSfZoningHeightBulk,
 )
@@ -21,7 +22,7 @@ from elt.models import RawSfParcelWrap
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
 
-class RawSfParcelAdminForm(forms.ModelForm):
+class ReadOnlyGeomForm(forms.ModelForm):
     """ref: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#adding-custom-validation-to-the-admin"""
 
     def clean_geom(self):
@@ -35,7 +36,7 @@ class RawParcelMapView(TemplateView):
 @admin.register(RawSfParcel)
 class RawSfParcelAdmin(admin.GISModelAdmin):
     # Use custom form as a way to disable geometry editing (making field readonly makes it not display the map)
-    form = RawSfParcelAdminForm
+    form = ReadOnlyGeomForm
     # change_list_template = "elt/admin/DEPRECATED__raw_sf_parcel_change_list.html"
     change_form_template = "elt/admin/raw_parcel_change_form.html"
     related_gis_models = [RawSfZoning, RawSfZoningHeightBulk]
@@ -92,13 +93,14 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
 @admin.register(RawSfParcelWrap)
 class RawSfParcelWrapAdmin(admin.GISModelAdmin):
     model = RawSfParcelWrap
-    list_display = ["apn", "parcel", "he_table_a", "he_table_b"]
-    readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b"]
+    list_display = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    # fields = ["apn"]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         # Optimize the number of DB queries.
-        queryset = queryset.select_related("parcel", "he_table_a", "he_table_b")
+        queryset = queryset.select_related("parcel", "he_table_a", "he_table_b", "reportall_parcel")
         return queryset
 
 
@@ -183,6 +185,43 @@ class RawSfHeTableCAdmin(admin.GISModelAdmin):
     model = RawSfHeTableC
     list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]
     search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
+
+
+@admin.register(RawSfReportall)
+class RawSfReportallAdmin(admin.GISModelAdmin):
+    model = RawSfReportall
+    # list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]
+    # search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
+    # fmt:off
+    _fieldlist = [
+        ("situs","parcel_id","acreage","calc_acrea"),
+        "geom",
+        ("owner", "owner_occ",),
+        ("land_use_class", "land_us_01"),
+        ("bldg_sqft", "buildings", "bedrooms", "fullbath", "halfbath", "total_bath", "total_room"),
+        ("year_built", "story_height", "style", "eff_year_b"),
+        ("condition", "exterior", "cooling", "heatsrc"),
+        ("mkt_val_bldg", "mkt_val_land", "mkt_val_total", "sale_price", "trans_date"),
+        ("m_recpnt", "m_addressn", "m_streetnm", "m_streetpd", "m_streetpo", "m_streetpr"),
+        ("m_statenm", "m_country", "m_placenm"),
+        ("m_subocc", "m_uspsbox", "m_zipcode"),
+        ("mail_name", "mail_address", "mail_ad_01", "mail_ad_02"),
+        ("muni_name", "state_abbr","school_dis"),
+        ("situs_city", "situs_zip", "situs_zip4", "zip_code"),
+        ("usps_resid", "routing_nu"),
+        ("zoning", "zone_subty"),
+        ("latitude", "longitude", "elevation"),
+        ("water", "sewer", "fld_zone",),
+        ("legal_desc", "legal_d_01", "legal_d_02"),
+        ("alt_id_1", "alt_id_2"),
+        ("map_book", "map_page", "ngh_code"),
+        ("census_pla", "county_fip", "county_nam", "cty_row_id"),
+        ("addr_number", "addr_se_01", "addr_sec_u", "addr_st_01", "addr_st_02", "addr_st_03", "addr_street"),
+        ("robust_id", "last_updat", "run_date")
+]
+    # fmt:on
+    fields = list(_fieldlist)
+    readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
 
 
 @admin.register(RawCaliResourceLevel)

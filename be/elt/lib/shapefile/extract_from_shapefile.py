@@ -39,7 +39,7 @@ def extract_from_shapefile(geo: Juri, datatype: GisData):
 
     date_from_filename = date_parse(latest_file.stem.split("_")[0], yearfirst=True).date()
     model_name_camel = "".join(x.capitalize() for x in model_name.split("_"))
-    # Check if DB model exists in our web app
+    # Wrap DB model with run_date method (also checking for db_model existence)
     db_model = elt_model_with_run_date(model_name_camel, date_from_filename)
 
     with tempfile.TemporaryDirectory() as tempdir:

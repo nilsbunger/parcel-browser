@@ -168,9 +168,9 @@
           // tile layers
           console.log("Map on load")
           // Sources here are making requests against elt/views.py
-          map.addSource('raw_sf_parcel_src', {
+          map.addSource('raw_sf_parcel_wrap_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel/{z}/{x}/{y}'],
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel_wrap/{z}/{x}/{y}'],
               'minzoom': 12,
               'maxzoom': 17
           });
@@ -192,11 +192,27 @@
               'minzoom': 11,
               'maxzoom': 18
           });
+          map.addSource('sf_yigby_elt_analysis_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/elt_analysis/sf/yigby/{z}/{x}/{y}'],
+              'minzoom': 11,
+              'maxzoom': 18
+          });
+          map.addLayer({
+              'id': 'sf_yigby_elt_analysis', // Layer ID
+              'type': 'fill',
+              'source': 'sf_yigby_elt_analysis_src', 
+              'source-layer': 'elt_analysis',
+              'paint': {
+                  'fill-opacity': 1,
+                  'fill-color': '#80FF00',
+              }
+          });
           map.addLayer({
               'id': 'resource_level', // Layer ID
               'type': 'fill',
-              'source': 'raw_cali_resource_level_src', // ID of the tile source created above
-              'source-layer': 'raw_cali_resource_level', // layer name in the tileset (set in backend)
+              'source': 'raw_cali_resource_level_src',
+              'source-layer': 'raw_cali_resource_level',
               'paint': {
                   'fill-opacity': 0.5,
                   'fill-color': ['case',
@@ -211,68 +227,53 @@
           });
           // create parcel poly layer so we can click on it
           map.addLayer({
-              'id': 'parcel_poly', // Layer ID
+              'id': 'parcel_wrap_poly',
               'type': 'fill',
-              'source': 'raw_sf_parcel_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_parcel', // layer name in the tileset (set in backend)
+              'source': 'raw_sf_parcel_wrap_src',
+              'source-layer': 'raw_sf_parcel_wrap',
               'paint': paintExpression('m1_zoning')
-              {#    {#}
-              {#    'fill-opacity': ['case', noHe, 0.0, 0.4],#}
-              {#    'fill-color': ['case',#}
-              {#        heTest[6], '#39639c', // Up to 4 units (6 on corner lot)#}
-              {#        heTest[7], '#89b3cf', // Density decontrol#}
-              {#        heTest[2], '#dedf00', // 55 ft#}
-              {#        heTest[3], '#fab037', // 65 ft#}
-              {#        heTest[4], '#fd7100', // 85 ft#}
-              {#        heTest[0], '#fc3600', // 140 ft#}
-              {#        heTest[1], '#c50600', // 240 ft#}
-              {##}
-              {#        heTest[5], '#485b34', // (not in HE map) Added Height, existing form based area#}
-              {#        '#303030'#}
-              {#    ]#}
-              {# } #}
           });
 
           map.addLayer({
-              'id': 'parcel', // Layer ID
+              'id': 'parcel_wrap', // Layer ID
               'type': 'line',
-              'source': 'raw_sf_parcel_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_parcel', // ID of the tile source created above
+              'source': 'raw_sf_parcel_wrap_src',
+              'source-layer': 'raw_sf_parcel_wrap',
           })
 
           map.addLayer({
               'id': 'zoning_poly', // Layer ID
               'type': 'fill',
-              'source': 'raw_sf_zoning_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning', // layer name in the tileset (set in backend)
+              'source': 'raw_sf_zoning_src',
+              'source-layer': 'raw_sf_zoning',
               'paint': {'fill-opacity': 0}
           });
           map.addLayer({
               'id': 'zoning', // Layer ID
               'type': 'line',
-              'source': 'raw_sf_zoning_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning', // ID of the tile source created above
+              'source': 'raw_sf_zoning_src',
+              'source-layer': 'raw_sf_zoning',
               'paint': {'line-width': 3, 'line-color': '#a0a050'}
           })
           map.addLayer({
               'id': 'zoning_height_poly', // Layer ID
               'type': 'fill',
-              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning_height_bulk', // layer name in the tileset (set in backend)
+              'source': 'raw_sf_zoning_height_bulk_src',
+              'source-layer': 'raw_sf_zoning_height_bulk',
               'paint': {'fill-opacity': 0}
           });
           map.addLayer({
               'id': 'zoning_height', // Layer ID
               'type': 'line',
-              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning_height_bulk', // ID of the tile source created above
+              'source': 'raw_sf_zoning_height_bulk_src',
+              'source-layer': 'raw_sf_zoning_height_bulk',
               'paint': {'line-width': 4, 'line-color': '#4040a0'}
           })
           map.addLayer({
               'id': 'zoning_labels', // Layer ID
               'type': 'symbol',
-              'source': 'raw_sf_zoning_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning', // ID of the tile source created above
+              'source': 'raw_sf_zoning_src',
+              'source-layer': 'raw_sf_zoning',
               'paint': {'text-color': '#808040', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
               'layout': {
                   'text-field': ['get', 'zoning'],
@@ -284,8 +285,8 @@
           map.addLayer({
               'id': 'zoning_height_labels', // Layer ID
               'type': 'symbol',
-              'source': 'raw_sf_zoning_height_bulk_src', // ID of the tile source created above
-              'source-layer': 'raw_sf_zoning_height_bulk', // ID of the tile source created above
+              'source': 'raw_sf_zoning_height_bulk_src',
+              'source-layer': 'raw_sf_zoning_height_bulk',
               'paint': {'text-color': '#303070', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
               'layout': {
                   'text-field': ['get', 'gen_height'],
@@ -304,7 +305,7 @@
 
       // create layer toggles
       for (const btn of [
-          ['Parcel', true, 'parcel'],
+          ['Parcel', true, 'parcel_wrap'],
           ['Zoning', false, 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels'],
           ['Resource Areas', false, 'resource_level']
       ]) {
@@ -357,7 +358,7 @@
               console.log("Feature:", feature)
               const p = feature.properties
               switch (feature.layer.id) {
-                  case 'parcel_poly':
+                  case 'parcel_wrap_poly':
                       const addr = p.from_addre ? `${p.from_addre}-${p.to_address} ${p.street_nam} ${p.street_typ}`
                           : '[no address]'
                       return `<p><a href='/dj/admin/elt/rawsfparcelwrap/${p.apn}'>Parcel: ` +
@@ -393,8 +394,8 @@
               radioButtons[i].addEventListener("click", function () {
                   console.log("You have selected color: " + this.value);
                   const layerPaint = paintExpression(this.value);
-                  map.setPaintProperty('parcel_poly', 'fill-opacity', layerPaint['fill-opacity']);
-                  map.setPaintProperty('parcel_poly', 'fill-color', layerPaint['fill-color']);
+                  map.setPaintProperty('parcel_wrap_poly', 'fill-opacity', layerPaint['fill-opacity']);
+                  map.setPaintProperty('parcel_wrap_poly', 'fill-color', layerPaint['fill-color']);
               });
           }
       });

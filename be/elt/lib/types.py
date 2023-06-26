@@ -24,6 +24,7 @@ class GisData(Enum):
     tpa = "tpa"
     road = "road"
     he = "he"  # housing element
+    reportall = "reportall"
 
     # postprocess raw data -- create / update wrapper models, find duplicates, etc.
     post = "post"
@@ -31,3 +32,7 @@ class GisData(Enum):
     # California resource areas from CTCAD/HCD Opportunity maps: https://www.treasurer.ca.gov/ctcac/opportunity.asp
     #   Not to be confused with Opportunity Zones.
     resource_level = "resource_level"
+
+
+class EltAnalysisEnum(Enum):
+    yigby = "yigby"
