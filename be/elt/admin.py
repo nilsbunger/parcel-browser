@@ -3,7 +3,6 @@
 from django import forms
 from django.contrib.gis import admin
 
-from django.views.generic import TemplateView
 from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
@@ -27,10 +26,6 @@ class ReadOnlyGeomForm(forms.ModelForm):
 
     def clean_geom(self):
         raise forms.ValidationError("We don't allow changing geometry in the admin")
-
-
-class RawParcelMapView(TemplateView):
-    template_name = "elt/admin/raw_sf_parcel_map.html"
 
 
 @admin.register(RawSfParcel)

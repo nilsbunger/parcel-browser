@@ -8,8 +8,6 @@ class CustomAdminSite(AdminSite):  # 1.
     site_title = "Turboprop Site Title"
 
     def get_urls(self):  # 2.
-        from elt.admin import RawParcelMapView
-
         urls = super().get_urls()
         my_urls = [
             path("elt/parcelmap", self.admin_view(self.parcelmapview), name="elt-parcel-map-view"),
