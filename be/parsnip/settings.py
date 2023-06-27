@@ -38,7 +38,6 @@ env = environ.Env(
     DJANGO_LOG_LEVEL=(str, "INFO"),
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
-    WHICH_DB=(str, None),
     CLOUDFLARE_R2_ENABLED=(bool, True),
     AIRTABLE_API_KEY=(str, None),
     AIRTABLE_YIMBY_LAW_HE_API_KEY=(str, None),
@@ -53,7 +52,7 @@ assert DJANGO_ENV in ["development", "production", "staging"]
 DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 STAGE_ENV = DJANGO_ENV == "staging"  # running on staging server
-DB: str = env("DB")  # which DB to use for primary data storage:
+DB: str = env("DB").upper()  # which DB to use for primary data storage:
 assert DB in ["LOCAL", "DEV", "PROD"]
 TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")

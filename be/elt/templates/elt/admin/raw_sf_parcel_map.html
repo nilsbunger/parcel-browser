@@ -83,6 +83,10 @@
         <input type="radio" id="no-he-radio" name="he_select" value="none" style="margin:0 5px 0 10px">
         <label for="no-he-radio">No HE</label>
       </fieldset>
+      <fieldset style="display:flex; align-items:center; border-top:none">
+        <input type="number" id="min-lot-size" name="min_lot_size" value="0" style="margin:0 5px 0 20px; width:60px;">
+        <label for="min_lot_size">Min lot size (sq ft)</label>
+      </fieldset>
     </nav>
     <div id="map"></div>
   </div>
@@ -99,6 +103,22 @@
           [-122.66336, 37.492987], // Southwest coordinates
           [-122.050481, 37.871651] // Northeast coordinates
       ];
+
+      function debounce(func, delay) {
+          let timeoutId;
+
+          return function (...args) {
+              // Clear any existing timeouts
+              if (timeoutId) {
+                  clearTimeout(timeoutId);
+              }
+
+              // Set up a new timeout to execute the function after the delay
+              timeoutId = setTimeout(() => {
+                  func.apply(this, args);
+              }, delay);
+          };
+      }
 
       const map = new mapboxgl.Map({
           container: 'map',
@@ -142,25 +162,50 @@
       }
       const heZoningName = ["140 feet", "240 feet", "55 feet", "65 feet", "85 feet", "Extra height in existing...",
           "Up to 4 units (6 on corner lot)", "Density decontrol"]
-      const paintExpression = (he_plan) =>
-          {
-              const noHe = ['!', ['any', ...heTest(he_plan)]]
-              const heVal = heTest(he_plan);
-              return {
-                  'fill-opacity': ['case', noHe, 0.0, 0.4],
-                  'fill-color': ['case',
-                      heVal[6], '#39639c', // Up to 4 units (6 on corner lot)
-                      heVal[7], '#89b3cf', // Density decontrol
-                      heVal[2], '#dedf00', // 55 ft
-                      heVal[3], '#fab037', // 65 ft
-                      heVal[4], '#fd7100', // 85 ft
-                      heVal[0], '#fc3600', // 140 ft
-                      heVal[1], '#c50600', // 240 ft
+      const paintExpression = (he_plan) => {
+          const noHe = ['!', ['any', ...heTest(he_plan)]]
+          const heVal = heTest(he_plan);
+          return {
+              'fill-opacity': ['case', noHe, 0.0, 0.4],
+              'fill-color': ['case',
+                  heVal[6], '#39639c', // Up to 4 units (6 on corner lot)
+                  heVal[7], '#89b3cf', // Density decontrol
+                  heVal[2], '#dedf00', // 55 ft
+                  heVal[3], '#fab037', // 65 ft
+                  heVal[4], '#fd7100', // 85 ft
+                  heVal[0], '#fc3600', // 140 ft
+                  heVal[1], '#c50600', // 240 ft
 
-                      heVal[5], '#485b34', // (not in HE map) Added Height, existing form based area
-                      '#303030'
-                  ]
+                  heVal[5], '#485b34', // (not in HE map) Added Height, existing form based area
+                  '#303030'
+              ]
+          }
+      }
+
+      function refreshFilterSourcesAndLayers(paramStr) {
+          if (map.getLayer('sf_yigby_elt_analysis')) {
+              map.removeLayer('sf_yigby_elt_analysis');
+          }
+          if (map.getSource('sf_yigby_elt_analysis_src')) {
+              map.removeSource('sf_yigby_elt_analysis_src');
+          }
+          map.addSource('sf_yigby_elt_analysis_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/elt_analysis/sf/yigby/{z}/{x}/{y}' + paramStr],
+              'minzoom': 11,
+              'maxzoom': 18
+          });
+          map.addLayer({
+              'id': 'sf_yigby_elt_analysis', // Layer ID
+              'type': 'fill',
+              'source': 'sf_yigby_elt_analysis_src',
+              'source-layer': 'elt_analysis',
+              'paint': {
+                  'fill-opacity': 1,
+                  'fill-color': '#ffff00',
               }
+          });
+
       }
 
       map.on('load', () => {
@@ -168,12 +213,7 @@
           // tile layers
           console.log("Map on load")
           // Sources here are making requests against elt/views.py
-          map.addSource('raw_sf_parcel_wrap_src', {
-              'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel_wrap/{z}/{x}/{y}'],
-              'minzoom': 12,
-              'maxzoom': 17
-          });
+
           map.addSource('raw_sf_zoning_src', {
               'type': 'vector',
               'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning/{z}/{x}/{y}'],
@@ -192,22 +232,6 @@
               'minzoom': 11,
               'maxzoom': 18
           });
-          map.addSource('sf_yigby_elt_analysis_src', {
-              'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/elt_analysis/sf/yigby/{z}/{x}/{y}'],
-              'minzoom': 11,
-              'maxzoom': 18
-          });
-          map.addLayer({
-              'id': 'sf_yigby_elt_analysis', // Layer ID
-              'type': 'fill',
-              'source': 'sf_yigby_elt_analysis_src', 
-              'source-layer': 'elt_analysis',
-              'paint': {
-                  'fill-opacity': 1,
-                  'fill-color': '#80FF00',
-              }
-          });
           map.addLayer({
               'id': 'resource_level', // Layer ID
               'type': 'fill',
@@ -225,22 +249,6 @@
                   ]
               }
           });
-          // create parcel poly layer so we can click on it
-          map.addLayer({
-              'id': 'parcel_wrap_poly',
-              'type': 'fill',
-              'source': 'raw_sf_parcel_wrap_src',
-              'source-layer': 'raw_sf_parcel_wrap',
-              'paint': paintExpression('m1_zoning')
-          });
-
-          map.addLayer({
-              'id': 'parcel_wrap', // Layer ID
-              'type': 'line',
-              'source': 'raw_sf_parcel_wrap_src',
-              'source-layer': 'raw_sf_parcel_wrap',
-          })
-
           map.addLayer({
               'id': 'zoning_poly', // Layer ID
               'type': 'fill',
@@ -274,7 +282,11 @@
               'type': 'symbol',
               'source': 'raw_sf_zoning_src',
               'source-layer': 'raw_sf_zoning',
-              'paint': {'text-color': '#808040', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
+              'paint': {
+                  'text-color': '#808040',
+                  'text-halo-width': 5,
+                  'text-halo-color': 'rgba(255, 255, 255, 0.8)'
+              },
               'layout': {
                   'text-field': ['get', 'zoning'],
                   'text-anchor': 'center',
@@ -287,7 +299,11 @@
               'type': 'symbol',
               'source': 'raw_sf_zoning_height_bulk_src',
               'source-layer': 'raw_sf_zoning_height_bulk',
-              'paint': {'text-color': '#303070', 'text-halo-width': 5, 'text-halo-color': 'rgba(255, 255, 255, 0.8)'},
+              'paint': {
+                  'text-color': '#303070',
+                  'text-halo-width': 5,
+                  'text-halo-color': 'rgba(255, 255, 255, 0.8)'
+              },
               'layout': {
                   'text-field': ['get', 'gen_height'],
                   'text-anchor': 'center',
@@ -295,9 +311,37 @@
                   'text-size': 15,
               },
           })
+
+          map.addSource('raw_sf_parcel_wrap_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel_wrap/{z}/{x}/{y}'],
+              'minzoom': 12,
+              'maxzoom': 17
+          });
+
+
+          // create parcel poly layer so we can click on it
+          map.addLayer({
+              'id': 'parcel_wrap_poly',
+              'type': 'fill',
+              'source': 'raw_sf_parcel_wrap_src',
+              'source-layer': 'raw_sf_parcel_wrap',
+              'paint': paintExpression('m1_zoning')
+          });
+
+          map.addLayer({
+              'id': 'parcel_wrap', // Layer ID
+              'type': 'line',
+              'source': 'raw_sf_parcel_wrap_src',
+              'source-layer': 'raw_sf_parcel_wrap',
+          })
+
+
           for (layer in layervisinit) {
               map.setLayoutProperty(layer, 'visibility', layervisinit[layer]);
           }
+
+          refreshFilterSourcesAndLayers("")
       })
       ;
 
@@ -342,6 +386,7 @@
       // -------------------------------------------------------------------
       // Event handlers
 
+      // handle clicks on parcels
       map.on('click', (e) => {
           {#console.log("Click", e)#}
           // Set `bbox` as reactangle area around clicked point.
@@ -384,8 +429,12 @@
       });
 
       // change pointer styles with hovering.
-      map.on('mouseenter', 'parcel_poly', (e) => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'parcel_poly', (e) => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'parcel_poly', (e) => {
+          map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'parcel_poly', (e) => {
+          map.getCanvas().style.cursor = '';
+      });
 
       // Add event listener for housing element radio buttons
       document.addEventListener("DOMContentLoaded", function () {
@@ -400,7 +449,16 @@
           }
       });
 
+      // Add event listener for minimum lot size, refreshing layer
+      // Debounce to reduce spurious api calls
+      document.getElementById('min-lot-size').addEventListener('input', debounce(function (e) {
+          console.log("You have selected min lot size: " + e.target.value);
+          var minLotSize = e.target.value;
+          refreshFilterSourcesAndLayers("?min_lot_size=" + encodeURIComponent(minLotSize));
+      }, 500));
+
       // unused stuff:
+          {#map.setPaintProperty('sf_yigby_elt_analysis', 'fill-opacity', 1);#}
       /* map.on('moveend', (e) => {
           const bounds = map.getBounds();
           {#console.log('A moveend event occurred. bounds=', bounds);#}

@@ -1,5 +1,6 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Prefetch
 from django.http import HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
@@ -22,7 +23,7 @@ from elt.models import (
 
 
 # Generate parcel tiles on-demand for ELT models, used in admin view
-@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache time in seconds
+@method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
 class RawSfParcelWrapTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcelWrap
     vector_tile_layer_name = "raw_sf_parcel_wrap"
@@ -69,11 +70,12 @@ class RawCaliResourceLevelTile(LoginRequiredMixin, MVTView, ListView):
 
 
 # @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
-class EltAnalysisTile(LoginRequiredMixin, MVTView, ListView):
-    model = EltAnalysis
+# @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
+class EltAnalysisTile(MVTView, ListView):  # TODO: Add LoginRequiredMixin
+    model = RawSfParcelWrap
     vector_tile_layer_name = "elt_analysis"
     # vector_tile_fields = ("fips", "oppcat")
-    vector_tile_geom_name = "parcels__parcel__geom"
+    vector_tile_geom_name = "parcel__geom"
 
     def get(self, request, geo: str, analysis: str, z: int, x: int, y: int):
         if geo != "sf" or analysis != "yigby":
@@ -82,5 +84,12 @@ class EltAnalysisTile(LoginRequiredMixin, MVTView, ListView):
         return super().get(request, z, x, y)
 
     def get_vector_tile_queryset(self, *args, **kwargs):
-        print("HI")
-        return self.model.objects.select_related("parcels", "parcels__parcel")
+        query = self.request.GET.get("min_lot_size", "")
+        query = int(query) if query.isdigit() else 0
+        acres = query / 43560  # convert sqft to acres
+        print("Filtering for acres >= ", acres)
+        return self.model.objects.filter(
+            reportall_parcel__calc_acrea__gte=acres,
+            eltanalysis__analysis="yigby",
+            eltanalysis__juri="sf",
+        )
