@@ -1,11 +1,11 @@
 # Register your models here.
 
-from django import forms
 from django.contrib.gis import admin
 
 from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
+from elt.home3_admin import Home3Admin
 from elt.models import (
     RawCaliResourceLevel,
     RawSfHeTableA,
@@ -21,19 +21,8 @@ from elt.models import RawSfParcelWrap
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
 
-class ReadOnlyGeomForm(forms.ModelForm):
-    """ref: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#adding-custom-validation-to-the-admin"""
-
-    def clean_geom(self):
-        raise forms.ValidationError("We don't allow changing geometry in the admin")
-
-
 @admin.register(RawSfParcel)
-class RawSfParcelAdmin(admin.GISModelAdmin):
-    # Use custom form as a way to disable geometry editing (making field readonly makes it not display the map)
-    form = ReadOnlyGeomForm
-    # change_list_template = "elt/admin/DEPRECATED__raw_sf_parcel_change_list.html"
-    change_form_template = "elt/admin/raw_parcel_change_form.html"
+class RawSfParcelAdmin(Home3Admin):
     related_gis_models = [RawSfZoning, RawSfZoningHeightBulk]
     related_apn_models = [RawSfHeTableA, RawSfHeTableB]
     # what to show in list view:
@@ -49,65 +38,28 @@ class RawSfParcelAdmin(admin.GISModelAdmin):
     readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
     search_fields = ["mapblklot", "blklot", "street_nam", "from_addre", "zoning_cod"]
 
-    def get_urls(self):
-        return [
-            # path("<pk>/detail", self.admin_site.admin_view(ParcelDetailView.as_view()), name=f"parcel_detail"),
-            *super().get_urls(),
-        ]
-
-    # # Example of showing a detail field in a list:
-    # def show_detail(self, obj: RawSfParcel) -> str:
-    #     # Detail field in list view
-    #     url = reverse("admin:parcel_detail", args=[obj.pk])
-    #     return format_html(f'<a href="{url}">📝DEETS</a>')
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
-        # Render data for items which are geographically related to the parcel being rendered: (geometry intersects)
-        related_by_geo = list(
-            collapse([model.objects.filter(geom__intersects=obj.geom) for model in self.related_gis_models])
-        )
-        # Render data for items which are related by having the same parcel number (and a field called mapblklot)
-        filtered_results = [model.objects.filter(mapblklot=obj.mapblklot) for model in self.related_apn_models]
-        related_by_apn = list(collapse(filtered_results))
-
-        rel_forms = []
-        for obj in related_by_apn + related_by_geo:
-            RelatedModel = obj.__class__  # noqa:N806
-            RelatedModelAdmin = admin.site._registry[RelatedModel].__class__  # noqa:N806 # eg RawSfZoningAdmin class
-            inline_admin = RelatedModelAdmin(admin_site=self.admin_site, model=RelatedModel)
-            related_admin_form = inline_admin.get_inline_context(request, obj, add, change)
-            rel_forms.append(dict({"name": str(obj), "form": related_admin_form}))
-
-        context.update({"related_forms": rel_forms})
-        return super().render_change_form(request, context, add=add, change=not add, obj=obj, form_url=form_url)
-
 
 @admin.register(RawSfParcelWrap)
-class RawSfParcelWrapAdmin(admin.GISModelAdmin):
+class RawSfParcelWrapAdmin(Home3Admin):
     model = RawSfParcelWrap
+    change_form_template = "elt/admin/home3_admin_change_form.html"
+    fields = ["apn", ("parcel", "he_table_a", "he_table_b", "reportall_parcel")]
     list_display = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
     readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
-    # fields = ["apn"]
 
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        # Optimize the number of DB queries.
-        queryset = queryset.select_related("parcel", "he_table_a", "he_table_b", "reportall_parcel")
-        return queryset
+    search_fields = ["apn", "parcel__street_nam", "parcel__from_addre", "parcel__zoning_cod", "parcel__street_typ"]
+    extra_inline_fields = ["parcel", "he_table_a", "he_table_b", "reportall_parcel"]
 
 
 @admin.register(RawSfZoning)
-class RawSfZoningAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
+class RawSfZoningAdmin(InlineRenderedAdminMixin, Home3Admin):
     list_display = ["codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
     fields = (("zoning", "zoning_sim"), ("codesection", "districtname"), ("gen", "url"))
     readonly_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
 @admin.register(RawSfZoningHeightBulk)
-class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
+class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, Home3Admin):
     list_display = ["gen_height", "height"]
     fields = ["gen_height", "height"]
     readonly_fields = ["gen_height", "height"]
@@ -115,7 +67,7 @@ class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
 
 
 @admin.register(RawSfHeTableA)
-class RawSfHeTableAAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
+class RawSfHeTableAAdmin(InlineRenderedAdminMixin, Home3Admin):
     model = RawSfHeTableA
     list_display = ["mapblklot", "address", "ex_gp_des", "ex_zoning", "acres", "ex_use_vac", "run_date"]
     search_fields = ["mapblklot", "address", "ex_gp_des", "ex_zoning"]
@@ -136,7 +88,7 @@ class RawSfHeTableAAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
 
 
 @admin.register(RawSfHeTableB)
-class RawSfHeTableBAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
+class RawSfHeTableBAdmin(InlineRenderedAdminMixin, Home3Admin):
     model = RawSfHeTableB
     # fmt:off
     list_display = ["mapblklot", "address", "acres", "ex_zoning", "m1_zoning", "m2_zoning", "m3_zoning", "vacant",
@@ -163,30 +115,17 @@ class RawSfHeTableBAdmin(InlineRenderedAdminMixin, admin.GISModelAdmin):
     fields = _fieldlist
     readonly_fields = list(collapse(_fieldlist))
 
-    def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
-        # Round floats for display
-        # TODO: do this for all admin models
-        model_inst = context["original"]
-        for fieldname in collapse(self._fieldlist):
-            fieldval = getattr(model_inst, fieldname, None)
-            if fieldval and isinstance(fieldval, float):
-                setattr(model_inst, fieldname, round(fieldval, 3))
-
-        return super().render_change_form(request, context, add, change, form_url, obj)
-
 
 @admin.register(RawSfHeTableC)
-class RawSfHeTableCAdmin(admin.GISModelAdmin):
+class RawSfHeTableCAdmin(Home3Admin):
     model = RawSfHeTableC
     list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]
     search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
 
 
 @admin.register(RawSfReportall)
-class RawSfReportallAdmin(admin.GISModelAdmin):
+class RawSfReportallAdmin(Home3Admin):
     model = RawSfReportall
-    # list_display = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed", "run_date"]
-    # search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
     # fmt:off
     _fieldlist = [
         ("situs","parcel_id","acreage","calc_acrea"),
@@ -217,6 +156,10 @@ class RawSfReportallAdmin(admin.GISModelAdmin):
     # fmt:on
     fields = list(_fieldlist)
     readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
+    field_options = {
+        "latitude": {"sig_figs": 7},
+        "longitude": {"sig_figs": 7},
+    }
 
 
 @admin.register(RawCaliResourceLevel)

@@ -3,11 +3,17 @@ import re
 import sys
 
 from django.urls import NoReverseMatch, URLPattern, URLResolver
+from math import floor, log10
 
 
 # Print to stderr
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+
+def round_to_sig_figs(num: float, sig_figs: int):
+    """Round a number to a specified number of significant figures"""
+    return round(num, sig_figs - int(floor(log10(abs(num)))) - 1)
 
 
 def keep_truthy(*args):

@@ -1,0 +1,26 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {#  {{ parcel_media }} #}
+  {{ inline_media }}
+{% endblock %}
+{% block content %}
+  {{ block.super }}
+{% endblock %}
+
+{% block after_field_sets %}
+  {% for field_name, field_form in inline_forms.items %}
+    <h2>{{ field_name | title }}</h2>
+
+    {% for fieldset in field_form %}
+      {% include "admin/includes/fieldset.html" %}
+    {% endfor %}
+
+  {% endfor %}
+
+
+{% endblock %}
+
+
+{% block submit_buttons_bottom %}{% endblock %}

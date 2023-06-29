@@ -2,6 +2,16 @@ from django.contrib.admin import AdminSite
 from django.template.response import TemplateResponse
 from django.urls import path
 
+# Custom views for the admin the app list
+parcelmap_view = {
+    "model": None,  # model,
+    "name": "Parcel Map",  # capfirst(model._meta.verbose_name_plural),
+    # "object_name": "parcel_map_no_real_obj_name",
+    "admin_url": "/dj/admin/elt/parcelmap",
+    "add_url": None,
+    "view_only": True,
+}
+
 
 class CustomAdminSite(AdminSite):  # 1.
     site_header = "Turboprop Admin Site"
@@ -26,19 +36,17 @@ class CustomAdminSite(AdminSite):  # 1.
     #     return ret
 
     def get_app_list(self, request, app_label=None):
-        """Extend 'app' list to include custom pages like the Parcel Map"""
-        app_list = super().get_app_list(request, app_label)
-        # Add custom views to the app list
-        model_dict = {
-            "model": None,  # model,
-            "name": "Parcel Map",  # capfirst(model._meta.verbose_name_plural),
-            # "object_name": "parcel_map_no_real_obj_name",
-            "admin_url": "/dj/admin/elt/parcelmap",
-            "add_url": None,
-            "view_only": True,
-        }
-        elt_app = next((app for app in app_list if app["app_label"] == "elt"))
-        elt_app["models"].insert(0, model_dict)
+        """Replace get_app_list to control sort order and include custom pages like the Parcel Map"""
+        app_dict = self._build_app_dict(request, app_label)
+        # Sort the apps alphabetically.
+        app_list = sorted(app_dict.values(), key=lambda x: x["name"].lower())
+
+        # Sort the models, prioritizing the ones with an "admin_priority" attribute, falling back to alphabetical.
+        for app in app_list:
+            app["models"].sort(key=lambda x: str(getattr(x["model"], "admin_priority", x["name"])))
+
+        # put the parcelmap view ahead of everything else.
+        app_dict["elt"]["models"].insert(0, parcelmap_view)
         return app_list
 
     def parcelmapview(self, request, *args, **kwargs):
