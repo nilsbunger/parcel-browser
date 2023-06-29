@@ -5,9 +5,9 @@ from enum import Enum
 import django
 from django.contrib.gis.db.models import Extent, Union
 from django.contrib.gis.geos import MultiPolygon
-from django.core.management.base import BaseCommand
 
 from lib.co.co_eligibility_lib import AB2011Eligible
+from lib.home3_command import Home3Command
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.topo_lib import (
     calculate_parcel_slopes,
@@ -35,7 +35,7 @@ class DataPrepCmd(Enum):
     ab2011 = 3
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Run data preparation tasks on loaded data prior to analysis"
 
     def add_arguments(self, parser):

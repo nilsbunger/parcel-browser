@@ -2,9 +2,9 @@ import operator
 import pprint
 from enum import Enum
 
-from django.core.management.base import BaseCommand
 from django.db import connection
 
+from lib.home3_command import Home3Command
 from world.models import AnalyzedParcel, Parcel
 
 
@@ -13,7 +13,7 @@ class SubCommand(Enum):
     histo = 2
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Analyze all the residential parcels, creating or working with the analyze_parcels table"
 
     def add_arguments(self, parser):

@@ -10,11 +10,10 @@ import geopandas
 import matplotlib.pyplot as plt
 import shapely
 from django.contrib.gis.db.models.functions import Distance
-from django.core.management import BaseCommand
 from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry import LineString
 
-from lib import mgmt_cmd_lib
+from lib.home3_command import Home3Command
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs, meters_to_latlong
 from lib.parcel_analysis_2022.parcel_lib import models_to_utm_gdf, normalize_geometries
 from world.models import Parcel, Roads
@@ -66,14 +65,13 @@ def get_nearby_parcels_and_roads_df(model_obj, distance, crs):
     # return near_parcels_xlat, roads_xlat
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Add help text here..."
 
     def add_arguments(self, parser):
         parser.add_argument("cmd", choices=CoCmd.__members__)
         parser.add_argument("rest", action="store", nargs="*")
         parser.add_argument("--xoxo", action="store_true", help="kiss")
-        mgmt_cmd_lib.add_common_arguments(parser)
 
     def evaluate_ab2011_from_roads(self):  # noqa: PLR0915 -- too many statements
         sd_utm_crs = get_utm_crs()
@@ -277,7 +275,6 @@ class Command(BaseCommand):
         plt.show()
 
     def handle(self, cmd, rest, *args, **options):
-        mgmt_cmd_lib.init(verbose=options["verbose"])
         logging.info(f"Running cmd = {cmd}, rest={rest}, options:\n{pprint.pformat(options)}")
         assert cmd == "eligible"
         # self.evaluate_road_width_from_parcel()

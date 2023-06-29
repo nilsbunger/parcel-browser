@@ -10,8 +10,7 @@ import tempfile
 from collections import Counter, defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management import BaseCommand
-from lib import mgmt_cmd_lib
+from lib.home3_command import Home3Command
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_batch
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.listings_lib import address_to_parcel
@@ -55,11 +54,10 @@ def zip_groups_from_zips(zips):
     return zip_groups
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Parse MLS Listings for San Diego, analyze, and put into database. Optionally re-scrape"
 
     def add_arguments(self, parser):
-        mgmt_cmd_lib.add_common_arguments(parser)
         parser.add_argument("--fetch", action="store_true", help="Fetch listings data from MLS service")
         parser.add_argument(
             "--fetch-zip",
@@ -91,7 +89,6 @@ class Command(BaseCommand):
         parser.add_argument("--single-process", action="store_true", help="Run analysis with only a single process")
 
     def handle(self, *args, **options):  # noqa: PLR0915 - too many statements.
-        mgmt_cmd_lib.init(verbose=options["verbose"])
         # -----
         # 1. Scrape latest listings if directed to.
         # -----

@@ -1,11 +1,11 @@
 from enum import Enum, EnumMeta
 
 import polars as pl
-from django.core.management.base import BaseCommand
 from elt.lib.attom_data import AttomDataApi
 from elt.lib.attom_data_struct import AttomPropertyRecord
 from elt.lib.rentometer_data import RentometerApi
 from facts.models import StdAddress
+from lib.home3_command import Home3Command
 from parsnip.settings import env
 from world.models import Parcel
 
@@ -97,7 +97,7 @@ def gptgen(subject_property: AttomPropertyRecord):
     raise NotImplementedError()
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Generate valuation for a property."
 
     def add_arguments(self, parser):

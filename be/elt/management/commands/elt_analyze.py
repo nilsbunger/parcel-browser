@@ -1,14 +1,9 @@
-from django.core.management.base import BaseCommand
-
 from elt.lib.analysis.yigby import analyze_yigby
-from elt.lib.arcgis.extract_from_api import extract_from_arcgis_api
-from elt.lib.excel.extract_from_excel import extract_from_excel
-from elt.lib.postprocess import postprocess_sf
-from elt.lib.shapefile.extract_from_shapefile import extract_from_shapefile
 from elt.lib.types import EltAnalysisEnum, GisData, Juri
+from lib.home3_command import Home3Command
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Run an analysis on a set of parcels, storing result in DB for viewing."
 
     def add_arguments(self, parser):

@@ -7,8 +7,8 @@ from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 from django.core.management import CommandParser
-from django.core.management.base import BaseCommand
 from elt.lib.types import Juri
+from lib.home3_command import Home3Command
 from parsnip.util import eprint
 
 from world.models import (
@@ -71,7 +71,7 @@ schemas = {
 }
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Load data from a shape file into a Django model"
 
     def add_arguments(self, parser: CommandParser):

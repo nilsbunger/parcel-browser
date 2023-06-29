@@ -1,11 +1,12 @@
 import django
 from django.core.mail import EmailMessage
-from django.core.management.base import BaseCommand
+
+from lib.home3_command import Home3Command
 from lib.scrape_hcd_lib import run_scrape_hcd
 from parsnip.settings import env
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Scrape HCD housing element compliance data and save it to Airtable. Intended to run nightly."
 
     def add_arguments(self, parser: django.core.management.base.CommandParser) -> None:

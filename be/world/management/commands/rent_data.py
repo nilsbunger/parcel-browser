@@ -1,14 +1,14 @@
 import logging
 
-from django.core.management import BaseCommand
 from django.db.models import Count
 
+from lib.home3_command import Home3Command
 from world.models import RentalData
 
 log = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(Home3Command):
     help = "Commands to manage rent data in our system"
 
     # Positional arguments
