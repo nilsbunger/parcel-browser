@@ -1,13 +1,26 @@
-import logging
-import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from datetime import date, timedelta
 from enum import StrEnum
+import logging
+import re
+from typing import Type
 
-import polars as pl
+from django.core.exceptions import ImproperlyConfigured
 from google.oauth2 import service_account
 from googleapiclient import discovery
+import polars as pl
+
 from parsnip.settings import BASE_DIR
+
+# support this module in django and non-django env
+try:
+    from django.conf import settings  # check if django is setup.
+
+    str(settings)  # check if django is setup (this will raise an exception if not)
+    from django.core.cache import cache as django_cache
+except ImproperlyConfigured:
+    django_cache = None
 
 log = logging.getLogger(__name__)
 
@@ -89,9 +102,8 @@ class SheetCell:
             return f"SheetCell({self.cell})"
 
 
-@dataclass
+@dataclass(kw_only=True)  # kw_only=True keeps things clean for inheritance
 class GoogleSheet:
-    service: discovery.Resource
     sheet_url: str
 
     class ValueRenderOption(StrEnum):
@@ -101,6 +113,10 @@ class GoogleSheet:
 
     def __post_init__(self) -> None:
         self._sheet_id = self.sheet_url.split("spreadsheets/d/")[1].split("/")[0]
+        self.credentials = service_account.Credentials.from_service_account_file(
+            KEY_FILE_PATH, scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        )
+        self.service = discovery.build("sheets", "v4", credentials=self.credentials)
 
     def read_data(
         self,
@@ -115,11 +131,17 @@ class GoogleSheet:
         ).execute()
         return result.get("values", [])
 
-    def write_column(self, data: Sequence[str | int | float], start_range: SheetCell, end_range=None):
+    def write_column(self, data: Sequence[str | int | float | date], start_range: SheetCell, end_range=None):
         """write a list of data as a single column. If end_range isn't provided, we'll allow it to write down
         the entire column"""
-        assert isinstance(data, Sequence) and isinstance(data[0], str | int | float)
-        data_columns = [[x] for x in data]
+        assert isinstance(data, Sequence)
+        if isinstance(data[0], date):
+            # convert date back to number of days since Dec 30, 1890 (the epoch for Google Sheets)
+            typed_data = [(d - date(1899, 12, 30)).days for d in data]
+        else:
+            assert isinstance(data[0], str | int | float)
+            typed_data = data
+        data_columns = [[x] for x in typed_data]
         if not end_range:
             end_range = start_range.move_relative(rows=len(data_columns))
         range_str = self.range_string(start_range, end_range)
@@ -157,7 +179,7 @@ class GoogleSheet:
         named_ranges = result.get("namedRanges", [])
         return [n["name"] for n in named_ranges]
 
-    def data_from_named_range(self, named_range: str):
+    def data_from_named_range(self, named_range: str, data_type: type):
         try:
             result = (
                 self.service.spreadsheets()
@@ -171,10 +193,15 @@ class GoogleSheet:
                 )
                 .execute()
             )
-            return result.get("values", [])
+            res = result.get("values", [])
+            if data_type is date:
+                typed_res = [[date(1899, 12, 30) + timedelta(days=int(x)) for x in row] for row in res]
+            else:
+                typed_res = [[data_type(x) for x in row] for row in res]
+            return typed_res
         except Exception as e:
             print(e)
-            raise e
+            raise
 
     @staticmethod
     def range_string(start_range: SheetCell, end_range: SheetCell or None):
@@ -208,18 +235,15 @@ class GoogleSheet:
         print(column_starts)
         return column_starts
 
-    def named_ranges_to_polars_df(self, named_ranges: Iterable[str]):
+    def named_ranges_to_polars_df(self, named_ranges: Iterable[str, Type]):
         dfs = []
 
-        for named_range in named_ranges:
+        for range_name, range_type in named_ranges:
             # Get data from the named range
-            data = self.data_from_named_range(named_range)
+            data = self.data_from_named_range(range_name, range_type)
 
-            # Create column names for the named range
-            if len(data[0]) > 1:
-                col_names = [f"{named_range}_{i}" for i in range(len(data[0]))]
-            else:
-                col_names = [named_range]
+            # Create column names for the named range - multiple columns get _1, _2, etc appended
+            col_names = [range_name] if len(data[0]) == 1 else [f"{range_name}_{i}" for i in range(len(data[0]))]
 
             # Create a Polars DataFrame for the named range
             df = pl.DataFrame(dict(zip(col_names, zip(*data, strict=True), strict=True)))
@@ -230,77 +254,94 @@ class GoogleSheet:
         return result_df
 
 
-rent_roll_named_ranges = {"UnitNum", "Occupied", "CurrentRent", "SqFt", "MoveInDate", "LeaseEndDate"}
+@dataclass(kw_only=True)
+class RentRollSheet(GoogleSheet):
+    use_cache: bool = True
+
+    rent_roll_named_range_dict = {
+        "UnitNum": str,
+        "Occupied": str,
+        "CurrentRent": int,
+        "SqFt": int,
+        "MoveInDate": date,
+        "LeaseEndDate": date,
+    }
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.rent_roll_named_range_set = set(self.rent_roll_named_range_dict.keys())
+        self.rent_roll_df: pl.DataFrame = self._fetch()
+        if self.use_cache and not django_cache:
+            raise ModuleNotFoundError("use_cache is True but django cache is not imported")
+
+    def _fetch(self) -> pl.DataFrame:
+        """Get rent roll data from a rent roll datasheet that's been labelled, and return a Polars DataFrame"""
+        if self.use_cache:
+            rent_roll_dframe = django_cache.get("rent_roll_dframe_" + self._sheet_id)
+            if rent_roll_dframe is not None:
+                log.debug("Rent roll data found in cache")
+                return rent_roll_dframe
+        found_named_ranges = set(self.list_named_ranges())
+        assert self.rent_roll_named_range_set.issubset(found_named_ranges)
+        self.rent_roll_df = self.named_ranges_to_polars_df(self.rent_roll_named_range_dict.items())
+        log.info(f"Rent Roll (cache missed): for {self._sheet_id}")
+        if django_cache:
+            django_cache.set("rent_roll_dframe_" + self._sheet_id, self.rent_roll_df)
+        return self.rent_roll_df
 
 
-def get_rent_roll(rent_roll_gsheet: GoogleSheet, use_cache=True) -> pl.DataFrame:
-    """Get rent roll data from a rent roll datasheet that's been labelled, and return a Polars DataFrame"""
-    if use_cache:
-        from django.core.cache import cache
-
-        rent_roll_dframe = cache.get("rent_roll_dframe_" + rent_roll_gsheet._sheet_id)
-        if rent_roll_dframe is not None:
-            log.debug("Rent roll data found in cache")
-            return rent_roll_dframe
-
-    found_named_ranges = set(rent_roll_gsheet.list_named_ranges())
-    assert rent_roll_named_ranges.issubset(found_named_ranges)
-    rent_roll = rent_roll_gsheet.named_ranges_to_polars_df(rent_roll_named_ranges)
-    log.info(f"Rent Roll (cache missed): for {rent_roll_gsheet._sheet_id}")
-    if use_cache:
-        cache.set("rent_roll_dframe_" + rent_roll_gsheet._sheet_id, rent_roll)
-    return rent_roll
+@dataclass(kw_only=True)
+class T12Sheet(GoogleSheet):
+    pass
 
 
-def rent_roll_to_pro_forma(rent_roll_gsheet: GoogleSheet, pro_forma_gsheet: GoogleSheet):
-    # Get rent roll data
-    rent_roll = get_rent_roll(rent_roll_gsheet, use_cache=False)
+@dataclass(kw_only=True)
+class ProformaSheet(GoogleSheet):
+    def populate_rent_roll(self, rent_roll: RentRollSheet):
+        # Get rent roll data
+        rent_roll_df = rent_roll.rent_roll_df
 
-    print("Writing updates to pro forma...")
-    start_dict = pro_forma_gsheet.find_column_starts(
-        start_range=SheetCell("Rent Roll-Input!A1"), end_range=SheetCell("Z5"), strings_to_find=rent_roll_named_ranges
-    )
-    # update fields in the pro format sheet
-    for col_str, start_cell in start_dict.items():
-        print("... ", col_str, "to", start_cell.to_string(skip_sheet=True))
-        result = pro_forma_gsheet.write_column(start_range=start_cell, data=rent_roll[col_str].to_list())
-    # data = rent_roll_gsheet.read_data(f"{rent_roll_sheets[0]}!A1:D10")
-    # print("Read data:", data)
+        col_dict: dict[str, SheetCell] = self.find_column_starts(
+            start_range=SheetCell("Rent Roll-Input!A1"),
+            end_range=SheetCell("Z5"),
+            strings_to_find=rent_roll.rent_roll_named_range_set,
+        )
+        print(f"Writing updates to pro forma Google Sheet. cols = {list(col_dict.keys())}")
+        # update fields in the pro format sheet
+        for col_str, start_cell in col_dict.items():
+            print(f"... Column {col_str} to cell {start_cell.to_string(skip_sheet=True)}")
+            result = self.write_column(start_range=start_cell, data=rent_roll_df[col_str].to_list())
+        # data = rent_roll_gsheet.read_data(f"{rent_roll_sheets[0]}!A1:D10")
+        # print("Read data:", data)
 
+    def populate_t12(self, t12_sheet: T12Sheet):
+        """Get T12 income and expense data and populate it into the pro forma sheet."""
+        found_named_ranges = set(t12_sheet.list_named_ranges())
 
-def t12_to_pro_forma(t12_gsheet: GoogleSheet, pro_forma_gsheet: GoogleSheet):
-    """Get T12 income and expense data and populate it into the pro forma sheet."""
-    found_named_ranges = set(t12_gsheet.list_named_ranges())
-    start_dict = pro_forma_gsheet.find_column_starts(
-        start_range=SheetCell("Rent Roll-Input!A1"), end_range=SheetCell("Z5"), strings_to_find=rent_roll_named_ranges
-    )
-
-
-credentials = service_account.Credentials.from_service_account_file(
-    KEY_FILE_PATH, scopes=["https://www.googleapis.com/auth/spreadsheets"]
-)
-service = discovery.build("sheets", "v4", credentials=credentials)
-
-
-def get_gsheet(gsheet_url):
-    return GoogleSheet(service, gsheet_url)
+        # start_dict = self.find_column_starts(
+        #     start_range=SheetCell("Rent Roll-Input!A1"),  # TODO: update to T12 location
+        #     end_range=SheetCell("Z5"),
+        #     strings_to_find=rent_roll_named_ranges,
+        # )
+        #
 
 
 def main():
-    # Set up the Google Sheets API client
-    rent_roll_gsheet = get_gsheet(rent_roll_sheet_url)
-    pro_forma_gsheet = get_gsheet(pro_forma_sheet_url)
-    t12_gsheet = GoogleSheet(service, t12_sheet_url)
+    # sources: rent roll and t12 sheets
+    rent_roll_gsheet = RentRollSheet(sheet_url=rent_roll_sheet_url, use_cache=False)
+    t12_gsheet = T12Sheet(sheet_url=t12_sheet_url)
 
-    rent_roll_to_pro_forma(rent_roll_gsheet, pro_forma_gsheet)
-    t12_to_pro_forma(t12_gsheet, pro_forma_gsheet)
+    # destination: pro_forma sheet.
+    pro_forma_gsheet = ProformaSheet(sheet_url=pro_forma_sheet_url)
+    pro_forma_gsheet.populate_rent_roll(rent_roll_gsheet)
+    pro_forma_gsheet.populate_t12(t12_gsheet)
+    print("Data written successfully")
 
-    print("Done")
     # Example of writing
     rent_roll_sheets = rent_roll_gsheet.worksheets()
     assert len(rent_roll_sheets) == 1
     rent_roll_gsheet.write_data([["Hello, world!"]], SheetCell((rent_roll_sheets[0], "A1")))
-    print("Data written successfully")
+    print("Done")
 
 
 if __name__ == "__main__":

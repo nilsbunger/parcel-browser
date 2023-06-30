@@ -9,7 +9,7 @@ from ninja.security import django_auth
 from pydantic import Extra
 
 from facts.models import AddressFeatures, StdAddress
-from lib.g_sheets import get_gsheet, get_rent_roll
+from lib.g_sheets import GoogleSheet, RentRollSheet
 from lib.ninja_api import ApiResponseSchema
 
 from .models import PropertyProfile
@@ -95,12 +95,11 @@ def _list_properties(request):
 # Verdant apt rent-roll and t12 google sheet
 rent_roll_sheet_url = "https://docs.google.com/spreadsheets/d/1-ADiHnDJxAzCToVMd0aNeXRhdLniPja813ATcwNvJ_s/edit"
 t12_sheet_url = "https://docs.google.com/spreadsheets/d/1KMXU0iDZPKJvcbEasme0bfMHVPsQ37NqtPohJ_DtbWo/edit"
-rent_roll_gsheet = get_gsheet(rent_roll_sheet_url)
 
 
 @props_api.get("/bov/{bov_id}", url_name="_get_bov")
 def _get_bov(request, bov_id: int):
-    rent_roll = get_rent_roll(rent_roll_gsheet)
-    rent_roll_dict = rent_roll.to_dict(as_series=False)
+    rent_roll_gsheet = RentRollSheet(sheet_url=rent_roll_sheet_url, use_cache=False)
+    rent_roll_dict = rent_roll_gsheet.rent_roll_df.to_dict(as_series=False)
 
     return {"errors": False, "message": "BOV retrieved", "data": rent_roll_dict}
