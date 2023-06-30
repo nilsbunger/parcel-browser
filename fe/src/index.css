@@ -15,7 +15,6 @@
     html {
         font-family: DM Sans, sans-serif;
     }
-
     body {
         @apply bg-gray-wheat;
         @apply text-prim;
@@ -28,16 +27,9 @@
         @apply text-2xl;
         @apply font-medium;
     }
-
     h3 {
         @apply text-xl;
         @apply font-medium;
-    }
-
-    div {
-    }
-
-    p {
     }
     footer.bg-prim, div.bg-prim {
         /* use white font on dark background */
@@ -85,11 +77,16 @@
     .btn-primary {
         @apply bg-prim-800;
         @apply text-white;
+        min-height:2.5rem;
+        height:2.5rem;
     }
     .btn-primary:hover {
         @apply bg-prim-850;
     }
-
+    button {
+        @apply btn;
+        @apply btn-primary;
+    }
 }
 
 /**
