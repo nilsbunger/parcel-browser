@@ -1,0 +1,34 @@
+{# JSONEditor widget, see also elt/widgets.py #}
+<div
+  {% if not widget.attrs.style %}
+    style="height:{{ widget.height|default:'500px' }};width:{{ widget.width|default:'90%' }};display:inline-block;"
+  {% endif %}
+  {% include "django/forms/widgets/attrs.html" %}
+>
+</div>
+
+<textarea id="{{ widget.attrs.id }}_textarea" name="{{ widget.name }}" required="" style="display: none">
+  {{ widget.value }}
+</textarea>
+
+<script type="module">
+    let content = {
+        text: undefined,
+        json: {{ widget.value|safe }}
+    }
+    var options = {{ widget.options|safe }}; // unused options but in django_json_widget, they feed this into jsoneditor.
+    var textareaElement = document.getElementById("{{widget.attrs.id}}_textarea");
+    const editor = new JSONEditor({
+        target: document.getElementById('{{ widget.attrs.id }}'),
+        props: {
+            content,
+            readOnly: true,
+            onChange: (updatedContent, previousContent, {contentErrors, patchResult}) => {
+                // content is an object { json: JSONValue } | { text: string }
+                console.log('onChange', {updatedContent, previousContent, contentErrors, patchResult})
+                content = updatedContent
+            }
+        }
+    })
+
+</script>

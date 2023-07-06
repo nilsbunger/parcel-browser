@@ -1,12 +1,14 @@
 # Register your models here.
 
 from django.contrib.gis import admin
+from django.contrib.gis.db import models
 
 from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
 from elt.home3_admin import Home3Admin
 from elt.models import (
+    ExternalApiData,
     RawCaliResourceLevel,
     RawSfHeTableA,
     RawSfHeTableB,
@@ -17,6 +19,8 @@ from elt.models import (
     RawSfZoningHeightBulk,
 )
 from elt.models import RawSfParcelWrap
+from elt.widgets import JSONEditorWidget
+
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
 
@@ -174,3 +178,15 @@ class RawCaliResourceLevelAdmin(admin.GISModelAdmin):
         "region", "run_date"
     ]
     # fmt:on
+
+
+@admin.register(ExternalApiData)
+class ExternalApiDataAdmin(admin.ModelAdmin):
+    change_form_template = "elt/admin/home3_admin_change_form.html"
+    model = ExternalApiData
+    list_display = ["vendor", "created_at", "lookup_key", "hash_version"]
+    list_filter = ["vendor", "created_at", "lookup_key", "hash_version"]
+    readonly_fields = ["vendor", "created_at", "lookup_hash", "lookup_key", "hash_version"]
+    formfield_overrides = {
+        models.JSONField: {"widget": JSONEditorWidget},
+    }
