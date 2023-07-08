@@ -23,6 +23,13 @@ class Command(Home3Command):
             type=GisData,
             help="Data type to load (parcel, zoning, etc.)",
         )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Don't actually change anything - only supported with some commands",
+        )
 
     # def generate_meta_model(self, geo: Juri):
     #     model_cls = elt_models.__dict__[f"raw_{geo.name}_meta"]
@@ -40,10 +47,12 @@ class Command(Home3Command):
             case Juri.sf, GisData.reportall:
                 extract_from_shapefile(geo, gis_data_type)
             case Juri.sf, GisData.post:
-                postprocess_sf()
+                postprocess_sf(dry_run=options["dry_run"])
             # case Juri.sf, GisData.meta:
             #     self.generate_meta_model(geo)
             case Juri.sf, GisData.he:
+                extract_from_excel(geo, gis_data_type)
+            case Juri.sf, GisData.rentboard:
                 extract_from_excel(geo, gis_data_type)
             # California
             case Juri.california, GisData.resource_level:

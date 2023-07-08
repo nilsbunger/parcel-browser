@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.admin import ModelAdmin, helpers
 from django.contrib.admin.utils import flatten_fieldsets
 from django.contrib.gis import admin
+from django.contrib.gis.admin import GISModelAdmin
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.forms import Media
@@ -20,7 +21,7 @@ class Home3AdminForm(forms.ModelForm):
         raise forms.ValidationError("We don't allow changing geometry in the admin")
 
 
-class Home3Admin(ModelAdmin):
+class Home3Admin(GISModelAdmin):
     """Base class for admin pages. Handles special needs for GIS models, foreign key models, etc."""
 
     extra_inline_fields = []  # override in subclass for any foreign keys to display inline

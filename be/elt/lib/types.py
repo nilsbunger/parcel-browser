@@ -25,6 +25,7 @@ class GisData(Enum):
     road = "road"
     he = "he"  # housing element
     reportall = "reportall"
+    rentboard = "rentboard"
 
     # postprocess raw data -- create / update wrapper models, find duplicates, etc.
     post = "post"

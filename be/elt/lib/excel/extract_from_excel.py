@@ -1,21 +1,36 @@
-from math import isnan
+import copy
+from dataclasses import dataclass, field
 from datetime import date
+from functools import reduce
+from math import isnan
 import re
 import sys
+from typing import Callable
 
 from charset_normalizer.cli.normalizer import query_yes_no
-from django.db.models import Model
+from dateutil.parser import parse as date_parse
+from django.db import models
 from pandas import DataFrame, ExcelFile
 import pandas as pd
-from django.contrib.gis.db import models
 
 from elt.lib.elt_utils import batched, elt_model_with_run_date, get_elt_pipe_filenames, pipestage_prompt
 from elt.lib.types import GisData, Juri
-from dateutil.parser import parse as date_parse
-
 from parsnip.settings import BASE_DIR
 
 MODELS_DIR = BASE_DIR / "elt" / "models"
+
+
+def default_field(obj):
+    return field(default_factory=lambda: copy.deepcopy(obj))
+
+
+@dataclass(frozen=True)
+class ExcelParseArgs:
+    enum_cols: list[str] = default_field([])
+    int_cols: list[str] = default_field([])
+    skip_cols: list[str] = default_field([])
+    fn_cols: dict[str, Callable] = default_field([])
+    header_rows: list[int] = None
 
 
 def sanitize(name):
@@ -26,10 +41,13 @@ def sanitize(name):
     if str(name) == "nan":
         print("unexpected nan")
         raise ValueError("Unexpected nan - should be turned into None")
-    base = re.sub("[^A-Za-z0-9_\- ]", "_", str(name).strip().lower())
-    # convert multiple spaces, dashes, and underscores to an underscore
-    base = re.sub("[ _\-]+", "_", base)
-    base = re.sub("_$", "", base)  # remove trailing underscore
+    # remove non-alphanumeric characters, replacing them with an underscore
+    base = re.sub("[^A-Za-z0-9_\- ]", "_", str(name).strip())
+    # add an underscore in front of each capitalized word
+    base = re.sub("([^A-Z])([A-Z])", r"\1_\2", base)
+    # lowercase the result and convert multiple spaces, dashes, and underscores to an underscore
+    base = re.sub("[ _\-]+", "_", base.lower())
+    base = base.strip("_")  # remove leading or trailing underscore
     if base[0].isdigit():
         # first character is a digit - prepend an "A". Can't use underscore b/c Django converts it to spaces.
         base = "A" + base
@@ -50,77 +68,158 @@ def camelcase(name):
     m = sanitize(name)
     if m is None:
         return None
-    base_str = m.strip()
-    base_str = "".join(x.capitalize() for x in re.split("[ _]", base_str))
+    base_str = m.strip().capitalize()
+    # capitalize each word... but if we see a sequence of numbers, keep the underscores.
+    try:
+        base_str = reduce(
+            lambda s, t: s + (t.capitalize()) if t[0].isalpha() or s[-1].isalpha() else s + "_" + t,
+            re.split("[ _]", base_str),
+        )
+    except Exception as e:
+        print(f"Error processing {name}: {e}")
+        raise e
+    base_str = base_str
     return base_str
 
 
 pandas_field_to_db_field = {
     "object": "models.CharField(max_length=254, null=True, blank=True)",
     "int64": "models.IntegerField(null=True, blank=True)",
+    "Int64": "models.IntegerField(null=True, blank=True)",  # Int64 allows nulls, while int64 doesn't.
     "float64": "models.FloatField(null=True, blank=True)",
     "bool": "models.BooleanField(null=True, blank=True)",
+    "datetime64[ns]": "models.DateField(null=True, blank=True)",
 }
 
 
-def parse_sf_he(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
-    """Parse the SF HE data from excel. Called by extract_from_excel dynamically."""
-    match friendly_sheet_name:
-        case "table_a":
-            enum_cols = ["ex_gp_des", "ex_zoning", "ex_use_vac", "infra", "public", "site_stat", "id_last2", "opt1"]
-            int_cols = ["zip5"]
-            skip_cols = ["jurisdict"]
-            # remove dashes from parcel APN field
-            fn_cols = dict({"mapblklot": lambda x: x.replace("-", "") if type(x) == str else x})
-            header_rows = [1]
-        case "table_b":
-            # fmt:off
-            enum_cols = ['shortfall', 'ex_gp_type', 'ex_zoning', 'm1_gp_type', 'm2_gp_type', 'm3_gp_type',
-                         'm1_zoning', 'm2_zoning', 'm3_zoning', 'vacant', 'ex_use', 'infra']
-            int_cols = ["zip5"]
-            skip_cols = ["jurisdict"]
-            # remove dashes from parcel APN field
-            fn_cols = dict({"mapblklot": lambda x: x.replace("-", "") if type(x)==str else x})
-            header_rows = [1]
-            # fmt:on
-        case "table_c":
-            enum_cols = ["zoning_type"]
-            int_cols = []
-            skip_cols = []
-            fn_cols = dict()
-            header_rows = [2]
-        case _:
-            print(f"Unprocessed sheet: {full_sheet_name}")
-            return None
-    print(f"Processing Sheet {full_sheet_name} (aka {friendly_sheet_name})...")
-
-    df = pd.read_excel(xls, full_sheet_name, header=header_rows)
+def parse_excel(*, xls, full_sheet_name, friendly_sheet_name, parse_args: ExcelParseArgs):
+    """Parse excel file into a dataframe with processing like enum mapping and datatype munging."""
+    df = pd.read_excel(xls, full_sheet_name, header=parse_args.header_rows)
     orig_cols = list(df.columns)  # keep a copy of the original column names so we can compare
     # Sanitize column names
     df.rename(columns=lambda x: sanitize(x), inplace=True)
 
     cols = list(df.columns)
 
-    cols_to_check = enum_cols + skip_cols + int_cols
+    cols_to_check = parse_args.enum_cols + parse_args.skip_cols + parse_args.int_cols
     for col in cols_to_check:
         if col not in cols:
-            raise ValueError(f"Error: column {col} not found in {friendly_sheet_name}")
+            raise ValueError(f"Error: column {col} not found in sheet {friendly_sheet_name}. Columns are {cols}")
     # convert columns to appropriate type
     try:
-        df.drop(columns=skip_cols, inplace=True)
+        df.drop(columns=parse_args.skip_cols, inplace=True)
         col: str
-        for col in enum_cols:
+        for col in parse_args.fn_cols:
+            df[col] = df[col].map(parse_args.fn_cols[col])  # map applies a function to a column
+        for col in parse_args.enum_cols:
             df[col] = df[col].astype("category")
-        for col in int_cols:
+        for col in parse_args.int_cols:
             df[col] = df[col].astype("Int64")  # Int64 allows for nulls
-        for col in fn_cols:
-            df[col] = df[col].map(fn_cols[col])  # map applies a function to a column
     except Exception as e:
         print(f"Error processing sheet {friendly_sheet_name}: {e}")
         raise e
     print("df:", df)
     print("df datatypes:", [(x, df[x].dtype.name) for x in df.columns])
-    # Prompt.ask("Your choice? ", choices=prompt_options)
+    category_cols = [
+        df[col_name]
+        for col_name in df.columns
+        if getattr(df[col_name].dtype, "is_dtype", lambda x: False)("category")
+    ]
+    print("\nColumn names and types:")
+    print(df.dtypes)
+    print("\nCategory columns:")
+    for col in category_cols:
+        print(f"Column {col.name}: {len(col.cat.categories)} columns")
+        if len(col.cat.categories) < 20:
+            print(list(col.cat.categories))
+        else:
+            print("Too many categories to list")
+
+    return df
+
+
+def parse_sf_he(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
+    """Parse the SF HE data from excel. Called by extract_from_excel dynamically."""
+    match friendly_sheet_name:
+        case "table_a":
+            # fmt:off
+            parse_args = ExcelParseArgs(
+                enum_cols=[
+                    "ex_gp_des", "ex_zoning", "ex_use_vac", "infra", "public", "site_stat", "id_last2", "opt1"
+                ],
+                int_cols=["zip5"],
+                skip_cols=["jurisdict"],
+                # remove dashes from parcel APN field
+                fn_cols=dict({"mapblklot": lambda x: x.replace("-", "") if type(x) == str else x}),
+                header_rows=[1],
+            )
+            # fmt:on
+        case "table_b":
+            # fmt:off
+            parse_args = ExcelParseArgs(
+                enum_cols=['shortfall', 'ex_gp_type', 'ex_zoning', 'm1_gp_type', 'm2_gp_type', 'm3_gp_type',
+                           'm1_zoning', 'm2_zoning', 'm3_zoning', 'vacant', 'ex_use', 'infra'],
+                int_cols=["zip5"],
+                skip_cols=["jurisdict"],
+                # remove dashes from parcel APN field
+                fn_cols=dict({"mapblklot": lambda x: x.replace("-", "") if type(x) == str else x}),
+                header_rows=[1],
+            )
+            # fmt:on
+        case "table_c":
+            parse_args = ExcelParseArgs(enum_cols=["zoning_type"], header_rows=[2])
+        case _:
+            print(f"Unprocessed sheet: {full_sheet_name}")
+            return None
+    print(f"Processing Sheet {full_sheet_name} (aka {friendly_sheet_name})...")
+    df = parse_excel(
+        xls=xls, full_sheet_name=full_sheet_name, friendly_sheet_name=friendly_sheet_name, parse_args=parse_args
+    )
+    return df
+
+
+def parse_sf_rentboard(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
+    def parse_year(x):
+        if x == "Year unknown (no information available)":
+            return 0
+        elif x == "Year Unknown (more than 20 years)":
+            return 1
+        elif x == "Year Unknown (within past 10-20 years)":
+            return 2
+        elif x == "Year Unknown (within past 5-10 years)":
+            return 3
+        elif x == "Year Unknown (within past five years)":
+            return 4
+        elif isnan(x):
+            return None
+        try:
+            int(x)
+            return x
+        except ValueError:
+            print(f"something that won't parse as int in an int column:{x}")
+            return x
+
+    args = ExcelParseArgs(
+        # fmt:off
+        enum_cols=[
+            "case_type_name", "occupancy_type", "bedroom_count", "bathroom_count", "square_footage", "monthly_rent",
+            "base_rentinclude_utility", "month", "past_occupancy", "contact_association", "contact_type",
+        ],
+        # fmt:on
+        int_cols=["day", "year"],
+        skip_cols=["occupancy_date", "signature"],
+        fn_cols={
+            "bedroom_count": lambda x: "FivePlus" if x == "5+" else x,
+            "parcel_number": lambda x: x.replace("-", "") if type(x) == str else x,
+            "day": lambda x: None if x == "Day unknown" else x,
+            "year": parse_year,
+        },
+        header_rows=[0],
+    )
+
+    df = parse_excel(
+        xls=xls, full_sheet_name=full_sheet_name, friendly_sheet_name=friendly_sheet_name, parse_args=args
+    )
     return df
 
 
@@ -134,12 +233,12 @@ def generate_py_for_model(model_name_camel: str, sheet_df: DataFrame) -> str:
     header_lines = [
         "# Autogenerated by extract_from_excel.py",
         "from django.contrib.gis.db import models",
-        "from elt.models.create_sanitized import CreateSanitizedMixin",
+        "from elt.models.model_utils import SanitizedModelMixin",
         "",
-        f"class {model_name_camel}(CreateSanitizedMixin, models.Model):",
+        f"class {model_name_camel}(SanitizedModelMixin, models.Model):",
         f"    class Meta:",
-        f'        verbose_name = "{camel_to_verbose(model_name_camel)}"',
-        f'        verbose_name_plural = "{camel_to_verbose(model_name_camel)}"',
+        f'        verbose_name = "{camel_to_verbose(model_name_camel)} [Excel]"',
+        f'        verbose_name_plural = "{camel_to_verbose(model_name_camel)} [Excel]"',
     ]
     # main body lines
     lines = [f"    run_date = models.DateField()"]
@@ -150,15 +249,15 @@ def generate_py_for_model(model_name_camel: str, sheet_df: DataFrame) -> str:
         if dt.name in pandas_field_to_db_field:
             lines.append(f"    {col} = {pandas_field_to_db_field[dt.name]}")
         elif dt.name == "category":
-            # create text for a django class that represents the enum inside the model class
-            # get the enum values from the column
+            # create text for a django enum in the model class
+            # get the enum values from the pandas column
             enum_name = camelcase(f"{col}_enum")
             used_cats = set({})
             lines.append(f"    {col} = models.IntegerField(choices={enum_name}.choices, null=True, blank=True)")
             enum_lines.append(f"\n    class {enum_name}(models.IntegerChoices):")
             cat_mappings = dict({})
             for idx, cat in enumerate(sheet_df[col].cat.categories):
-                safe_cat = camelcase(cat)
+                safe_cat = sanitize(cat).upper()
                 cat_mappings[safe_cat] = cat
                 if safe_cat in used_cats:
                     print(f"WARNING: Skipping duplicate category: {cat}.(prev name={cat_mappings[safe_cat]}")
@@ -166,8 +265,7 @@ def generate_py_for_model(model_name_camel: str, sheet_df: DataFrame) -> str:
                     used_cats.add(safe_cat)
                     enum_lines.append(f"        {safe_cat} = {idx}")
         else:
-            print(f"ERROR: Unhandled data type: {dt}")
-            sys.exit(1)
+            raise ValueError(f"ERROR: Unhandled data type: {dt}")
     lines = header_lines + enum_lines + [""] + lines
     result = "\n".join(lines)
     return result + "\n"
@@ -183,15 +281,15 @@ def write_db_model_file(model_name, model_name_camel, sheet_df):
 
 def save_df_to_db(sheet_df: DataFrame, db_model: models.Model, run_date: date):
     """Save a dataframe to a django model"""
-    db_model_with_date: Model | None = elt_model_with_run_date(db_model.__name__, run_date)
+    db_model_with_date: models.Model | None = elt_model_with_run_date(db_model.__name__, run_date)
     assert db_model_with_date
     df_records = sheet_df.to_dict("records")
-    batch_size = 1000
+    batch_size = 10
     print(f"Saving {len(df_records)} records to {db_model_with_date.__name__} ({batch_size} at a time)...")
-    for batch in batched(df_records, batch_size):
+    for batch in batched(sheet_df.iterrows(), batch_size):
         print(".", end="")
         # noinspection PyCallingNonCallable
-        models = [db_model_with_date.create_sanitized(**record, run_date=run_date) for record in batch]
+        models = [db_model_with_date.create_sanitized(row, sheet_df, run_date=run_date) for idx, row in batch]
         try:
             db_model_with_date.objects.bulk_create(models)
         except Exception as e:

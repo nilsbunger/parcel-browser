@@ -3,7 +3,7 @@ from django.db.models import Count, F, Max, OuterRef, QuerySet, Subquery, Window
 from django.db.models.functions import RowNumber
 from django.forms import model_to_dict
 
-from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfParcel, RawSfReportall
+from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfParcel, RawSfRentboardHousingInv, RawSfReportall
 from elt.models.raw_sf_parcel_wrap import RawSfParcelWrap
 from parsnip.util import dict_del_keys
 
@@ -66,29 +66,75 @@ def check_parcel_wraps_sf():
 def latest_instances(model: models.Model, apn_field) -> QuerySet:
     """Get the latest instances (latest run_date) of a model for each apn."""
     latest_run_dates = model.objects.filter(**{apn_field: OuterRef(apn_field)}).order_by("-run_date")[:1]
-
     # Main query to get the instances with the latest run_date for each apn
     latest_instances = model.objects.filter(id__in=Subquery(latest_run_dates.values("id")))
 
     return latest_instances
 
 
-# Create missing links to ParcelWrap
-...
+def link_to_parcel_wrap_sf_many_to_one(model, apn_field, wrap_model_field, *, dry_run=False):
+    """Link instances of a model to corresponding RawSfParcelWrap instance. Create RawSfParcelWrap
+    if needed. This method is meant for models where there's a many-to-one relationship between the model and
+    RawSfParcelWrap, with the foreign key in the model. There's no check for uniqueness here."""
+
+    # Grab any instances of the model that don't have a link to a parcel wrap
+    unlinked_rows = model.objects.filter(**{wrap_model_field: None})
+    unlinked_apns = {getattr(inst, apn_field) for inst in unlinked_rows}
+    parcel_wraps = RawSfParcelWrap.objects.filter(apn__in=unlinked_apns)
+    print(
+        f"For model {model.__name__}, found {len(unlinked_rows)} unlinked entries (w/ {len(unlinked_apns)}"
+        f" unique apn's), and {len(parcel_wraps)} parcel wrap objects to link them to"
+    )
+    parcel_wrap_by_apn_dict = {parcel_wrap.apn: parcel_wrap for parcel_wrap in parcel_wraps}
+    print("Linking unlinked rows to parcel wraps...")
+    updated_rows = []
+    for idx, unlinked_row in enumerate(unlinked_rows):
+        if idx % 500 == 0:
+            print(".", end="")
+        unlinked_row_apn = getattr(unlinked_row, apn_field)
+        if unlinked_row_apn in parcel_wrap_by_apn_dict:
+            setattr(unlinked_row, wrap_model_field, parcel_wrap_by_apn_dict[unlinked_row_apn])
+        else:
+            print(f"Creating new parcel wrap for APN {unlinked_row_apn}")
+            if not dry_run:
+                parcel_wrap = RawSfParcelWrap.objects.create(apn=unlinked_row_apn)
+                setattr(unlinked_row, wrap_model_field, parcel_wrap)
+            else:
+                print(f"DRY RUN: Would've linked {unlinked_row} to new parcel wrap for apn={unlinked_row_apn}")
+            unlinked_row.save(update_fields=[wrap_model_field])
+        updated_rows.append(unlinked_row)
+
+    print("\nSaving updated rows...")
+    if not dry_run:
+        model.objects.bulk_create(
+            updated_rows,
+            batch_size=500,
+            update_conflicts=True,
+            unique_fields=["id"],
+            update_fields=[wrap_model_field],
+        )
+        print("Done saving updated rows")
+    else:
+        print(f"DRY RUN: Would have saved {len(updated_rows)} rows to parcel wraps")
 
 
-def link_to_parcel_wrap_sf(model, apn_field, wrap_model_field):
+def link_to_parcel_wrap_sf_one_to_one(model, apn_field, wrap_model_field):
     """Link the latest instances of a model to corresponding RawSfParcelWrap instance. Create RawSfParcelWrap
-    if needed."""
+    if needed.
+
+    This method makes two assumptions about the model:
+     * there's a one-to-one relationship between the model and RawSfParcelWrap w/ foreign key in RawSfParcelWrap.
+     * run_date,apn is unique for the model.
+    """
     print(f"Checking links from {model.__name__} to RawSfParcelWrap...")
-    # Get the latest instances of the model
+    # Get the latest instances of the model where it isn't linked from a parcel wrap foreign key.
     unlinked_rows = (
         latest_instances(model, apn_field)
-        .annotate(num_fk_references=Count("rawsfparcelwrap"))
+        .annotate(num_fk_references=Count("rawsfparcelwrap"))  # Count uses related model's foreign key.
         .filter(num_fk_references=0)
     )
-    missing_apns = {getattr(inst, apn_field) for inst in unlinked_rows}
-    parcel_wraps = RawSfParcelWrap.objects.filter(apn__in=missing_apns)
+    unlinked_apns = {getattr(inst, apn_field) for inst in unlinked_rows}
+    parcel_wraps = RawSfParcelWrap.objects.filter(apn__in=unlinked_apns)
     print(
         f"For model {model.__name__}, found {len(unlinked_rows)} latest unlinked APNs and {len(parcel_wraps)} "
         f"parcel wrap objects to link them to"
@@ -118,7 +164,7 @@ def link_to_parcel_wrap_sf(model, apn_field, wrap_model_field):
         print("DONE checking for unlinked APNs. No new links created")
 
 
-def postprocess_sf():
+def postprocess_sf(*, dry_run=False):
     """After loading raw data, this method does post-processing like:
     - creating the RawSfParcelWrap model
     - any other checks and post-processing to be identified
@@ -133,6 +179,7 @@ def postprocess_sf():
     # print(f"Found {len(table_a_apns)} apns in RawSfHeTableA")
     # print(f"Found {len(table_b_apns)} apns in RawSfHeTableB")
 
-    link_to_parcel_wrap_sf(RawSfHeTableA, "mapblklot", "he_table_a")
-    link_to_parcel_wrap_sf(RawSfHeTableB, "mapblklot", "he_table_b")
-    link_to_parcel_wrap_sf(RawSfReportall, "parcel_id", "reportall_parcel")
+    link_to_parcel_wrap_sf_many_to_one(RawSfRentboardHousingInv, "parcel_number", "rawsfparcelwrap", dry_run=dry_run)
+    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableA, "mapblklot", "he_table_a")
+    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableB, "mapblklot", "he_table_b")
+    link_to_parcel_wrap_sf_one_to_one(RawSfReportall, "parcel_id", "reportall_parcel")

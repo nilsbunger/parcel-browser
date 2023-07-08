@@ -2,6 +2,8 @@
 
 from django.contrib.gis import admin
 from django.contrib.gis.db import models
+from django.urls import reverse
+from django.utils.html import format_html
 
 from more_itertools import collapse
 
@@ -14,6 +16,7 @@ from elt.models import (
     RawSfHeTableB,
     RawSfHeTableC,
     RawSfParcel,
+    RawSfRentboardHousingInv,
     RawSfReportall,
     RawSfZoning,
     RawSfZoningHeightBulk,
@@ -43,16 +46,53 @@ class RawSfParcelAdmin(Home3Admin):
     search_fields = ["mapblklot", "blklot", "street_nam", "from_addre", "zoning_cod"]
 
 
+class RawSfRentboardHousingInvInline(admin.TabularInline):
+    model = RawSfRentboardHousingInv
+    extra = 0
+    fields = (
+        "unit_number",
+        "bedroom_count",
+        "bathroom_count",
+        "monthly_rent",
+        "year",
+        "occupancy_type",
+        "view_detail",
+    )
+    readonly_fields = ("view_detail",)
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def view_detail(self, obj):
+        """Provide a link to the detail view of the inline object."""
+        url = obj.get_admin_url()  # Get admin URL
+        return format_html('<a href="{}">View</a>', url)
+
+    view_detail.short_description = "View Detail"
+
+
 @admin.register(RawSfParcelWrap)
 class RawSfParcelWrapAdmin(Home3Admin):
     model = RawSfParcelWrap
     change_form_template = "elt/admin/home3_admin_change_form.html"
     fields = ["apn", ("parcel", "he_table_a", "he_table_b", "reportall_parcel")]
-    list_display = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    list_display = ["apn", "parcel", "rent_count", "he_table_a", "he_table_b", "reportall_parcel"]
     readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
 
     search_fields = ["apn", "parcel__street_nam", "parcel__from_addre", "parcel__zoning_cod", "parcel__street_typ"]
     extra_inline_fields = ["parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    inlines = [RawSfRentboardHousingInvInline]
+
+    def rent_count(self, obj):
+        return obj.rawsfrentboardhousinginv_set.count()
+
+    rent_count.short_description = "# rent reports"
 
 
 @admin.register(RawSfZoning)
@@ -167,7 +207,7 @@ class RawSfReportallAdmin(Home3Admin):
 
 
 @admin.register(RawCaliResourceLevel)
-class RawCaliResourceLevelAdmin(admin.GISModelAdmin):
+class RawCaliResourceLevelAdmin(Home3Admin):
     model = RawCaliResourceLevel
     list_display = ["cnty_nm", "region", "oppcat"]
 
@@ -190,3 +230,38 @@ class ExternalApiDataAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.JSONField: {"widget": JSONEditorWidget},
     }
+
+
+@admin.register(RawSfRentboardHousingInv)
+class RawSfRentBoardHousingInvAdmin(Home3Admin):
+    model = RawSfRentboardHousingInv
+    list_display = ["parcel_number", "unit_address", "unit_number", "monthly_rent", "email", "rawsfparcelwrap"]
+    search_fields = ["parcel_numer", "unit_address", "email"]
+    fields = ["rawsfparcelwrap"]
+    readonly_fields = [
+        "parcel_number",
+        "case_type_name",
+        "unit_number",
+        "unit_address",
+        "occupancy_type",
+        "bedroom_count",
+        "bathroom_count",
+        "square_footage",
+        "monthly_rent",
+        "base_rentinclude_utility",
+        "day",
+        "month",
+        "year",
+        "past_occupancy",
+        "contact_association",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "vacancy_date",
+        "contact_type",
+        "signature_date2",
+        "signature_date1",
+        "occupancy_or_vacancy",
+        "run_date",
+    ]
