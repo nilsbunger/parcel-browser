@@ -66,7 +66,7 @@ module.exports = {
     },
     variants: {},
     corePlugins: {
-        // preflight: false,   // disable Tailwind's resetting of styles
+        preflight: false,   // disable Tailwind's resetting of styles, it interferes with mantine.
     },
     plugins: [require("@tailwindcss/typography"), require("daisyui")],
     daisyui: {
@@ -96,13 +96,13 @@ module.exports = {
                     // neutral: "#C9C9C7",
                     // // "base-100": "var(--color-gray-wheat)",
                     //
-
+                    // DaisyUI css variables (ref: https://daisyui.com/docs/themes/#-5):
                     "--rounded-btn": "0.25rem",
                     "--rounded-box": "1rem", // border radius rounded-box utility class, used in card and other large boxes
                     "--rounded-badge": "1.9rem", // border radius rounded-badge utility class, used in badges and similar
                     "--animation-btn": "0.25s", // duration of animation when you click on button
                     "--animation-input": "0.2s", // duration of animation for inputs like checkbox, toggle, radio, etc
-                    "--btn-text-case": "uppercase", // set default text transform for buttons
+                    "--btn-text-case": "none", // set default text transform for buttons
                     "--btn-focus-scale": "0.95", // scale transform of button when you focus on it
                     "--border-btn": "1px", // border width of buttons
                     "--tab-border": "1px", // border width of tabs
