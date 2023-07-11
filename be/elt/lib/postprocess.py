@@ -36,7 +36,7 @@ def check_for_dupes_sf():
         print("No duplicates found")
 
 
-def check_parcel_wraps_sf():
+def check_parcel_wraps_sf(dry_run=False):
     """Check we have a parcel wrap entity for each parcel. If any are missing, create them."""
     print("Checking completeness of parcel wrap entities...")
     parcels = RawSfParcel.objects.only("blklot").all()
@@ -51,10 +51,11 @@ def check_parcel_wraps_sf():
     if missing_parcel_wraps:
         print("Creating missing ParcelWrap entities...")
         new_parcel_wraps = [RawSfParcelWrap(apn=apn) for apn in missing_parcel_wraps]
-        RawSfParcelWrap.objects.bulk_create(new_parcel_wraps, batch_size=500)
-        for apn in missing_parcel_wraps:
-            RawSfParcelWrap.objects.create(apn=apn)
-        print("Done creating bare parcel wraps")
+        if not dry_run:
+            RawSfParcelWrap.objects.bulk_create(new_parcel_wraps, batch_size=500)
+            print("Done creating bare parcel wraps")
+        else:
+            print(f"Would have created {len(missing_parcel_wraps)} bare parcel wraps")
     if missing_parcels:
         print(
             "Note: Use viewer to resolve ParcelWraps without Parcel. Could mean some outdated parcel references"
@@ -104,8 +105,8 @@ def link_to_parcel_wrap_sf_many_to_one(model, apn_field, wrap_model_field, *, dr
             unlinked_row.save(update_fields=[wrap_model_field])
         updated_rows.append(unlinked_row)
 
-    print("\nSaving updated rows...")
-    if not dry_run:
+    if not dry_run and updated_rows:
+        print("\nSaving updated rows...")
         model.objects.bulk_create(
             updated_rows,
             batch_size=500,
@@ -114,11 +115,13 @@ def link_to_parcel_wrap_sf_many_to_one(model, apn_field, wrap_model_field, *, dr
             update_fields=[wrap_model_field],
         )
         print("Done saving updated rows")
+    elif not updated_rows:
+        print("No rows to save")
     else:
         print(f"DRY RUN: Would have saved {len(updated_rows)} rows to parcel wraps")
 
 
-def link_to_parcel_wrap_sf_one_to_one(model, apn_field, wrap_model_field):
+def link_to_parcel_wrap_sf_one_to_one(model, apn_field, wrap_model_field, dry_run=False):
     """Link the latest instances of a model to corresponding RawSfParcelWrap instance. Create RawSfParcelWrap
     if needed.
 
@@ -147,19 +150,25 @@ def link_to_parcel_wrap_sf_one_to_one(model, apn_field, wrap_model_field):
         apn = getattr(model_inst, apn_field)
         updated_wraps.append(RawSfParcelWrap(apn=apn, **{wrap_model_field: model_inst}))
     if len(updated_wraps):
-        print("Writing updated links to DB...")
-        # Update RawSfParcelWrap with the latest instances, or create if one with the correct APN doesn't exist yet.
-        RawSfParcelWrap.objects.bulk_create(
-            updated_wraps,
-            batch_size=500,
-            update_conflicts=True,
-            unique_fields=["apn"],
-            update_fields=[wrap_model_field],
-        )
-        print(
-            f"Done adding links for model {model.__name__}. Updated or created {len(updated_wraps)} "
-            f"RawSfParcelWrap objects"
-        )
+        if not dry_run:
+            print("Writing updated links to DB...")
+            # Update RawSfParcelWrap with the latest instances, or create if one with the correct APN doesn't exist yet.
+            RawSfParcelWrap.objects.bulk_create(
+                updated_wraps,
+                batch_size=500,
+                update_conflicts=True,
+                unique_fields=["apn"],
+                update_fields=[wrap_model_field],
+            )
+            print(
+                f"\nDone adding links for model {model.__name__}. Updated or created {len(updated_wraps)} "
+                f"RawSfParcelWrap objects"
+            )
+        else:
+            print(
+                f"\nDRY RUN: Would've added {len(updated_wraps)} links for model {model.__name__} to "
+                f"RawSfParcelWrap objects"
+            )
     else:
         print("DONE checking for unlinked APNs. No new links created")
 
@@ -170,7 +179,7 @@ def postprocess_sf(*, dry_run=False):
     - any other checks and post-processing to be identified
     """
     check_for_dupes_sf()
-    check_parcel_wraps_sf()
+    check_parcel_wraps_sf(dry_run=dry_run)
     # print("\nMatching APNs in RawSfParcel (blklot), RawSfHeTableA (mapblklot), and RawSfHeTableB(mapblklot)...")
     # parcel_apns = set(RawSfParcel.objects.values_list("blklot", flat=True))
     # table_a_apns = set(RawSfHeTableA.objects.values_list("mapblklot", flat=True))
@@ -179,7 +188,12 @@ def postprocess_sf(*, dry_run=False):
     # print(f"Found {len(table_a_apns)} apns in RawSfHeTableA")
     # print(f"Found {len(table_b_apns)} apns in RawSfHeTableB")
 
-    link_to_parcel_wrap_sf_many_to_one(RawSfRentboardHousingInv, "parcel_number", "rawsfparcelwrap", dry_run=dry_run)
-    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableA, "mapblklot", "he_table_a")
-    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableB, "mapblklot", "he_table_b")
-    link_to_parcel_wrap_sf_one_to_one(RawSfReportall, "parcel_id", "reportall_parcel")
+    link_to_parcel_wrap_sf_many_to_one(
+        RawSfRentboardHousingInv, "parcel_number", wrap_model_field="rawsfparcelwrap", dry_run=dry_run
+    )
+    link_to_parcel_wrap_sf_one_to_one(RawSfParcel, "blklot", wrap_model_field="parcel", dry_run=dry_run)
+    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableA, "mapblklot", wrap_model_field="he_table_a", dry_run=dry_run)
+    link_to_parcel_wrap_sf_one_to_one(RawSfHeTableB, "mapblklot", wrap_model_field="he_table_b", dry_run=dry_run)
+    link_to_parcel_wrap_sf_one_to_one(
+        RawSfReportall, "parcel_id", wrap_model_field="reportall_parcel", dry_run=dry_run
+    )
