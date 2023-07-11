@@ -1,8 +1,6 @@
 import * as React from "react"
-import { useCallback, useEffect } from "react"
-
-import { Anchor, ScrollArea, Table } from "@mantine/core"
-import { Link, useParams } from "react-router-dom"
+import { useEffect } from "react"
+import { useParams } from "react-router-dom"
 import useSWR from "swr"
 import { fetcher } from "../utils/fetcher"
 import CollapsibleTree from "../components/CollapsibleTree"
@@ -25,16 +23,15 @@ export default function PropertyDetailPage() {
 
   return (
     <div>
-      <h1>Property detail page</h1>
-      <p>{addr}</p>
-      <p>
-        {data.address.city}, {data.address.state} {data.address.zip}
-      </p>
+        <h1>{addr}</h1>
+        <h3>
+          {data.address.city}, {data.address.state} {data.address.zip}
+        </h3>
 
       <div className="py-10">
-        <hr />
+        <hr/>
       </div>
-      <CollapsibleTree data={data} />
+      <CollapsibleTree data={data}/>
     </div>
   )
 }
