@@ -69,7 +69,7 @@ DEBUG = DEV_ENV and not TEST_ENV
 # NOTE: DEBUG is set to false within tests regardless of the value of DEBUG here.
 # profiling and debugging tools
 ENABLE_SILK = False and DEBUG  # DEV_ENV and not TEST_ENV
-ENABLE_DEBUG_TOOLBAR = False and DEBUG
+ENABLE_DEBUG_TOOLBAR = DEBUG
 
 
 eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
@@ -454,7 +454,7 @@ LOGGING = {
     },
     "root": {"handlers": log_handlers, "level": DJANGO_LOG_LEVEL},
     "loggers": {
-        "django.server": info_logger,
+        "django.server": debug_logger,
         "django.utils.autoreload": info_logger,
         "django.db.backends": info_logger,
         "silk": info_logger,
