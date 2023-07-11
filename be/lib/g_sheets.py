@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from enum import StrEnum
 import logging
 import re
-from typing import Type
+from typing import Type, cast
 
 from django.core.exceptions import ImproperlyConfigured
 from google.oauth2 import service_account
@@ -235,14 +235,14 @@ class GoogleSheet:
         print(column_starts)
         return column_starts
 
-    def named_ranges_to_polars_df(self, named_ranges: Iterable[str, Type]):
+    def named_ranges_to_polars_df(self, named_ranges: Iterable[str, Type]) -> pl.DataFrame:
         dfs = []
 
         for range_name, range_type in named_ranges:
-            # Get data from the named range
-            data = self.data_from_named_range(range_name, range_type)
+            # Get data from the named range - returns one or more columns
+            data: list[list[float | date]] = self.data_from_named_range(range_name, range_type)
 
-            # Create column names for the named range - multiple columns get _1, _2, etc appended
+            # Create polars column name(s) for the named range
             col_names = [range_name] if len(data[0]) == 1 else [f"{range_name}_{i}" for i in range(len(data[0]))]
 
             # Create a Polars DataFrame for the named range
@@ -283,7 +283,10 @@ class RentRollSheet(GoogleSheet):
                 return rent_roll_dframe
         found_named_ranges = set(self.list_named_ranges())
         assert self.rent_roll_named_range_set.issubset(found_named_ranges)
-        self.rent_roll_df = self.named_ranges_to_polars_df(self.rent_roll_named_range_dict.items())
+        # cast due to pycharm issue? dict_items are iterable...
+        self.rent_roll_df = self.named_ranges_to_polars_df(
+            cast(Iterable[str, Type], self.rent_roll_named_range_dict.items())
+        )
         log.info(f"Rent Roll (cache missed): for {self._sheet_id}")
         if django_cache:
             django_cache.set("rent_roll_dframe_" + self._sheet_id, self.rent_roll_df)

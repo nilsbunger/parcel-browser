@@ -3,12 +3,11 @@ import sesame.utils
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.urls import reverse
+from lib.ninja_api import ApiResponseSchema
 from ninja import ModelSchema, NinjaAPI, Schema
 from ninja.errors import ValidationError
 from ninja.security import django_auth
 from pydantic import EmailStr, constr
-
-from lib.ninja_api import ApiResponseSchema
 
 from .lib import send_magic_link_email
 from .models import User
