@@ -2,14 +2,25 @@
   "strict": true,
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "strict": true,
     "target": "ESNext",
     "moduleResolution": "node",
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": false,
-    "typeRoots": ["node_modules/@silevis/reactgrid/dist/types"],
-    "include": ["node_modules/@silevis/reactgrid/dist/reactgrid.d.ts"]
-  }
+    "typeRoots": [
+      "node_modules/@types",
+      "node_modules/@silevis/reactgrid/dist/types"
+    ]
+  },
+  "include": [
+    "src/**/*.tsx",
+    "src/**/*.ts",
+    "node_modules/@silevis/reactgrid/dist/reactgrid.d.ts"
+  ]
 }

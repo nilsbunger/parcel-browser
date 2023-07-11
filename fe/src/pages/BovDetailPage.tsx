@@ -8,7 +8,6 @@ import PropertyFilters from "../components/PropertyFilters";
 import { Dropzone, MIME_TYPES } from "@mantine/dropzone"
 import { Box, Flex, Group, LoadingOverlay, rem, Table, Text, useMantineTheme } from "@mantine/core"
 import { IconPhoto, IconTable, IconUpload, IconX } from "@tabler/icons"
-import { useDisclosure } from "@mantine/hooks"
 
 // React data grid: https://github.com/adazzle/react-data-grid/blob/main/README.md
 // interface Row {
@@ -77,15 +76,14 @@ export default function BovDetailPage() {
   // get property profiles
 
   useEffect(() => {
-    setShowFinancials(true) // TODO: remove later.
     if (rrFilename && t12Filename) {
       setFinancialsLoading(true)
       setTimeout(() => {
         setShowFinancials(true)
-      }, 4500)
+        setFinancialsLoading(false)
+      }, 2500)
     }
   }, [rrFilename, t12Filename])
-
   useEffect(() => {
     document.title = `BOV ${id}`
   }, [id])
@@ -107,6 +105,7 @@ export default function BovDetailPage() {
       <div className="py-5">
         <h1>BOV </h1>
         <h2 className="mt-10 mb-5">Financials</h2>
+        {/* Table of uploaded files */}
         <Table maw={700}>
           <thead>
           <tr>
@@ -117,16 +116,16 @@ export default function BovDetailPage() {
           </tr>
           </thead>
           <tbody>
-          {/*{rrFilename && (*/}
-          {/*  <tr onClick={onClickrr}>*/}
-          {/*    <td>*/}
-          {/*      <IconTable color="#1D6F42" className="inline mr-2"/> {rrFilename}*/}
-          {/*    </td>*/}
-          {/*    <td>Rent roll</td>*/}
-          {/*    <td>3/31/2023</td>*/}
-          {/*    <td>5/9/2023</td>*/}
-          {/*  </tr>*/}
-          {/*)}*/}
+          {rrFilename && (
+            <tr onClick={() => console.log("Click on rent roll entry")}>
+              <td>
+                <IconTable color="#1D6F42" className="inline mr-2"/> {rrFilename}
+              </td>
+              <td>Rent roll</td>
+              <td>3/31/2023</td>
+              <td>5/9/2023</td>
+            </tr>
+          )}
           {t12Filename && (
             <tr>
               <td>
@@ -180,7 +179,7 @@ export default function BovDetailPage() {
             </div>
           </Box>
         )}
-        {showFinancials && !financialsLoading && <span/>}
+        {showFinancials && !financialsLoading && <h3>Todo... show financials here </h3>}
         <h2 className="my-10">3. Review your BOV</h2>
         <h2 className="my-10">4. Send to client</h2>
       </div>
