@@ -8,6 +8,8 @@
     "moduleResolution": "node",
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "typeRoots": ["node_modules/@silevis/reactgrid/dist/types"],
+    "include": ["node_modules/@silevis/reactgrid/dist/reactgrid.d.ts"]
   }
 }

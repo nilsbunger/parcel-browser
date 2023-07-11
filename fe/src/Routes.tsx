@@ -20,6 +20,7 @@ const PropertyDetailPage = lazy(() => import("./pages/PropertyDetailPage"))
 const NewPropertyPage = lazy(() => import("./pages/NewPropertyPage"))
 
 const BovDetailPage = lazy(() => import("./pages/BovDetailPage"))
+const ReactGridDetailPage = lazy(() => import("./pages/ReactGridDetailPage"))
 
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"))
 
@@ -60,6 +61,7 @@ export function MyRoutes() {
                 <Route path="rental-rates" element={<RentalRatesPage />} />
                 <Route path="map" element={<CoMapPage />} />
                 <Route path="bov/:id" element={<BovDetailPage />} />
+                <Route path="reactgrid/:id" element={<ReactGridDetailPage />} />
                 <Route path="properties" element={<PropertiesPage />} />
                 <Route path="properties/new" element={<NewPropertyPage />} />
                 <Route path="properties/:id" element={<PropertyDetailPage />} />

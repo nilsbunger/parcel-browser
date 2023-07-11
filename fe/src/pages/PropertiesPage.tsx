@@ -127,10 +127,10 @@ const DropdownRangeButton = ({ options, onSelectionChange }) => {
         />
         <div className="flex-grow mx-2">
           <Slider range
-            min={0}
-            max={100}
-            value={[minValue, maxValue]}
-            onChange={handleSliderChange}
+                  min={0}
+                  max={100}
+                  value={[minValue, maxValue]}
+                  onChange={handleSliderChange}
           />
         </div>
         <input
@@ -245,12 +245,14 @@ export default function PropertiesPage() {
     )
   })
 
-  return (
-    <ScrollArea>
+  return (<>
       <div className="flex flex-row">
         <div className="flex-grow text-right">
           <Link to={{ pathname: `/bov/1` }} className="btn btn-primary btn-sm mr-4">
             BOV example
+          </Link>
+          <Link to={{ pathname: '/reactgrid/1' }} className="btn btn-primary btn-sm mr-4">
+            ReactGrid example
           </Link>
           <Link to={{ pathname: `/properties/new` }} className="btn btn-primary btn-sm">
             ADD...
@@ -261,16 +263,18 @@ export default function PropertiesPage() {
       </div>
       {/*<FilterRow columns={["address", "entity"]} onFilterChange={(filters: any) => console.log(filters)}/>*/}
       <Testbed/>
-      <Table sx={{ minWidth: 800 }} verticalSpacing="xs">
-        <thead>
-        <tr>
-          <th>ID</th>
-          <th>Address</th>
-          <th>Entity</th>
-        </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </Table>
-    </ScrollArea>
+      <ScrollArea type="auto">
+        <Table verticalSpacing="xs">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Address</th>
+            <th>Entity</th>
+          </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </Table>
+      </ScrollArea>
+    </>
   )
 }

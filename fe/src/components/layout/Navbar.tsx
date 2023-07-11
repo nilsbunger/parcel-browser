@@ -52,7 +52,7 @@ function mobileMenu({ isAuthenticated, user }: { isAuthenticated: boolean, user:
                   )}
                 </Disclosure.Button>
                 <div className="pt-1">
-                  <Link to="/" >
+                  <Link to="/">
                     <Home3Logo/>
                   </Link>
                 </div>
@@ -119,7 +119,7 @@ function mobileMenu({ isAuthenticated, user }: { isAuthenticated: boolean, user:
 function desktopMenu({ isAuthenticated, user }: { isAuthenticated: boolean, user: any }) {
   return (
     <nav className="mx-auto hidden md:block">
-      <div className="flex items-center justify-between h-16">
+      <div className="flex items-center justify-between h-16 min-w-0">
         <div className="flex items-center">
           {/* Logo:*/}
           <Link to="/">
@@ -211,9 +211,11 @@ export default function Navbar() {
   return (
     <>
       <div className="h-1 w-full bg-acc"></div>
-      <div className="md:container px-8 lg:px-16 py-2 mx-auto">
-        {desktopMenu({ isAuthenticated, user })}
-        {mobileMenu({ isAuthenticated, user })}
+      <div className="md:container px-8 lg:px-16 py-2">
+        <div className="max-w-full">
+          {desktopMenu({ isAuthenticated, user })}
+          {mobileMenu({ isAuthenticated, user })}
+        </div>
       </div>
     </>
   )
