@@ -1,10 +1,9 @@
 # Register your models here.
-
+from django.contrib.admin import EmptyFieldListFilter, FieldListFilter, SimpleListFilter
 from django.contrib.gis import admin
 from django.contrib.gis.db import models
-from django.urls import reverse
+from django.db.models import Count, Prefetch
 from django.utils.html import format_html
-
 from more_itertools import collapse
 
 from elt.admin_utils import InlineRenderedAdminMixin
@@ -16,16 +15,37 @@ from elt.models import (
     RawSfHeTableB,
     RawSfHeTableC,
     RawSfParcel,
+    RawSfParcelWrap,
     RawSfRentboardHousingInv,
     RawSfReportall,
     RawSfZoning,
     RawSfZoningHeightBulk,
 )
-from elt.models import RawSfParcelWrap
 from elt.widgets import JSONEditorWidget
 
 
 # Registering models: https://docs.djangoproject.com/en/4.2/ref/contrib/admin/#modeladmin-objects
+class RawSfParcelWrapInline(admin.StackedInline):
+    model = RawSfParcelWrap
+    extra = 0
+    fields = ("parcel_wrap_link",)
+    readonly_fields = ("parcel_wrap_link",)
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def parcel_wrap_link(self, obj):
+        """Provide a link to the detail view of the inline object."""
+        url = obj.get_admin_url()  # Get admin URL
+        return format_html('<a href="{}">{}</a>', url, obj.apn)
+
+    parcel_wrap_link.short_description = "Parcel Wrap"
 
 
 @admin.register(RawSfParcel)
@@ -44,6 +64,7 @@ class RawSfParcelAdmin(Home3Admin):
     fields = list(_fieldlist)
     readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
     search_fields = ["mapblklot", "blklot", "street_nam", "from_addre", "zoning_cod"]
+    inlines = [RawSfParcelWrapInline]
 
 
 class RawSfRentboardHousingInvInline(admin.TabularInline):
@@ -77,17 +98,74 @@ class RawSfRentboardHousingInvInline(admin.TabularInline):
     view_detail.short_description = "View Detail"
 
 
+class RentCountFilter(SimpleListFilter):
+    title = "rent_count"
+    parameter_name = "rent_count"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("0", "0"),
+            ("1", "1 or more"),
+            ("2", "2 or more"),
+            ("5", "5 or more"),
+            ("10", "10 or more"),
+            ("20", "20 or more"),
+            ("50", "50 or more"),
+            ("100", "100 or more"),
+            ("200", "200 or more"),
+        ]
+
+    def queryset(self, request, queryset):
+        # cats = A.objects.annotate(num_b=Count('b')).filter(num_b__lt=2)
+        if self.value() is None:
+            return queryset
+        val = int(self.value())
+        if val == 0:
+            return queryset.annotate(num=Count("rawsfrentboardhousinginv")).filter(num=0)
+        else:
+            return queryset.annotate(num=Count("rawsfrentboardhousinginv")).filter(num__gte=val)
+
+
 @admin.register(RawSfParcelWrap)
 class RawSfParcelWrapAdmin(Home3Admin):
     model = RawSfParcelWrap
-    change_form_template = "elt/admin/home3_admin_change_form.html"
-    fields = ["apn", ("parcel", "he_table_a", "he_table_b", "reportall_parcel")]
-    list_display = ["apn", "parcel", "rent_count", "he_table_a", "he_table_b", "reportall_parcel"]
-    readonly_fields = ["apn", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    fields = ["apn", "rent_count", ("parcel", "he_table_a", "he_table_b", "reportall_parcel")]
+    list_display = ["apn", "rent_count", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    readonly_fields = ["apn", "rent_count", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
 
     search_fields = ["apn", "parcel__street_nam", "parcel__from_addre", "parcel__zoning_cod", "parcel__street_typ"]
     extra_inline_fields = ["parcel", "he_table_a", "he_table_b", "reportall_parcel"]
     inlines = [RawSfRentboardHousingInvInline]
+    list_filter = [
+        ("parcel", EmptyFieldListFilter),
+        ("he_table_a", EmptyFieldListFilter),
+        ("he_table_b", EmptyFieldListFilter),
+        ("reportall_parcel", EmptyFieldListFilter),
+        RentCountFilter,
+    ]
+
+    def get_queryset(self, request):
+        """Queryset for the list view, prefetching related data for list view.
+        By default this would be
+        """
+        qs = super().get_queryset(request)
+        if getattr(request, "list_view", False):
+            # We're in the list view, so be careful about fetching data.
+
+            qs = (
+                qs.select_related("parcel", "he_table_a", "he_table_b", "reportall_parcel")
+                .prefetch_related(
+                    Prefetch("rawsfrentboardhousinginv_set", queryset=RawSfRentboardHousingInv.objects.all())
+                )
+                .only(
+                    "apn", "parcel__blklot", "he_table_a__mapblklot", "he_table_b__mapblklot", "reportall_parcel_id"
+                )
+            )
+            # .prefetch_related("rawsfrentboardhousinginv_set")
+        else:
+            # we're not in list view (eg in change view), so fetch all data.
+            qs = qs.select_related("parcel", "he_table_a", "he_table_b", "reportall_parcel")
+        return qs
 
     def rent_count(self, obj):
         return obj.rawsfrentboardhousinginv_set.count()
@@ -98,14 +176,14 @@ class RawSfParcelWrapAdmin(Home3Admin):
 @admin.register(RawSfZoning)
 class RawSfZoningAdmin(InlineRenderedAdminMixin, Home3Admin):
     list_display = ["codesection", "districtname", "gen", "url", "zoning", "zoning_sim"]
-    fields = (("zoning", "zoning_sim"), ("codesection", "districtname"), ("gen", "url"))
+    fields = (("zoning", "zoning_sim"), ("codesection", "districtname"), ("gen", "url"), "geom")
     readonly_fields = ("codesection", "districtname", "gen", "url", "zoning", "zoning_sim")
 
 
 @admin.register(RawSfZoningHeightBulk)
 class RawSfZoningHeightBulkAdmin(InlineRenderedAdminMixin, Home3Admin):
     list_display = ["gen_height", "height"]
-    fields = ["gen_height", "height"]
+    fields = ["gen_height", "height", "geom"]
     readonly_fields = ["gen_height", "height"]
     search_fields = ["gen_height", "height"]
 
@@ -129,6 +207,7 @@ class RawSfHeTableAAdmin(InlineRenderedAdminMixin, Home3Admin):
     # fmt:on
     fields = _fieldlist
     readonly_fields = list(collapse(_fieldlist))
+    inlines = [RawSfParcelWrapInline]
 
 
 @admin.register(RawSfHeTableB)
@@ -172,7 +251,7 @@ class RawSfReportallAdmin(Home3Admin):
     model = RawSfReportall
     # fmt:off
     _fieldlist = [
-        ("situs","parcel_id","acreage","calc_acrea"),
+        ("situs", "parcel_id", "acreage", "calc_acrea"),
         "geom",
         ("owner", "owner_occ",),
         ("land_use_class", "land_us_01"),
@@ -184,7 +263,7 @@ class RawSfReportallAdmin(Home3Admin):
         ("m_statenm", "m_country", "m_placenm"),
         ("m_subocc", "m_uspsbox", "m_zipcode"),
         ("mail_name", "mail_address", "mail_ad_01", "mail_ad_02"),
-        ("muni_name", "state_abbr","school_dis"),
+        ("muni_name", "state_abbr", "school_dis"),
         ("situs_city", "situs_zip", "situs_zip4", "zip_code"),
         ("usps_resid", "routing_nu"),
         ("zoning", "zone_subty"),
@@ -196,7 +275,7 @@ class RawSfReportallAdmin(Home3Admin):
         ("census_pla", "county_fip", "county_nam", "cty_row_id"),
         ("addr_number", "addr_se_01", "addr_sec_u", "addr_st_01", "addr_st_02", "addr_st_03", "addr_street"),
         ("robust_id", "last_updat", "run_date")
-]
+    ]
     # fmt:on
     fields = list(_fieldlist)
     readonly_fields = list(collapse(set(_fieldlist) - {"geom"}))
@@ -237,8 +316,9 @@ class RawSfRentBoardHousingInvAdmin(Home3Admin):
     model = RawSfRentboardHousingInv
     list_display = ["parcel_number", "unit_address", "unit_number", "monthly_rent", "email", "rawsfparcelwrap"]
     search_fields = ["parcel_numer", "unit_address", "email"]
-    fields = ["rawsfparcelwrap"]
+    # fields = ["rawsfparcelwrap"]
     readonly_fields = [
+        "rawsfparcelwrap",
         "parcel_number",
         "case_type_name",
         "unit_number",
@@ -265,3 +345,8 @@ class RawSfRentBoardHousingInvAdmin(Home3Admin):
         "occupancy_or_vacancy",
         "run_date",
     ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.select_related("rawsfparcelwrap")
+        return qs

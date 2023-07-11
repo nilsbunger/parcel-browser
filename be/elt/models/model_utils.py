@@ -46,12 +46,17 @@ class SanitizedModelMixin:
         return field_text
 
     def __str__(self) -> str:
-        """Return a string representation of the model instance for admin"""
+        """Return a string representation of the model instance. Fill in fields that are fetched already"""
         clsname = self.__class__.__name__
         format_entry = raw_str.get(clsname)
         if not format_entry:
             return super().__str__()
-        values = [self._get_field_display_value(fieldname) for fieldname in format_entry[1:]]
+        values = []
+        for fieldname in format_entry[1:]:
+            if fieldname in self.__dict__:  # the field has been fetched
+                values.append(self._get_field_display_value(fieldname))
+            else:
+                values.append(f"<{fieldname} not fetched>")
         return f"{format_entry[0].format(*values)}"
 
     def __new__(cls, *args, **kwargs):
@@ -108,4 +113,4 @@ class SanitizedModelMixin:
 
     def get_admin_url(self):
         """Return the admin URL. Used by admin inlines."""
-        return reverse("admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name), args=[self.id])
+        return reverse("admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name), args=[self.pk])

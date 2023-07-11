@@ -95,13 +95,20 @@ class Home3Admin(GISModelAdmin):
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         # Optimize the number of DB queries by prefetching related models
-        if self.extra_inline_fields:
-            queryset = queryset.select_related(*self.extra_inline_fields)
+        # if self.extra_inline_fields:
+        #     queryset = queryset.select_related(*self.extra_inline_fields)
         return queryset
 
     def has_delete_permission(self, request, obj=None):
         """By default don't allow deletes"""
         return False
+
+    def changelist_view(self, request, extra_context=None):
+        """Add an attribute to the request to signify that we are in the list view. Used in
+        get_queryset of each admin to change queries for list view vs change view.
+        """
+        request.list_view = True
+        return super().changelist_view(request, extra_context)
 
     def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
         """Render the change form, including inline forms for related models by foreign key or by GIS geo"""
@@ -110,9 +117,10 @@ class Home3Admin(GISModelAdmin):
         inline_forms = {}
         inline_media = Media()
         for extra_field in self.extra_inline_fields:
-            model = getattr(obj, extra_field)
-            if not model:
+            model_attr = getattr(obj, extra_field)
+            if not model_attr:
                 continue
+            model = model_attr.__class__.objects.get(pk=model_attr.pk)
             model_admin = self.admin_site._registry[model.__class__]
             fieldsets = model_admin.get_fieldsets(request, model)
             ModelForm = model_admin.get_form(request, model, change=True, fields=flatten_fieldsets(fieldsets))
