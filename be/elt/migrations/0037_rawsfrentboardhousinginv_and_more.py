@@ -274,7 +274,7 @@ class Migration(migrations.Migration):
                 "verbose_name": "Raw Sf Rentboard Housing Inv [Excel]",
                 "verbose_name_plural": "Raw Sf Rentboard Housing Inv [Excel]",
             },
-            bases=(elt.models.model_utils.SanitizedModelMixin, models.Model),
+            bases=(elt.models.model_utils.SanitizedRawModelMixin, models.Model),
         ),
         migrations.AlterModelOptions(
             name="rawsfparcelwrap",

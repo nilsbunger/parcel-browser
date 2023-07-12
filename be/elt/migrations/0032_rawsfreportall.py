@@ -104,6 +104,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "Raw SF Reportall [Shapefile]",
                 "verbose_name_plural": "Raw SF Reportall [Shapefile]",
             },
-            bases=(elt.models.model_utils.SanitizedModelMixin, models.Model),
+            bases=(elt.models.model_utils.SanitizedRawModelMixin, models.Model),
         ),
     ]

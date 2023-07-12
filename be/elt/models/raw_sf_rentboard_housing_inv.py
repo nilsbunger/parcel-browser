@@ -2,10 +2,10 @@
 from django.contrib.gis.db import models
 
 from elt.models import RawSfParcelWrap
-from elt.models.model_utils import SanitizedModelMixin
+from elt.models.model_utils import SanitizedRawModelMixin
 
 
-class RawSfRentboardHousingInv(SanitizedModelMixin, models.Model):
+class RawSfRentboardHousingInv(SanitizedRawModelMixin, models.Model):
     class Meta:
         verbose_name = "Raw Sf Rentboard Housing Inv [Excel]"
         verbose_name_plural = "Raw Sf Rentboard Housing Inv [Excel]"

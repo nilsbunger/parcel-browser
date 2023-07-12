@@ -1,10 +1,10 @@
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
 
-from elt.models.model_utils import SanitizedModelMixin
+from elt.models.model_utils import SanitizedRawModelMixin
 
 
-class RawSfReportall(SanitizedModelMixin, models.Model):
+class RawSfReportall(SanitizedRawModelMixin, models.Model):
     class Meta:
         verbose_name = "Raw SF Reportall [Shapefile]"
         verbose_name_plural = "Raw SF Reportall [Shapefile]"

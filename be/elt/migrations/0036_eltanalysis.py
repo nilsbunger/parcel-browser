@@ -36,6 +36,6 @@ class Migration(migrations.Migration):
                 "verbose_name": "ELT Analysis",
                 "verbose_name_plural": "ELT Analyses",
             },
-            bases=(elt.models.model_utils.SanitizedModelMixin, models.Model),
+            bases=(elt.models.model_utils.SanitizedRawModelMixin, models.Model),
         ),
     ]

@@ -2,10 +2,10 @@ from django.contrib.gis.db import models
 
 from elt.lib.types import EltAnalysisEnum, Juri
 from elt.models import RawSfParcel, RawSfParcelWrap
-from elt.models.model_utils import SanitizedModelMixin
+from elt.models.model_utils import SanitizedRawModelMixin
 
 
-class EltAnalysis(SanitizedModelMixin, models.Model):
+class EltAnalysis(SanitizedRawModelMixin, models.Model):
     class Meta:
         verbose_name = "ELT Analysis"
         verbose_name_plural = "ELT Analyses"
