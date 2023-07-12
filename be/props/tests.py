@@ -15,12 +15,30 @@ class TestProperty:
         assert x.geometry.coordinates.long == -122.147775
 
 
+def _json_post(self, path: str, data: str, exp_status=200) -> dict:
+    resp = self.post(path, data=data, content_type="application/json", secure=True)
+    assert resp.status_code == exp_status
+    return resp.json()
+
+
+def _json_get(self, path: str, data: str = None, exp_status=200) -> dict:
+    resp = self.get(path, data=data, content_type="application/json", secure=True)
+    assert resp.status_code == exp_status
+    return resp.json()
+
+
 @pytest.fixture()
 def client_and_user(django_user_model, client):
     from django.contrib.auth import get_user_model
 
     user = get_user_model().objects.create_user(email="testuser@test.home3.co", password="testpassword")
     assert client.login(email="testuser@test.home3.co", password="testpassword")
+    client.defaults["content_type"] = "application/json"
+    client.defaults["secure"] = True
+
+    client_cls = type(client)
+    client_cls.json_post = _json_post
+    client_cls.json_get = _json_get
     yield client, user
 
     client.logout()
@@ -29,48 +47,34 @@ def client_and_user(django_user_model, client):
 
 class TestApi:
     @pytest.mark.django_db
-    def test_create_property_api(self, client_and_user, create_new_property_request: Callable):
+    def test_create_property_api(self, client_and_user, create_new_property_req):
         client, user = client_and_user
         # NOTE: have to hardcode URL - can't use reverse() when there is a get and post at same location.
-        response = client.post(
-            "/api/properties/profiles",
-            data=create_new_property_request("1389 La Honda Rd"),
-            content_type="application/json",
-            secure=True,
-        )
-        assert response.status_code == 200
-        result = response.json()
-        assert result == {"errors": False, "message": "Property created", "data": {"id": 1}}
-        response = client.post(
-            "/api/properties/profiles",
-            data=create_new_property_request("1390 La Honda Rd"),
-            content_type="application/json",
-            secure=True,
-        )
-        assert response.status_code == 200
-        assert response.json() == {"errors": False, "message": "Property created", "data": {"id": 2}}
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1389 La Honda Rd"))
+        assert resp == {"errors": False, "message": "Property created", "data": {"id": 1}}
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1390 La Honda Rd"))
+        assert resp == {"errors": False, "message": "Property created", "data": {"id": 2}}
+        # using same address a second time should result in same property id.
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1390 La Honda Rd"))
+        assert resp == {"errors": False, "message": "Property created", "data": {"id": 2}}
         # response = api._create_property(request, data=create_new_property_request)
 
     def test_list_properties_api(self, client_and_user, dummy_properties):
         # Test the list-properties API
         client, user = client_and_user
         path = "/api/properties/profiles"
-        response = client.get(path, secure=True)
-        assert response.status_code == 200
-        result = response.json()
-        assert len(result) == 10
+        resp = client.json_get(path)
+        assert len(resp) == 10
         # check that related model got pulled
-        assert result[5]["address"]["street_addr"] == "6 Dummy Rd"
+        assert resp[5]["address"]["street_addr"] == "6 Dummy Rd"
 
     def test_get_property_api(self, client_and_user, dummy_properties):
         # Test the get-property API
         client, user = client_and_user
         prop_under_test = dummy_properties[3]
         path = f"/api/properties/profiles/{prop_under_test.id}"
-        response = client.get(path, secure=True)
-        assert response.status_code == 200
-        result = response.json()
-        assert result["address"]["street_addr"] == "4 Dummy Rd"
+        resp = client.json_get(path)
+        assert resp["address"]["street_addr"] == "4 Dummy Rd"
 
     def test_get_property_no_exist(self, client_and_user, dummy_properties):
         # Test the get-property API
@@ -81,9 +85,7 @@ class TestApi:
 
         prop_under_test = dummy_properties[3]  # noqa: F841 - unused variable
         path = f"/api/properties/profiles/9999999"
-        response = client.get(path, secure=True)
-        assert response.status_code == 404
-        result = response.json()  # noqa: F841 - unused variable
+        response = client.json_get(path, exp_status=404)  # noqa: F841 - unused variable
 
 
 ####################
@@ -117,7 +119,7 @@ def create_user(db, django_user_model):
 
 
 @pytest.fixture
-def create_new_property_request():
+def create_new_property_req():
     """Return a method that takes an address so we can test different addresses"""
 
     def _inner(addr: str):

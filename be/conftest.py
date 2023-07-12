@@ -1,6 +1,10 @@
+import logging
+
 import pytest
 from django.core.management import call_command
 from parsnip.settings import BASE_DIR
+
+log = logging.getLogger(__name__)
 
 ## Disable monkeypatching of network calls. It interferes with Response mocking (eg in test_attom_api.py)
 # # Don't allow network calls during test. Cool use of monkeypatch. Saw on Real Python.
@@ -27,7 +31,7 @@ def django_db_setup(django_db_setup, django_db_blocker):
     # See https://pytest-django.readthedocs.io/en/latest/database.html#django-db-setup for more info
 
     with django_db_blocker.unblock():
-        print("Adding parcel / roads / zoning fixtures")
+        logging.info("Adding parcel / roads / zoning fixtures")
         call_command("loaddata", BASE_DIR / "world/test_fixtures/parcel_data.yaml")
         call_command("loaddata", BASE_DIR / "world/test_fixtures/roads_data.yaml")
         call_command("loaddata", BASE_DIR / "world/test_fixtures/analyzed_road_data.yaml")

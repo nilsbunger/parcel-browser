@@ -3,12 +3,13 @@ import logging
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-ALLOWED_USER_CREATION_DOMAINS = ["home3.co"]
+ALLOWED_USER_CREATION_DOMAINS = ["home3.co", "test.home3.co"]
 log = logging.getLogger(__name__)
 
 
@@ -50,7 +51,8 @@ class MyUserManager(BaseUserManager):
             user.set_password(password)
             user.save(using=self._db)
             return user
-        log.error(f"Request to create account from email {email}")
+        log.error(f"Denied request to create account from email {email}")
+        raise ValidationError("We can't create an account with that email")
 
 
 class User(AbstractBaseUser, PermissionsMixin):
