@@ -42,11 +42,11 @@ class UserSchema(ModelSchema):
         model_fields = ["first_name", "last_name", "email"]
 
 
-class LoginResponseDataSchema(Schema):
+class _LoginResponseDataSchema(Schema):
     user: UserSchema = None
 
 
-LoginResponseSchema = ApiResponseSchema[LoginResponseDataSchema]
+LoginResponseSchema = ApiResponseSchema[_LoginResponseDataSchema]
 
 
 LogoutResponseSchema = ApiResponseSchema[None]
