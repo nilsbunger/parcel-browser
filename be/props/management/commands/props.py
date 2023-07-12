@@ -9,7 +9,7 @@ from elt.lib.attom_data import AttomDataApi
 from elt.lib.attom_data_struct import AttomPropertyRecord
 from elt.lib.rentometer_data import RentometerApi
 from facts.models import StdAddress
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 from parsnip.settings import env
 from world.models import Parcel
 

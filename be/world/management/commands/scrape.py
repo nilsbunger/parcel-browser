@@ -10,7 +10,7 @@ import tempfile
 from collections import Counter, defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 from lib.parcel_analysis_2022.analyze_parcel_lib import analyze_batch
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
 from lib.parcel_analysis_2022.listings_lib import address_to_parcel

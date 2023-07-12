@@ -3,7 +3,7 @@ from elt.lib.excel.extract_from_excel import extract_from_excel
 from elt.lib.postprocess import postprocess_sf
 from elt.lib.shapefile.extract_from_shapefile import extract_from_shapefile
 from elt.lib.types import GisData, Juri
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 
 
 class Command(Home3Command):

@@ -4,7 +4,7 @@ from enum import Enum
 
 from django.db import connection
 
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 from world.models import AnalyzedParcel, Parcel
 
 

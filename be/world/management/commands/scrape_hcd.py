@@ -1,7 +1,7 @@
 import django
 from django.core.mail import EmailMessage
 
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 from lib.scrape_hcd_lib import run_scrape_hcd
 from parsnip.settings import env
 

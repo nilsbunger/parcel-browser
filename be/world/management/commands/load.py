@@ -8,7 +8,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.utils import LayerMapping
 from django.core.management import CommandParser
 from elt.lib.types import Juri
-from lib.home3_command import Home3Command
+from lib.mgmt_lib import Home3Command
 from parsnip.util import eprint
 
 from world.models import (
