@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pytest
 
 from facts.models import AddressFeatures, StdAddress
@@ -17,8 +19,8 @@ class TestProperty:
 def client_and_user(django_user_model, client):
     from django.contrib.auth import get_user_model
 
-    user = get_user_model().objects.create_user(email="testuser@foo.com", password="testpassword")
-    assert client.login(email="testuser@foo.com", password="testpassword")
+    user = get_user_model().objects.create_user(email="testuser@test.home3.co", password="testpassword")
+    assert client.login(email="testuser@test.home3.co", password="testpassword")
     yield client, user
 
     client.logout()
@@ -27,22 +29,33 @@ def client_and_user(django_user_model, client):
 
 class TestApi:
     @pytest.mark.django_db
-    def test_create_property_api(self, client_and_user, create_new_property_request: str):
+    def test_create_property_api(self, client_and_user, create_new_property_request: Callable):
         client, user = client_and_user
         # NOTE: have to hardcode URL - can't use reverse() when there is a get and post at same location.
         response = client.post(
-            "/api/properties/profiles", data=create_new_property_request, content_type="application/json"
+            "/api/properties/profiles",
+            data=create_new_property_request("1389 La Honda Rd"),
+            content_type="application/json",
+            secure=True,
         )
         assert response.status_code == 200
         result = response.json()
         assert result == {"errors": False, "message": "Property created", "data": {"id": 1}}
+        response = client.post(
+            "/api/properties/profiles",
+            data=create_new_property_request("1390 La Honda Rd"),
+            content_type="application/json",
+            secure=True,
+        )
+        assert response.status_code == 200
+        assert response.json() == {"errors": False, "message": "Property created", "data": {"id": 2}}
         # response = api._create_property(request, data=create_new_property_request)
 
     def test_list_properties_api(self, client_and_user, dummy_properties):
         # Test the list-properties API
         client, user = client_and_user
         path = "/api/properties/profiles"
-        response = client.get(path)
+        response = client.get(path, secure=True)
         assert response.status_code == 200
         result = response.json()
         assert len(result) == 10
@@ -54,7 +67,7 @@ class TestApi:
         client, user = client_and_user
         prop_under_test = dummy_properties[3]
         path = f"/api/properties/profiles/{prop_under_test.id}"
-        response = client.get(path)
+        response = client.get(path, secure=True)
         assert response.status_code == 200
         result = response.json()
         assert result["address"]["street_addr"] == "4 Dummy Rd"
@@ -63,12 +76,12 @@ class TestApi:
         # Test the get-property API
         client, user = client_and_user
 
-        response = client.get("/dj/supadupa")
+        response = client.get("/dj/supadupa", secure=True)
         assert response.status_code == 404
 
         prop_under_test = dummy_properties[3]  # noqa: F841 - unused variable
         path = f"/api/properties/profiles/9999999"
-        response = client.get(path)
+        response = client.get(path, secure=True)
         assert response.status_code == 404
         result = response.json()  # noqa: F841 - unused variable
 
@@ -105,7 +118,16 @@ def create_user(db, django_user_model):
 
 @pytest.fixture
 def create_new_property_request():
-    return """{"formFields":{"streetAddress":"8901 Alpine Road","city":"La Honda","zip":"94020"},"features":{"type":"Feature","properties":{"accuracy":"rooftop","mapbox_id":"dXJuOm1ieGFkcjphODc1Y2Y3Yy04MDc4LTRlMDUtYTIzZC0wNjRmZGRiOTdiNDY=","match_code":{"exact_match":false,"house_number":"unmatched","street":"unmatched","postcode":"unmatched","place":"unmatched","region":"unmatched","locality":"not_applicable","country":"inferred","confidence":"low"},"place_type":["address"],"place_name":"8901 Alpine Road, La Honda, California 94020, United States","address_number":"8901","street":"Alpine Road","context":[{"id":"postcode.312135404","mapbox_id":"dXJuOm1ieHBsYzpFcHJPN0E","text_en":"94020","text":"94020"},{"id":"place.175499500","wikidata":"Q2454633","mapbox_id":"dXJuOm1ieHBsYzpDblhvN0E","text_en":"La Honda","language_en":"en","text":"La Honda","language":"en"},{"id":"district.20629228","wikidata":"Q108101","mapbox_id":"dXJuOm1ieHBsYzpBVHJHN0E","text_en":"San Mateo County","language_en":"en","text":"San Mateo County","language":"en"},{"id":"region.419052","short_code":"US-CA","wikidata":"Q99","mapbox_id":"dXJuOm1ieHBsYzpCbVRz","text_en":"California","language_en":"en","text":"California","language":"en"},{"id":"country.8940","short_code":"us","wikidata":"Q30","mapbox_id":"dXJuOm1ieHBsYzpJdXc","text_en":"United States","language_en":"en","text":"United States","language":"en"}],"id":"address.5785944174450600","external_ids":{"carmen":"address.5785944174450600","federated":"carmen.address.5785944174450600"},"feature_name":"8901 Alpine Road","matching_name":"8901 Alpine Road","description":"La Honda, California 94020, United States","metadata":{"iso_3166_2":"US-CA","iso_3166_1":"us"},"language":"en","maki":"marker","postcode":"94020","place":"La Honda","district":"San Mateo County","region":"California","region_code":"CA","country":"United States","country_code":"us","full_address":"8901 Alpine Road, La Honda, California 94020, United States","address_line1":"8901 Alpine Road","address_line2":"","address_line3":"","address_level1":"CA","address_level2":"La Honda","address_level3":"","postcode_plus":"9771","is_deliverable":true,"missing_unit":false},"text_en":"Alpine Road","geometry":{"type":"Point","coordinates":[-122.2306,37.294425]}}}"""
+    """Return a method that takes an address so we can test different addresses"""
+
+    def _inner(addr: str):
+        return (
+            """{"formFields":{"streetAddress":" """
+            + addr
+            + """ ","city":"La Honda","zip":"94020"},"features":{"type":"Feature","properties":{"accuracy":"rooftop","mapbox_id":"xxx=","match_code":{"exact_match":false,"house_number":"unmatched","street":"unmatched","postcode":"unmatched","place":"unmatched","region":"unmatched","locality":"not_applicable","country":"inferred","confidence":"low"},"place_type":["address"],"place_name":"8901 Alpine Road, La Honda, California 94020, United States","address_number":"8901","street":"Alpine Road","context":[{"id":"postcode.312135404","mapbox_id":"xxx","text_en":"94020","text":"94020"},{"id":"place.175499500","wikidata":"Q2454633","mapbox_id":"xxx","text_en":"La Honda","language_en":"en","text":"La Honda","language":"en"},{"id":"district.20629228","wikidata":"Q108101","mapbox_id":"xxx","text_en":"San Mateo County","language_en":"en","text":"San Mateo County","language":"en"},{"id":"region.419052","short_code":"US-CA","wikidata":"Q99","mapbox_id":"xxx","text_en":"California","language_en":"en","text":"California","language":"en"},{"id":"country.8940","short_code":"us","wikidata":"Q30","mapbox_id":"xxx","text_en":"United States","language_en":"en","text":"United States","language":"en"}],"id":"address.5785944174450600","external_ids":{"carmen":"address.5785944174450600","federated":"carmen.address.5785944174450600"},"feature_name":"8901 Alpine Road","matching_name":"8901 Alpine Road","description":"La Honda, California 94020, United States","metadata":{"iso_3166_2":"US-CA","iso_3166_1":"us"},"language":"en","maki":"marker","postcode":"94020","place":"La Honda","district":"San Mateo County","region":"California","region_code":"CA","country":"United States","country_code":"us","full_address":"8901 Alpine Road, La Honda, California 94020, United States","address_line1":"8901 Alpine Road","address_line2":"","address_line3":"","address_level1":"CA","address_level2":"La Honda","address_level3":"","postcode_plus":"9771","is_deliverable":true,"missing_unit":false},"text_en":"Alpine Road","geometry":{"type":"Point","coordinates":[-122.2306,37.294425]}}}"""
+        )
+
+    return _inner
 
 
 @pytest.fixture
@@ -115,7 +137,7 @@ def property_feature():
         "type": "Feature",
         "properties": {
             "accuracy": "rooftop",
-            "mapbox_id": "dXJuOm1ieGFkcjo0MDE3NTRlNi02NzNjLTQzMDQtYThhNS0wYTliZmI3NDc0Yzc=",
+            "mapbox_id": "xxx=",
             "match_code": {
                 "exact_match": false,
                 "house_number": "matched",
@@ -136,20 +158,20 @@ def property_feature():
             "context": [
                 {
                     "id": "neighborhood.127036652",
-                    "mapbox_id": "dXJuOm1ieHBsYzpCNUpzN0E",
+                    "mapbox_id": "xxx",
                     "text_en": "College Terrace",
                     "text": "College Terrace"
                 },
                 {
                     "id": "postcode.313356012",
-                    "mapbox_id": "dXJuOm1ieHBsYzpFcTF1N0E",
+                    "mapbox_id": "xxx",
                     "text_en": "94306",
                     "text": "94306"
                 },
                 {
                     "id": "place.250554604",
                     "wikidata": "Q47265",
-                    "mapbox_id": "dXJuOm1ieHBsYzpEdThvN0E",
+                    "mapbox_id": "xxx",
                     "text_en": "Palo Alto",
                     "language_en": "en",
                     "text": "Palo Alto",
@@ -158,7 +180,7 @@ def property_feature():
                 {
                     "id": "district.20686572",
                     "wikidata": "Q110739",
-                    "mapbox_id": "dXJuOm1ieHBsYzpBVHVtN0E",
+                    "mapbox_id": "xxx",
                     "text_en": "Santa Clara County",
                     "language_en": "en",
                     "text": "Santa Clara County",
@@ -168,7 +190,7 @@ def property_feature():
                     "id": "region.419052",
                     "short_code": "US-CA",
                     "wikidata": "Q99",
-                    "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+                    "mapbox_id": "xxx",
                     "text_en": "California",
                     "language_en": "en",
                     "text": "California",
@@ -178,7 +200,7 @@ def property_feature():
                     "id": "country.8940",
                     "short_code": "us",
                     "wikidata": "Q30",
-                    "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+                    "mapbox_id": "xxx",
                     "text_en": "United States",
                     "language_en": "en",
                     "text": "United States",

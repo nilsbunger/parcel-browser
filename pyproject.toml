@@ -5,6 +5,12 @@ plugins = ["mypy_django_plugin.main"]
 [tool.django-stubs]
 django_settings_module = "parsnip.settings"
 
+[tool.pytest.ini_options]
+addopts = "--nomigrations -rA -vv"
+DJANGO_SETTINGS_MODULE = "parsnip.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+
+
 [tool.ruff]
 # Ruff linter
 line-length = 120

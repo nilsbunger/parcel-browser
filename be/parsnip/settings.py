@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 from datetime import UTC, datetime
+import logging
 import os
 from pathlib import Path
 import sys
@@ -69,13 +70,16 @@ DEBUG = DEV_ENV and not TEST_ENV
 # NOTE: DEBUG is set to false within tests regardless of the value of DEBUG here.
 # profiling and debugging tools
 ENABLE_SILK = False and DEBUG  # DEV_ENV and not TEST_ENV
-ENABLE_DEBUG_TOOLBAR = DEBUG
+ENABLE_DEBUG_TOOLBAR = DEBUG and not TEST_ENV
 
 
-eprint(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
+logging.info(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
 if TEST_ENV:
-    eprint("**** TEST ENVIRONMENT ****")
-eprint(f"**** DEBUG == {DEBUG} ****")
+    logging.info("**** TEST ENVIRONMENT ****")
+if DEBUG:
+    logging.warning("**** DEBUG == True ****")
+else:
+    logging.info("**** DEBUG == False ****")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -85,7 +89,7 @@ if (PROD_ENV or STAGE_ENV) and not BUILD_PHASE and not TEST_ENV:
     SECRET_KEY = env("DJANGO_SECRET_KEY")
     INSECURE = False
 else:
-    eprint("**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
+    logging.warning("**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
     SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
     INSECURE = True
 CSRF_COOKIE_SECURE = True
@@ -263,9 +267,9 @@ ROOT_URLCONF = "parsnip.urls"
 
 try:
     GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH")
-    eprint("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH)
+    logging.info("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH)
     GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH")
-    eprint("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH)
+    logging.info("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH)
 except ImproperlyConfigured:
     pass
 
@@ -307,10 +311,10 @@ match DB:
 
 if BUILD_PHASE:
     (db_host, db_port, db_name, db_user, db_passwd) = ("", "", "", "", "")
-    eprint("**** NO DB - BUILD PHASE ****")
+    logging.info("**** NO DB - BUILD PHASE ****")
 else:
     db_host, db_port, db_name, db_user, db_passwd = db_settings
-    eprint(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}")
+    logging.info(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}")
 
 if BUILD_PHASE:
     DATABASES = {}
