@@ -250,7 +250,7 @@ def property_feature():
 
 @pytest.fixture
 def create_new_property_req():
-    """Return a method that takes an address and simulates a request to the server to create a property profile."
+    """Return a method that takes an address and simulates a request to the server to create a property profile."""
 
     def _inner(addr: str, city: str, zip: str):
         return json.dumps(_create_new_property_fixture(addr, city, zip))
