@@ -1,6 +1,8 @@
 from copy import deepcopy
 from math import isnan
 
+from django.db import models
+from django.db.models import QuerySet
 from django.urls import reverse
 import numpy as np
 import pandas as pd
@@ -114,3 +116,10 @@ class SanitizedRawModelMixin:
     def get_admin_url(self):
         """Return the admin URL. Used by admin inlines."""
         return reverse("admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name), args=[self.pk])
+
+    @classmethod
+    def histo(cls, *, qs=None, field: str) -> QuerySet:
+        """Return a queryset with a count of each value of FIELD within a queryset"""
+        if not qs:
+            qs = cls.objects.all()
+        return qs.values(field).annotate(count=models.Count(field)).order_by("count")

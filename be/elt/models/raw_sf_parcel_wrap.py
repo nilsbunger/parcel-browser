@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.db.models import QuerySet
 
 from elt.models.model_utils import SanitizedRawModelMixin
 
@@ -19,9 +20,15 @@ class RawSfParcelWrap(SanitizedRawModelMixin, models.Model):
     reportall_parcel = models.ForeignKey("RawSfReportall", on_delete=models.PROTECT, null=True, blank=True)
 
     @classmethod
-    def find_by_address(cls, address: str, city: str = "SF") -> "RawSfParcelWrap":
+    def find_by_address(cls, address: str, city: str = "SF", *, raise_on_empty=False) -> QuerySet["RawSfParcelWrap"]:
         addr_num, *addr_name, rest = address.split(" ")
         assert addr_num.isdigit()
+        if addr_name[0] in ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]:
+            addr_name[0] = "0" + addr_name[0]
         addr_name = " ".join(addr_name)
         # TODO: search from-address and to-address range
-        return cls.objects.filter(parcel__fromaddre=str(addr_num), parcel__streetnam=addr_name)
+        # NOTE: __iexact means case-insensitive exact match
+        qs = cls.objects.filter(parcel__from_addre=str(addr_num), parcel__street_nam__iexact=addr_name)
+        if raise_on_empty and not qs.exists():
+            raise cls.DoesNotExist(f"No APN found for address {address}")
+        return qs

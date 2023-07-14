@@ -23,6 +23,8 @@ from whitenoise import WhiteNoise
 
 from .util import eprint, keep_truthy
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory should be "be/" (the Django project root)
 
@@ -59,7 +61,6 @@ TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_r
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 eprint("Django Log Level (to stderr)", DJANGO_LOG_LEVEL)
-print("Django Log Level (to stdout)", DJANGO_LOG_LEVEL)
 TOPO_DB_ALIAS = "local_db" if DEV_ENV else "default"
 CLOUDFLARE_R2_ENABLED = env("CLOUDFLARE_R2_ENABLED") and not TEST_ENV
 
@@ -73,13 +74,13 @@ ENABLE_SILK = False and DEBUG  # DEV_ENV and not TEST_ENV
 ENABLE_DEBUG_TOOLBAR = DEBUG and not TEST_ENV
 
 
-logging.info(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****")
+print(f"**** {'INSECURE (DEV) ENVIRONMENT' if DEV_ENV else 'PRODUCTION ENVIRONMENT'} ****", file=sys.stderr)
 if TEST_ENV:
-    logging.info("**** TEST ENVIRONMENT ****")
+    print("**** TEST ENVIRONMENT ****", file=sys.stderr)
 if DEBUG:
-    logging.warning("**** DEBUG == True ****")
+    log.warning("**** DEBUG == True ****")
 else:
-    logging.info("**** DEBUG == False ****")
+    print("**** DEBUG == False ****", file=sys.stderr)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -89,7 +90,7 @@ if (PROD_ENV or STAGE_ENV) and not BUILD_PHASE and not TEST_ENV:
     SECRET_KEY = env("DJANGO_SECRET_KEY")
     INSECURE = False
 else:
-    logging.warning("**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
+    log.warning("**** USING INSECURE DEV-ENVIRONMENT SECRET ****")
     SECRET_KEY = 'django-insecure--.=O/3?A`qp>-K5{m$6KOgNH8$72m!FwO"vO&k<V+m`ZhJ)_#]A9iXB]o}l8&)'
     INSECURE = True
 CSRF_COOKIE_SECURE = True
@@ -267,9 +268,9 @@ ROOT_URLCONF = "parsnip.urls"
 
 try:
     GDAL_LIBRARY_PATH = env("GDAL_LIBRARY_PATH")
-    logging.info("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH)
+    print("Using GDAL Library path from environment var:", GDAL_LIBRARY_PATH, file=sys.stderr)
     GEOS_LIBRARY_PATH = env("GEOS_LIBRARY_PATH")
-    logging.info("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH)
+    print("Using GEOS Library path from environment var:", GEOS_LIBRARY_PATH, file=sys.stderr)
 except ImproperlyConfigured:
     pass
 
@@ -311,10 +312,10 @@ match DB:
 
 if BUILD_PHASE:
     (db_host, db_port, db_name, db_user, db_passwd) = ("", "", "", "", "")
-    logging.info("**** NO DB - BUILD PHASE ****")
+    print("**** NO DB - BUILD PHASE ****", file=sys.stderr)
 else:
     db_host, db_port, db_name, db_user, db_passwd = db_settings
-    logging.info(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}")
+    print(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}", file=sys.stderr)
 
 if BUILD_PHASE:
     DATABASES = {}

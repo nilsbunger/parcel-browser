@@ -1,7 +1,8 @@
-from typing import Callable
+import json
 
 import pytest
 
+from elt.models import RawSfParcelWrap
 from facts.models import AddressFeatures, StdAddress
 from props.models import PropertyProfile
 
@@ -47,15 +48,23 @@ def client_and_user(django_user_model, client):
 
 class TestApi:
     @pytest.mark.django_db
+    def test_database_settings(db):
+        from django.conf import settings
+
+        count = RawSfParcelWrap.objects.count()
+        print("Parcel Wrap Count = ", count)
+        assert settings.DATABASES["default"]["NAME"] == "test_railway"
+
+    @pytest.mark.django_db
     def test_create_property_api(self, client_and_user, create_new_property_req):
         client, user = client_and_user
         # NOTE: have to hardcode URL - can't use reverse() when there is a get and post at same location.
-        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1389 La Honda Rd"))
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("3756 jackson st", "sf", ""))
         assert resp == {"errors": False, "message": "Property created", "data": {"id": 1}}
-        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1390 La Honda Rd"))
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("45 parker ave", "sf", ""))
         assert resp == {"errors": False, "message": "Property created", "data": {"id": 2}}
         # using same address a second time should result in same property id.
-        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("1390 La Honda Rd"))
+        resp = client.json_post("/api/properties/profiles", data=create_new_property_req("45 parker ave", "sf", ""))
         assert resp == {"errors": False, "message": "Property created", "data": {"id": 2}}
         # response = api._create_property(request, data=create_new_property_request)
 
@@ -97,7 +106,7 @@ class TestApi:
 def dummy_addresses(db):
     addrs = [
         StdAddress.objects.create(
-            street_addr=f"{idx+1} Dummy Rd", city="La Honda", state="CA", zip="94020", address_features={}
+            street_addr=f"{idx + 1} Dummy Rd", city="La Honda", state="CA", zip="94020", address_features={}
         )
         for idx in range(10)
     ]
@@ -116,20 +125,6 @@ def create_user(db, django_user_model):
         return django_user_model.objects.create_user(**kwargs)
 
     return make_user
-
-
-@pytest.fixture
-def create_new_property_req():
-    """Return a method that takes an address so we can test different addresses"""
-
-    def _inner(addr: str):
-        return (
-            """{"formFields":{"streetAddress":" """
-            + addr
-            + """ ","city":"La Honda","zip":"94020"},"features":{"type":"Feature","properties":{"accuracy":"rooftop","mapbox_id":"xxx=","match_code":{"exact_match":false,"house_number":"unmatched","street":"unmatched","postcode":"unmatched","place":"unmatched","region":"unmatched","locality":"not_applicable","country":"inferred","confidence":"low"},"place_type":["address"],"place_name":"8901 Alpine Road, La Honda, California 94020, United States","address_number":"8901","street":"Alpine Road","context":[{"id":"postcode.312135404","mapbox_id":"xxx","text_en":"94020","text":"94020"},{"id":"place.175499500","wikidata":"Q2454633","mapbox_id":"xxx","text_en":"La Honda","language_en":"en","text":"La Honda","language":"en"},{"id":"district.20629228","wikidata":"Q108101","mapbox_id":"xxx","text_en":"San Mateo County","language_en":"en","text":"San Mateo County","language":"en"},{"id":"region.419052","short_code":"US-CA","wikidata":"Q99","mapbox_id":"xxx","text_en":"California","language_en":"en","text":"California","language":"en"},{"id":"country.8940","short_code":"us","wikidata":"Q30","mapbox_id":"xxx","text_en":"United States","language_en":"en","text":"United States","language":"en"}],"id":"address.5785944174450600","external_ids":{"carmen":"address.5785944174450600","federated":"carmen.address.5785944174450600"},"feature_name":"8901 Alpine Road","matching_name":"8901 Alpine Road","description":"La Honda, California 94020, United States","metadata":{"iso_3166_2":"US-CA","iso_3166_1":"us"},"language":"en","maki":"marker","postcode":"94020","place":"La Honda","district":"San Mateo County","region":"California","region_code":"CA","country":"United States","country_code":"us","full_address":"8901 Alpine Road, La Honda, California 94020, United States","address_line1":"8901 Alpine Road","address_line2":"","address_line3":"","address_level1":"CA","address_level2":"La Honda","address_level3":"","postcode_plus":"9771","is_deliverable":true,"missing_unit":false},"text_en":"Alpine Road","geometry":{"type":"Point","coordinates":[-122.2306,37.294425]}}}"""
-        )
-
-    return _inner
 
 
 @pytest.fixture
@@ -251,3 +246,112 @@ def property_feature():
             ]
         }
     }"""
+
+
+@pytest.fixture
+def create_new_property_req():
+    """Return a method that takes an address and simulates a request to the server to create a property profile."
+
+    def _inner(addr: str, city: str, zip: str):
+        return json.dumps(_create_new_property_fixture(addr, city, zip))
+
+    return _inner
+
+
+def _create_new_property_fixture(addr: str, city: str, zip: str):
+    return {
+        "formFields": {"streetAddress": addr, "city": city, "zip": zip},
+        "features": {
+            "type": "Feature",
+            "properties": {
+                "accuracy": "rooftop",
+                "mapbox_id": "xxx=",
+                "match_code": {
+                    "exact_match": False,
+                    "house_number": "unmatched",
+                    "street": "unmatched",
+                    "postcode": "unmatched",
+                    "place": "unmatched",
+                    "region": "unmatched",
+                    "locality": "not_applicable",
+                    "country": "inferred",
+                    "confidence": "low",
+                },
+                "place_type": ["address"],
+                "place_name": "8901 Alpine Road, La Honda, California 94020, United States",
+                "address_number": "8901",
+                "street": "Alpine Road",
+                "context": [
+                    {"id": "postcode.312135404", "mapbox_id": "xxx", "text_en": "94020", "text": "94020"},
+                    {
+                        "id": "place.175499500",
+                        "wikidata": "Q2454633",
+                        "mapbox_id": "xxx",
+                        "text_en": "La Honda",
+                        "language_en": "en",
+                        "text": "La Honda",
+                        "language": "en",
+                    },
+                    {
+                        "id": "district.20629228",
+                        "wikidata": "Q108101",
+                        "mapbox_id": "xxx",
+                        "text_en": "San Mateo County",
+                        "language_en": "en",
+                        "text": "San Mateo County",
+                        "language": "en",
+                    },
+                    {
+                        "id": "region.419052",
+                        "short_code": "US-CA",
+                        "wikidata": "Q99",
+                        "mapbox_id": "xxx",
+                        "text_en": "California",
+                        "language_en": "en",
+                        "text": "California",
+                        "language": "en",
+                    },
+                    {
+                        "id": "country.8940",
+                        "short_code": "us",
+                        "wikidata": "Q30",
+                        "mapbox_id": "xxx",
+                        "text_en": "United States",
+                        "language_en": "en",
+                        "text": "United States",
+                        "language": "en",
+                    },
+                ],
+                "id": "address.5785944174450600",
+                "external_ids": {
+                    "carmen": "address.5785944174450600",
+                    "federated": "carmen.address.5785944174450600",
+                },
+                "feature_name": "8901 Alpine Road",
+                "matching_name": "8901 Alpine Road",
+                "description": "La Honda, California 94020, United States",
+                "metadata": {"iso_3166_2": "US-CA", "iso_3166_1": "us"},
+                "language": "en",
+                "maki": "marker",
+                "postcode": "94020",
+                "place": "La Honda",
+                "district": "San Mateo County",
+                "region": "California",
+                "region_code": "CA",
+                "country": "United States",
+                "country_code": "us",
+                "full_address": "8901 Alpine Road, La Honda, California 94020, United States",
+                "address_line1": "8901 Alpine Road",
+                "address_line2": "",
+                "address_line3": "",
+                "address_level1": "CA",
+                "address_level2": "La Honda",
+                "address_level3": "",
+                "postcode_plus": "9771",
+                "is_deliverable": True,
+                "missing_unit": False,
+            },
+            "text_en": "Alpine Road",
+            "geometry": {"type": "Point", "coordinates": [-122.2306, 37.294425]},
+        },
+    }

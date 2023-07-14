@@ -6,10 +6,11 @@ from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema
 from ninja.errors import ValidationError
 from ninja.security import django_auth
-from pydantic import Extra
+from pydantic import Extra, validator
 
 from facts.models import AddressFeatures, StdAddress
 from lib.g_sheets import GoogleSheet, RentRollSheet
+from lib.mapbox import AddressNormalizer
 from lib.ninja_api import ApiResponseSchema
 
 from .models import PropertyProfile
@@ -29,17 +30,22 @@ class PropertyCreateFormFieldsSchema(Schema):
     city: str
     zip: str
 
+    @validator("streetAddress")
+    def strip_whitespace(cls, v):
+        return v.strip()
+
 
 class CreatePropertySchema(Schema):
     formFields: PropertyCreateFormFieldsSchema  # noqa: N815 - mixed case
     features: AddressFeatures
 
 
-class NewPropertyRespDataSchema(Schema):
+class _NewPropertyRespDataSchema(Schema):
     id: int
+    # prop: PropertyProfile
 
 
-NewPropertyResponseSchema = ApiResponseSchema[NewPropertyRespDataSchema]
+NewPropertyResponseSchema = ApiResponseSchema[_NewPropertyRespDataSchema]
 
 
 @props_api.exception_handler(ValidationError)
@@ -51,26 +57,17 @@ def custom_validation_errors(request, exc):
 
 @props_api.post("/profiles", response=NewPropertyResponseSchema, url_name="_create_property")
 def _create_property(request, data: CreatePropertySchema):
-    std_address, _created = StdAddress.objects.get_or_create(
+    std_address, _created = StdAddress.from_addr(
         street_addr=data.formFields.streetAddress,
         city=data.formFields.city,
         zip=data.formFields.zip,
     )
-    if _created:
-        log.info(f"Created new property address id={std_address.id}")
-        print("Created ", std_address.id)
-    else:
-        log.info(f"Found existing property address id={std_address.id}")
-
+    log.info(f"{'Created new' if _created else 'Found existing'} StdAddress id={std_address.id}")
     std_address.address_features = data.features.dict()
     std_address.save()
-
-    prop, _created = PropertyProfile.objects.get_or_create(legal_entity=None, address=std_address)
-    if _created:
-        log.info(f"Created new property profile id={prop.id}")
-    else:
-        log.info(f"Found existing property profile id={prop.id}")
-    return NewPropertyResponseSchema(errors=False, message="Property created", data={"id": prop.id})
+    prop, _created = PropertyProfile.create_and_link_to_apn(legal_entity=None, address=std_address)
+    log.info(f"{'Created new' if _created else 'Found existing'} PropertyProfile id={prop.id}")
+    return NewPropertyResponseSchema(errors=False, message="Property created", data=prop)
 
 
 @props_api.get("/profiles/{prop_id}", response=PropertyProfileOut)
