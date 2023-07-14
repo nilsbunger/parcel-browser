@@ -1,7 +1,5 @@
 # Register your models here.
-from django.contrib.gis import admin
 
-from .models import Parcel, RentalData, ZoningBase
 
 #
 # class RentalDataInline(admin.TabularInline):

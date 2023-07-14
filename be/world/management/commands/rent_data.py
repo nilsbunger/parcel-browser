@@ -1,8 +1,8 @@
 import logging
 
 from django.db.models import Count
-
 from lib.mgmt_lib import Home3Command
+
 from world.models import RentalData
 
 log = logging.getLogger(__name__)

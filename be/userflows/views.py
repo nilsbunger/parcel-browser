@@ -1,8 +1,6 @@
 # Create your views here.
 import logging
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
 import sesame
 import sesame.utils
 from django import forms
@@ -10,6 +8,8 @@ from django.contrib.auth import get_user_model, logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import FormView
 
 from .lib import send_magic_link_email
@@ -28,7 +28,7 @@ class MagicLinkLoginView(FormView):
 
     def get_user(self, email) -> get_user_model() | None:
         """Find the user with this email address, return its instance or None"""
-        User = get_user_model()
+        User = get_user_model()  # noqa: N806
         return User.objects.get_or_create(email=email)
 
     def create_link(self, user):

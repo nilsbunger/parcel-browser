@@ -1,10 +1,10 @@
 import datetime
 from typing import Any
 
+from lib.co.co_eligibility_lib import EligibilityCheck
 from ninja import ModelSchema, Schema
 from pydantic import Field
 
-from lib.co.co_eligibility_lib import EligibilityCheck
 from world.models import AnalyzedListing, Parcel, PropertyListing, RentalData, Roads
 
 

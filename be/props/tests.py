@@ -1,9 +1,9 @@
 import json
 
 import pytest
-
 from elt.models import RawSfParcelWrap
 from facts.models import AddressFeatures, StdAddress
+
 from props.models import PropertyProfile
 
 
@@ -48,7 +48,7 @@ def client_and_user(django_user_model, client):
 
 class TestApi:
     @pytest.mark.django_db
-    def test_database_settings(db):
+    def test_database_settings(self, db):
         from django.conf import settings
 
         count = RawSfParcelWrap.objects.count()

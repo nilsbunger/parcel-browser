@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import re
 import sys
+from dataclasses import dataclass
+from math import floor, log10
 
 from django.urls import NoReverseMatch, URLPattern, URLResolver
-from math import floor, log10
 
 
 # Print to stderr

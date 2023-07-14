@@ -4,7 +4,6 @@ from enum import Enum
 
 from django.core.paginator import Paginator
 from django.db.models import DateField, DateTimeField
-
 from lib.mgmt_lib import Home3Command
 from parsnip.settings import LOCAL_DB
 

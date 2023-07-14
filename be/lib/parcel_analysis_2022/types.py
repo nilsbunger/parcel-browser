@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Union
 
 from shapely.geometry import MultiPolygon, Polygon
-
 from world.models import Parcel
 
 """ CheckResultEnum represents the result of an analysis check """

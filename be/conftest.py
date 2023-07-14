@@ -1,7 +1,5 @@
 import logging
-import sys
 
-from django.conf import settings
 import pytest
 from django.core.management import call_command
 from parsnip.settings import BASE_DIR
@@ -25,8 +23,6 @@ log = logging.getLogger(__name__)
 #         print(f"Test class {item.name} has a constructor and will be skipped")
 #         logging.warning(f"WARNING2: Test class {item.name} has a constructor and will be skipped")
 #         warnings.warn(f"WARNING3: Test class {item.name} has a constructor and will be skipped")
-
-from django.test.utils import setup_test_environment
 
 
 @pytest.fixture(scope="session")  # session scope means it'll only run once.

@@ -1,21 +1,20 @@
 import copy
+import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from functools import reduce
 from math import isnan
-import re
-import sys
-from typing import Callable
 
+import pandas as pd
 from charset_normalizer.cli.normalizer import query_yes_no
 from dateutil.parser import parse as date_parse
 from django.db import models
 from pandas import DataFrame, ExcelFile
-import pandas as pd
+from parsnip.settings import BASE_DIR
 
 from elt.lib.elt_utils import batched, elt_model_with_run_date, get_elt_pipe_filenames, pipestage_prompt
 from elt.lib.types import GisData, Juri
-from parsnip.settings import BASE_DIR
 
 MODELS_DIR = BASE_DIR / "elt" / "models"
 
@@ -42,11 +41,11 @@ def sanitize(name):
         print("unexpected nan")
         raise ValueError("Unexpected nan - should be turned into None")
     # remove non-alphanumeric characters, replacing them with an underscore
-    base = re.sub("[^A-Za-z0-9_\- ]", "_", str(name).strip())
+    base = re.sub("[^A-Za-z0-9_\\- ]", "_", str(name).strip())
     # add an underscore in front of each capitalized word
     base = re.sub("([^A-Z])([A-Z])", r"\1_\2", base)
     # lowercase the result and convert multiple spaces, dashes, and underscores to an underscore
-    base = re.sub("[ _\-]+", "_", base.lower())
+    base = re.sub("[ _\\-]+", "_", base.lower())
     base = base.strip("_")  # remove leading or trailing underscore
     if base[0].isdigit():
         # first character is a digit - prepend an "A". Can't use underscore b/c Django converts it to spaces.
@@ -95,7 +94,7 @@ pandas_field_to_db_field = {
 def parse_excel(*, xls, full_sheet_name, friendly_sheet_name, parse_args: ExcelParseArgs):
     """Parse excel file into a dataframe with processing like enum mapping and datatype munging."""
     df = pd.read_excel(xls, full_sheet_name, header=parse_args.header_rows)
-    orig_cols = list(df.columns)  # keep a copy of the original column names so we can compare
+    orig_cols = list(df.columns)  # noqa:F841 # keep a copy of the original column names so we can compare
     # Sanitize column names
     df.rename(columns=lambda x: sanitize(x), inplace=True)
 
@@ -179,7 +178,7 @@ def parse_sf_he(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
 
 
 def parse_sf_rentboard(xls: ExcelFile, full_sheet_name: str, friendly_sheet_name: str):
-    def parse_year(x):
+    def parse_year(x):  # noqa:PLR0911
         if x == "Year unknown (no information available)":
             return 0
         elif x == "Year Unknown (more than 20 years)":
@@ -316,7 +315,7 @@ def extract_from_excel(geo: Juri, datatype: GisData, thru_data=None):
     full_sheet_names = xls.sheet_names
     full_sheet_names.reverse()
     for full_sheet_name in full_sheet_names:
-        sanitized_sheet_name = sanitize(re.match("^[^\-]+", full_sheet_name)[0])
+        sanitized_sheet_name = sanitize(re.match("^[^\\-]+", full_sheet_name)[0])
         parser_fn = globals()[f"parse_{geo.name}_{resolved_datatype}"]
         model_name = "raw_" + geo.name + "_" + resolved_datatype + "_" + sanitized_sheet_name
         model_name_camel = camelcase(model_name)

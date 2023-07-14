@@ -3,6 +3,7 @@ from collections import Counter
 from datetime import datetime
 from math import ceil
 from pprint import pformat, pprint
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -47,7 +48,7 @@ def reonomy_post_call(api_call, params=None, body=None, save=True):
 
 
 def save_resp(response, api_call):
-    time_str = datetime.now().strftime("%m%d %H:%M:%S")
+    time_str = datetime.now(tz=ZoneInfo("America/Los_Angeles")).strftime("%m%d %H:%M:%S")
     with open("../../lib/reonomy_calls.py", mode="a") as localfile:
         localfile.write('\n["' + time_str + ": " + api_call + '",\n' + pformat(response, indent=2) + "],")
 
@@ -138,7 +139,7 @@ def find_search_summaries(saved_calls, region):
     pprint(hist)
 
     # Find specific property
-    apn = 1244003
+    # apn = 1244003
     # Look into 2023 February updates as a recent example where data should be settled.
     feb_updates = [id_dict[id] for id in id_dict if id_dict[id][update_type][0:7] == "2023-02"]
     feb_mtg_updates_df = pd.DataFrame.from_records(feb_updates)

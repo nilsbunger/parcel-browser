@@ -1,7 +1,6 @@
 import logging
 
 from django.db import models
-
 from elt.models import RawSfParcelWrap
 from facts.models import StdAddress
 

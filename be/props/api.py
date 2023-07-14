@@ -1,17 +1,16 @@
 import logging
 
+import pydantic
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
+from facts.models import AddressFeatures, StdAddress
+from lib.g_sheets import RentRollSheet
+from lib.ninja_api import ApiResponseSchema
 from ninja import NinjaAPI, Schema
 from ninja.errors import ValidationError
 from ninja.security import django_auth
-from pydantic import Extra, validator
-
-from facts.models import AddressFeatures, StdAddress
-from lib.g_sheets import GoogleSheet, RentRollSheet
-from lib.mapbox import AddressNormalizer
-from lib.ninja_api import ApiResponseSchema
+from pydantic import Extra
 
 from .models import PropertyProfile
 from .schema import PropertyProfileOut
@@ -30,7 +29,7 @@ class PropertyCreateFormFieldsSchema(Schema):
     city: str
     zip: str
 
-    @validator("streetAddress")
+    @pydantic.validator("streetAddress")  # note: use fully-qualified name so ruff can check it.
     def strip_whitespace(cls, v):
         return v.strip()
 

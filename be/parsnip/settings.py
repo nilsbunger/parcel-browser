@@ -9,15 +9,15 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-from datetime import UTC, datetime
 import logging
 import os
-from pathlib import Path
 import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
 import environ
 import sentry_sdk
+from django.core.exceptions import ImproperlyConfigured
 from sentry_sdk.integrations.django import DjangoIntegration
 from whitenoise import WhiteNoise
 
@@ -308,7 +308,7 @@ match DB:
     case "PROD":
         db_settings = (env("DB_HOST"), env("DB_PORT"), env("DB_NAME"), env("DB_USERNAME"), env("DB_PASSWORD"))
     case _:
-        assert False
+        raise AssertionError()
 
 if BUILD_PHASE:
     (db_host, db_port, db_name, db_user, db_passwd) = ("", "", "", "", "")

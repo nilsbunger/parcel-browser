@@ -1,15 +1,9 @@
-from copy import deepcopy
-from math import isnan
-
+import pandas as pd
 from django.db import models
 from django.db.models import QuerySet
 from django.urls import reverse
-import numpy as np
-import pandas as pd
-from pandas.core.dtypes.common import is_datetime64_any_dtype
 
-from elt.lib.excel.extract_from_excel import camel_to_verbose, camelcase
-
+from elt.lib.excel.extract_from_excel import camelcase
 
 # String representation of model types
 raw_str = {
@@ -40,7 +34,7 @@ class SanitizedRawModelMixin:
             return display_fn()
         return getattr(self, fieldname)
 
-    def _get_FIELD_display(self, field):
+    def _get_FIELD_display(self, field):  # noqa:N802
         field_text = super()._get_FIELD_display(field)
         # if field_text[0] == "A" and field_text[1].isdigit():
         #     field_text = field_text[1:]
@@ -115,7 +109,7 @@ class SanitizedRawModelMixin:
 
     def get_admin_url(self):
         """Return the admin URL. Used by admin inlines."""
-        return reverse("admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name), args=[self.pk])
+        return reverse(f"admin:{self._meta.app_label}_{self._meta.model_name}_change", args=[self.pk])
 
     @classmethod
     def histo(cls, *, qs=None, field: str) -> QuerySet:

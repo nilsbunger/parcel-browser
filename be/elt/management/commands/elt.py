@@ -1,9 +1,10 @@
+from lib.mgmt_lib import Home3Command
+
 from elt.lib.arcgis.extract_from_api import extract_from_arcgis_api
 from elt.lib.excel.extract_from_excel import extract_from_excel
 from elt.lib.postprocess import postprocess_sf
 from elt.lib.shapefile.extract_from_shapefile import extract_from_shapefile
 from elt.lib.types import GisData, Juri
-from lib.mgmt_lib import Home3Command
 
 
 class Command(Home3Command):
@@ -58,7 +59,7 @@ class Command(Home3Command):
             case Juri.california, GisData.resource_level:
                 extract_from_shapefile(geo, gis_data_type)
             case Juri.california, GisData.oppzone:
-                assert False, "Outdated implementation... review before using"
+                raise AssertionError("Outdated implementation... review before using")
                 # extract_from_shapefile(geo, gis_data_type)
             # Orange county / santa ana
             case Juri.santa_ana, GisData.parcel:

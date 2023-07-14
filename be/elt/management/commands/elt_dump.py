@@ -1,12 +1,10 @@
-from collections import defaultdict
-import json
 import logging
-from pprint import pprint
 import sys
+from collections import defaultdict
+from pprint import pprint
 
 from django.core.management.base import BaseCommand
 from django.core.serializers import serialize
-from django.db.models import Count
 
 from elt.models import RawSfParcelWrap
 
@@ -45,7 +43,7 @@ class Command(BaseCommand):
 
         # flatten the dict into a list of parcel_wraps
         obj_list = []
-        for zone, parcel_wrap_list in parcels_by_zone.items():
+        for _zone, parcel_wrap_list in parcels_by_zone.items():
             obj_list += parcel_wrap_list
         print("Limited parcelwrap list length: ", len(obj_list), file=sys.stderr)
         # get related objects and add them to the list to be serialized.

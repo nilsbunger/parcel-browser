@@ -9,6 +9,7 @@ from pprint import pformat, pprint
 from random import random
 from time import sleep
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from dateutil.parser import parse
 from parsnip.settings import env
@@ -49,7 +50,7 @@ pim_base_url = "https://sfplanninggis.org/proxy/DotNet/proxy.ashx?https://sfplan
 
 
 def save_resp(fname, response, api_call):
-    time_str = datetime.now().strftime("%m%d %H:%M:%S")
+    time_str = datetime.now(tz=ZoneInfo("America/Los_Angeles")).strftime("%m%d %H:%M:%S")
     with open(fname, mode="a") as localfile:
         localfile.write('\n["' + time_str + ": " + api_call + '",\n' + pformat(response, indent=2) + "],")
 
@@ -139,8 +140,8 @@ def load_calls_from_disk() -> list[list[str, dict]]:
             saved_calls.extend(raw_lines)
         except ValueError as e:
             print(e)
-    l = [x[1]["results"] for x in saved_calls]
-    flatlist = [item for sublist in l for item in sublist]
+    result_list = [x[1]["results"] for x in saved_calls]
+    flatlist = [item for sublist in result_list for item in sublist]
     print(f"DONE. Found {len(flatlist)} records")
     dates = [x["attributes"]["CURRSALEDATE"] for x in flatlist]
     dates = ["1970/1/1" if d == "Null" else d for d in dates]
@@ -150,7 +151,7 @@ def load_calls_from_disk() -> list[list[str, dict]]:
 
 def main():
     # sf_pim_call()
-    multifam_list = load_calls_from_disk()
+    multifam_list = load_calls_from_disk()  # noqa: F841
 
 
 if __name__ == "__main__":

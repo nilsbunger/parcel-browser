@@ -1,7 +1,7 @@
 from django.contrib.gis.db import models
 
 from elt.lib.types import EltAnalysisEnum, Juri
-from elt.models import RawSfParcel, RawSfParcelWrap
+from elt.models import RawSfParcelWrap
 from elt.models.model_utils import SanitizedRawModelMixin
 
 

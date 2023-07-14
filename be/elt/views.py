@@ -1,18 +1,14 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Prefetch
 from django.http import HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 from vectortiles.postgis.views import MVTView
-
-from elt.models.elt_analysis import EltAnalysis
 from world.infra.django_cache import h3_cache_page
 
 from elt.models import (
     RawCaliResourceLevel,
     RawSfHeTableB,
-    RawSfParcel,
     RawSfParcelWrap,
     RawSfZoning,
     RawSfZoningHeightBulk,

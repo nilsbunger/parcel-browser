@@ -11,11 +11,10 @@ import matplotlib.pyplot as plt
 import shapely
 from django.contrib.gis.db.models.functions import Distance
 from geopandas import GeoDataFrame, GeoSeries
-from shapely.geometry import LineString
-
 from lib.mgmt_lib import Home3Command
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs, meters_to_latlong
 from lib.parcel_analysis_2022.parcel_lib import models_to_utm_gdf, normalize_geometries
+from shapely.geometry import LineString
 from world.models import Parcel, Roads
 from world.models.models import AnalyzedRoad
 

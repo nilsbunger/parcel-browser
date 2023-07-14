@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import django
 import pyproj
 from joblib import Parallel, delayed
-
 from world.models import Roads
 
 if TYPE_CHECKING:

@@ -1,16 +1,15 @@
+import logging
+import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
-import logging
-import re
-from typing import Type, cast
+from typing import cast
 
+import polars as pl
 from django.core.exceptions import ImproperlyConfigured
 from google.oauth2 import service_account
 from googleapiclient import discovery
-import polars as pl
-
 from parsnip.settings import BASE_DIR
 
 # support this module in django and non-django env
@@ -235,7 +234,7 @@ class GoogleSheet:
         print(column_starts)
         return column_starts
 
-    def named_ranges_to_polars_df(self, named_ranges: Iterable[str, Type]) -> pl.DataFrame:
+    def named_ranges_to_polars_df(self, named_ranges: Iterable[str, type]) -> pl.DataFrame:
         dfs = []
 
         for range_name, range_type in named_ranges:
@@ -285,7 +284,7 @@ class RentRollSheet(GoogleSheet):
         assert self.rent_roll_named_range_set.issubset(found_named_ranges)
         # cast due to pycharm issue? dict_items are iterable...
         self.rent_roll_df = self.named_ranges_to_polars_df(
-            cast(Iterable[str, Type], self.rent_roll_named_range_dict.items())
+            cast(Iterable[str, type], self.rent_roll_named_range_dict.items())
         )
         log.info(f"Rent Roll (cache missed): for {self._sheet_id}")
         if django_cache:
@@ -313,13 +312,13 @@ class ProformaSheet(GoogleSheet):
         # update fields in the pro format sheet
         for col_str, start_cell in col_dict.items():
             print(f"... Column {col_str} to cell {start_cell.to_string(skip_sheet=True)}")
-            result = self.write_column(start_range=start_cell, data=rent_roll_df[col_str].to_list())
+            result = self.write_column(start_range=start_cell, data=rent_roll_df[col_str].to_list())  # noqa:F841
         # data = rent_roll_gsheet.read_data(f"{rent_roll_sheets[0]}!A1:D10")
         # print("Read data:", data)
 
     def populate_t12(self, t12_sheet: T12Sheet):
         """Get T12 income and expense data and populate it into the pro forma sheet."""
-        found_named_ranges = set(t12_sheet.list_named_ranges())
+        found_named_ranges = set(t12_sheet.list_named_ranges())  # noqa:F841
 
         # start_dict = self.find_column_starts(
         #     start_range=SheetCell("Rent Roll-Input!A1"),  # TODO: update to T12 location

@@ -1,9 +1,8 @@
 from django.db import models
-from pydantic import BaseModel, Extra
-
 from elt.lib.attom_data_struct import Address as AttomAddress
 from lib import mapbox
 from lib.util import LongLat
+from pydantic import BaseModel, Extra
 
 
 # Create your models here.

@@ -1,6 +1,5 @@
 import json
-from builtins import super
-from typing import Sequence
+from collections.abc import Sequence
 
 from django import forms
 from django.utils.html import html_safe
@@ -10,9 +9,9 @@ from django.utils.html import html_safe
 class GlobalJsMediaPath:
     """Convert a JS module import into a global variable assignment for use in a django widget Media statement."""
 
-    def __init__(self, url: str, objectNames: Sequence[str]):
+    def __init__(self, url: str, object_names: Sequence[str]):
         self.url = url
-        self.objectNames = objectNames
+        self.objectNames = object_names
 
     def __str__(self):
         # fmt:off

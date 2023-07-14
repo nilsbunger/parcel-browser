@@ -1,5 +1,5 @@
 # Register your models here.
-from django.contrib.admin import EmptyFieldListFilter, FieldListFilter, SimpleListFilter
+from django.contrib.admin import EmptyFieldListFilter, SimpleListFilter
 from django.contrib.gis import admin
 from django.contrib.gis.db import models
 from django.db.models import Count, Prefetch

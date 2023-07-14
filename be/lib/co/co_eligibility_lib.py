@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 
 from django.contrib.gis.db.models.functions import Distance
 from pydantic import BaseModel
+from world.models import Parcel, Roads, ZoningBase
+from world.models.models import AnalyzedRoad
 
 from lib.parcel_analysis_2022.crs_lib import meters_to_latlong
 from lib.parcel_analysis_2022.types import CheckResultEnum
-from world.models import Parcel, Roads, ZoningBase
-from world.models.models import AnalyzedRoad
 
 
 class EligibilityCheck(BaseModel):

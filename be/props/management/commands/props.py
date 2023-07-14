@@ -3,8 +3,6 @@ from enum import Enum, EnumMeta
 import openai
 import polars as pl
 import tiktoken
-from django.core.management.base import BaseCommand
-
 from elt.lib.attom_data import AttomDataApi
 from elt.lib.attom_data_struct import AttomPropertyRecord
 from elt.lib.rentometer_data import RentometerApi
@@ -215,7 +213,7 @@ Here are 4 comparable properties with recent sales, and relevant information abo
         {"role": "user", "content": user_prompt},
     ]
     openai.api_key = env("OPENAI_API_KEY")
-    result = openai.ChatCompletion.create(messages=messages, model="gpt-3.5-turbo", temperature=0.4)
+    result = openai.ChatCompletion.create(messages=messages, model="gpt-3.5-turbo", temperature=0.4)  # noqa:F841
 
     print("DONE")
 

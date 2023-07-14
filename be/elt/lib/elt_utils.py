@@ -1,8 +1,8 @@
-from copy import deepcopy
 import sys
+import warnings
+from copy import deepcopy
 from datetime import date, datetime
 from itertools import chain, islice
-import warnings
 from zoneinfo import ZoneInfo
 
 from django.db import models

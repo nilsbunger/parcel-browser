@@ -5,7 +5,6 @@ from enum import Enum
 import django
 from django.contrib.gis.db.models import Extent, Union
 from django.contrib.gis.geos import MultiPolygon
-
 from lib.co.co_eligibility_lib import AB2011Eligible
 from lib.mgmt_lib import Home3Command
 from lib.parcel_analysis_2022.crs_lib import get_utm_crs
@@ -14,6 +13,7 @@ from lib.parcel_analysis_2022.topo_lib import (
     calculate_parcel_slopes_mp,
     check_topos_for_parcels,
 )
+
 from world.models import AnalyzedParcel, Parcel, ZoningBase
 from world.models.base_models import ZoningMapLabel
 

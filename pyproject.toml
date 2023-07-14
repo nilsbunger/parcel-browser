@@ -17,6 +17,7 @@ line-length = 120
 target-version = "py311"
 ignore-init-module-imports = true
 
+
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -63,6 +64,9 @@ exclude = [
     "vendored",
     "*_calls.py",
 ]
+
+[tool.ruff.pep8-naming]
+classmethod-decorators = ["classmethod", "pydantic.validator"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401", ]

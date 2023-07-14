@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-
 from world.models.base_models import RentalUnit
 
 

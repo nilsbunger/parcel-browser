@@ -1,4 +1,5 @@
-from datetime import date, datetime
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from elt.lib.types import EltAnalysisEnum, Juri
 from elt.models import RawSfParcelWrap
@@ -28,7 +29,7 @@ def analyze_yigby(geo: Juri):
     e = EltAnalysis(
         juri=geo.value,
         analysis=EltAnalysisEnum.yigby.value,
-        run_date=date.today(),
+        run_date=datetime.now(tz=ZoneInfo("America/Los_Angeles")).date(),
     )
     e.save()
     e.parcels.set(parcels_by_faith_owners)

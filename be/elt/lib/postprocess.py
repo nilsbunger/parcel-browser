@@ -1,11 +1,10 @@
 from django.contrib.gis.db import models
-from django.db.models import Count, F, Max, OuterRef, QuerySet, Subquery, Window
-from django.db.models.functions import RowNumber
+from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.forms import model_to_dict
+from parsnip.util import dict_del_keys
 
 from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfParcel, RawSfRentboardHousingInv, RawSfReportall
 from elt.models.raw_sf_parcel_wrap import RawSfParcelWrap
-from parsnip.util import dict_del_keys
 
 
 def check_for_dupes_sf():
@@ -31,7 +30,7 @@ def check_for_dupes_sf():
                         same_count += 1
                         model.objects.filter(pk=objs[i]["id"]).delete()
     if same_count > 0:
-        print("Deleted {} duplicates with same data".format(same_count))
+        print(f"Deleted {same_count} duplicates with same data")
     else:
         print("No duplicates found")
 
@@ -142,7 +141,6 @@ def link_to_parcel_wrap_sf_one_to_one(model, apn_field, wrap_model_field, dry_ru
         f"For model {model.__name__}, found {len(unlinked_rows)} latest unlinked APNs and {len(parcel_wraps)} "
         f"parcel wrap objects to link them to"
     )
-    created_count = 0
     updated_wraps = []
     for idx, model_inst in enumerate(unlinked_rows):
         if idx % 1000 == 0:

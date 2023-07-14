@@ -1,11 +1,11 @@
 import pytest
+from world.models import Parcel
 
 from lib.co.co_eligibility_lib import (
     CommercialCorridorCheck,
     PrincipallyPermittedUseCheck,
 )
 from lib.parcel_analysis_2022.types import CheckResultEnum
-from world.models import Parcel
 
 
 @pytest.mark.django_db(databases=["basedata", "default"])  # TODO: REMOVE DEFAULT

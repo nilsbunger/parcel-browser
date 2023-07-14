@@ -1,9 +1,8 @@
-from datetime import UTC, datetime, timedelta
 import logging
 import urllib
+from datetime import UTC, datetime, timedelta
 
 import requests
-
 from parsnip.settings import env
 
 MAPBOX_API_KEY = env("MAPBOX_API_KEY")  # noqa: N806

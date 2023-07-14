@@ -5,8 +5,8 @@ from collections import defaultdict
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import Subquery
-
 from lib.parcel_analysis_2022.types import CheckResultEnum
+
 from world.models import Parcel, Roads
 
 

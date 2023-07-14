@@ -7,7 +7,6 @@ from pprint import pformat
 from dateutil.parser import parse as date_parse
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.utils import LayerMapping, mapping, ogrinspect
-from django.db import models
 
 import elt.models as elt_models
 from elt.lib.elt_utils import elt_model_with_run_date, get_elt_pipe_filenames, pipestage_prompt
@@ -60,7 +59,7 @@ def extract_from_shapefile(geo: Juri, datatype: GisData):
 
         # Save new data to DB from shapefile
         mapper = elt_models.__dict__[f"{model_name}_mapping"]
-        ds = DataSource(Path(tempdir, shapefile))
+        ds = DataSource(Path(tempdir, shapefile))  # noqa:F841
 
         lm = LayerMapping(db_model, Path(tempdir, shapefile), mapper, transform=True, using="default")
         print(f"Deleting old data from DB {db_model}...")

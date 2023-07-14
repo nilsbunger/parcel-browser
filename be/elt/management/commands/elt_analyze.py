@@ -1,6 +1,7 @@
-from elt.lib.analysis.yigby import analyze_yigby
-from elt.lib.types import EltAnalysisEnum, GisData, Juri
 from lib.mgmt_lib import Home3Command
+
+from elt.lib.analysis.yigby import analyze_yigby
+from elt.lib.types import EltAnalysisEnum, Juri
 
 
 class Command(Home3Command):

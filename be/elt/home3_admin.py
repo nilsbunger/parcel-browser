@@ -1,7 +1,7 @@
 from functools import partial
 
 from django import forms
-from django.contrib.admin import ModelAdmin, helpers
+from django.contrib.admin import helpers
 from django.contrib.admin.utils import flatten_fieldsets
 from django.contrib.gis import admin
 from django.contrib.gis.admin import GISModelAdmin
@@ -9,8 +9,6 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.forms import Media
 from more_itertools import collapse
-from django.forms import DecimalField
-
 from parsnip.util import round_to_sig_figs
 
 
@@ -123,7 +121,9 @@ class Home3Admin(GISModelAdmin):
             model = model_attr.__class__.objects.get(pk=model_attr.pk)
             model_admin = self.admin_site._registry[model.__class__]
             fieldsets = model_admin.get_fieldsets(request, model)
-            ModelForm = model_admin.get_form(request, model, change=True, fields=flatten_fieldsets(fieldsets))
+            ModelForm = model_admin.get_form(  # noqa:N806 (uppercase var name)
+                request, model, change=True, fields=flatten_fieldsets(fieldsets)
+            )
             form = ModelForm(instance=model)
             readonly_fields = model_admin.get_readonly_fields(request, model)
             admin_form = helpers.AdminForm(form, list(fieldsets), {}, readonly_fields, model_admin=model_admin)
