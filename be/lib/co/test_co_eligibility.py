@@ -8,6 +8,7 @@ from lib.co.co_eligibility_lib import (
 from lib.parcel_analysis_2022.types import CheckResultEnum
 
 
+@pytest.mark.skip(reason="outdated tests requiring san diego parcel data and old DB config")
 @pytest.mark.django_db(databases=["basedata", "default"])  # TODO: REMOVE DEFAULT
 class TestCommercialCorridor:
     def test_on_wide_road(self):
@@ -28,6 +29,7 @@ class TestCommercialCorridor:
         pass
 
 
+@pytest.mark.skip(reason="outdated tests requiring san diego parcel data and old DB config")
 @pytest.mark.django_db(databases=["basedata"])
 class TestPrincipallyPermittedUse:
     def test_commercial_parcel(self):
