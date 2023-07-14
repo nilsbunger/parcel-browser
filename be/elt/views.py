@@ -67,7 +67,7 @@ class RawCaliResourceLevelTile(LoginRequiredMixin, MVTView, ListView):
 
 # @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
 # @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
-class EltAnalysisTile(MVTView, ListView):  # TODO: Add LoginRequiredMixin
+class EltAnalysisTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcelWrap
     vector_tile_layer_name = "elt_analysis"
     # vector_tile_fields = ("fips", "oppcat")

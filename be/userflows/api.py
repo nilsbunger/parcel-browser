@@ -15,7 +15,7 @@ from .models import User
 # from .api_schema import ProfileSchema
 
 userflows_api = NinjaAPI(
-    auth=django_auth, csrf=True, urls_namespace="userflows", docs_decorator=staff_member_required
+    auth=django_auth, csrf=True, urls_namespace="userflows_api", docs_decorator=staff_member_required
 )
 
 

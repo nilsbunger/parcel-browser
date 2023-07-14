@@ -364,6 +364,7 @@ if DEV_ENV:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     EMAIL_BACKEND = "world.infra.MailerSendBackend"
+# Note: in test env, this is automatically set to django.core.mail.backends.locmem.EmailBackend
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

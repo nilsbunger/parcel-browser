@@ -16,36 +16,6 @@ class TestProperty:
         assert x.geometry.coordinates.long == -122.147775
 
 
-def _json_post(self, path: str, data: str, exp_status=200) -> dict:
-    resp = self.post(path, data=data, content_type="application/json", secure=True)
-    assert resp.status_code == exp_status
-    return resp.json()
-
-
-def _json_get(self, path: str, data: str = None, exp_status=200) -> dict:
-    resp = self.get(path, data=data, content_type="application/json", secure=True)
-    assert resp.status_code == exp_status
-    return resp.json()
-
-
-@pytest.fixture()
-def client_and_user(django_user_model, client):
-    from django.contrib.auth import get_user_model
-
-    user = get_user_model().objects.create_user(email="testuser@test.home3.co", password="testpassword")
-    assert client.login(email="testuser@test.home3.co", password="testpassword")
-    client.defaults["content_type"] = "application/json"
-    client.defaults["secure"] = True
-
-    client_cls = type(client)
-    client_cls.json_post = _json_post
-    client_cls.json_get = _json_get
-    yield client, user
-
-    client.logout()
-    user.delete()
-
-
 class TestApi:
     @pytest.mark.django_db
     def test_database_settings(self, db):
