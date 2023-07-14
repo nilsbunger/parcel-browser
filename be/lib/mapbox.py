@@ -2,11 +2,14 @@ import logging
 import urllib
 from datetime import UTC, datetime, timedelta
 
+from django.conf import settings
 import requests
 from parsnip.settings import env
 
-MAPBOX_API_KEY = env("MAPBOX_API_KEY")  # noqa: N806
-assert MAPBOX_API_KEY
+if settings.TEST_ENV:
+    MAPBOX_API_KEY = None
+else:
+    MAPBOX_API_KEY = env("MAPBOX_API_KEY")  # noqa: N806
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +41,13 @@ class AddressNormalizer:
         self._normalize_address()
 
     def _normalize_address(self):
-        url = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{urllib.parse.quote(self._full_address)}.json"
-        log.info("Making Mapbox API request for address resolution")
+        if not MAPBOX_API_KEY:
+            log.info("Mapbox has no API key, so using local stub (eg for test runs)")
+            server = "localmapboxstub:8181"
+        else:
+            log.info("Making Mapbox API request for address resolution")
+            server = "api.mapbox.com"
+        url = f"https://{server}/geocoding/v5/mapbox.places/{urllib.parse.quote(self._full_address)}.json"
         response = requests.get(url, params=self.params)
         self._data = response.json()
 

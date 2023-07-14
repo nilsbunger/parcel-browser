@@ -1,9 +1,11 @@
 import json
+import urllib
 
 import pytest
+import responses
+
 from elt.models import RawSfParcelWrap
 from facts.models import AddressFeatures, StdAddress
-
 from props.models import PropertyProfile
 
 
@@ -26,10 +28,25 @@ class TestApi:
         assert settings.DATABASES["default"]["NAME"] == "test_railway"
 
     @pytest.mark.django_db
-    def test_create_property_api(self, client_and_user, create_new_property_req):
+    @responses.activate  # responses module for mocking
+    def test_create_property_api(self, client_and_user, create_new_property_req, mapbox_normalize_addr_resp):
         client, user = client_and_user
-        # NOTE: have to hardcode URL - can't use reverse() when there is a get and post at same location.
+        # create mock response
+        addrs = (  # input, output pairs for address
+            ("3756 jackson st, sf", "3756 Jackson Street, San Francisco"),
+            ("45 parker ave, sf", "45 Parker Avenue, San Francisco"),
+            ("45 parker ave, sf", "45 Parker Avenue, San Francisco"),
+        )
+        for addr in addrs:
+            responses.add(
+                responses.GET,
+                f"https://localmapboxstub:8181/geocoding/v5/mapbox.places/{urllib.parse.quote(addr[0])}.json",
+                json=mapbox_normalize_addr_resp(addr[1]),  # mock response to generate
+                status=200,
+            )
+        # NOTE: have to hardcode Django URL - can't use reverse() when there is a get and post at same location.
         resp = client.json_post("/api/properties/profiles", data=create_new_property_req("3756 jackson st", "sf", ""))
+        print(responses.calls)
         assert resp == {"errors": False, "message": "Property created", "data": {"id": 1}}
         resp = client.json_post("/api/properties/profiles", data=create_new_property_req("45 parker ave", "sf", ""))
         assert resp == {"errors": False, "message": "Property created", "data": {"id": 2}}
@@ -95,6 +112,135 @@ def create_user(db, django_user_model):
         return django_user_model.objects.create_user(**kwargs)
 
     return make_user
+
+
+@pytest.fixture
+def mapbox_normalize_addr_resp():
+    """This is the response from the Mapbox API when normalizing an address.
+    Accepts an addr_dict with keys being 'input' to the server, and value being output to generate."""
+
+    def _inner(output_addr):
+        return _mapbox_normalize_addr_fixture(output_addr)
+
+    return _inner
+
+
+def _mapbox_normalize_addr_fixture(output_addr: str):
+    # output_addr should be a well-formed address like "3756 Jackson Street"
+    street, city = output_addr.split(", ")
+    return {
+        "type": "FeatureCollection",
+        "query": ["1234", "dummy"],  # ["3756", "jackson", "st", "sf"],
+        "features": [
+            {
+                "id": "address.4765053304903338",
+                "type": "Feature",
+                "place_type": ["address"],
+                "relevance": 1,
+                "properties": {
+                    "accuracy": "rooftop",
+                    "mapbox_id": "dXJuOm1ieGFkcjplZTAyMWNjZi05NTE4LTRmMzYtYTMyMS0xNTFiNmFmMzE4M2M",
+                },
+                "text": "Dummy",  # "Jackson Street",
+                "place_name": f"{output_addr}, California 94118, United States",
+                "matching_place_name": f"Dummy match",  # f"{output_addr}, SF, California 94118, United States",
+                "center": [0, 0],  # [-122.45676, 37.78991],
+                "geometry": {"type": "Point", "coordinates": [0, 0]},  # [-122.45676, 37.78991]},
+                "address": street.split(" ")[0],  # "3756",
+                "context": [
+                    {
+                        "id": "neighborhood.516025580",
+                        "mapbox_id": "dXJuOm1ieHBsYzpIc0hzN0E",
+                        "text": "Dummy",  # "Presidio Heights",
+                    },
+                    {"id": "postcode.312536812", "mapbox_id": "dXJuOm1ieHBsYzpFcUR1N0E", "text": "94118"},
+                    {
+                        "id": "place.292358380",
+                        "mapbox_id": "dXJuOm1ieHBsYzpFVzBJN0E",
+                        "wikidata": "Q62",
+                        "text": city,
+                    },
+                    {
+                        "id": "district.20547308",
+                        "mapbox_id": "dXJuOm1ieHBsYzpBVG1HN0E",
+                        "wikidata": "Q62",
+                        "text": "Dummy county",  # "San Francisco County",
+                    },
+                    {
+                        "id": "region.419052",
+                        "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+                        "wikidata": "Q99",
+                        "short_code": "US-CA",
+                        "text": "California",
+                    },
+                    {
+                        "id": "country.8940",
+                        "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+                        "wikidata": "Q30",
+                        "short_code": "us",
+                        "text": "United States",
+                    },
+                ],
+            },
+            {
+                "id": "address.2269403891027682",
+                "type": "Feature",
+                "place_type": ["address"],
+                "relevance": 0.972222,
+                "properties": {
+                    "accuracy": "interpolated",
+                    "mapbox_id": "dXJuOm1ieGFkcjo0ODhhZDc1OC1mYzQ0LTQ3MTktYWNhZC1mZmNiZjU0NWVlMWE",
+                },
+                "text": "Jackson Street Southeast",
+                "place_name": "3756 Jackson Street Southeast, Albany, Oregon 97322, United States",
+                "center": [-123.095363, 44.610387],
+                "geometry": {"type": "Point", "coordinates": [-123.095363, 44.610387], "interpolated": True},
+                "address": "3756",
+            },
+            {
+                "id": "neighborhood.318475500",
+                "type": "Feature",
+                "place_type": ["neighborhood"],
+                "relevance": 0.693333,
+                "properties": {"mapbox_id": "dXJuOm1ieHBsYzpFdnVNN0E", "wikidata": "Q14682502"},
+                "text": "Jackson Square",
+                "place_name": "Jackson Square, San Francisco, California, United States",
+                "matching_place_name": "Jackson Square, SF, California, United States",
+                "bbox": [-122.406921387, 37.793242962, -122.387695312, 37.804358869],
+                "center": [-122.398793, 37.800613],
+                "geometry": {"type": "Point", "coordinates": [-122.398793, 37.800613]},
+                "context": [
+                    {"id": "postcode.312487660", "mapbox_id": "dXJuOm1ieHBsYzpFcUF1N0E", "text": "94111"},
+                    {
+                        "id": "place.292358380",
+                        "mapbox_id": "dXJuOm1ieHBsYzpFVzBJN0E",
+                        "wikidata": "Q62",
+                        "text": "San Francisco",
+                    },
+                    {
+                        "id": "district.20547308",
+                        "mapbox_id": "dXJuOm1ieHBsYzpBVG1HN0E",
+                        "wikidata": "Q62",
+                        "text": "San Francisco County",
+                    },
+                    {
+                        "id": "region.419052",
+                        "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+                        "wikidata": "Q99",
+                        "short_code": "US-CA",
+                        "text": "California",
+                    },
+                    {
+                        "id": "country.8940",
+                        "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+                        "wikidata": "Q30",
+                        "short_code": "us",
+                        "text": "United States",
+                    },
+                ],
+            },
+        ],
+    }
 
 
 @pytest.fixture
