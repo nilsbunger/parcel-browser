@@ -3,9 +3,9 @@ import urllib
 
 import pytest
 import responses
-
 from elt.models import RawSfParcelWrap
 from facts.models import AddressFeatures, StdAddress
+
 from props.models import PropertyProfile
 
 

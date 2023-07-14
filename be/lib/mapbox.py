@@ -2,8 +2,8 @@ import logging
 import urllib
 from datetime import UTC, datetime, timedelta
 
-from django.conf import settings
 import requests
+from django.conf import settings
 from parsnip.settings import env
 
 if settings.TEST_ENV:
