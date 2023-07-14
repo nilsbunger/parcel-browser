@@ -25,6 +25,7 @@ jobs:
       DB_NAME: test_db
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      DB: LOCAL
     services:
       postgres:
         image: postgis/postgis:14-3.3   # versions available: https://registry.hub.docker.com/r/postgis/postgis/
