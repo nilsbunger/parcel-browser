@@ -305,6 +305,10 @@ match DB:
         ]
     case "LOCAL":
         db_settings = local_db_settings
+    case "TEST":
+        db_settings = [
+            env(x) for x in ["DB_DEV_HOST", "DB_DEV_PORT", "DB_DEV_NAME", "DB_DEV_USERNAME", "DB_DEV_PASSWORD"]
+        ]
     case "PROD":
         db_settings = (env("DB_HOST"), env("DB_PORT"), env("DB_NAME"), env("DB_USERNAME"), env("DB_PASSWORD"))
     case _:

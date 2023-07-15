@@ -21,11 +21,13 @@ jobs:
   build-and-test:
     runs-on: ubuntu-22.04 # has postgres 14.7 installed, which is helpful to avoid having to install it ourselves
     env:
-      DB_HOST: localhost
-      DB_NAME: test_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB: LOCAL
+      DB_TEST_HOST: localhost
+      DB_TEST_PORT: 5432
+      DB_TEST_NAME: test_db
+      DB_TEST_USERNAME: postgres
+      DB_TEST_PASSWORD: postgres
+      DB: TEST
+      TEST_ENV: true
     services:
       postgres:
         image: postgis/postgis:14-3.3   # versions available: https://registry.hub.docker.com/r/postgis/postgis/
