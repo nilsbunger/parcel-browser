@@ -209,7 +209,7 @@ MIDDLEWARE = keep_truthy(
 # #####################################################################
 # STATIC FILES and TEMPLATES
 
-if DEV_ENV or LOCAL_DB:  # local dev or local build&run case
+if DEV_ENV or LOCAL_DB or TEST_ENV:  # local dev or local build&run case
     # location to get *.partial.html from
     template_dirs = [BASE_DIR / ".." / "fe" / "dist"]
     STATIC_ROOT = BASE_DIR / ".." / "fe" / "dist"

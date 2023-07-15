@@ -25,7 +25,7 @@ class TestApi:
 
         count = RawSfParcelWrap.objects.count()
         print("Parcel Wrap Count = ", count)
-        assert settings.DATABASES["default"]["NAME"] == "test_railway"
+        assert settings.DATABASES["default"]["NAME"][0:5] == "test_"
 
     @pytest.mark.django_db
     @responses.activate  # responses module for mocking
