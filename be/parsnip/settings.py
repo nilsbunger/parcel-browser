@@ -56,7 +56,7 @@ DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 STAGE_ENV = DJANGO_ENV == "staging"  # running on staging server
 DB: str = env("DB").upper()  # which DB to use for primary data storage:
-assert DB in ["LOCAL", "DEV", "PROD"]
+assert DB in ["LOCAL", "DEV", "TEST", "PROD"]
 TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -307,7 +307,7 @@ match DB:
         db_settings = local_db_settings
     case "TEST":
         db_settings = [
-            env(x) for x in ["DB_DEV_HOST", "DB_DEV_PORT", "DB_DEV_NAME", "DB_DEV_USERNAME", "DB_DEV_PASSWORD"]
+            env(x) for x in ["DB_TEST_HOST", "DB_TEST_PORT", "DB_TEST_NAME", "DB_TEST_USERNAME", "DB_TEST_PASSWORD"]
         ]
     case "PROD":
         db_settings = (env("DB_HOST"), env("DB_PORT"), env("DB_NAME"), env("DB_USERNAME"), env("DB_PASSWORD"))
