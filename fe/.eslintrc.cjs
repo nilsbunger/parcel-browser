@@ -5,16 +5,17 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   parserOptions: {
     tsconfigRootDir: __dirname,
-    project: ["./tsconfig.json"],
+    project: ["./tsconfig.json"]
   },
   plugins: ["@typescript-eslint", "eslint-plugin-testing-library", "eslint-plugin-jest-dom"],
   // See also configuration instructions in  https://typescript-eslint.io/docs/linting/configs
   extends: [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
-    //"plugin:@typescript-eslint/strict",
-    "prettier",
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/recommended-requiring-type-checking",
+      //"plugin:@typescript-eslint/strict",
+      "prettier",
+      "plugin:storybook/recommended"
   ],
   rules: {
     "@typescript-eslint/restrict-template-expressions": "off",
@@ -29,6 +30,6 @@ module.exports = {
     "@typescript-eslint/no-unsafe-argument": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-inferrable-types": "off",
-    "@typescript-eslint/no-implicit-any-catch": "off",
-  },
-}
+    "@typescript-eslint/no-implicit-any-catch": "off"
+  }
+};
