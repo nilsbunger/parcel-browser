@@ -28,7 +28,7 @@ export default function NewListingPage() {
     if ("apn" in addrSearchData) {
       setLoading(true)
       const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/world/analysis/`, {
-        ResponseCls: AnalysisPostRespSchema,
+        RespDataCls: AnalysisPostRespSchema,
         isPost: false,
         params: { apn: addrSearchData.apn },
       })

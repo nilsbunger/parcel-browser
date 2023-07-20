@@ -14,10 +14,12 @@ venv/
 dist/
 fe/dist/
 fe/dist-dev/
+fe/src/stories/
 fe/parcel-bundle-reports/
 deploy/
 **/*.log
 **/test_fixtures/
+**/fixtures/*
 be/world/data/
 **/.scrapy/
 **/.parcel-cache

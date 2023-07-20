@@ -8,21 +8,11 @@ import PropertyFilters from "../components/PropertyFilters";
 import { Dropzone, MIME_TYPES } from "@mantine/dropzone"
 import { Box, Flex, Group, LoadingOverlay, rem, Table, Text, useMantineTheme } from "@mantine/core"
 import { IconPhoto, IconTable, IconUpload, IconX } from "@tabler/icons"
+import { apiRequest } from "../utils/fetcher";
+import { z, ZodType } from "zod";
+import { columnarToRowData } from "../utils/utils";
+import { KeyedColumns, RentRollRespDataZod, KeyedRow } from "../types";
 
-// React data grid: https://github.com/adazzle/react-data-grid/blob/main/README.md
-// interface Row {
-//   id: number
-//   title: string
-// }
-// const columns = [
-//   { key: "id", name: "ID" },
-//   { key: "title", name: "Title", sortable: true },
-// ]
-
-// const rows = [
-//   { id: 0, title: "Example" },
-//   { id: 1, title: "Demo" },
-// ]
 
 const MyDropzone = ({ setFilename = null, children }: { setFilename?: any; children: ReactNode }): JSX.Element => {
   const theme = useMantineTheme()
@@ -64,6 +54,36 @@ const MyDropzone = ({ setFilename = null, children }: { setFilename?: any; child
   )
 }
 
+export function useApiRequest<T, U=T>(url: string | null, RespDataZod: ZodType, xformer: (a: T) => U): {data:U | null, isLoading:boolean, error:boolean | Record<string, string>} {
+  const [data, setData] = React.useState<U | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<boolean | Record<string, string>>(false)
+  useEffect(() => {
+    if (!url) return;
+    apiRequest<typeof RespDataZod>(url, {
+      RespDataCls: RespDataZod,
+      isPost: false,
+      body: undefined,
+    })
+      .then(({ errors, data, message }) => {
+        // console.log("Column data:")
+        // console.log(data)
+        const xdata = xformer(data) // eg convert column to row data
+        setError(errors)
+        setIsLoading(false)
+        setData(xdata)
+      })
+      .catch((err) => {
+        console.error(err)
+        setError(true)
+        setIsLoading(false)
+        setData(null)
+      })
+  }, [url])
+  return {data, isLoading, error}
+}
+
+
 export default function BovDetailPage() {
   // setup and state
   const [showRentRoll, setShowRentRoll] = React.useState(false)
@@ -74,6 +94,12 @@ export default function BovDetailPage() {
   const [t12Filename, setT12Filename] = React.useState<string | null>(null)
   const [showFinancials, setShowFinancials] = React.useState(false)
   // get property profiles
+
+  type RespDataType = z.infer<typeof RentRollRespDataZod>
+  const foo = columnarToRowData<string | number>
+  console.log(foo)
+  const { data, isLoading, error } = useApiRequest<RespDataType, Array<Record<string,string | number>>>(
+    showRentRoll ? `/api/properties/bov/${id}`: null, RentRollRespDataZod, columnarToRowData<string | number>)
 
   useEffect(() => {
     if (rrFilename && t12Filename) {
@@ -91,7 +117,9 @@ export default function BovDetailPage() {
   const rentRollDisplay = !id
     ? <div>Invalid BOV id</div>
     : !showRentRoll ? <button onClick={() => setShowRentRoll(true)}>Load Rent Roll</button>
-      : <RentRoll id={parseInt(id)}></RentRoll>
+      : error ? <div>Error loading rent roll!</div>
+      : isLoading ? <div>Loading rent roll...</div>
+      : <RentRoll rows={data}></RentRoll>
 
   return (<div>
       <h2 className="py-5">Filters</h2>

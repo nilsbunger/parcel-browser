@@ -1,6 +1,6 @@
 
 import type { Meta, StoryObj } from '@storybook/react';
-import RentRoll from "./RentRoll";
+import RentRoll from "../../components/RentRoll";
 
 
 //👇 This default export determines where your story goes in the story list
@@ -14,5 +14,6 @@ type Story = StoryObj<typeof RentRoll>;
 export const FirstStory: Story = {
   args: {
     //👇 The args you need here will depend on your component
+    rows: [],
   },
 };

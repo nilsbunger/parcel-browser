@@ -18,6 +18,7 @@
     "dev": "parcel watch --target default",
     "build": "rm -rf .parcel-cache/ dist/ ../dist/ && parcel build --dist-dir ../dist/static --no-cache --target default && mkdir -p ../dist/django-templates && mv ../dist/static/*.html ../dist/django-templates/",
     "lint": "eslint . --ext .ts,.tsx",
+    "check-types": "tsc --noemit",
     "prettify": "prettier --write .",
     "test": "jest",
     "clean": "rm -rf .parcel-cache/ dist/ ../dist/",

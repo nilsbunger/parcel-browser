@@ -14,13 +14,12 @@
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": false,
     "typeRoots": [
-      "node_modules/@types",
-      "node_modules/@silevis/reactgrid/dist/types"
+      "node_modules/@types"
     ]
   },
   "include": [
     "src/**/*.tsx",
-    "src/**/*.ts",
-    "node_modules/@silevis/reactgrid/dist/reactgrid.d.ts"
-  ]
+    "src/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }

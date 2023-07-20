@@ -1,4 +1,3 @@
-import React from "react"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import useSWR, { useSWRConfig } from "swr"
@@ -17,7 +16,7 @@ async function doAnalysis(
   //   await post_csrf(`/api/world/analysis/`, {params: { al_id: analysisId }})
   // )
   const { data, errors, message } = await apiRequest<typeof AnalysisPostRespSchema>(`/api/world/analysis/`, {
-    ResponseCls: AnalysisPostRespSchema,
+    RespDataCls: AnalysisPostRespSchema,
     params: { al_id: analysisId },
     isPost: false,
   })

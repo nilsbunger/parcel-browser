@@ -1,66 +1,18 @@
 import * as React from "react";
-import { useEffect } from "react";
-import { apiRequest } from "../utils/fetcher";
-import { RentRollRespDataCls } from "../types";
+import { KeyedRow } from "../types";
 import DataGrid from "react-data-grid";
+import 'react-data-grid/lib/styles.css';
 
 // React data grid: https://github.com/adazzle/react-data-grid/blob/main/README.md
 
-type ColumnarData = {
-  [key: string]: any[]
-}
-
-type RowData = {
-  [key: string]: any
-}
-
-function rowKeyGetter(row: RowData) {
+function rowKeyGetter(row: KeyedRow) {
   // need this method to support row selection
   return row.UnitNum
 }
 
 
-function columnarToRowData(columnarData: ColumnarData): RowData[] {
-  const keys = Object.keys(columnarData)
-  const rowCount = columnarData[keys[0]].length
 
-  return Array.from({ length: rowCount }, (_, i) =>
-    keys.reduce((row: RowData, key) => {
-      row[key] = columnarData[key][i]
-      return row
-    }, {})
-  )
-}
-
-export default function RentRoll({ id, rows }: {id: number, rows: RowData[]}) {
-  // const [rows, setRows] = React.useState<RowData[]>([])
-  // const [isLoading, setIsLoading] = React.useState(true)
-  // const [error, setError] = React.useState<boolean | Record<string, string>>(false)
-
-  // useEffect(() => {
-  //   apiRequest<typeof RentRollRespDataCls>(`/api/properties/bov/${id}`, {
-  //     RespDataCls: RentRollRespDataCls,
-  //     isPost: false,
-  //     body: undefined,
-  //   })
-  //     .then(({ errors, data, message }) => {
-  //       console.log("Column data:")
-  //       console.log(data)
-  //       const rowData = columnarToRowData(data)
-  //       console.log("Row data:")
-  //       console.log(rowData)
-  //       setRows(rowData)
-  //       setError(errors)
-  //       setIsLoading(false)
-  //     })
-  //     .catch((err) => {
-  //       console.log("Error getting property profiles:", err)
-  //       setError(true)
-  //       setIsLoading(false)
-  //     })
-  // }, [id])
-  // if (error) return <div>failed to load Rent Roll</div>
-  // if (isLoading) return <div>loading...</div>
+export default function RentRoll({ rows }: {rows: KeyedRow[] | null}) {
   return (
     <div>
       <DataGrid
@@ -72,7 +24,7 @@ export default function RentRoll({ id, rows }: {id: number, rows: RowData[]}) {
           { key: "LeaseEndDate", name: "Lease End Date" },
           { key: "SqFt", name: "SqFt" },
         ]}
-        rows={rows}
+        rows={rows || []}
         rowKeyGetter={rowKeyGetter}
         // onSort={(columnKey, sortDirection) => console.log(columnKey, sortDirection)}
         className="rdg-light"

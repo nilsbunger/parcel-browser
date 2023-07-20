@@ -248,8 +248,6 @@ export const AnalysisPostReqSchema = z.object({
   // analyzed listing ID
   al_id: z.number().optional(),
 })
-export type AnalysisPostReq = z.infer<typeof AnalysisPostReqSchema>
-// type AnalysisPostResp = z.infer<typeof AnalysisPostRespSchema>
 
 // /api/world/address-search
 export const AddressSearchGetRespSchema = z.union([
@@ -275,12 +273,10 @@ export const ApiResponseSchema = z.object({
   message: z.string().nullable(),
 })
 export const LoginRespDataCls = z.object({ user: UserSchema.nullable() })
-export type LoginResponse = z.infer<typeof LoginRespDataCls>
 
 export const NewPropertyRespDataCls = z.object({
   id: z.number(),
 })
-export type NewPropertyResponse = z.infer<typeof NewPropertyRespDataCls>
 
 export const LoginRequestSchema = z.object({
   email: z.string().email(),
@@ -299,9 +295,8 @@ export function isMagicLinkLogin(req: LoginRequest | MagicLinkLoginRequest): req
 }
 
 export const LogoutResponseSchema = ApiResponseSchema.extend({})
-export type LogoutResponse = z.infer<typeof LogoutResponseSchema>
 
-export const RentRollRespDataCls = z.object({
+export const RentRollRespDataZod = z.object({
   Occupied: z.array(z.string()),
   CurrentRent: z.array(z.number()),
   UnitNum: z.array(z.string()),
@@ -309,4 +304,12 @@ export const RentRollRespDataCls = z.object({
   LeaseEndDate: z.array(z.string()),
   SqFt: z.array(z.number()),
 })
-export type RentRollResponse = z.infer<typeof RentRollRespDataCls>
+
+
+export type KeyedColumns = {
+  [key: string]: any[]
+}
+
+export type KeyedRow = {
+  [key: string]: any
+}
