@@ -4,15 +4,15 @@ import { Table } from "@tanstack/react-table"
 import * as React from "react"
 import { ErrorBoundary } from "react-error-boundary"
 
-type Props = {
-  table: Table<any>
+type Props<T> = {
+  table: Table<T>
   pageIndex: number
   pageSize: number
   setPageIndex: React.Dispatch<React.SetStateAction<number>>
   setPageSize: React.Dispatch<React.SetStateAction<number>>
 }
 
-function TablePagination({ table, pageIndex, pageSize, setPageIndex, setPageSize }: Props) {
+function TablePagination<T>({ table, pageIndex, pageSize, setPageIndex, setPageSize }: Props<T>) {
   return (
     <ErrorBoundary fallback={<div>Error in TablePagination</div>}>
       <div className="pagination">

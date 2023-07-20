@@ -17,7 +17,11 @@ export type Listing = {
   neighborhood: string
   is_mf: boolean
   is_tpa: boolean
-  [key: string]: string | number | boolean | object
+  zone: string
+  price: string | number
+  analysis_id: number
+  parcel_size: number
+  // [key: string]: string | number | boolean | object
 }
 
 export type UnitRentData = { rent_mean: number; rent_75_percentile: number; num_samples: number }
@@ -95,11 +99,11 @@ export const RoadGetRespSchema = z.object({
 })
 
 interface EligibilityCheckSchema {
-  name?: string
-  description?: string
-  result?: string
-  notes?: string[]
-  children?: EligibilityCheckSchema[]
+  name: string
+  description: string
+  result: string
+  notes: string[]
+  children: EligibilityCheckSchema[]
 }
 
 // Eligibility test result
@@ -108,7 +112,7 @@ export const EligibilityCheckSchema: z.ZodType<EligibilityCheckSchema> = z.lazy(
   z.object({
     name: z.string(),
     description: z.string(),
-    result: z.any(),
+    result: z.string(),
     notes: z.array(z.string()),
     children: z.array(EligibilityCheckSchema),
   })

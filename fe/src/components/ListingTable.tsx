@@ -18,7 +18,7 @@ type Props = {
 export default function ListingTable({ table, setColumnFilters }: Props) {
   return (
     <ErrorBoundary fallback={<div>Error in ListingTable</div>}>
-      {table.getRowModel().rows.length == 0 && <Skeleton count={50} />}
+      {table.getRowModel().rows.length === 0 && <Skeleton count={50} />}
       <table className="table-auto pb-8 border-spacing-2 overflow-x-auto whitespace-nowrap border-separate">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

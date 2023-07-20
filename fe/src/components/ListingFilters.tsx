@@ -6,13 +6,13 @@ import * as React from "react"
 import { Table, Column, ColumnFiltersState } from "@tanstack/react-table"
 import { Updater } from "use-immer"
 
-function Filter({
+function Filter<T>({
   column,
   table,
   setColumnFilters,
 }: {
   column: Column<any, unknown>
-  table: Table<any>
+  table: Table<T>
   setColumnFilters: Updater<ColumnFiltersState>
 }) {
   const firstValue = table.getPreFilteredRowModel().flatRows[0]?.getValue(column.id)
@@ -44,6 +44,7 @@ function Filter({
                   value: [modifier(value), undefined],
                 })
               } else {
+                // @ts-ignore
                 draft[filterIndex].value[0] = modifier(value)
               }
             })
@@ -67,6 +68,7 @@ function Filter({
                   value: [undefined, modifier(value)],
                 })
               } else {
+                // @ts-ignore
                 draft[filterIndex].value[1] = modifier(value)
               }
             })

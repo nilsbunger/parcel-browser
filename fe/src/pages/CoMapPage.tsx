@@ -7,9 +7,11 @@ import { BitmapLayer, PathLayer } from "@deck.gl/layers/typed"
 import { MapView } from "@deck.gl/core/typed"
 import { TileLayer } from "@deck.gl/geo-layers/typed"
 import { MVTLayer } from "@deck.gl/geo-layers/typed"
+import { PickingInfo } from "@deck.gl/core"
 import { Button, Menu } from "@mantine/core"
 import { useImmer } from "use-immer"
 import { CoMapDrawer } from "../components/CoMapDrawer"
+
 
 const INITIAL_VIEW_STATE = {
   latitude: 32.7157,
@@ -159,13 +161,13 @@ function mvtLayerWrapper(id, layers, visible = true) {
 /* global window */
 const devicePixelRatio = (typeof window !== "undefined" && window.devicePixelRatio) || 1
 
-function getTooltip({ tile }) {
+function getTooltip(info: PickingInfo ): null | string {
   // console.log(tile);
-  if (!tile) {
+  if (!info) {
     return null
   }
-  const { x, y, z } = tile.index
-  return tile && `tile: x: ${x}, y: ${y}, z: ${z}`
+  const { x, y, z } = info.index
+  return info && `tile: x: ${x}, y: ${y}, z: ${z}`
 }
 
 function baseTileLayer(onTilesLoad, showTileBoundaries) {
@@ -190,14 +192,13 @@ function baseTileLayer(onTilesLoad, showTileBoundaries) {
     maxZoom: 19,
     tileSize: 256,
     zoomOffset: devicePixelRatio === 1 ? -1 : 0,
-    renderSubLayers: (props) => {
+    renderSubLayer: (props) => {
       const {
         bbox: { west, south, east, north },
       } = props.tile
 
       return [
         new BitmapLayer(props, {
-          data: null,
           image: props.data,
           bounds: [west, south, east, north],
           desaturate: 0.8,
@@ -314,8 +315,8 @@ function CoMapLayerControl({ visibleLayers, setVisibleLayers }) {
 
 export default function CoMapPage({ onTilesLoad = null }) {
   const showTileBoundaries = false
-  const [hoverInfo, setHoverInfo] = useState()
-  const [selection, setSelection] = useState<{ selType: string; objId: number; info: object }>(null)
+  const [hoverInfo, setHoverInfo] = useState<unknown>()
+  const [selection, setSelection] = useState<{ selType: string; objId: number; info: object }>()
   const [visibleLayers, setVisibleLayers] = useImmer<Record<string, boolean>>({
     "tpa-vis-layer": false,
     "mf-vis-layer": false,
@@ -356,14 +357,14 @@ export default function CoMapPage({ onTilesLoad = null }) {
       const objId = info.object.properties.id
       console.log("Set Selection: ", { selType, objId, info })
       setSelection({ selType, objId, info })
-    } else setSelection(null)
+    } else setSelection(undefined)
   }, [])
 
   // event handler for escape key
   useEffect(() => {
     const handleEsc = (event) => {
       if (event.keyCode === 27) {
-        setSelection(null)
+        setSelection(undefined)
       }
     }
     window.addEventListener("keydown", handleEsc)

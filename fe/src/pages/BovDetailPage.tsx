@@ -11,7 +11,7 @@ import { IconPhoto, IconTable, IconUpload, IconX } from "@tabler/icons"
 import { apiRequest } from "../utils/fetcher";
 import { z, ZodType } from "zod";
 import { columnarToRowData } from "../utils/utils";
-import { KeyedColumns, RentRollRespDataZod, KeyedRow } from "../types";
+import { RentRollRespDataZod } from "../types";
 
 
 const MyDropzone = ({ setFilename = null, children }: { setFilename?: any; children: ReactNode }): JSX.Element => {
@@ -113,7 +113,6 @@ export default function BovDetailPage() {
   useEffect(() => {
     document.title = `BOV ${id}`
   }, [id])
-
   const rentRollDisplay = !id
     ? <div>Invalid BOV id</div>
     : !showRentRoll ? <button onClick={() => setShowRentRoll(true)}>Load Rent Roll</button>

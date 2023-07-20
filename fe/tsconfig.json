@@ -12,6 +12,7 @@
     "moduleResolution": "node",
     "module": "esnext",
     "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "noImplicitAny": false,
     "typeRoots": [
       "node_modules/@types"

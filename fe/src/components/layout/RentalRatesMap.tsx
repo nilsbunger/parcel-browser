@@ -75,11 +75,13 @@ function RentalRatesMap({ rentalRates }: Props) {
           zoom={13}
           scrollWheelZoom={true}
           className={"!h-[80vh] !w-100"}
+/* NOTE: This was removed in react-leaflet v4. TODO: figure out how to do this in v4
           whenCreated={(map) =>
             setInterval(() => {
               map.invalidateSize()
             }, 100)
           }
+*/
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

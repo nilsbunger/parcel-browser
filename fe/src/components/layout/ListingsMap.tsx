@@ -3,25 +3,27 @@ import { FeatureGroup, LayersControl, MapContainer, Marker, Popup, TileLayer } f
 import { Link } from "react-router-dom"
 import { Listing } from "../../types"
 import { ErrorBoundary } from "react-error-boundary"
+import { LatLngTuple } from "leaflet"
 
 type Props = { listings: Listing[] }
 
 const asSqFt = (m: number) => Math.round(m * 3.28 * 3.28)
 
 function ListingsMap({ listings }: Props) {
-  const center = [32.7157, -117.1611]
+  const center:LatLngTuple = [32.7157, -117.1611]
+
   return (
     <ErrorBoundary fallback={<div>Error in ListingsMap</div>}>
       <MapContainer
-        center={center as any}
+        center={center}
         zoom={13}
         scrollWheelZoom={true}
         className={"!h-[80vh] !w-5/12"}
-        whenCreated={(map: any) =>
-          setInterval(() => {
-            map.invalidateSize()
-          }, 100)
-        }
+        // whenCreated={(map: any) =>
+        //   setInterval(() => {
+        //     map.invalidateSize()
+        //   }, 100)
+        // }
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -62,7 +64,7 @@ function ListingsMap({ listings }: Props) {
                   }}
                   className="underline text-darkblue"
                 >
-                  {listing.address}
+                  {listing.addr}
                 </Link>
                 <br />
                 Price: ${listing.price}

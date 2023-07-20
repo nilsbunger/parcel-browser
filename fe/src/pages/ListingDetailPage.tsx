@@ -79,7 +79,6 @@ export default function ListingDetailPage() {
   async function onRedoAnalysis(e: React.MouseEvent<HTMLButtonElement>) {
     showNotification({
       id: "analysis-loading",
-      disallowClose: true,
       title: "Re-running analysis",
       message: "HI",
       color: "blue",

@@ -20,7 +20,7 @@ export function CoMapDrawer({ selection, setSelection }) {
   return (
     <Drawer
       opened={opened}
-      onClose={() => setSelection(null)}
+      onClose={() => setSelection(undefined)}
       title="Details"
       padding="lg"
       size="350px"
@@ -81,7 +81,7 @@ const renderEligibilityTitleRow = (eligibility: EligibilityCheck) => {
       break
   }
 
-  const rowname = eligibility.name == "And" ? "All of these checks must pass:" : eligibility.name
+  const rowname = eligibility.name === "And" ? "All of these checks must pass:" : eligibility.name
   return (
     <>
       {passFail}
@@ -89,8 +89,6 @@ const renderEligibilityTitleRow = (eligibility: EligibilityCheck) => {
         multiline
         width={220}
         withArrow
-        transition="fade"
-        transitionDuration={200}
         label={eligibility.description}
       >
         <span className={"leading-6"}>
@@ -193,7 +191,7 @@ const RoadDetails = ({ properties }) => {
       <p>Functional class: {data.funclass_decoded}</p>
       <p>Segment class: {data.segclass_decoded}</p>
       <span className={"text-xs"}>
-        <pre>{stringify(data, 5, null, 2)}</pre>
+        <pre>{stringify(data, 5, undefined, 2)}</pre>
       </span>
     </div>
   )
@@ -202,9 +200,9 @@ const RoadDetails = ({ properties }) => {
 const CoMapDrawerContents = ({ selection }) => {
   if (!selection) return <></>
 
-  if (selection.selType == "tpa-tile-layer") return <p>Transit Priority Area Overlay</p>
-  if (selection.selType == "ab2011-tile-layer") return <p>AB 2011 Eligibility Overlay</p>
-  if (selection.selType == "zoning-tile-layer") {
+  if (selection.selType === "tpa-tile-layer") return <p>Transit Priority Area Overlay</p>
+  if (selection.selType === "ab2011-tile-layer") return <p>AB 2011 Eligibility Overlay</p>
+  if (selection.selType === "zoning-tile-layer") {
     return (
       <div>
         <p>Zone</p>
@@ -213,19 +211,19 @@ const CoMapDrawerContents = ({ selection }) => {
       </div>
     )
   }
-  if (selection.selType == "r2-parcel-road-tile-layer")
+  if (selection.selType === "r2-parcel-road-tile-layer")
     return selection.info.object.properties.apn ? (
       <ParcelDetails apn={selection.info.object.properties.apn} />
     ) : (
       <RoadDetails properties={selection.info.object.properties} />
     )
-  if (selection.selType == "parcel-tile-layer")
+  if (selection.selType === "parcel-tile-layer")
     // this branch is unused now, since we combined parcel and zoning and serve them staticly
     return <ParcelDetails apn={selection.info.object.properties.apn} />
-  if (selection.selType == "road-tile-layer")
+  if (selection.selType === "road-tile-layer")
     // this branch is unused now, since we combined parcel and zoning and serve them staticly
     return <RoadDetails properties={selection.info.object.properties} />
-  if (selection.selType == "compcomm-tile-layer") {
+  if (selection.selType === "compcomm-tile-layer") {
     const p = selection.info.object.properties
     return (
       <div>
@@ -239,7 +237,7 @@ const CoMapDrawerContents = ({ selection }) => {
     <>
       <p>{selection.selType}</p>
       <span className={"text-xs"}>
-        <pre>{stringify(selection, 5, null, 2)}</pre>
+        <pre>{stringify(selection, 5, undefined, 2)}</pre>
       </span>
     </>
   )
