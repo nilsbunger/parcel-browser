@@ -99,6 +99,7 @@ def reonomy_property_detail_call(id, save=True):
 
 
 def load_calls_from_disk() -> list[list[str, dict]]:
+    # NOTE: this is deprecated and replaced with extraction in be/elt/lib/extract/json.py
     with open("../../lib/reonomy_calls.py") as localfile:
         lines = localfile.readlines()
     lines[-1] += "]"

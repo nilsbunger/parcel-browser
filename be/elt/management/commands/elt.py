@@ -1,3 +1,4 @@
+from elt.lib.extract.json import extract_from_json
 from lib.mgmt_lib import Home3Command
 
 from elt.lib.extract.arcgis import extract_from_arcgis_api
@@ -47,6 +48,8 @@ class Command(Home3Command):
                 extract_from_shapefile(geo, gis_data_type)
             case Juri.sf, GisData.reportall:
                 extract_from_shapefile(geo, gis_data_type)
+            case Juri.sf, GisData.reonomy:
+                extract_from_json(geo, gis_data_type)
             case Juri.sf, GisData.post:
                 postprocess_sf(dry_run=options["dry_run"])
             # case Juri.sf, GisData.meta:
