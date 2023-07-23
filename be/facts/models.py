@@ -1,5 +1,5 @@
 from django.db import models
-from elt.lib.attom_data_struct import Address as AttomAddress
+from elt.lib.ext_api.attom_property_types import Address as AttomAddress
 from lib import mapbox
 from lib.util import LongLat
 from pydantic import BaseModel, Extra

@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import QuerySet
 from django.urls import reverse
 
-from elt.lib.excel.extract_from_excel import camelcase
+from elt.lib.extract.excel import camelcase
 
 # String representation of model types
 raw_str = {

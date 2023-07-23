@@ -3,9 +3,9 @@ from enum import Enum, EnumMeta
 import openai
 import polars as pl
 import tiktoken
-from elt.lib.attom_data import AttomDataApi
-from elt.lib.attom_data_struct import AttomPropertyRecord
-from elt.lib.rentometer_data import RentometerApi
+from elt.lib.ext_api.attom_data_api import AttomDataApi
+from elt.lib.ext_api.attom_property_types import AttomPropertyRecord
+from elt.lib.ext_api.rentometer_api import RentometerApi
 from facts.models import StdAddress
 from lib.mgmt_lib import Home3Command
 from parsnip.settings import env

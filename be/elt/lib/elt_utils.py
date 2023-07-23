@@ -59,7 +59,7 @@ def get_elt_pipe_filenames(
     geo: Juri, datatype: GisData, stage_dirname: str, extension="jsonl", expect_existing=False
 ):
     """Find filenames for current pipestage. Filenames should be dates. Return sorted by date from newest."""
-    from elt.lib.arcgis.params import DATA_DIR
+    from elt.lib.extract.params import DATA_DIR
 
     # stage_dir = (DATA_DIR / geo.value / datatype.value / stage_dirname).resolve()
     stage_dir = (DATA_DIR / geo.value).resolve()

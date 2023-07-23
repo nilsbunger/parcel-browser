@@ -1,7 +1,7 @@
 from lib.mgmt_lib import Home3Command
 
-from elt.lib.arcgis.extract_from_api import extract_from_arcgis_api
-from elt.lib.excel.extract_from_excel import extract_from_excel
+from elt.lib.extract.arcgis import extract_from_arcgis_api
+from elt.lib.extract.excel import extract_from_excel
 from elt.lib.postprocess import postprocess_sf
 from elt.lib.shapefile.extract_from_shapefile import extract_from_shapefile
 from elt.lib.types import GisData, Juri

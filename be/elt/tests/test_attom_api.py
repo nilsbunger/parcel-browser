@@ -6,8 +6,8 @@ import responses
 from facts.models import StdAddress
 from responses import matchers
 
-from elt.lib.attom_data import AttomDataApi
-from elt.lib.attom_data_struct import AttomPropertyRecord, PropertyAddressResponse
+from elt.lib.ext_api.attom_data_api import AttomDataApi
+from elt.lib.ext_api.attom_property_types import AttomPropertyRecord, PropertyAddressResponse
 from elt.tests.fixtures import (
     AttomCompsFixture,
     AttomPropertyAddressFixture,
