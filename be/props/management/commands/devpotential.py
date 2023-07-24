@@ -12,7 +12,7 @@ from lib.mgmt_lib import Home3Command
 
 
 def catch(func, *args, idx, raise_again=True, handle=lambda e: e, **kwargs):
-    if idx % 1000 == 0:
+    if idx % 100 == 0:
         print(f"Processing {idx}th item")
     try:
         return func(*args, **kwargs)
@@ -77,8 +77,10 @@ def create_parcel_facts_csv(schema_list: List[ParcelFacts], filename: str):
                 )
                 for i, contact in enumerate(list(deduped_contacts)[:4], start=1):
                     row_dict[f"contact_name{i}"] = contact[0]
+                    if contact[0] == "Vesta Asset Management":
+                        print("found Vesta Asset Management")
                     row_dict[f"contact_email{i}"] = contact[1]
                     row_dict[f"contact_phone{i}"] = contact[2]
-                    row_dict[f"contact_role{i}"] = contact[3].label
-                    row_dict[f"contact_type{i}"] = contact[4].label
+                    row_dict[f"contact_role{i}"] = contact[3].label if contact[3] else None
+                    row_dict[f"contact_type{i}"] = contact[4].label if contact[4] else None
             writer.writerow(row_dict)

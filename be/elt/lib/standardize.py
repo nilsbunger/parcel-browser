@@ -2,11 +2,11 @@ from datetime import date
 import re
 import sys
 import traceback
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from elt.models import RawSfHeTableB, RawSfRentboardHousingInv
 from ninja import Field, Schema
 
+from elt.models import RawSfHeTableB, RawSfRentboardHousingInv
 
 enum_or_none = lambda _Enum, _val: _Enum(_val) if _val is not None else None
 round_or_none = lambda _val, ndigits: round(_val, ndigits) if _val is not None else None
@@ -36,10 +36,9 @@ class RentBoardEntry(Schema):
     contact_phone: str | None = Field(..., alias="phone")
     contact_email: str | None = Field(..., alias="email")
     contact_type: ContactType | None = Field(..., alias="contact_type")
-    contact_role: ContactRole | None = Field(..., alias="contact_type")
+    contact_role: ContactRole | None = Field(..., alias="contact_association")
     rent: int | None
-    # contact_email: str
-    # contact_type: RawSfRentboardHousingInv.ContactTypeEnum
+
     # br: int
     # bath: int
     # sq_ft: int
@@ -81,9 +80,9 @@ class ParcelFacts(Schema):
     parcel_sq_ft: int
     curr_zoning: str = Field(..., alias="parcel.zoning_cod")
     curr_use: str | None = Field(..., alias="reportall_parcel.land_use_class")
-    c_net_build_sq_ft: int | str
-    c_sq_ft_ratio: float | str
-    c_num_hes: int
+    net_build_sq_ft: int | None
+    sq_ft_ratio: float | None
+    hes_count: int
     he_zoning: Tuple[str | int | None, str | int | None, str | int | None]
     he_gp_type: Tuple[str | None, str | None, str | None]
     he_max_density: Tuple[float | None, float | None, float | None]
@@ -102,6 +101,33 @@ class ParcelFacts(Schema):
     curr_val_bldg: int = Field(..., alias="reportall_parcel.mkt_val_bldg")
     curr_val_land: int = Field(..., alias="reportall_parcel.mkt_val_land")
     rent_board_data: List[RentBoardEntry]
+    vacant_count: int | None
+    owner_occ_count: int | None
+    rented_count: int | None
+    non_resi_count: int | None
+
+    @staticmethod
+    def get_occupancy_count(obj, occ_type):
+        # If there's no rent board data, return None to differentiate from 0 reports of a type.
+        if not obj.rawsfrentboardhousinginv_set.all():
+            return None
+        return len([x for x in obj.rawsfrentboardhousinginv_set.all() if x.occupancy_type == occ_type])
+
+    @staticmethod
+    def resolve_vacant_count(obj):
+        return ParcelFacts.get_occupancy_count(obj, RawSfRentboardHousingInv.OccupancyTypeEnum.VACANT)
+
+    @staticmethod
+    def resolve_owner_occ_count(obj):
+        return ParcelFacts.get_occupancy_count(obj, RawSfRentboardHousingInv.OccupancyTypeEnum.OCCUPIED_BY_OWNER)
+
+    @staticmethod
+    def resolve_rented_count(obj):
+        return ParcelFacts.get_occupancy_count(obj, RawSfRentboardHousingInv.OccupancyTypeEnum.OCCUPIED_BY_NON_OWNER)
+
+    @staticmethod
+    def resolve_non_resi_count(obj):
+        return ParcelFacts.get_occupancy_count(obj, RawSfRentboardHousingInv.OccupancyTypeEnum.NON_RESIDENTIAL)
 
     def resolve_rent_board_data(self, obj):
         rent_entries = [RentBoardEntry.from_orm(rent_entry) for rent_entry in obj.rawsfrentboardhousinginv_set.all()]
@@ -141,24 +167,25 @@ class ParcelFacts(Schema):
             print(e)
             raise e
 
-    def resolve_c_num_hes(self, obj):
+    def resolve_hes_count(self, obj):
         hes = self.he_zoning
         return len([he for he in hes if he is not None])
 
-    def resolve_c_net_build_sq_ft(self, obj):
+    def resolve_net_build_sq_ft(self, obj):
         numeric_upzones = [int(x) for x in self.he_zoning if x is not None and x.isnumeric()]
         if not len(numeric_upzones):
             # TODO: calculate buildable sq ft for non-numeric upzones (density decontrol, etc)
-            return "0000 NOT CALCULATED"
+            return None
 
         max_height = max(numeric_upzones)
         floors = max_height // 10
         net_sqft = round(0.9 * 0.85 * self.parcel_sq_ft * floors)
         return net_sqft
 
-    def resolve_c_sq_ft_ratio(self, obj):
-        if str(self.c_net_build_sq_ft).isnumeric():
+    def resolve_sq_ft_ratio(self, obj):
+        if str(self.net_build_sq_ft).isnumeric():
             bldg_sq_ft = max(obj.reportall_parcel.bldg_sqft, 1000)
-            x = round(self.c_net_build_sq_ft / bldg_sq_ft, ndigits=1)
+            x = round(self.net_build_sq_ft / bldg_sq_ft, ndigits=1)
             return x
-        return "0000 NOT CALCULATED"
+        # TODO: calculate buildable sq ft for non-numeric upzones (density decontrol, etc)
+        return None
