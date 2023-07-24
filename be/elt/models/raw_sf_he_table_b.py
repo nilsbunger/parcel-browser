@@ -11,28 +11,37 @@ class RawSfHeTableB(SanitizedRawModelMixin, models.Model):
         indexes = [models.Index(fields=["mapblklot"])]
 
     class ShortfallEnum(models.IntegerChoices):
-        ShortfallOfSites = 0
+        ShortfallOfSites = 0, "Site Shortfall"
 
     class ExGpTypeEnum(models.IntegerChoices):
-        CommunityBusiness = 0
-        NeighborhoodCommercialDistrict = 1
-        NeighborhoodCommercialTransitDistrict = 2
-        NeighborhoodCommercialCluster = 3
-        NeighborhoodCommercialModerateScale = 4
-        NeighborhoodCommercialShoppingCenter = 5
-        NeighborhoodCommercialSmallScale = 6
-        ResidentialTransitOrientedDistrict = 7
-        ResidentialCommercialHighDensity = 8
-        ResidentialCommercialMediumDensity = 9
-        ResidentialHouseOneFamily = 10
-        ResidentialHouseOneFamilyDetached = 11
-        ResidentialHouseOneFamilySecondaryUnit = 12
-        ResidentialHouseThreeFamily = 13
-        ResidentialHouseTwoFamily = 14
-        ResidentialMixedHighDensity = 15
-        ResidentialMixedLowDensity = 16
-        ResidentialMixedMediumDensity = 17
-        ResidentialMixedModerateDensity = 18
+        CommunityBusiness = 0, "Comm Biz"
+        NeighborhoodCommercialDistrict = 1, "Nghbrhd Comm"
+        NeighborhoodCommercialTransitDistrict = 2, "Nghbrhd Comm Transit"
+        NeighborhoodCommercialCluster = 3, "Nghbrhd Comm Cluster"
+        NeighborhoodCommercialModerateScale = 4, "Nghbrhd Comm Mod Scale"
+        NeighborhoodCommercialShoppingCenter = 5, "Nghbrhd Comm Shopping"
+        NeighborhoodCommercialSmallScale = 6, "Nghbrhd Comm Small Scale"
+        ResidentialTransitOrientedDistrict = (
+            7,
+            "Resi Transit Orient",
+        )
+        ResidentialCommercialHighDensity = (
+            8,
+            "Resi Comm Hi Dens",
+        )
+        ResidentialCommercialMediumDensity = (
+            9,
+            "Resi Comm Med Dens",
+        )
+        ResidentialHouseOneFamily = 10, "Resi 1 Fam"
+        ResidentialHouseOneFamilyDetached = 11, "Resi 1 Fam Detach"
+        ResidentialHouseOneFamilySecondaryUnit = 12, "Resi 1 Fam Secondary"
+        ResidentialHouseThreeFamily = 13, "Resi 3 Fam"
+        ResidentialHouseTwoFamily = 14, "Resi 2 Fam"
+        ResidentialMixedHighDensity = 15, "Resi Mixed Hi Dens"
+        ResidentialMixedLowDensity = 16, "Resi Mixed Lo Dens"
+        ResidentialMixedMediumDensity = 17, "Resi Mixed Med Dens"
+        ResidentialMixedModerateDensity = 18, "Resi Mixed Mod Dens"
 
     class ExZoningEnum(models.IntegerChoices):
         C2 = 0
@@ -83,8 +92,8 @@ class RawSfHeTableB(SanitizedRawModelMixin, models.Model):
         Rto = 45
 
     class GpTypeEnum(models.IntegerChoices):
-        MultiFamilyMixedUse = 0
-        MultiFamilyResidential = 1
+        MultiFamilyMixedUse = 0, "MF Mixed"
+        MultiFamilyResidential = 1, "MF Resi"
 
     # class M2ZoningEnum(models.IntegerChoices):
     #     A140HeightAllowed = 0
@@ -95,14 +104,14 @@ class RawSfHeTableB(SanitizedRawModelMixin, models.Model):
     #     IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 5
     #
     class ZoningEnum(models.IntegerChoices):
-        A140HeightAllowed = 0
-        A240HeightAllowed = 1
-        A55HeightAllowed = 2
-        A65HeightAllowed = 3
-        A85HeightAllowed = 4
-        AddedHeightInExistingFormBasedArea = 5
-        IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 6
-        NoHeightChangeDensityDecontrol = 7
+        A140HeightAllowed = 0, "140'"
+        A240HeightAllowed = 1, "240'"
+        A55HeightAllowed = 2, "55'"
+        A65HeightAllowed = 3, "65'"
+        A85HeightAllowed = 4, "85'"
+        AddedHeightInExistingFormBasedArea = 5, "Added Height Form based"
+        IncreasedDensityUpToFourUnitsSixUnitsOnCornerLots = 6, "4-6 Units"
+        NoHeightChangeDensityDecontrol = 7, "Density Decontrol"
 
     class VacantEnum(models.IntegerChoices):
         UnderutilizedPl = 0
@@ -114,55 +123,55 @@ class RawSfHeTableB(SanitizedRawModelMixin, models.Model):
         UnderutilizedVrx = 6
 
     class ExUseEnum(models.IntegerChoices):
-        A1Flat1AptBldg1Parcel = 0
-        A1FlatDwelling1Parcel = 1
-        A2DwellingsOn1Parcel4UnitsOrLess = 2
-        A2DwellingsOn1Parcel5To14Units = 3
-        Apartment15UnitsOrMore = 4
-        Apartment4UnitsOrLess = 5
-        Apartment5To14Units = 6
-        ApartmntCommercialStore = 7
+        A1Flat1AptBldg1Parcel = 0, "1 Flat Apt Bldg"
+        A1FlatDwelling1Parcel = 1, "1 Flat Dwlng"
+        A2DwellingsOn1Parcel4UnitsOrLess = 2, "2 Dwlng 1-4 Units"
+        A2DwellingsOn1Parcel5To14Units = 3, "2 Dwlng 5-14 Units"
+        Apartment15UnitsOrMore = 4, "Apt 15+ Units"
+        Apartment4UnitsOrLess = 5, "Apt 1-4 Units"
+        Apartment5To14Units = 6, "Apt 5-14 Units"
+        ApartmntCommercialStore = 7, "Apt Comm Store"
         Bank = 8
-        ChurchesConventsRectories = 9
-        ClubsLodgesFraternalOrganizations = 10
-        CommercialStores = 11
-        CommercialMixedUse = 12
-        Condominium = 13
-        CondominiumBmr = 14
-        ConvalescentNursingHomes = 15
-        CoopUnitsUnsegregated = 16
-        Dwelling = 17
-        DwellingsApt4UnitsOrLess = 18
-        FlatStore = 19
-        FlatStore15Units = 20
-        FlatStore4UnitsOrLess = 21
-        FlatStore5To14Units = 22
-        FlatsDuplex = 23
-        Flats5To14Units = 24
-        GaragesCommercial = 25
+        ChurchesConventsRectories = 9, "Churches etc"
+        ClubsLodgesFraternalOrganizations = 10, "Clubs etc"
+        CommercialStores = 11, "Comm Stores"
+        CommercialMixedUse = 12, "Comm Mixed Use"
+        Condominium = 13, "Condo"
+        CondominiumBmr = 14, "Condo BMR"
+        ConvalescentNursingHomes = 15, "Convalescent"
+        CoopUnitsUnsegregated = 16, "Coop Units"
+        Dwelling = 17, "Dwelling"
+        DwellingsApt4UnitsOrLess = 18, "Dwlng Apt 1-4 Units"
+        FlatStore = 19, "Flat Store"
+        FlatStore15Units = 20, "Flat Store 15+ Units"
+        FlatStore4UnitsOrLess = 21, "Flat Store 1-4 Units"
+        FlatStore5To14Units = 22, "Flat Store 5-14 Units"
+        FlatsDuplex = 23, "Flats Duplex"
+        Flats5To14Units = 24, "Flats 5-14 Units"
+        GaragesCommercial = 25, "Garages Comm"
         GasStation = 26
         Hotel = 27
         HotelsOther = 28
         Industrial = 29
-        MedicalDentalOfficeBuilding = 30
+        MedicalDentalOfficeBuilding = 30, "Medical Office"
         Misc = 31
         Motels = 32
         OfficeRetail = 33
         Office = 34
-        OfficeAndApartments5To14Units = 35
-        OfficeWithMajorRetailUnits = 36
+        OfficeAndApartments5To14Units = 35, "Office Apt 5-14 Units"
+        OfficeWithMajorRetailUnits = 36, "Office Major Retail"
         ParkingLot = 37
         Schools = 38
         ShoppingCenter = 39
-        SingleStructOnMultiLotDFSOnly = 40
+        SingleStructOnMultiLotDFSOnly = 40, "Single Struct Multi Lot"
         TiApartment = 41
         TicBldg4UnitsOrLess = 42
         Theatres = 43
         VacantLot = 44
-        VacantLotCommAndInd = 45
-        VacantLotPublicUse = 46
-        VacantLotResidential = 47
-        VacantLotResidentialWRestriction = 48
+        VacantLotCommAndInd = 45, "Vacant Lot Comm Ind"
+        VacantLotPublicUse = (46,)
+        VacantLotResidential = 47, "Vacant Lot Resi"
+        VacantLotResidentialWRestriction = 48, "Vacant Lot Resi Restrict"
 
     class InfraEnum(models.IntegerChoices):
         Yes = 0
