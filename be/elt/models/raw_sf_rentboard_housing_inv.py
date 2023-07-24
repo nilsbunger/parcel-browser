@@ -7,8 +7,8 @@ from elt.models.model_utils import SanitizedRawModelMixin
 
 class RawSfRentboardHousingInv(SanitizedRawModelMixin, models.Model):
     class Meta:
-        verbose_name = "Raw Sf Rentboard Housing Inv [Excel]"
-        verbose_name_plural = "Raw Sf Rentboard Housing Inv [Excel]"
+        verbose_name = "Raw Sf Rentboard Data [Excel]"
+        verbose_name_plural = "Raw Sf Rentboard Data [Excel]"
         indexes = [models.Index(fields=["parcel_number"])]
 
     class CaseTypeNameEnum(models.IntegerChoices):

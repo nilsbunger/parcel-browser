@@ -1,9 +1,10 @@
 from datetime import date
+import re
 import sys
 import traceback
-from typing import Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
-from elt.models import RawSfHeTableB
+from elt.models import RawSfHeTableB, RawSfRentboardHousingInv
 from ninja import Field, Schema
 
 
@@ -22,6 +23,54 @@ zoning_map = {
     ZoningEnum.NoHeightChangeDensityDecontrol: "Density Decontrol",
     None: None,
 }
+
+ContactType = RawSfRentboardHousingInv.ContactTypeEnum
+ContactRole = RawSfRentboardHousingInv.ContactAssociationEnum
+
+
+class RentBoardEntry(Schema):
+    """Accept a RawSfRentboardHousingInv objct (eg RawSfRentboardHousingInv.from_orm(obj)), and pull out useful info."""
+
+    apn: str = Field(..., alias="parcel_number")
+    contact_name: str | None
+    contact_phone: str | None = Field(..., alias="phone")
+    contact_email: str | None = Field(..., alias="email")
+    contact_type: ContactType | None = Field(..., alias="contact_type")
+    contact_role: ContactRole | None = Field(..., alias="contact_type")
+    rent: int | None
+    # contact_email: str
+    # contact_type: RawSfRentboardHousingInv.ContactTypeEnum
+    # br: int
+    # bath: int
+    # sq_ft: int
+    # unit_number: str
+    # unit_address: str
+    # # rent_includes: # add this later
+    # rent_date: date
+    # occupancy_type: RawSfRentboardHousingInv.OccupancyTypeEnum
+    # vacancy_date: date
+    # occupancy_comment: str
+
+    def resolve_rent(self, obj):
+        if not obj.monthly_rent:
+            return None
+        if obj.monthly_rent == RawSfRentboardHousingInv.MonthlyRentEnum.A0_NO_RENT_PAID_BY_THE_OCCUPANT:
+            return 0
+        if obj.monthly_rent == RawSfRentboardHousingInv.MonthlyRentEnum.A7000:
+            return 8000  # $7000 or more... pick a number.
+
+        match_obj = re.search(r"(\d+) (\d+)", obj.get_monthly_rent_display())
+        try:
+            rent_range = (int(match_obj.group(1)), int(match_obj.group(2)))
+            return (rent_range[0] + rent_range[1]) / 2
+        except Exception:
+            print("Couldn't match rent range", obj.get_monthly_rent_display())
+            raise
+
+    def resolve_contact_name(self, obj):
+        if not obj.first_name and not obj.last_name:
+            return None
+        return f"{obj.first_name + ' ' if obj.first_name else ''}{obj.last_name or ''}"
 
 
 class ParcelFacts(Schema):
@@ -52,6 +101,11 @@ class ParcelFacts(Schema):
     last_sale_date: date | None = Field(..., alias="reportall_parcel.trans_date")
     curr_val_bldg: int = Field(..., alias="reportall_parcel.mkt_val_bldg")
     curr_val_land: int = Field(..., alias="reportall_parcel.mkt_val_land")
+    rent_board_data: List[RentBoardEntry]
+
+    def resolve_rent_board_data(self, obj):
+        rent_entries = [RentBoardEntry.from_orm(rent_entry) for rent_entry in obj.rawsfrentboardhousinginv_set.all()]
+        return rent_entries
 
     def resolve_existing_gp_type(self, obj):
         return getattr(obj.he_table_b, "get_ex_gp_type_display")()
