@@ -134,7 +134,7 @@ class RawSfParcelWrapAdmin(Home3Admin):
     readonly_fields = ["apn", "rent_count", "parcel", "he_table_a", "he_table_b", "reportall_parcel"]
 
     search_fields = ["apn", "parcel__street_nam", "parcel__from_addre", "parcel__zoning_cod", "parcel__street_typ"]
-    extra_inline_fields = ["parcel", "he_table_a", "he_table_b", "reportall_parcel"]
+    extra_inline_fields = ["he_table_b", "reportall_parcel", "parcel", "he_table_a"]
     inlines = [RawSfRentboardHousingInvInline]
     list_filter = [
         ("parcel", EmptyFieldListFilter),
@@ -314,7 +314,16 @@ class ExternalApiDataAdmin(admin.ModelAdmin):
 @admin.register(RawSfRentboardHousingInv)
 class RawSfRentBoardHousingInvAdmin(Home3Admin):
     model = RawSfRentboardHousingInv
-    list_display = ["parcel_number", "unit_address", "unit_number", "monthly_rent", "email", "rawsfparcelwrap"]
+    list_display = [
+        "parcel_number",
+        "unit_address",
+        "unit_number",
+        "monthly_rent",
+        "occupancy_type",
+        "email",
+        "rawsfparcelwrap",
+    ]
+    list_filter = ["occupancy_type"]
     search_fields = ["parcel_numer", "unit_address", "email"]
     # fields = ["rawsfparcelwrap"]
     readonly_fields = [

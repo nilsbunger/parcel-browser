@@ -9,7 +9,9 @@
   {{ block.super }}
 {% endblock %}
 
-{% block after_field_sets %}
+{% block inline_field_sets %}
+  {{ block.super }}     {# Show normal inlines first via super call #}
+  {# Add our extra inlines (from Home3Admin class) #}
   {% for field_name, field_form in inline_forms.items %}
     <h2>{{ field_name | title }}</h2>
 
