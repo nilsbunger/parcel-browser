@@ -1,7 +1,6 @@
 from django.contrib.gis.db import models
 
 from elt.lib.types import EltAnalysisEnum, Juri
-from elt.models import RawSfParcelWrap
 from elt.models.model_utils import SanitizedRawModelMixin
 
 
@@ -14,4 +13,4 @@ class EltAnalysis(SanitizedRawModelMixin, models.Model):
     analysis = models.CharField(choices=[(x.value, x.name) for x in EltAnalysisEnum], max_length=20)
     run_date = models.DateField()
     # TODO: for multi-jurisdiction we will want to use a standardized Parcel table..
-    parcels = models.ManyToManyField(RawSfParcelWrap)
+    parcels = models.ManyToManyField("RawSfParcelWrap")

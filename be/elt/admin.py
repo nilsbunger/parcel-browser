@@ -324,7 +324,7 @@ class RawSfRentBoardHousingInvAdmin(Home3Admin):
         "rawsfparcelwrap",
     ]
     list_filter = ["occupancy_type"]
-    search_fields = ["parcel_numer", "unit_address", "email"]
+    search_fields = ["parcel_number", "unit_address", "email"]
     # fields = ["rawsfparcelwrap"]
     readonly_fields = [
         "rawsfparcelwrap",

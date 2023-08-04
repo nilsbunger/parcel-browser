@@ -45,11 +45,11 @@ class RawSfHeTableA(SanitizedRawModelMixin, models.Model):
         ResidentialTransitOrientedMission = 31
         ResidentialCommercialHighDensity = 32
         ResidentialCommercialMediumDensity = 33
-        ResidentialHouseOneFamily = 34
-        ResidentialHouseOneFamilyDetached = 35
+        ResidentialHouseOneFamily = 34, "Resi 1 Fam"
+        ResidentialHouseOneFamilyDetached = 35, "Resi 1 Fam Detached"
         ResidentialHouseOneFamilySecondaryUnit = 36
-        ResidentialHouseThreeFamily = 37
-        ResidentialHouseTwoFamily = 38
+        ResidentialHouseThreeFamily = 37, "Resi 3 Fam"
+        ResidentialHouseTwoFamily = 38, "Resi 2 Fam"
         ResidentialMixedHighDensity = 39
         ResidentialMixedLowDensity = 40
         ResidentialMixedMediumDensity = 41
@@ -168,7 +168,7 @@ class RawSfHeTableA(SanitizedRawModelMixin, models.Model):
         ApartmntCommercialStore = 8
         Bank = 9
         BankCondominium = 10
-        ChurchesConventsRectories = 11
+        ChurchesConventsRectories = 11, "Churches etc"
         ClubsLodgesFraternalOrganizations = 12
         CommercialDepartmentStores = 13
         CommercialStoreCondo = 14
@@ -258,8 +258,8 @@ class RawSfHeTableA(SanitizedRawModelMixin, models.Model):
         PendingProject = 1
 
     class IdLast2Enum(models.IntegerChoices):
-        NotUsedInPriorHousingElement = 0
-        UsedInPriorHousingElementNonVacant = 1
+        NotUsedInPriorHousingElement = 0, "Not used in prior HE"
+        UsedInPriorHousingElementNonVacant = 1, "Used in prior HE"
 
     class Opt1Enum(models.IntegerChoices):
         Pipeline = 0

@@ -1,6 +1,7 @@
 # hand-crafted models:
 from .external_api_data import ExternalApiData
 from .raw_cali_resource_level import RawCaliResourceLevel, raw_cali_resource_level_mapping
+from .elt_analysis import EltAnalysis
 
 # auto-generated models:
 from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping
