@@ -14,7 +14,7 @@ from django.db import models
 from pandas import DataFrame, ExcelFile
 from parsnip.settings import BASE_DIR
 
-from elt.lib.elt_utils import batched, elt_model_with_run_date, get_elt_pipe_filenames, pipestage_prompt
+from elt.lib.elt_utils import batched, elt_model_with_run_date, get_elt_file_assets, pipestage_prompt
 from elt.lib.types import GisData, Juri
 
 MODELS_DIR = BASE_DIR / "elt" / "models"
@@ -304,10 +304,9 @@ def extract_from_excel(geo: Juri, datatype: GisData, thru_data=None):
     """ """
     print(f"Extract from excel: geo={geo.value}, data={datatype.value}")
     pipestage_dirname = "0.excel"
-    existing_files, resolved_datatype, _ = get_elt_pipe_filenames(
-        geo, datatype, pipestage_dirname, extension="xlsx", expect_existing=True
-    )
-    latest_file = existing_files[0]
+    file_assets = get_elt_file_assets(geo, datatype, pipestage_dirname, extension="xlsx", expect_existing=True)
+    latest_file = file_assets.latest_files[0]
+    resolved_datatype = file_assets.resolved_datatype
     print("Extracting from latest matching file: ", latest_file)
     date_from_filename = date_parse(latest_file.stem.split("_")[0], yearfirst=True).date()
 

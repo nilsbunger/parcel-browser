@@ -16,9 +16,9 @@ class H3CacheMiddleware(CacheMiddleware):
 
 
 # cache_page decorator, adapted from django.views.decorator.cache
-def h3_cache_page(timeout, *, cache=None, key_prefix=None):
+def h3_cache_page(seconds, *, cache=None, key_prefix=None):
     return decorator_from_middleware_with_args(H3CacheMiddleware)(
-        page_timeout=timeout,
+        page_timeout=seconds,
         cache_alias=cache,
         key_prefix=key_prefix,
     )

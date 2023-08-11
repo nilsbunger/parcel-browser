@@ -74,13 +74,14 @@
     <nav id="menu" style="display:flex;">
       <div id="menu-insert"></div>
       <fieldset style="display:flex; align-items:center; border-top:none">
-        <input type="radio" id="he1-radio" name="he_select" value="m1_zoning" checked style="margin:0 5px 0 10px">
+        <span>2022:</span>
+        <input type="radio" id="he1-radio" name="he_select" value="m1_zoning" style="margin:0 5px 0 10px">
         <label for="he1-radio">HE 1</label>
         <input type="radio" id="he2-radio" name="he_select" value="m2_zoning" style="margin:0 5px 0 10px">
         <label for="he2-radio">HE 2</label>
         <input type="radio" id="he3-radio" name="he_select" value="m3_zoning" style="margin:0 5px 0 10px">
         <label for="he3-radio">HE 3</label>
-        <input type="radio" id="no-he-radio" name="he_select" value="none" style="margin:0 5px 0 10px">
+        <input type="radio" id="no-he-radio" name="he_select" value="none" checked style="margin:0 5px 0 10px">
         <label for="no-he-radio">No HE</label>
       </fieldset>
       <fieldset style="display:flex; align-items:center; border-top:none">
@@ -160,9 +161,7 @@
               ['==', zoning, 7],  // NoHeightChangeDensityDecontrol
           ]
       }
-      const heZoningName = ["140 feet", "240 feet", "55 feet", "65 feet", "85 feet", "Extra height in existing...",
-          "Up to 4 units (6 on corner lot)", "Density decontrol"]
-      const paintExpression = (he_plan) => {
+      const hePaintExpression = (he_plan) => { // he_plan is "m1_zoning", "m2_zoning", "m3_zoning"
           const noHe = ['!', ['any', ...heTest(he_plan)]]
           const heVal = heTest(he_plan);
           return {
@@ -179,7 +178,34 @@
                   heVal[5], '#485b34', // (not in HE map) Added Height, existing form based area
                   '#303030'
               ]
+
           }
+      }
+
+      // layer colors for phase 1 (July 2023) rezoning plan (Concept A and Concept B)
+      const phase1FillExpression = (he_plan) => { // he_plan is "Concept A" or "Concept B"
+          const verbosePlan = he_plan === 'Concept A' ? 'DAG188' : 'DAG199'
+          const numericPlan = he_plan === 'Concept A' ? 'DAG189' : 'DAG200'
+          const planVal = he_plan === 'Concept A' ? '1_A' : '1_B'
+          return {
+              'fill-opacity': ['case', ['in', planVal, ['get', 'LAYER']], 0.5, 0.0],
+              'fill-color': ['case',
+                  ['in', 'fourplex', ['get', 'LAYER']], '#39639c',
+                  ['==', ['get', verbosePlan], "No height change, density decontrol"], '#89b3cf', // Up to 4 units (6 on corner lot)
+                  {#heVal[7], '#89b3cf', // Density decontrol#}
+                  ['==', ['get', numericPlan], 55], '#dedf00', // 55 ft
+                  ['==', ['get', numericPlan], 65], '#fab037', // 65 ft
+                  ['==', ['get', numericPlan], 80], '#fc9015', // 85 ft
+                  ['==', ['get', numericPlan], 85], '#fd7100', // 85 ft
+                  ['==', ['get', numericPlan], 105], '#fc5500', // 105 ft
+                  ['==', ['get', numericPlan], 130], '#fc4200', // 105 ft
+                  ['==', ['get', numericPlan], 140], '#fc3600', // 140 ft
+                  ['==', ['get', numericPlan], 240], '#c50600', // 240 ft
+                  ['==', ['get', numericPlan], 300], '#800400', // 240 ft
+                  '#202020' // UNMAPPED
+              ]
+          }
+
       }
 
       function refreshFilterSourcesAndLayers(paramStr) {
@@ -326,7 +352,7 @@
               'type': 'fill',
               'source': 'raw_sf_parcel_wrap_src',
               'source-layer': 'raw_sf_parcel_wrap',
-              'paint': paintExpression('m1_zoning')
+              'paint': {'fill-opacity': 0.0}  // initialize to nothing. set by event listeners later.
           });
 
           map.addLayer({
@@ -336,7 +362,22 @@
               'source-layer': 'raw_sf_parcel_wrap',
           })
 
+          map.addSource('raw_geom_he_phase1_src', {
+              'type': 'vector',
+              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_geom_data/sf/he/phase_1_A_20230727|phase_1_B_20230727|fourplex_for_1_A|fourplex_for_1_B/{z}/{x}/{y}'],
+              'minzoom': 11,
+              'maxzoom': 18
+          });
+          map.addLayer({
+              'id': 'raw_geom_he_phase1_poly_layer', // Layer ID
+              'type': 'fill',
+              'source': 'raw_geom_he_phase1_src',
+              'source-layer': 'raw_geom_data',
+              'paint': {
+                  'fill-opacity': 0.0 // initialize to nothing. set by event listeners later.
+              }
 
+          });
           for (layer in layervisinit) {
               map.setLayoutProperty(layer, 'visibility', layervisinit[layer]);
           }
@@ -349,7 +390,7 @@
 
       // create layer toggles
       for (const btn of [
-          ['Parcel', true, 'parcel_wrap'],
+          ['Parcel', false, 'parcel_wrap'],
           ['Zoning', false, 'zoning', 'zoning_height', 'zoning_labels', 'zoning_height_labels'],
           ['Resource Areas', false, 'resource_level']
       ]) {
@@ -380,13 +421,46 @@
           }
           menu.appendChild(link);
       }
-      // create HE selector
+      // create phase 1 HE selector
+      const phase1Buttons = []
+      for (const btn of ['Concept A', 'Concept B']) {
+          console.log(btn)
+          const link = document.createElement('a');
+          link.id = btn + '_toggle';
+          link.href = '#';
+          link.textContent = btn;
+          link.onclick = function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              this.className = this.className === 'active' ? '' : 'active';
+              if (this.className === 'active') {
+                  const layerPaint = phase1FillExpression(this.text);
+                  for (const btn of phase1Buttons) {
+                      if (btn.text !== this.text) {
+                          btn.className = ''
+                      }
+                  }
+                  map.setPaintProperty('raw_geom_he_phase1_poly_layer', 'fill-color', layerPaint['fill-color']);
+                  map.setPaintProperty('raw_geom_he_phase1_poly_layer', 'fill-opacity', layerPaint['fill-opacity']);
+              } else {
+                  map.setPaintProperty('raw_geom_he_phase1_poly_layer', 'fill-opacity', 0.0);
+              }
+
+          }
+          menu.appendChild(link);
+          phase1Buttons.push(link)
+
+      }
 
 
       // -------------------------------------------------------------------
       // Event handlers
 
-      // handle clicks on parcels
+      // used in popup
+      const heZoningName = ["140 feet", "240 feet", "55 feet", "65 feet", "85 feet", "Extra height in existing...",
+          "Up to 4 units (6 on corner lot)", "Density decontrol"]
+
+      // Create popups for clicks on parcels
       map.on('click', (e) => {
           {#console.log("Click", e)#}
           // Set `bbox` as reactangle area around clicked point.
@@ -400,7 +474,7 @@
 
           console.log("Selected features:", selectedFeatures);
           const features = selectedFeatures.toReversed().map((feature) => {
-              console.log("Feature:", feature)
+              console.log(`Feature: ${feature.layer.id}`, feature)
               const p = feature.properties
               switch (feature.layer.id) {
                   case 'parcel_wrap_poly':
@@ -418,6 +492,11 @@
                       return `<p>Zoning Height/Bulk: ${p.height} : ${p.gen_height}</p>`
                   case 'resource_level':
                       return `<p>Resource Area: ${p.oppcat}, fips=${p.fips}</p>`
+                  case 'raw_geom_he_phase1_poly_layer':
+                      const isConceptA = p.LAYER.includes("1_A")
+                      const val = p.LAYER.substring(0, 8) === 'fourplex' ? 'fourplex'
+                          : isConceptA ? p.DAG188 : p.DAG199
+                      return `<p>HE Phase 1 Concept ${isConceptA? "A" : "B"}: ${val}</p>`
               }
 
               {#popup.setLngLat(e.lngLat).setHTML(feature.properties.description).addTo(map);#}
@@ -442,7 +521,7 @@
           for (var i = 0; i < radioButtons.length; i++) {
               radioButtons[i].addEventListener("click", function () {
                   console.log("You have selected color: " + this.value);
-                  const layerPaint = paintExpression(this.value);
+                  const layerPaint = hePaintExpression(this.value);
                   map.setPaintProperty('parcel_wrap_poly', 'fill-opacity', layerPaint['fill-opacity']);
                   map.setPaintProperty('parcel_wrap_poly', 'fill-color', layerPaint['fill-color']);
               });
@@ -458,7 +537,6 @@
       }, 500));
 
       // unused stuff:
-          {#map.setPaintProperty('sf_yigby_elt_analysis', 'fill-opacity', 1);#}
       /* map.on('moveend', (e) => {
           const bounds = map.getBounds();
           {#console.log('A moveend event occurred. bounds=', bounds);#}

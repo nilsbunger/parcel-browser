@@ -1,13 +1,59 @@
 from django.contrib.gis.db import models
-from django.db.models import Count, OuterRef, QuerySet, Subquery
+from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import CharField, Count, OuterRef, QuerySet, Subquery, Value
+from django.db.models.functions import Cast, Concat
 from django.forms import model_to_dict
+
+from lib.util import flatten_dict
 from parsnip.util import dict_del_keys
 
-from elt.models import RawSfHeTableA, RawSfHeTableB, RawSfParcel, RawSfRentboardHousingInv, RawSfReportall
+from elt.models import (
+    RawGeomData,
+    RawSfHeTableA,
+    RawSfHeTableB,
+    RawSfParcel,
+    RawSfRentboardHousingInv,
+    RawSfReportall,
+)
 from elt.models.raw_sf_parcel_wrap import RawSfParcelWrap
 
 
-def check_for_dupes_sf():
+def filter_key(d, key_to_remove):
+    return {k: v for k, v in d.items() if k != key_to_remove}
+
+
+def check_for_dupes_raw_geom(dry_run: bool = False):
+    """Look for duplicates in raw_geom"""
+    # Annotate the locations with the count of identical geometries
+    # Group by geometry and annotate the group with a list of IDs
+    print("Looking for duplicates in RawGeomData...")
+    locations_with_counts = (
+        RawGeomData.objects.values("run_date", "geom", "juri", "data_type", "data", "rawsfparcelwrap_id")
+        .annotate(identical_count=Count("id"), id_list=ArrayAgg("id"))
+        .filter(identical_count__gt=1)
+    )
+
+    # Construct the duplicate groups from the aggregated data
+    duplicate_groups = {}
+    ids_to_delete = set({})
+    for item in locations_with_counts:
+        dup_rows = RawGeomData.objects.filter(id__in=item["id_list"]).values()
+        duped_flat = [filter_key(flatten_dict(x), key_to_remove="id") for x in list(dup_rows)]
+        all_same = all([duped_flat[0] == x for x in duped_flat])
+        if not all_same:
+            print("WEIRD")
+        else:
+            ids_to_delete = ids_to_delete | set(item["id_list"][1:])
+
+    if not dry_run:
+        print(f"Deleting {len(ids_to_delete)} rows")
+        RawGeomData.objects.filter(id__in=ids_to_delete).delete()
+    else:
+        print(f"DRY RUN, would've deleted {len(ids_to_delete)} rows")
+    print("Done with Raw Geom dupe check")
+
+
+def check_for_dupes_sf(dry_run: bool = False):
     """Check for duplicates in RawSfParcel, RawSfHeTableA, and RawSfHeTableB, and remove if found."""
     same_count = 0
     # check RawSfParcel for duplicates (ie same mapblklot); check if those duplicates have same data.
@@ -28,9 +74,10 @@ def check_for_dupes_sf():
                         print(f"Parcels {objs[i]['id']} and {objs[i + 1]['id']} have different data")
                     else:
                         same_count += 1
-                        model.objects.filter(pk=objs[i]["id"]).delete()
+                        if not dry_run:
+                            model.objects.filter(pk=objs[i]["id"]).delete()
     if same_count > 0:
-        print(f"Deleted {same_count} duplicates with same data")
+        print(("**DRY RUN** would've deleted" if dry_run else "Deleted") + f"{same_count} duplicates with same data")
     else:
         print("No duplicates found")
 
@@ -176,7 +223,8 @@ def postprocess_sf(*, dry_run=False):
     - creating the RawSfParcelWrap model
     - any other checks and post-processing to be identified
     """
-    check_for_dupes_sf()
+    check_for_dupes_raw_geom(dry_run=dry_run)
+    check_for_dupes_sf(dry_run=dry_run)
     check_parcel_wraps_sf(dry_run=dry_run)
     # print("\nMatching APNs in RawSfParcel (blklot), RawSfHeTableA (mapblklot), and RawSfHeTableB(mapblklot)...")
     # parcel_apns = set(RawSfParcel.objects.values_list("blklot", flat=True))

@@ -29,4 +29,9 @@ urlpatterns = [
         views.EltAnalysisTile.as_view(),
         name="elt-analysis-tile",
     ),
+    path(
+        "api/tile/raw_geom_data/<str:geo>/<str:datatype>/<str:layer>/<int:z>/<int:x>/<int:y>",
+        views.RawGeomDataTile.as_view(),
+        name="raw-geom-data-tile",
+    ),
 ]

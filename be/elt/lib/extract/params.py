@@ -1,4 +1,4 @@
-from parsnip import settings
+from django.conf import settings
 
 from elt.lib.extract import arcgis
 from elt.lib.types import GisData, Juri

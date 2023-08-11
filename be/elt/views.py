@@ -1,5 +1,6 @@
 # Create your views here.
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 from django.http import HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
@@ -8,6 +9,7 @@ from world.infra.django_cache import h3_cache_page
 
 from elt.models import (
     RawCaliResourceLevel,
+    RawGeomData,
     RawSfHeTableB,
     RawSfParcelWrap,
     RawSfZoning,
@@ -63,6 +65,35 @@ class RawCaliResourceLevelTile(LoginRequiredMixin, MVTView, ListView):
     model = RawCaliResourceLevel
     vector_tile_layer_name = "raw_cali_resource_level"
     vector_tile_fields = ("fips", "oppcat")
+
+
+# @method_decorator(h3_cache_page(seconds=30), name="dispatch")  # cache time in seconds
+class RawGeomDataTile(LoginRequiredMixin, MVTView, ListView):
+    model = RawGeomData
+    vector_tile_layer_name = "raw_geom_data"
+    vector_tile_fields = ("data",)
+
+    def get(self, request, geo: str, datatype: str, layer: str, z: int, x: int, y: int):
+        if geo != "sf" or datatype != "he":
+            # return a 404 response
+            return HttpResponseNotFound()
+        self.geo = geo
+        self.datatype = datatype
+        self.layerquery = [Q(data__LAYER=l) for l in layer.split("|")]
+        self.q_object = self.layerquery[0]
+        for l in self.layerquery[1:]:
+            self.q_object |= l
+
+        return super().get(request, z, x, y)
+
+    def get_vector_tile_queryset(self, *args, **kwargs):
+        q = self.model.objects.filter(
+            self.q_object,
+            juri=self.geo,
+            data_type=self.datatype,
+        )
+        print("getting vector tile")
+        return q
 
 
 # @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds

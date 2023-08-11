@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import requests
 
-from elt.lib.elt_utils import get_elt_pipe_filenames, log_and_print, pipestage_prompt
+from elt.lib.elt_utils import get_elt_file_assets, log_and_print, pipestage_prompt
 from elt.lib.types import GisData, Juri
 from elt.models import RawSantaAnaParcel
 
@@ -21,9 +21,12 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
     print(f"Extract from Arc GIS API pipe stage: geo={geo}, datatype={datatype}, {pipestage}: {stage_config['name']}")
     if stage_config["has_file_output"]:  # file-based output
         pipestage_dirname = f"{pipestage}.{stage_config['name']}"
-        existing_files, resolved_datatype, new_file = get_elt_pipe_filenames(geo, datatype, pipestage_dirname)
+        file_assets = get_elt_file_assets(geo, datatype, pipestage_dirname, extension="jsonl")
+        existing_files = file_assets.latest_files
+        resolved_datatype = file_assets.resolved_datatype
+        new_filesname = file_assets.new_filename
     else:
-        existing_files, new_file = [], "DB"
+        existing_files, new_filename = [], "DB"
 
     if stage_config["has_file_output"] and not existing_files:
         print("No existing file found... Creating one.")
@@ -40,7 +43,7 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
     # Got user intention, either fetch new data (create_new_file), incrementally add to latest file (do_incremental),
     # or load existing data
     if use_file == "c":  # create new data
-        outfile = new_file
+        outfile = new_filesname
         logmsg = f"Fetched {geo_name} {resolved_datatype} {stage_config['name']}, wrote to {outfile}\n"
     elif use_file == "i":  # incrementally add to latest file
         outfile = existing_filename
@@ -54,7 +57,7 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
         raise NotImplementedError("Not implemented yet - use older existing data")
 
     # Fetch data from API or from file
-    file_to_write = (new_file if use_file == "c" else outfile,)
+    file_to_write = (new_filesname if use_file == "c" else outfile,)
     result_count = stage_config["fetcher_fn"](
         stage_config["url"],
         stage_config["custom_params"],

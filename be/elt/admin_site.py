@@ -3,7 +3,7 @@ from django.template.response import TemplateResponse
 from django.urls import path
 
 # Custom views for the admin the app list
-parcelmap_view = {
+parcelmap_meta_dict = {
     "model": None,  # model,
     "name": "Parcel Map",  # capfirst(model._meta.verbose_name_plural),
     # "object_name": "parcel_map_no_real_obj_name",
@@ -46,7 +46,7 @@ class CustomAdminSite(AdminSite):  # 1.
             app["models"].sort(key=lambda x: str(getattr(x["model"], "admin_priority", x["name"])))
 
         # put the parcelmap view ahead of everything else.
-        app_dict["elt"]["models"].insert(0, parcelmap_view)
+        app_dict["elt"]["models"].insert(0, parcelmap_meta_dict)
         return app_list
 
     def parcelmapview(self, request, *args, **kwargs):
