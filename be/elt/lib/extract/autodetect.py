@@ -1,5 +1,5 @@
 from elt.lib.elt_utils import get_elt_file_assets
-from elt.lib.extract.shapefile import extract_from_shapefile_bespoke, extract_from_shapefile_generic
+from elt.lib.extract.shapefile import extract_from_shapefile_generic
 from elt.lib.types import GisData, Juri
 
 

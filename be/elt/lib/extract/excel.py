@@ -6,11 +6,11 @@ from datetime import date
 from functools import reduce
 from math import isnan
 
-from django.db.models import Model
 import pandas as pd
 from charset_normalizer.cli.normalizer import query_yes_no
 from dateutil.parser import parse as date_parse
 from django.db import models
+from django.db.models import Model
 from pandas import DataFrame, ExcelFile
 from parsnip.settings import BASE_DIR
 

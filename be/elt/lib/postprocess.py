@@ -1,9 +1,7 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import CharField, Count, OuterRef, QuerySet, Subquery, Value
-from django.db.models.functions import Cast, Concat
+from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.forms import model_to_dict
-
 from lib.util import flatten_dict, getattr_with_lookup_key
 from parsnip.util import dict_del_keys
 
@@ -34,7 +32,6 @@ def check_for_dupes_raw_geom(dry_run: bool = False):
     )
 
     # Construct the duplicate groups from the aggregated data
-    duplicate_groups = {}
     ids_to_delete = set({})
     for item in locations_with_counts:
         dup_rows = RawGeomData.objects.filter(id__in=item["id_list"]).values()

@@ -1,14 +1,12 @@
-from datetime import date
 import sys
 import traceback
-from typing import List
+from datetime import date
 
-from ninja.errors import ValidationError
-
-from elt.lib.standardize import ParcelFacts, SfHeFacts, RentBoardEntry, create_parcel_facts_csv
+from elt.lib.standardize import ParcelFacts, SfHeFacts, create_parcel_facts_csv
 from elt.models import RawGeomData, RawSfParcelWrap
 from lib.mgmt_lib import Home3Command
 from lib.models_lib import group_queryset_by_field
+from ninja.errors import ValidationError
 
 
 def catch(func, *args, idx, raise_again=True, handle=lambda e: e, **kwargs):
@@ -40,7 +38,7 @@ class Command(Home3Command):
             "data__mapblklot"
         )
         he_count = qs.count()
-        he_facts = dict()
+        he_facts = {}
         print("Processing Jul 2023 HE data")
         for idx, objgroup in enumerate(group_queryset_by_field(qs, "data__mapblklot")):
             if idx % 5000 == 0:
@@ -63,7 +61,7 @@ class Command(Home3Command):
         for obj in qs:
             obj.he_facts = he_facts[obj.apn]
         try:
-            facts: List[ParcelFacts] = [catch(ParcelFacts.from_orm, obj, idx=idx) for idx, obj in enumerate(qs)]
+            facts: list[ParcelFacts] = [catch(ParcelFacts.from_orm, obj, idx=idx) for idx, obj in enumerate(qs)]
         except ValidationError as e:
             print(e)
             print(e.errors())

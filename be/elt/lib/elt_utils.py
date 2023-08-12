@@ -1,21 +1,21 @@
-from pathlib import Path
 import sys
-from types import SimpleNamespace
-from typing import Callable
 import warnings
+from collections.abc import Callable
 from copy import deepcopy
 from datetime import date, datetime
 from itertools import chain, islice
+from pathlib import Path
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
+
+import pandas as pd
 from dateutil.parser import parse as date_parse
 from django.contrib.gis.db.models import GeometryField
 from django.contrib.gis.gdal import DataSource, GDALException, OGRGeomType
 from django.contrib.gis.utils import LayerMapError, LayerMapping
 from django.core.exceptions import FieldDoesNotExist
-
 from django.db import models
 from django.db.models import JSONField
-import pandas as pd
 from rich.prompt import Prompt
 
 from elt import models as elt_models
@@ -159,7 +159,6 @@ def elt_model_with_custom_save(model_name_camel: str, save_fn: Callable) -> mode
     """Return a version of the given ELT DB model which has a custom save method
     Args:
         model_name_camel (str): DB model name in CamelCase
-        data_date (date): date to set in run_date field when saving
     Returns:
         models.Model: a Django model with a run_date field
     """
@@ -214,7 +213,7 @@ class H3LayerMapping(LayerMapping):
         for json_fieldname in json_fieldnames:
             # pop the mapping for the JSON field so it doesn't get processed by the parent method
             self.removed_mappings[json_fieldname] = self.mapping.pop(json_fieldname)
-            field = self.model._meta.get_field(json_fieldname)
+            # field = self.model._meta.get_field(json_fieldname)
             ogr_name = self.removed_mappings[json_fieldname]
             # Extract the values from the feature using the ogr_names in the list
             json_kwargs[json_fieldname] = {name: feature.get(name) for name in ogr_name}
@@ -231,7 +230,7 @@ class H3LayerMapping(LayerMapping):
         print("verify ogr field", ogr_field, model_field)
         return super().verify_ogr_field(ogr_field, model_field)
 
-    def check_layer(self):
+    def check_layer(self):  # noqa: PLR0915 too many statements
         """
         NILS: Copied from django's LayerMapping, edited to work with json fields.
 
@@ -255,7 +254,9 @@ class H3LayerMapping(LayerMapping):
             try:
                 idx = ogr_fields.index(ogr_map_fld)
             except ValueError:
-                raise LayerMapError('Given mapping OGR field "%s" not found in OGR Layer.' % ogr_map_fld)
+                raise LayerMapError(  # noqa: B904
+                    'Given mapping OGR field "%s" not found in OGR Layer.' % ogr_map_fld
+                )  # noqa: B904
             return idx
 
         # No need to increment through each feature in the model, simply check
@@ -266,7 +267,7 @@ class H3LayerMapping(LayerMapping):
             try:
                 model_field = self.model._meta.get_field(field_name)
             except FieldDoesNotExist:
-                raise LayerMapError('Given mapping field "%s" not in given Model fields.' % field_name)
+                raise LayerMapError('Given mapping field "%s" not in given Model fields.' % field_name)  # noqa: B904
 
             # Getting the string name for the Django field class (e.g., 'PointField').
             fld_name = model_field.__class__.__name__
@@ -284,14 +285,14 @@ class H3LayerMapping(LayerMapping):
                     else:
                         gtype = OGRGeomType(ogr_name)
                 except GDALException:
-                    raise LayerMapError('Invalid mapping for GeometryField "%s".' % field_name)
+                    raise LayerMapError('Invalid mapping for GeometryField "%s".' % field_name)  # noqa: B904
 
                 # Making sure that the OGR Layer's Geometry is compatible.
                 ltype = self.layer.geom_type
                 if not (ltype.name.startswith(gtype.name) or self.make_multi(ltype, model_field)):
                     raise LayerMapError(
-                        "Invalid mapping geometry; model has %s%s, "
-                        "layer geometry type is %s." % (fld_name, "(dim=3)" if coord_dim == 3 else "", ltype)
+                        "Invalid mapping geometry; model has {}{}, "
+                        "layer geometry type is {}.".format(fld_name, "(dim=3)" if coord_dim == 3 else "", ltype)
                     )
 
                 # Setting the `geom_field` attribute w/the name of the model field
@@ -309,7 +310,7 @@ class H3LayerMapping(LayerMapping):
                         try:
                             rel_model._meta.get_field(rel_name)
                         except FieldDoesNotExist:
-                            raise LayerMapError(
+                            raise LayerMapError(  # noqa: B904
                                 'ForeignKey mapping field "%s" not in %s fields.'
                                 % (rel_name, rel_model.__class__.__name__)
                             )

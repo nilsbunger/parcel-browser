@@ -79,10 +79,10 @@ class RawGeomDataTile(LoginRequiredMixin, MVTView, ListView):
             return HttpResponseNotFound()
         self.geo = geo
         self.datatype = datatype
-        self.layerquery = [Q(data__LAYER=l) for l in layer.split("|")]
-        self.q_object = self.layerquery[0]
-        for l in self.layerquery[1:]:
-            self.q_object |= l
+        self.layerquerylist = [Q(data__LAYER=lyr) for lyr in layer.split("|")]
+        self.q_object = self.layerquerylist[0]
+        for layerquery in self.layerquerylist[1:]:
+            self.q_object |= layerquery
 
         return super().get(request, z, x, y)
 

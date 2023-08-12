@@ -1,17 +1,14 @@
-from datetime import date
 import sys
 import tempfile
 import zipfile
+from datetime import date
 from pathlib import Path, PosixPath
 from pprint import pformat, pprint
 
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.utils import LayerMapping, mapping, ogrinspect
 from django.db.models import Count, Q
-from django.contrib.gis.db import models
 
-
-from elt.models import RawGeomData
 import elt.models as elt_models
 from elt.lib.elt_utils import (
     H3LayerMapping,
@@ -22,8 +19,9 @@ from elt.lib.elt_utils import (
     pipestage_prompt,
 )
 from elt.lib.types import GisData, Juri
+from elt.models import RawGeomData
 
-mapping = {
+layer_metadata_dict = {
     "phase_1_A_20230727": {
         "geom": "MULTIPOLYGON",
         "data": ["mapblklot", "zoning", "height", "gen_hght", "DAG188", "DAG189"],
@@ -107,25 +105,28 @@ def extract_from_shapefile_generic(geo: Juri, resolved_datatype: str, zipfname: 
             ds = DataSource(shppath, encoding="utf-8")
             assert len(ds) == 1, "Expected only one layer in shapefile"
 
-            def custom_save(self, *args, **kwargs):
+            def custom_save(self, *args, ds=ds, shapefile=shapefile, **kwargs):
                 self.run_date = data_date
                 self.juri = geo.value
                 self.data_type = resolved_datatype
                 self.data["LAYER"] = ds[0].name
                 self.data["FILENAME"] = shapefile
 
-            RawGeomModel = elt_model_with_custom_save("RawGeomData", custom_save)
+            RawGeomModel = elt_model_with_custom_save("RawGeomData", custom_save)  # noqa: N806
             try:
-                layer_map = mapping[ds[0].name]
+                layer_map = layer_metadata_dict[ds[0].name]
             except KeyError:
                 print("No mapping found for layer: ", ds[0].name)
                 inspect_shapefile(shppath)
-                lm = H3LayerMapping(RawGeomModel, shppath, mapping["unknown"], transform=True, using="default")
+                lm = H3LayerMapping(
+                    RawGeomModel, shppath, layer_metadata_dict["unknown"], transform=True, using="default"
+                )
                 lm.stats()
                 print("Add mapping for the above fields")
                 sys.exit(1)
 
-            # fields in the layer: ['OBJECTID', 'mapblklot', 'zoning', 'height', 'gen_hght', 'DAG188', 'DAG189', 'Shape_Leng', 'Shape_Area']
+            # fields in the layer: ['OBJECTID', 'mapblklot', 'zoning', 'height', 'gen_hght',
+            # 'DAG188', 'DAG189', 'Shape_Leng', 'Shape_Area']
             lm = H3LayerMapping(RawGeomModel, shppath, layer_map, transform=True, using="default")
             lm.stats()
             lm.save(strict=False, verbose=False, progress=True, step=500)  # fid_range=(0, 20))  # TODO: HACK!

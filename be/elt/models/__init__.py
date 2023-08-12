@@ -1,10 +1,11 @@
 # hand-crafted models:
+from .elt_analysis import EltAnalysis
 from .external_api_data import ExternalApiData
 from .raw_cali_resource_level import RawCaliResourceLevel, raw_cali_resource_level_mapping
-from .elt_analysis import EltAnalysis
 
 # auto-generated models:
 from .raw_california_oppzone import RawCaliforniaOppzone, raw_california_oppzone_mapping
+from .raw_geom_data import RawGeomData
 from .raw_orange_county_road import RawOrangeCountyRoad, raw_orange_county_road_mapping
 from .raw_santa_ana_parcel import RawSantaAnaParcel
 from .raw_santa_ana_zoning import RawSantaAnaZoning, raw_santa_ana_zoning_mapping
@@ -21,4 +22,3 @@ from .raw_sf_zoning_height_bulk_districts import (
     RawSfZoningHeightBulk,
     raw_sf_zoning_height_bulk_mapping,
 )
-from .raw_geom_data import RawGeomData

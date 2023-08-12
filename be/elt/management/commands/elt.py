@@ -1,11 +1,11 @@
-from elt.lib.extract.autodetect import extract_autodetect
-from elt.lib.extract.json import extract_from_json
 from lib.mgmt_lib import Home3Command
 
 from elt.lib.extract.arcgis import extract_from_arcgis_api
+from elt.lib.extract.autodetect import extract_autodetect
 from elt.lib.extract.excel import extract_from_excel
-from elt.lib.postprocess import postprocess_sf
+from elt.lib.extract.json import extract_from_json
 from elt.lib.extract.shapefile import extract_from_shapefile_bespoke
+from elt.lib.postprocess import postprocess_sf
 from elt.lib.types import GisData, Juri
 
 

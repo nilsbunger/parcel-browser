@@ -1,10 +1,10 @@
 """ Extract data from a .json file into a Django model. """
 import ast
-import json
+
+from dateutil.parser import parse as date_parse
 
 from elt.lib.elt_utils import get_elt_file_assets
 from elt.lib.types import GisData, Juri
-from dateutil.parser import parse as date_parse
 
 
 def extract_from_json(geo: Juri, datatype: GisData, thru_data=None):
@@ -13,7 +13,9 @@ def extract_from_json(geo: Juri, datatype: GisData, thru_data=None):
     file_assets = get_elt_file_assets(geo, datatype, pipestage_dirname, extension="json", expect_existing=True)
     latest_file = file_assets.latest_files[0]
     print("Extracting from latest matching file: ", latest_file)
-    date_from_filename = date_parse(latest_file.stem.split("_")[0], yearfirst=True).date()
+    date_from_filename = date_parse(  # noqa: F841 unused variable
+        latest_file.stem.split("_")[0], yearfirst=True
+    ).date()
 
     # load json from latest file
 
@@ -21,7 +23,7 @@ def extract_from_json(geo: Juri, datatype: GisData, thru_data=None):
         lines = localfile.readlines()
     lines[-1] += "]"
     try:
-        saved_calls = ast.literal_eval("".join(lines))
+        saved_calls = ast.literal_eval("".join(lines))  # noqa: F841 unused variable
     except ValueError as e:
         print(e)
     print("DONE")

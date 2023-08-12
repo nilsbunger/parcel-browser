@@ -26,7 +26,7 @@ def extract_from_arcgis_api(geo: Juri, datatype: GisData, pipestage: int, thru_d
         resolved_datatype = file_assets.resolved_datatype
         new_filesname = file_assets.new_filename
     else:
-        existing_files, new_filename = [], "DB"
+        existing_files, new_filename = [], "DB"  # noqa: F841 unused variable
 
     if stage_config["has_file_output"] and not existing_files:
         print("No existing file found... Creating one.")
@@ -192,6 +192,6 @@ def parcel_data_fetcher(url, arc_custom_params, *, do_incremental, thru_data, sk
             unique_fields=["assessment_no", "legal_lot_id", "name"],
             batch_size=50,
         )
-        parcels = []
+        parcels = []  # noqa: F841 unused variable
     print(f"DONE writing parcels to DB. Wrote {count} parcels. {error_count} errors.")
     return count
