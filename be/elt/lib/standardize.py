@@ -1,17 +1,22 @@
 import csv
-from datetime import date
 import re
 import sys
 import traceback
-from typing import List, Optional, Tuple
+from datetime import date
 
 from more_itertools import collapse
 from ninja import Field, Schema
 
 from elt.models import RawSfHeTableB, RawSfRentboardHousingInv
 
-enum_or_none = lambda _Enum, _val: _Enum(_val) if _val is not None else None
-round_or_none = lambda _val, ndigits: round(_val, ndigits) if _val is not None else None
+
+def enum_or_none(_Enum, _val):  # noqa: N803
+    return _Enum(_val) if _val is not None else None
+
+
+def round_or_none(_val, ndigits):
+    return round(_val, ndigits) if _val is not None else None
+
 
 ZoningEnum = RawSfHeTableB.ZoningEnum
 zoning_map = {
@@ -74,8 +79,66 @@ class RentBoardEntry(Schema):
         return f"{obj.first_name + ' ' if obj.first_name else ''}{obj.last_name or ''}"
 
 
+sf_he_facts_zoning_map = {
+    "55' Height Allowed": 55,
+    "65' Height Allowed": 65,
+    "65' Height Allowed (Unchanged)": 65,
+    "80' Height Allowed (Unchanged)": 80,
+    "85' Height Allowed": 85,
+    "100' Height Allowed (Unchanged)": 100,
+    "85' Height Allowed (Unchanged)": 85,
+    "105' Height Allowed (Unchanged)": 105,
+    "130' Height Allowed (Unchanged)": 130,
+    "140' Height Allowed": 140,
+    "240' Height Allowed": 240,
+    "300' Height Allowed": 300,
+    "Increased density up to four units (six units on corner lots)": "4-6 Units",
+    "No height change, density decontrol": "Density Decontrol",
+}
+
+
+class SfHeFacts(Schema):
+    """Accept a list of RawGeomData sf he objects that map to a single parcel (via SfHeFacts.from_orm(objlist)),
+    and pull out useful info."""
+
+    apn: str
+    hes_count: int
+    he_zoning: tuple[str | int | None, ...]
+    curr_zoning: str | None  # eg "C-2" , "RH-2", ...
+
+    def resolve_apn(self, objlist):
+        assert all([o.data["mapblklot"] == objlist[0].data["mapblklot"] for o in objlist])
+        if objlist[0].data["mapblklot"] is None:
+            print("HMMM")
+        return objlist[0].data["mapblklot"]
+
+    def resolve_hes_count(self, objlist):
+        # it's better to count the classified entries from self.he_zoning since the table has wonky entries
+        return len([x for x in self.he_zoning if x])
+
+    def resolve_he_zoning(self, objlist):
+        # Return tuple of 2 values -- concept A and concept B
+        retval = [None, None]
+        for obj in objlist:
+            he_zoning_raw = obj.data.get("DAG188", obj.data.get("DAG199", obj.data.get("FOURPLEX")))
+            assert he_zoning_raw
+            he_zoning = sf_he_facts_zoning_map.get(he_zoning_raw, None)
+            assert he_zoning
+            if "1_A" in obj.data["LAYER"]:
+                retval[0] = he_zoning
+            elif "1_B" in obj.data["LAYER"]:
+                retval[1] = he_zoning
+            else:
+                raise Exception(f"Unknown layer {obj.data['LAYER']}")
+        return retval
+
+    def resolve_curr_zoning(self, objlist):
+        assert all([o.data["zoning"] == objlist[0].data["zoning"] for o in objlist])
+        return objlist[0].data["zoning"]
+
+
 class ParcelFacts(Schema):
-    """Accept a RawSfParcelWrap objct (eg ParcelFacts.from_orm(obj)), and pull out useful info."""
+    """Accept a RawSfParcelWrap objct (via ParcelFacts.from_orm(obj)), and pull out useful info."""
 
     apn: str
     address: str = Field(..., alias="parcel.resolved_address")
@@ -85,11 +148,11 @@ class ParcelFacts(Schema):
     net_build_sq_ft: int | None
     sq_ft_ratio: float | None
     hes_count: int
-    he_zoning: Tuple[str | int | None, str | int | None, str | int | None]
-    he_gp_type: Tuple[str | None, str | None, str | None]
-    he_max_density: Tuple[float | None, float | None, float | None]
+    he_zoning: tuple[str | int | None, ...]
+    he_gp_type: tuple[str | None, ...]
+    he_max_density: tuple[float | None, ...]
     year_built: int = Field(..., alias="reportall_parcel.year_built")
-    bluesky_prob: Optional[float]
+    bluesky_prob: float | None
     # curr__gp_type: str ## this info is in the curr_zoning
     building_sqft: int = Field(..., alias="reportall_parcel.bldg_sqft")
     building_br: int = Field(..., alias="reportall_parcel.bedrooms")
@@ -102,7 +165,7 @@ class ParcelFacts(Schema):
     last_sale_date: date | None = Field(..., alias="reportall_parcel.trans_date")
     curr_val_bldg: int = Field(..., alias="reportall_parcel.mkt_val_bldg")
     curr_val_land: int = Field(..., alias="reportall_parcel.mkt_val_land")
-    rent_board_data: List[RentBoardEntry]
+    rent_board_data: list[RentBoardEntry]
     vacant_count: int | None
     owner_occ_count: int | None
     rented_count: int | None
@@ -136,26 +199,41 @@ class ParcelFacts(Schema):
         return rent_entries
 
     def resolve_existing_gp_type(self, obj):
-        return getattr(obj.he_table_b, "get_ex_gp_type_display")()
+        return obj.he_table_b.get_ex_gp_type_display()
 
     def resolve_bluesky_prob(self, obj):
-        if obj.he_table_a is None or obj.he_table_a.opt2 is None:
-            return None
-        return round(obj.he_table_a.opt2 * 100, ndigits=2)
+        return None
+        # From dec '22 housing element - outdated:
+        # if obj.he_table_a is None or obj.he_table_a.opt2 is None:
+        #     return None
+        # return round(obj.he_table_a.opt2 * 100, ndigits=2)
 
     def resolve_he_gp_type(self, obj):
-        he_gp_type = [getattr(obj.he_table_b, f"get_m{idx}_gp_type_display")() for idx in (1, 2, 3)]
-        return he_gp_type
+        return [None, None]
+        # From dec '22 housing element - outdated:
+        # he_gp_type = [getattr(obj.he_table_b, f"get_m{idx}_gp_type_display")() for idx in (1, 2, 3)]
+        # return he_gp_type
 
-    def resolve_he_zoning(self, obj):
-        he_zoning = [
-            zoning_map[enum_or_none(ZoningEnum, getattr(obj.he_table_b, f"m{idx}_zoning"))] for idx in (1, 2, 3)
-        ]
-        return he_zoning
+    def resolve_he_zoning(self, obj, *args):
+        return obj.he_facts.he_zoning  # eg ('65', '65') for concept a and b
+
+        # From dec '22 housing element - outdated:
+        # he_zoning = [
+        #     zoning_map[enum_or_none(ZoningEnum, getattr(obj.he_table_b, f"m{idx}_zoning"))] for idx in (1, 2, 3)
+        # ]
+        # return he_zoning
 
     def resolve_he_max_density(self, obj):
-        he_max_density = [round_or_none(getattr(obj.he_table_b, f"m{idx}_maxdens"), ndigits=1) for idx in (1, 2, 3)]
-        return he_max_density
+        return [None, None]
+        # From dec '22 housing element - outdated:
+        # he_max_density = [round_or_none(getattr(obj.he_table_b, f"m{idx}_maxdens"), ndigits=1) for idx in (1, 2, 3)]
+        # return he_max_density
+
+    def resolve_hes_count(self, obj):
+        return obj.he_facts.hes_count
+        # From dec '22 housing element - outdated:
+        # hes = self.he_zoning
+        # return len([he for he in hes if he is not None])
 
     def resolve_parcel_sq_ft(self, obj):
         try:
@@ -168,10 +246,6 @@ class ParcelFacts(Schema):
             traceback.print_tb(tb)  # Fixed format
             print(e)
             raise e
-
-    def resolve_hes_count(self, obj):
-        hes = self.he_zoning
-        return len([he for he in hes if he is not None])
 
     def resolve_net_build_sq_ft(self, obj):
         numeric_upzones = [int(x) for x in self.he_zoning if x is not None and x.isnumeric()]
@@ -193,7 +267,7 @@ class ParcelFacts(Schema):
         return None
 
 
-def create_parcel_facts_csv(schema_list: List[ParcelFacts], filename: str):
+def create_parcel_facts_csv(schema_list: list[ParcelFacts], filename: str):
     """Create a CSV file from a list of ParcelFacts objects, including relevant related data.
     This should be similar to the data we'd show in a detailed parcel view."""
     fieldnames = list(schema_list[0].dict().keys())
@@ -213,11 +287,11 @@ def create_parcel_facts_csv(schema_list: List[ParcelFacts], filename: str):
         for row in schema_list:
             row_dict = dict(vars(row))  # dict() to make a copy
             if row.rent_board_data:
-                deduped_contacts = set(
+                deduped_contacts = {
                     (r.contact_name, r.contact_email, r.contact_phone, r.contact_role, r.contact_type)
                     for r in row.rent_board_data
                     if r.contact_name
-                )
+                }
                 for i, contact in enumerate(list(deduped_contacts)[:4], start=1):
                     row_dict[f"contact_name{i}"] = contact[0]
                     row_dict[f"contact_email{i}"] = contact[1]
