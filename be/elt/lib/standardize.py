@@ -1,9 +1,11 @@
+import csv
 from datetime import date
 import re
 import sys
 import traceback
 from typing import List, Optional, Tuple
 
+from more_itertools import collapse
 from ninja import Field, Schema
 
 from elt.models import RawSfHeTableB, RawSfRentboardHousingInv
@@ -189,3 +191,38 @@ class ParcelFacts(Schema):
             return x
         # TODO: calculate buildable sq ft for non-numeric upzones (density decontrol, etc)
         return None
+
+
+def create_parcel_facts_csv(schema_list: List[ParcelFacts], filename: str):
+    """Create a CSV file from a list of ParcelFacts objects, including relevant related data.
+    This should be similar to the data we'd show in a detailed parcel view."""
+    fieldnames = list(schema_list[0].dict().keys())
+    fieldnames.remove("rent_board_data")
+    fieldnames += collapse(
+        [
+            (f"contact_name{i}", f"contact_email{i}", f"contact_phone{i}", f"contact_role{i}", f"contact_type{i}")
+            for i in [1, 2, 3, 4]
+        ]
+    )
+
+    # Create the CSV file
+    with open(filename, "w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction="ignore", restval=None)
+
+        writer.writeheader()
+        for row in schema_list:
+            row_dict = dict(vars(row))  # dict() to make a copy
+            if row.rent_board_data:
+                deduped_contacts = set(
+                    (r.contact_name, r.contact_email, r.contact_phone, r.contact_role, r.contact_type)
+                    for r in row.rent_board_data
+                    if r.contact_name
+                )
+                for i, contact in enumerate(list(deduped_contacts)[:4], start=1):
+                    row_dict[f"contact_name{i}"] = contact[0]
+                    row_dict[f"contact_email{i}"] = contact[1]
+                    row_dict[f"contact_phone{i}"] = contact[2]
+                    row_dict[f"contact_role{i}"] = contact[3].label if contact[3] else None
+                    row_dict[f"contact_type{i}"] = contact[4].label if contact[4] else None
+            writer.writerow(row_dict)
+    print(f"Done writing file {filename}")

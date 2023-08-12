@@ -4,7 +4,7 @@ from django.db.models import CharField, Count, OuterRef, QuerySet, Subquery, Val
 from django.db.models.functions import Cast, Concat
 from django.forms import model_to_dict
 
-from lib.util import flatten_dict
+from lib.util import flatten_dict, getattr_with_lookup_key
 from parsnip.util import dict_del_keys
 
 from elt.models import (
@@ -45,7 +45,9 @@ def check_for_dupes_raw_geom(dry_run: bool = False):
         else:
             ids_to_delete = ids_to_delete | set(item["id_list"][1:])
 
-    if not dry_run:
+    if not ids_to_delete:
+        print("No duplicates found")
+    elif not dry_run:
         print(f"Deleting {len(ids_to_delete)} rows")
         RawGeomData.objects.filter(id__in=ids_to_delete).delete()
     else:
@@ -126,7 +128,8 @@ def link_to_parcel_wrap_sf_many_to_one(model, apn_field, wrap_model_field, *, dr
 
     # Grab any instances of the model that don't have a link to a parcel wrap
     unlinked_rows = model.objects.filter(**{wrap_model_field: None})
-    unlinked_apns = {getattr(inst, apn_field) for inst in unlinked_rows}
+    split_apn = apn_field.split("__")
+    unlinked_apns = {getattr_with_lookup_key(inst, *split_apn) for inst in unlinked_rows}
     parcel_wraps = RawSfParcelWrap.objects.filter(apn__in=unlinked_apns)
     print(
         f"For model {model.__name__}, found {len(unlinked_rows)} unlinked entries (w/ {len(unlinked_apns)}"
@@ -138,7 +141,7 @@ def link_to_parcel_wrap_sf_many_to_one(model, apn_field, wrap_model_field, *, dr
     for idx, unlinked_row in enumerate(unlinked_rows):
         if idx % 500 == 0:
             print(".", end="")
-        unlinked_row_apn = getattr(unlinked_row, apn_field)
+        unlinked_row_apn = getattr_with_lookup_key(unlinked_row, *split_apn)
         if unlinked_row_apn in parcel_wrap_by_apn_dict:
             setattr(unlinked_row, wrap_model_field, parcel_wrap_by_apn_dict[unlinked_row_apn])
         else:
@@ -236,6 +239,9 @@ def postprocess_sf(*, dry_run=False):
 
     link_to_parcel_wrap_sf_many_to_one(
         RawSfRentboardHousingInv, "parcel_number", wrap_model_field="rawsfparcelwrap", dry_run=dry_run
+    )
+    link_to_parcel_wrap_sf_many_to_one(
+        RawGeomData, "data__mapblklot", wrap_model_field="rawsfparcelwrap", dry_run=dry_run
     )
     link_to_parcel_wrap_sf_one_to_one(RawSfParcel, "blklot", wrap_model_field="parcel", dry_run=dry_run)
     link_to_parcel_wrap_sf_one_to_one(RawSfHeTableA, "mapblklot", wrap_model_field="he_table_a", dry_run=dry_run)

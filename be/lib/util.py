@@ -33,3 +33,10 @@ def flatten_dict(d, parent_key="", sep="."):
         else:
             items.append((new_key, flattened_value))
     return dict(items)
+
+
+def getattr_with_lookup_key(obj, attr, lookup_key=None):
+    x = getattr(obj, attr)
+    if lookup_key:
+        return x[lookup_key]
+    return x
