@@ -15,10 +15,10 @@ class RawSfRentboardHousingInv(SanitizedRawModelMixin, models.Model):
         HOUSING_INVENTORY_UNIT_INFORMATION_2023 = 0
 
     class OccupancyTypeEnum(models.IntegerChoices):
-        NON_RESIDENTIAL = 0
-        OCCUPIED_BY_NON_OWNER = 1
-        OCCUPIED_BY_OWNER = 2
-        VACANT = 3
+        NON_RESIDENTIAL = 0, "Non-resi"
+        OCCUPIED_BY_NON_OWNER = 1, "Non-owner"
+        OCCUPIED_BY_OWNER = 2, "Owner"
+        VACANT = 3, "Vacant"
 
     class BedroomCountEnum(models.IntegerChoices):
         FIVE_PLUS = 0
@@ -187,6 +187,14 @@ class RawSfRentboardHousingInv(SanitizedRawModelMixin, models.Model):
         OCTOBER = 11
         SEPTEMBER = 12
 
+    class YearEnum(models.IntegerChoices):
+        # Note: Integer values of an actual year > 1950 are also valid.
+        NO_INFO = 0, "Year unknown (no information available)"
+        MORE_THAN_20_YEARS = 1, "Year Unknown (more than 20 years)"
+        WITHIN_PAST_10_20_YEARS = 2, "Year Unknown (within past 10-20 years)"
+        WITHIN_PAST_5_10_YEARS = 3, "Year Unknown (within past 5-10 years)"
+        WITHIN_PAST_5_YEARS = 4, "Year Unknown (within past five years)"
+
     class PastOccupancyEnum(models.IntegerChoices):
         NO = 0
         YES = 1
@@ -214,7 +222,7 @@ class RawSfRentboardHousingInv(SanitizedRawModelMixin, models.Model):
     base_rentinclude_utility = models.IntegerField(choices=BaseRentincludeUtilityEnum.choices, null=True, blank=True)
     day = models.IntegerField(null=True, blank=True)
     month = models.IntegerField(choices=MonthEnum.choices, null=True, blank=True)
-    year = models.IntegerField(null=True, blank=True)
+    year = models.IntegerField(choices=YearEnum.choices, null=True, blank=True)
     past_occupancy = models.IntegerField(choices=PastOccupancyEnum.choices, null=True, blank=True)
     contact_association = models.IntegerField(choices=ContactAssociationEnum.choices, null=True, blank=True)
     first_name = models.CharField(max_length=254, null=True, blank=True)

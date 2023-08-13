@@ -2,7 +2,6 @@
 from django.contrib.gis.db import models
 
 from elt.lib.types import GisData, Juri
-from elt.models import RawSfParcelWrap
 from elt.models.model_utils import SanitizedRawModelMixin
 
 
@@ -21,4 +20,4 @@ class RawGeomData(SanitizedRawModelMixin, models.Model):
     data = models.JSONField()
 
     # Link for data which is associated with a parcel directly
-    rawsfparcelwrap = models.ForeignKey(RawSfParcelWrap, on_delete=models.PROTECT, null=True, blank=True)
+    rawsfparcelwrap = models.ForeignKey("RawSfParcelWrap", on_delete=models.PROTECT, null=True, blank=True)
