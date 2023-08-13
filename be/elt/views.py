@@ -67,7 +67,7 @@ class RawCaliResourceLevelTile(LoginRequiredMixin, MVTView, ListView):
     vector_tile_fields = ("fips", "oppcat")
 
 
-# @method_decorator(h3_cache_page(seconds=30), name="dispatch")  # cache time in seconds
+@method_decorator(h3_cache_page(seconds=60 * 60), name="dispatch")  # cache time in seconds
 class RawGeomDataTile(LoginRequiredMixin, MVTView, ListView):
     model = RawGeomData
     vector_tile_layer_name = "raw_geom_data"
@@ -96,8 +96,7 @@ class RawGeomDataTile(LoginRequiredMixin, MVTView, ListView):
         return q
 
 
-# @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
-# @method_decorator(h3_cache_page(60 * 60 * 24), name="dispatch")  # cache time in seconds
+@method_decorator(h3_cache_page(60 * 60), name="dispatch")  # cache time in seconds
 class EltAnalysisTile(LoginRequiredMixin, MVTView, ListView):
     model = RawSfParcelWrap
     vector_tile_layer_name = "elt_analysis"

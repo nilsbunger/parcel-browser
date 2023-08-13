@@ -157,9 +157,8 @@ class SfHeEntry(Schema):
     curr_zoning: str | None  # eg "C-2" , "RH-2", ...
 
     def resolve_apn(self, objlist):
+        assert len(objlist), "Can't construct an SfHeEntry with no objects"
         assert all([o.data["mapblklot"] == objlist[0].data["mapblklot"] for o in objlist])
-        if objlist[0].data["mapblklot"] is None:
-            print("HMMM")
         return objlist[0].data["mapblklot"]
 
     def resolve_hes_count(self, objlist):
@@ -211,7 +210,7 @@ class ParcelFacts(Schema):
     curr_val_bldg: int = Field(..., alias="reportall_parcel.mkt_val_bldg")
     curr_val_land: int = Field(..., alias="reportall_parcel.mkt_val_land")
     rent_board_data: list[RentBoardEntry]
-    he_data: SfHeEntry
+    he_data: SfHeEntry | None
     vacant_count: int | None
     owner_occ_count: int | None
     rented_count: int | None
@@ -256,7 +255,9 @@ class ParcelFacts(Schema):
             raise e
 
     def resolve_net_build_sq_ft(self, obj):
-        numeric_upzones = [int(x) for x in self.he_zoning if x is not None and x.isnumeric()]
+        if not self.he_data:
+            return None
+        numeric_upzones = [int(x) for x in self.he_data.he_zoning if x is not None and x.isnumeric()]
         if not len(numeric_upzones):
             # TODO: calculate buildable sq ft for non-numeric upzones (density decontrol, etc)
             return None
@@ -281,6 +282,8 @@ class ParcelFacts(Schema):
 
     def resolve_he_data(self, obj):
         """Resolve embedded housing element list. Takes list of related RawGeomData objects and combines into one entry.."""
+        if len(obj.rawgeomdata_set.all()) == 0:
+            return None
         he_data = SfHeEntry.from_orm(obj.rawgeomdata_set.all())
         return he_data
 
@@ -291,7 +294,7 @@ def create_parcel_facts_csv(schema_list: list[ParcelFacts], filename: str):
 
     # construct column names we want - for rent-board data only include contact info
     # representative row with all columns we want
-    rep_row_keys = flatten_dict(next(s for s in schema_list if s.rent_board_data).dict()).keys()
+    rep_row_keys = flatten_dict(next(s for s in schema_list if s.rent_board_data and s.he_data).dict()).keys()
 
     fieldnames = [k for k in rep_row_keys if "rent_board_data" not in k and k != "he_data.apn"]
     fieldnames += collapse(
