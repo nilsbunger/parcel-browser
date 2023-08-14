@@ -34,8 +34,18 @@ Parsnip's app tier runs `gunicorn` as a web server. It serves Django endpoints, 
     * SECRET_KEY=...
 4. run `flyctl deploy`. This should run a migration AND deploy your app if you're lucky :)
 
-### Updates to web app
-... to be continued
+### Deploy to staging
+
+1. `fly deploy` from parsnip directory. 
+
+This deploys to https://stage-app.turboprop.ai
+
+### Deploy to production
+
+1. `fly deploy -c fly.prod.toml` from parsnip directory.
+
+This deploys to https://app.turboprop.ai
+
 
 ## Uploading data
 
@@ -59,4 +69,3 @@ Now, upload the nightly data needed for property listings.
    1. `pg_dump -a -t world_propertylisting | zip > world_proplistings.sql.gz`
    2. `scp world_proplistings.sql.gz root@parsnip.internal:/app`
    3. In the Docker container, `gunzip -c world_proplistings.sql.gz | psql postgresql://postgres:<passwd>@parsnip-postgis-db.internal:5432`
-   

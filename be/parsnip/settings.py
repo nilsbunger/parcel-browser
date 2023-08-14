@@ -37,7 +37,6 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 env = environ.Env(
     DB=(str, None),
     TEST_ENV=(bool, False),  # Running tests; disables silk and other dev infra
-    BUILD_PHASE=(bool, False),
     DJANGO_LOG_LEVEL=(str, "INFO"),
     DJANGO_ENV=(str, "production"),
     SENTRY_DSN=(str, None),
@@ -48,7 +47,6 @@ env = environ.Env(
     MAPBOX_API_KEY=(str, None),
     ATTOM_DATA_API_KEY=(str, None),
 )
-BUILD_PHASE: bool = env("BUILD_PHASE")
 
 DJANGO_ENV: str = env("DJANGO_ENV")
 assert DJANGO_ENV in ["development", "production", "staging"]
@@ -56,7 +54,7 @@ DEV_ENV = DJANGO_ENV == "development"  # running on local machine
 PROD_ENV = DJANGO_ENV == "production"  # running on production server
 STAGE_ENV = DJANGO_ENV == "staging"  # running on staging server
 DB: str = env("DB").upper()  # which DB to use for primary data storage:
-assert DB in ["LOCAL", "DEV", "TEST", "PROD"]
+assert DB in ["LOCAL", "DEV", "TEST", "PROD", "NONE"]
 TEST_ENV: bool = env("TEST_ENV") or (executable_name in ["pytest", "_jb_pytest_runner.py"])
 DJANGO_LOG_LEVEL = env("DJANGO_LOG_LEVEL")
 assert DJANGO_LOG_LEVEL in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -86,7 +84,7 @@ else:
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if (PROD_ENV or STAGE_ENV) and not BUILD_PHASE and not TEST_ENV:
+if (PROD_ENV or STAGE_ENV) and DB != "NONE" and not TEST_ENV:
     SECRET_KEY = env("DJANGO_SECRET_KEY")
     INSECURE = False
 else:
@@ -294,41 +292,36 @@ SILKY_PYTHON_PROFILER = True
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# railway_db_settings = ("containers-us-west-40.railway.app", 5944, "railway", "postgres", "aQezfx1tHL5zDRFWSbxI")
-# PGPASSWORD=aQezfx1tHL5zDRFWSbxI psql -h containers-us-west-40.railway.app -U postgres -p 5944 -d railway
-
 local_db_settings = ("127.0.0.1", 5432, "parsnip", "postgres", "password")
 match DB:
-    case "DEV":  # remote development DB
-        db_settings = [
+    case "DEV":  # remote development DB - only used as an option in local environment
+        db_host, db_port, db_name, db_user, db_passwd = (
             env(x) for x in ["DB_DEV_HOST", "DB_DEV_PORT", "DB_DEV_NAME", "DB_DEV_USERNAME", "DB_DEV_PASSWORD"]
-        ]
+        )
     case "LOCAL":
-        db_settings = local_db_settings
+        db_host, db_port, db_name, db_user, db_passwd = local_db_settings
     case "TEST":
-        db_settings = [
+        db_host, db_port, db_name, db_user, db_passwd = (
             env(x) for x in ["DB_TEST_HOST", "DB_TEST_PORT", "DB_TEST_NAME", "DB_TEST_USERNAME", "DB_TEST_PASSWORD"]
-        ]
+        )
     case "PROD":
-        db_settings = (env("DB_HOST"), env("DB_PORT"), env("DB_NAME"), env("DB_USERNAME"), env("DB_PASSWORD"))
+        db_host, db_port, db_name, db_user, db_passwd = (
+            env(x) for x in ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASSWORD"]
+        )
+    case "NONE":
+        db_host, db_port, db_name, db_user, db_passwd = None, None, None, None, None
     case _:
         raise AssertionError()
 
-if BUILD_PHASE:
-    (db_host, db_port, db_name, db_user, db_passwd) = ("", "", "", "", "")
+if db_host is None:
     print("**** NO DB - BUILD PHASE ****", file=sys.stderr)
-else:
-    db_host, db_port, db_name, db_user, db_passwd = db_settings
-    print(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}", file=sys.stderr)
-
-if BUILD_PHASE:
     DATABASES = {}
 else:
     # Define the 'default' DB where most reads and writes go. This could be a local or cloud DB.
     # Additionally define the 'topo' DB where the topo model lives, since it is very large.
     # The 'topo' DB is set up as a local DB, which is useful if we're running our scraping locally on a computer,
     # but with the cloud DB.
-    ...
+    print(f"**** {DB} DATABASE ****. HOST={db_host}:{db_port}, DB={db_name}, USER={db_user}", file=sys.stderr)
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.postgis",

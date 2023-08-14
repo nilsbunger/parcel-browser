@@ -7,8 +7,10 @@
 FROM ubuntu:20.04
 
 ### INSTALL SYSTEM PACKAGES ##############################################################
+
+# update and install packages: libarchive-tools (for mamba); git (for yarn)
 RUN apt-get update \
-    && apt-get install -y wget curl \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y wget curl bzip2 libarchive-tools git \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
 
 ### CONDA / MAMBA SETUP #################################################################
@@ -17,13 +19,16 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     && bash /tmp/miniconda.sh -b -p /opt/conda \
     && rm /tmp/miniconda.sh
 
-ENV PATH /opt/conda/bin:$PATH
-WORKDIR /app
+ENV PATH=/opt/conda/bin:$PATH
 
-RUN conda install -y -c conda-forge mamba
+# Update conda and install mamba
+RUN conda update -n base conda && \
+    conda install mamba -c conda-forge -y && \
+    conda clean -afy
 
 ### INSTALL SUPERCRONIC CRON MANAGER #####################################################
 
+WORKDIR /app
 # Supercronic setup, as per fly.io: https://fly.io/docs/app-guides/supercronic/
 ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.1/supercronic-linux-amd64 \
     SUPERCRONIC=supercronic-linux-amd64 \
@@ -34,7 +39,6 @@ RUN curl -fsSLO "$SUPERCRONIC_URL" \
  && chmod +x "$SUPERCRONIC" \
  && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
  && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
-
 
 ### INSTALL AND ACTIVATE MAMBA ENVIRONMENT #####################################################
 COPY mamba-env.yml .
@@ -48,12 +52,12 @@ RUN mamba env create -f mamba-env.yml \
 # Make all Docker RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "parsnip", "/bin/bash", "-c"]
 
+
 ### INSTALL YARN (requires conda env) ####################################################
 RUN npm install --location=global yarn
 
 ### ENVIRONMENT - these variables are available in the build phase on Fly.io
-ENV BUILD_PHASE=True
-#ENV REACT_APP_BACKEND_DOMAIN=https://app.home3.co
+ENV DB=NONE
 ENV DJANGO_ENV=production
 
 ### PYTHON DEPENDENCIES ##################################################################
@@ -80,12 +84,13 @@ COPY . .
 
 RUN mkdir -p dist/static
 
+# Collect backend static assets
 WORKDIR /app/be
 RUN python manage.py collectstatic --noinput
-### FRONT-END BUILD ##########################################################
+
+# Compile and collect frontend static assets (layered on top of backend assets)
 WORKDIR /app/fe
 RUN yarn build
-
 
 
 ### EXECUTE THE APP SERVER ###############################################################

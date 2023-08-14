@@ -19,7 +19,7 @@ kill_timeout = "5s"
   PORT = "8080"
 
 [processes]
-  cron = "supercronic /app/crontab"
+  # cron = "supercronic /app/crontab"   # don't run cron job in staging environment
   web = "mamba run -n parsnip gunicorn --bind :8080 --workers 3 parsnip.wsgi:application"
 
 [[mounts]]
