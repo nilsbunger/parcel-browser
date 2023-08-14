@@ -1,17 +1,17 @@
-# fly.toml file generated for parsnip-postgis-db on 2022-08-12T13:20:56-07:00
+# fly.toml app configuration file generated for parsnip-postgis-db on 2023-08-14T08:49:57-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "parsnip-postgis-db"
 primary_region = "lax"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
-
-[env]
-
-[mounts]
-source="pgdata"
-destination="/pgdata"
+kill_timeout = "5s"
 
 [experimental]
-  allowed_public_ports = []
   auto_rollback = true
+
+[[mounts]]
+  source = "pgdata"
+  destination = "/pgdata"
+  processes = ["app"]
