@@ -99,7 +99,9 @@
       // keep mapbox token in backend codebase.
       // NOTE : this is mapbox's public token.
       mapboxgl.accessToken = 'pk.eyJ1Ijoibmlsc2hvbWUzIiwiYSI6ImNsOHJtbDFtbDI2Znkzb3RvdDV0emhmamEifQ.rkpWuotqi4HacN2QUoWkgg';
-      console.log("MAPBOX SCRIPT")
+      const portStr = window.location.port !== "443" ? `:${window.location.port}` : '';
+      const fullDomain = `${window.location.protocol}//${window.location.hostname}${portStr}`;
+
       const bounds = [
           [-122.66336, 37.492987], // Southwest coordinates
           [-122.050481, 37.871651] // Northeast coordinates
@@ -217,7 +219,7 @@
           }
           map.addSource('sf_yigby_elt_analysis_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/elt_analysis/sf/yigby/{z}/{x}/{y}' + paramStr],
+              'tiles': [fullDomain+'/dj/elt/api/tile/elt_analysis/sf/yigby/{z}/{x}/{y}' + paramStr],
               'minzoom': 11,
               'maxzoom': 18
           });
@@ -242,19 +244,19 @@
 
           map.addSource('raw_sf_zoning_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning/{z}/{x}/{y}'],
+              'tiles': [fullDomain+'/dj/elt/api/tile/raw_sf_zoning/{z}/{x}/{y}'],
               'minzoom': 11,
               'maxzoom': 18
           });
           map.addSource('raw_sf_zoning_height_bulk_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_zoning_height_bulk/{z}/{x}/{y}'],
+              'tiles': [fullDomain+'/dj/elt/api/tile/raw_sf_zoning_height_bulk/{z}/{x}/{y}'],
               'minzoom': 11,
               'maxzoom': 18
           });
           map.addSource('raw_cali_resource_level_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_cali_resource_level/{z}/{x}/{y}'],
+              'tiles': [fullDomain+'/dj/elt/api/tile/raw_cali_resource_level/{z}/{x}/{y}'],
               'minzoom': 11,
               'maxzoom': 18
           });
@@ -340,7 +342,7 @@
 
           map.addSource('raw_sf_parcel_wrap_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_sf_parcel_wrap/{z}/{x}/{y}'],
+              'tiles': [fullDomain+'/dj/elt/api/tile/raw_sf_parcel_wrap/{z}/{x}/{y}'],
               'minzoom': 12,
               'maxzoom': 17
           });
@@ -364,7 +366,7 @@
 
           map.addSource('raw_geom_he_phase1_src', {
               'type': 'vector',
-              'tiles': ['http://localhost:8000/dj/elt/api/tile/raw_geom_data/sf/he/phase_1_A_20230727|phase_1_B_20230727|fourplex_for_1_A|fourplex_for_1_B/{z}/{x}/{y}'],
+              'tiles': [fullDomain+'/dj/elt/api/tile/raw_geom_data/sf/he/phase_1_A_20230727|phase_1_B_20230727|fourplex_for_1_A|fourplex_for_1_B/{z}/{x}/{y}'],
               'minzoom': 11,
               'maxzoom': 18
           });

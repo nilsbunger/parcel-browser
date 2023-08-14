@@ -27,7 +27,7 @@ def analyze_yigby(geo: Juri):
 
     print(f"Creating sf_yigby.csv with {faith_parcels_qs.count()} parcels")
     facts: list[ParcelFacts] = []
-    for idx, obj in enumerate(faith_parcels_qs.iterator(chunk_size=2000)):
+    for _idx, obj in enumerate(faith_parcels_qs.iterator(chunk_size=2000)):
         facts.append(ParcelFacts.from_orm(obj))
 
     create_parcel_facts_csv(facts, "sf_yigby.csv")
