@@ -12,14 +12,14 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [deploy]
-  release_command = "cd be && mamba run -n parsnip python manage.py migrate"
+  release_command = "mamba run -n parsnip python manage.py migrate"
 
 [env]
   PORT = "8080"
 
 [processes]
   cron = "supercronic /app/crontab"
-  web = "cd be && mamba run -n parsnip gunicorn --bind :8080 --workers 3 parsnip.wsgi:application"
+  web = "mamba run -n parsnip gunicorn --bind :8080 --workers 3 parsnip.wsgi:application"
 
 [[mounts]]
   source = "parsnip_data_machines"
