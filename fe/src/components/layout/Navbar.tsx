@@ -19,7 +19,7 @@ function classNames(...classes: string[]) {
 }
 
 const navigation = [
-  { name: "Map", href: "/map", current: false },
+  // { name: "Map", href: "/map", current: false }, // old map from san diego...
   { name: "Properties", href: "/properties", current: false },
   { name: "Listings", href: "/listings", current: false },
   { name: "Search", href: "/search", current: false },
