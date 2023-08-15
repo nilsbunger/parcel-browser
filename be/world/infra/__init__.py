@@ -1,4 +1,3 @@
-from .frontend_proxy_view import frontend_proxy_view
 from .mailersend_backend import MailerSendBackend
 from .my_white_noise_middleware import MyWhiteNoiseMiddleware
 from .template_parcel_reloader import _turboprop_template_changed

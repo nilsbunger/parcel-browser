@@ -64,7 +64,7 @@ urlpatterns = [
     ############ Catch-all for routes that should NOT go to react (ones starting with dj/ or api/) ############
     re_path(r"^(?:dj|api)/", page_not_found, {"exception": django.http.Http404()}, name="page_not_found"),
     ############ All other routes - send to React for rendering ############
-    re_path(r"^[^.]*$", FrontEndProxyView.as_view(template_name="react_layout.html"), name="frontend_proxy_view"),
+    re_path(r"^[^.]*$", FrontEndProxyView.as_view(), name="frontend_proxy_view"),
     # re_path(r"^(.*)$", frontend_proxy_view, name="frontend_proxy_view"),
     ############ Commented-out routes ############
     # # django-two-factor-auth URLS
