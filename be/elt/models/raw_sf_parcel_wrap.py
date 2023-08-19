@@ -17,7 +17,7 @@ class RawSfParcelWrap(SanitizedRawModelMixin, models.Model):
     parcel = models.ForeignKey("RawSfParcel", on_delete=models.PROTECT, null=True, blank=True)
     he_table_a = models.ForeignKey("RawSfHeTableA", on_delete=models.PROTECT, null=True, blank=True)
     he_table_b = models.ForeignKey("RawSfHeTableB", on_delete=models.PROTECT, null=True, blank=True)
-    reportall_parcel = models.ForeignKey("RawSfReportall", on_delete=models.PROTECT, null=True, blank=True)
+    reportall_parcel = models.ForeignKey("elt.RawReportall", on_delete=models.PROTECT, null=True, blank=True)
 
     @classmethod
     def find_by_address(cls, address: str, city: str = "SF", *, raise_on_empty=False) -> QuerySet["RawSfParcelWrap"]:

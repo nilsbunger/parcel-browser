@@ -4,10 +4,10 @@ from django.contrib.gis.db import models
 from elt.models.model_utils import SanitizedRawModelMixin
 
 
-class RawSfReportall(SanitizedRawModelMixin, models.Model):
+class RawReportall(SanitizedRawModelMixin, models.Model):
     class Meta:
-        verbose_name = "Raw SF Reportall [Shapefile]"
-        verbose_name_plural = "Raw SF Reportall [Shapefile]"
+        verbose_name = "Raw Reportall [Shapefile]"
+        verbose_name_plural = "Raw Reportall [Shapefile]"
         indexes = [models.Index(fields=["parcel_id"])]
 
     cty_row_id = models.BigIntegerField(null=True, blank=True)
@@ -96,7 +96,7 @@ class RawSfReportall(SanitizedRawModelMixin, models.Model):
     run_date = models.DateField()
 
 
-raw_sf_reportall_mapping = {
+raw_reportall_mapping = {
     "acreage": "ACREAGE",
     "addr_number": "ADDR_NUMBE",
     "addr_se_01": "ADDR_SE_01",

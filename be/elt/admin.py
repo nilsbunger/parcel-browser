@@ -17,7 +17,7 @@ from elt.models import (
     RawSfParcel,
     RawSfParcelWrap,
     RawSfRentboardHousingInv,
-    RawSfReportall,
+    RawReportall,
     RawSfZoning,
     RawSfZoningHeightBulk,
 )
@@ -246,9 +246,9 @@ class RawSfHeTableCAdmin(Home3Admin):
     search_fields = ["zoning", "zoning_name", "zoning_type", "residential_uses_allowed"]
 
 
-@admin.register(RawSfReportall)
-class RawSfReportallAdmin(Home3Admin):
-    model = RawSfReportall
+@admin.register(RawReportall)
+class RawReportallAdmin(Home3Admin):
+    model = RawReportall
     search_fields = ["parcel_id"]
     # fmt:off
     _fieldlist = [

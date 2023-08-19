@@ -16,7 +16,7 @@ from .raw_sf_he_table_c import RawSfHeTableC
 from .raw_sf_parcel import RawSfParcel, raw_sf_parcel_mapping
 from .raw_sf_parcel_wrap import RawSfParcelWrap
 from .raw_sf_rentboard_housing_inv import RawSfRentboardHousingInv
-from .raw_sf_reportall import RawSfReportall, raw_sf_reportall_mapping
+from .raw_sf_reportall import RawReportall, raw_reportall_mapping
 from .raw_sf_zoning import RawSfZoning, raw_sf_zoning_mapping
 from .raw_sf_zoning_height_bulk_districts import (
     RawSfZoningHeightBulk,

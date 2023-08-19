@@ -13,7 +13,7 @@ raw_str = {
     "RawSfParcel": ("Parcel {}: {}", "blklot", "resolved_address"),
     "RawSfParcelWrap": ("Wrap {} he_a={}, he_b={}", "parcel", "he_table_a", "he_table_b"),
     "RawCaliResourceLevel": ("Resource {}: {}, {}", "fips", "cnty_nm", "oppcat"),
-    "RawSfReportall": ("Reportall {}: {}", "parcel_id", "situs"),
+    "RawReportall": ("Reportall {}: {}", "parcel_id", "situs"),
     "RawSfRentboardHousingInv": (
         "Rentboard {}: {}, {} : ${}",
         "parcel_number",

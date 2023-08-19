@@ -11,7 +11,7 @@ from elt.models import (
     RawSfHeTableB,
     RawSfParcel,
     RawSfRentboardHousingInv,
-    RawSfReportall,
+    RawReportall,
 )
 from elt.models.raw_sf_parcel_wrap import RawSfParcelWrap
 
@@ -243,6 +243,4 @@ def postprocess_sf(*, dry_run=False):
     link_to_parcel_wrap_sf_one_to_one(RawSfParcel, "blklot", wrap_model_field="parcel", dry_run=dry_run)
     link_to_parcel_wrap_sf_one_to_one(RawSfHeTableA, "mapblklot", wrap_model_field="he_table_a", dry_run=dry_run)
     link_to_parcel_wrap_sf_one_to_one(RawSfHeTableB, "mapblklot", wrap_model_field="he_table_b", dry_run=dry_run)
-    link_to_parcel_wrap_sf_one_to_one(
-        RawSfReportall, "parcel_id", wrap_model_field="reportall_parcel", dry_run=dry_run
-    )
+    link_to_parcel_wrap_sf_one_to_one(RawReportall, "parcel_id", wrap_model_field="reportall_parcel", dry_run=dry_run)
