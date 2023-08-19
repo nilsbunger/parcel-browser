@@ -249,6 +249,7 @@ class RawSfHeTableCAdmin(Home3Admin):
 @admin.register(RawSfReportall)
 class RawSfReportallAdmin(Home3Admin):
     model = RawSfReportall
+    search_fields = ["parcel_id"]
     # fmt:off
     _fieldlist = [
         ("situs", "parcel_id", "acreage", "calc_acrea"),
