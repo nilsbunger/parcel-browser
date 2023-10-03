@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, NewType
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -93,17 +94,24 @@ class PowerBIScraper:
         self.url = page_url
         soup = BeautifulSoup(requests.get(page_url, verify=False, headers=self.page_headers).content, "html.parser")
 
-        # now fetch the iframe contents
-        html_data = requests.get(soup.iframe["src"]).text
-        d = json.loads(base64.b64decode(soup.iframe["src"].split("=")[-1]).decode("utf-8"))
+        # now fetch the iframe contents - find the one with a matching domain.
+        iframes = soup.find_all("iframe")
+        # TODO: PowerBIScraper is supposed to be generic. But here we have hardcoded a powerbigov.us domain.
+        iframes_parsed = [ifr for ifr in iframes if urlparse(ifr["src"]).netloc.startswith("app.powerbigov.us")]
+        assert len(iframes_parsed) == 1, "Expected 1 matching iframe, found " + str(len(iframes_parsed))
+        iframe_url = iframes_parsed[0]["src"]
+        html_data = requests.get(iframe_url).text
+        d = json.loads(base64.b64decode(iframe_url.split("=")[-1]).decode("utf-8"))
         self.tenantId = d["t"]
         self.resourceKey = d["k"]
         self.resolvedClusterUri = re.search(r"var resolvedClusterUri = '(.*?)'", html_data)[1].replace(
             "-redirect", "-api"
         )
+        # TODO: PowerBIScraper is supposed to be generic. But here we have hardcoded a powerbigov.us domain.
+        assert self.resolvedClusterUri.startswith("https://wabi-us-gov")
         self.requestId = re.search(r"var requestId = '(.*?)'", html_data)[1]
         self.activityId = re.search(r"var telemetrySessionId =  '(.*?)'", html_data)[1]
-
+        assert self.requestId and self.activityId
         # now that we've initialized request_id, etc, we can make API calls. This first one lists all the
         # tables, which we'll use for future calls.
         self.data_models = requests.get(self.models_url, headers=self.api_headers).json()

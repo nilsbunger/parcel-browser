@@ -34,7 +34,7 @@ JAN_1_2023 = datetime(2023, 1, 1, tzinfo=UTC)
 #       API key is AIRTABLE_API_KEY
 #       Used internally by Home3.
 #   Base: yimby_law_housing_elements
-#       Table is Cities
+#       Tables are HCD Cities and HCD HE Status Sync
 #       View is Website View HE Status
 #       https://airtable.com/appRD2z3VXs78iq80/tblptIMb2VnnFotnm/viwH5W5SQCJC08pTm?blocks=bip4r67brjWReva5n
 #       API key is AIRTABLE_YIMBY_LAW_HE_API_KEY
@@ -302,7 +302,7 @@ def sync_he_status_to_yimby_law_table(hcd_status_table: BITable, hcd_review_tabl
     # ids = [r["id"] for r in airtable_records]
     # print("Deleting", len(ids), "records from HCD HE Status Sync table")
     # yimby_law_he_status_sync_airtable.batch_delete(ids)
-    print("Syncing HCD tableso YIMBY Law Housing Elements 'HCD HE Status Sync' table")
+    print("Syncing HCD tables to YIMBY Law Housing Elements 'HCD HE Status Sync' table")
     # Update airtable entries that already exist with new HCD data.
     processed_juris = set()
     for idx, record in enumerate(airtable_records):
