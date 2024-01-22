@@ -10,8 +10,12 @@ class RawReportall(SanitizedRawModelMixin, models.Model):
         verbose_name_plural = "Raw Reportall [Shapefile]"
         indexes = [models.Index(fields=["parcel_id"])]
 
+    class CountyEnum(models.TextChoices):
+        SF = "SFC", "San Francisco"
+
     cty_row_id = models.BigIntegerField(null=True, blank=True)
     parcel_id = models.CharField(max_length=50, null=True, blank=True)
+    county = models.CharField(choices=CountyEnum.choices, null=True, blank=True)
     county_nam = models.CharField(max_length=100, null=True, blank=True)
     county_fip = models.BigIntegerField(null=True, blank=True)
     state_abbr = models.CharField(max_length=2, null=True, blank=True)

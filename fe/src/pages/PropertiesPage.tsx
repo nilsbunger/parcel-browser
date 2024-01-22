@@ -107,16 +107,20 @@ const Testbed = () => {
     console.log('Selected options:', selectedOptions);
   };
 
-  return (
-    <div className="flex gap-4">
-      <DropdownMultiselectButton
-        options={['Option 1', 'Option 2', 'Option 3']}
-        onSelectionChange={handleSelectionChange}
-      />
-      <DropdownRangeButton
-        options={['Option 1', 'Option 2', 'Option 3']}
-        onSelectionChange={handleSelectionChange}
-      />
+  return (<div>
+      <div className="flex gap-4">
+        <DropdownMultiselectButton
+          options={['Option 1', 'Option 2', 'Option 3']}
+          onSelectionChange={handleSelectionChange}
+        />
+        <DropdownRangeButton
+          options={['Option 1', 'Option 2', 'Option 3']}
+          onSelectionChange={handleSelectionChange}
+        />
+      </div>
+
+      <h1>Test bed stuff ... scroll down </h1>
+
     </div>
   );
 

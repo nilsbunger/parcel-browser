@@ -247,7 +247,7 @@ class RawSfHeTableCAdmin(Home3Admin):
 
 
 @admin.register(RawReportall)
-class RawReportallAdmin(Home3Admin):
+class RawSfReportallAdmin(Home3Admin):
     model = RawReportall
     search_fields = ["parcel_id"]
     # fmt:off
