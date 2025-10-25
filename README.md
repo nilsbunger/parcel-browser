@@ -1,5 +1,5 @@
-# Parsnip
-Home3 application for evaluating parcels for upzoning.
+# Parcel Browser
+This is an application for evaluating parcels for upzoning in California based on California YIMBY laws from 2019-2023.
 
 # Other files
 
