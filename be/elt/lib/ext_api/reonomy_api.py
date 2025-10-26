@@ -9,18 +9,6 @@ import pandas as pd
 import requests
 import tabulate
 
-REONOMY_ACCESS_KEY = "home3inc"
-REONOMY_SECRET_KEY = "e6ey32vyrghuuag9"
-
-# Authorization: Basic aG9tZTNpbmM6ZTZleTMydnlyZ2h1dWFnOQ=="
-
-url_base = "https://api.reonomy.com/v2/"
-headers = {
-    "Authorization": f"Basic aG9tZTNpbmM6ZTZleTMydnlyZ2h1dWFnOQ==",
-    "Content-Type": "application/json",
-}
-
-
 def reonomy_call(api_call, method, params=None, body=None, save=True):
     url = url_base + api_call
     if method == "GET":
